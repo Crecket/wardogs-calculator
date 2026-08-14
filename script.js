@@ -229,8 +229,98 @@ function applyLanguage() {
         LANG;
 
     updatePresetLock();
+    updateThemeButton();
     result();
     draw();
+}
+
+function getTheme() {
+    const saved =
+        localStorage.getItem(
+            'wardogs-theme'
+        );
+
+    if (
+        saved === 'light' ||
+        saved === 'dark'
+    ) {
+        return saved;
+    }
+
+    return 'dark';
+}
+
+function applyTheme(theme) {
+    const root =
+        document.documentElement;
+
+    const isLight =
+        theme === 'light';
+
+    if (isLight) {
+        root.dataset.theme =
+            'light';
+    } else {
+        delete root.dataset.theme;
+    }
+
+    localStorage.setItem(
+        'wardogs-theme',
+        isLight
+            ? 'light'
+            : 'dark'
+    );
+
+    updateThemeButton();
+
+    draw();
+}
+
+function updateThemeButton() {
+    const icon =
+        $('themeIcon');
+
+    const toggle =
+        $('themeToggle');
+
+    if (!icon || !toggle) {
+        return;
+    }
+
+    const isLight =
+        document.documentElement.dataset.theme ===
+        'light';
+
+    icon.textContent =
+        isLight
+            ? '☾'
+            : '☼';
+
+    toggle.setAttribute(
+        'aria-label',
+        isLight
+            ? 'Switch to dark theme'
+            : 'Switch to light theme'
+    );
+
+    toggle.title =
+        isLight
+            ? 'Switch to dark theme'
+            : 'Switch to light theme';
+}
+
+function toggleTheme() {
+    const current =
+        document.documentElement.dataset.theme ===
+        'light'
+            ? 'light'
+            : 'dark';
+
+    applyTheme(
+        current === 'light'
+            ? 'dark'
+            : 'light'
+    );
 }
 
 function formatCoord(value) {
@@ -372,11 +462,13 @@ function view() {
 
     const p = 34;
 
+    const visualScale = 2;
+
     const scale =
         Math.min(
             (W - p * 2) / S.w,
             (H - p * 2) / S.h
-        ) * S.zoom;
+        ) * S.zoom * visualScale;
 
     const mw =
         S.w * scale;
@@ -1317,7 +1409,56 @@ function updateCursor(e) {
         )}`;
 }
 
+function loadTheme() {
+    const saved =
+        localStorage.getItem(
+            'wardogs-theme'
+        );
+
+    if (
+        saved === 'light' ||
+        saved === 'dark'
+    ) {
+        applyTheme(saved);
+        return;
+    }
+
+    const prefersLight =
+        window.matchMedia(
+            '(prefers-color-scheme: light)'
+        ).matches;
+
+    applyTheme(
+        prefersLight
+            ? 'light'
+            : 'dark'
+    );
+}
+
+function bindThemeToggle() {
+    const toggle =
+        $('themeToggle');
+
+    if (!toggle) {
+        return;
+    }
+
+    toggle.onclick =
+        () => {
+            const current =
+                document.documentElement
+                    .dataset.theme;
+
+            applyTheme(
+                current === 'light'
+                    ? 'dark'
+                    : 'light'
+            );
+        };
+}
+
 function bindEvents() {
+
     $('mapSelect').onchange =
         () => {
             const key =
@@ -1740,6 +1881,10 @@ function bindEvents() {
 
 async function init() {
     try {
+        loadTheme();
+
+        bindThemeToggle();
+
         await loadLanguages();
 
         await loadMaps();
