@@ -46,8 +46,24 @@ const c = $('canvas');
 const wrap = document.querySelector('.map');
 const ctx = c.getContext('2d');
 
-async function fetchJSON(url) {
-    const response = await fetch(url);
+const BASE_PATH =
+    new URL('.', document.baseURI);
+
+function resourceURL(path) {
+    return new URL(
+        path,
+        BASE_PATH
+    ).href;
+}
+
+async function fetchJSON(path) {
+    const url =
+        resourceURL(path);
+
+    const response =
+        await fetch(url, {
+            cache: 'no-cache'
+        });
 
     if (!response.ok) {
         throw new Error(
@@ -59,7 +75,10 @@ async function fetchJSON(url) {
 }
 
 async function loadLanguages() {
-    const index = await fetchJSON('locales/index.json');
+    const index =
+        await fetchJSON(
+            'locales/index.json'
+        );
 
     DEFAULT_LANG =
         index.default || 'en';
@@ -70,11 +89,20 @@ async function loadLanguages() {
             : [];
 
     if (!LANGUAGES.length) {
-        throw new Error('No languages found in locales/index.json');
+        throw new Error(
+            'No languages found in locales/index.json'
+        );
     }
 
     await Promise.all(
         LANGUAGES.map(async language => {
+            if (
+                !language.id ||
+                !language.file
+            ) {
+                return;
+            }
+
             I18N[language.id] =
                 await fetchJSON(
                     `locales/${language.file}`
@@ -87,11 +115,13 @@ async function loadLanguages() {
     LANG =
         detectLanguage();
 
-    $('language').value = LANG;
+    $('language').value =
+        LANG;
 }
 
 function populateLanguageSelect() {
-    const select = $('language');
+    const select =
+        $('language');
 
     select.innerHTML = '';
 
@@ -103,7 +133,11 @@ function populateLanguageSelect() {
             language.id;
 
         option.textContent =
-            `${language.flag || ''} ${language.nativeName || language.name}`;
+            `${language.flag || ''} ${
+                language.nativeName ||
+                language.name ||
+                language.id
+            }`;
 
         select.appendChild(option);
     });
@@ -112,9 +146,8 @@ function populateLanguageSelect() {
 function detectLanguage() {
     const available =
         new Set(
-            LANGUAGES.map(
-                language => language.id
-            )
+            LANGUAGES
+                .map(language => language.id)
         );
 
     const saved =
@@ -135,7 +168,10 @@ function detectLanguage() {
             ? navigator.languages
             : [navigator.language];
 
-    for (const language of browserLanguages) {
+    for (
+        const language
+        of browserLanguages
+        ) {
         if (!language) {
             continue;
         }
@@ -155,7 +191,9 @@ function detectLanguage() {
         }
     }
 
-    return DEFAULT_LANG;
+    return available.has(DEFAULT_LANG)
+        ? DEFAULT_LANG
+        : LANGUAGES[0].id;
 }
 
 function tr(key) {
@@ -177,10 +215,14 @@ function applyLanguage() {
         LANG;
 
     document
-        .querySelectorAll('[data-i18n]')
+        .querySelectorAll(
+            '[data-i18n]'
+        )
         .forEach(element => {
             element.textContent =
-                tr(element.dataset.i18n);
+                tr(
+                    element.dataset.i18n
+                );
         });
 
     $('language').value =
@@ -248,7 +290,8 @@ async function loadMaps() {
     loaded
         .filter(Boolean)
         .forEach(map => {
-            MAPS[map.id] = map;
+            MAPS[map.id] =
+                map;
         });
 
     populateMapSelect();
@@ -261,7 +304,9 @@ function populateMapSelect() {
     select.innerHTML = '';
 
     const custom =
-        document.createElement('option');
+        document.createElement(
+            'option'
+        );
 
     custom.value =
         'custom';
@@ -274,18 +319,23 @@ function populateMapSelect() {
 
     select.appendChild(custom);
 
-    Object.values(MAPS).forEach(map => {
-        const option =
-            document.createElement('option');
+    Object.values(MAPS)
+        .forEach(map => {
+            const option =
+                document.createElement(
+                    'option'
+                );
 
-        option.value =
-            map.id;
+            option.value =
+                map.id;
 
-        option.textContent =
-            map.name;
+            option.textContent =
+                map.name;
 
-        select.appendChild(option);
-    });
+            select.appendChild(
+                option
+            );
+        });
 
     select.value =
         S.map;
@@ -336,12 +386,15 @@ function view() {
 
     return {
         scale,
+
         left:
             (W - mw) / 2 +
             S.panX,
+
         top:
             (H - mh) / 2 +
             S.panY,
+
         mw,
         mh
     };
@@ -649,19 +702,26 @@ function drawPresetMarkers(map) {
     });
 }
 
-function hexToRgba(color, alpha) {
+function hexToRgba(
+    color,
+    alpha
+) {
     if (!color) {
         return `rgba(215,164,82,${alpha})`;
     }
 
     if (
-        color.startsWith('rgba(')
+        color.startsWith(
+            'rgba('
+        )
     ) {
         return color;
     }
 
     if (
-        color.startsWith('rgb(')
+        color.startsWith(
+            'rgb('
+        )
     ) {
         return color
             .replace(
@@ -675,7 +735,10 @@ function hexToRgba(color, alpha) {
     }
 
     const hex =
-        color.replace('#', '');
+        color.replace(
+            '#',
+            ''
+        );
 
     if (
         hex.length !== 3 &&
@@ -746,10 +809,13 @@ function draw() {
         H
     );
 
-    ctx.fillStyle =
+    const styles =
         getComputedStyle(
             document.documentElement
-        ).getPropertyValue(
+        );
+
+    ctx.fillStyle =
+        styles.getPropertyValue(
             '--map-bg'
         ).trim() ||
         '#0d1012';
@@ -769,9 +835,7 @@ function draw() {
     );
 
     ctx.fillStyle =
-        getComputedStyle(
-            document.documentElement
-        ).getPropertyValue(
+        styles.getPropertyValue(
             '--panel-bg'
         ).trim() ||
         '#151a1d';
@@ -782,11 +846,6 @@ function draw() {
         v.mw,
         v.mh
     );
-
-    const styles =
-        getComputedStyle(
-            document.documentElement
-        );
 
     const major =
         styles.getPropertyValue(
@@ -1040,13 +1099,13 @@ function result() {
 
     $('dist').textContent =
         d.toFixed(2) +
-        ' км';
+        ' km';
 
     $('distm').textContent =
         Math.round(
             d * 1000
         ) +
-        ' м';
+        ' m';
 
     $('dx').textContent =
         (
@@ -1059,7 +1118,7 @@ function result() {
                 dx * 1000
             )
         ) +
-        ' м';
+        ' m';
 
     $('dy').textContent =
         (
@@ -1072,7 +1131,7 @@ function result() {
                 dy * 1000
             )
         ) +
-        ' м';
+        ' m';
 
     const inRange =
         d <=
@@ -1201,6 +1260,63 @@ function updatePresetLock() {
             : '';
 }
 
+function updateCursor(e) {
+    const rect =
+        c.getBoundingClientRect();
+
+    const x =
+        e.clientX -
+        rect.left;
+
+    const y =
+        e.clientY -
+        rect.top;
+
+    const world =
+        toWorld(
+            x,
+            y
+        );
+
+    if (
+        world.x < 0 ||
+        world.x > S.w ||
+        world.y < 0 ||
+        world.y > S.h
+    ) {
+        $('cursorCoords').style.display =
+            'none';
+
+        return;
+    }
+
+    const cursor =
+        $('cursorCoords');
+
+    cursor.style.display =
+        'block';
+
+    cursor.style.left =
+        `${e.clientX - rect.left + 14}px`;
+
+    cursor.style.top =
+        `${e.clientY - rect.top + 14}px`;
+
+    cursor.querySelector(
+        '.cursor-x'
+    ).textContent =
+        `x${formatCoord(
+            world.x * 1000
+        )}`;
+
+    cursor.querySelector(
+        '.cursor-y'
+    ).textContent =
+        `y${formatCoord(
+            world.y * 1000
+        )}`;
+}
+
 function bindEvents() {
     $('mapSelect').onchange =
         () => {
@@ -1223,8 +1339,13 @@ function bindEvents() {
                     'custom';
             }
 
-            clamp(S.origin);
-            clamp(S.target);
+            clamp(
+                S.origin
+            );
+
+            clamp(
+                S.target
+            );
 
             S.zoom = 1;
             S.panX = 0;
@@ -1282,8 +1403,13 @@ function bindEvents() {
                     )
                 );
 
-            clamp(S.origin);
-            clamp(S.target);
+            clamp(
+                S.origin
+            );
+
+            clamp(
+                S.target
+            );
 
             S.zoom = 1;
             S.panX = 0;
