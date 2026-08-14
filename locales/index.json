@@ -1,0 +1,68 @@
+{
+  "default": "en",
+  "languages": [
+    {
+      "id": "en",
+      "name": "English",
+      "nativeName": "English",
+      "flag": "🇬🇧",
+      "file": "en.json"
+    },
+    {
+      "id": "ru",
+      "name": "Russian",
+      "nativeName": "Русский",
+      "flag": "🇷🇺",
+      "file": "ru.json"
+    },
+    {
+      "id": "de",
+      "name": "German",
+      "nativeName": "Deutsch",
+      "flag": "🇩🇪",
+      "file": "de.json"
+    },
+    {
+      "id": "es",
+      "name": "Spanish",
+      "nativeName": "Español",
+      "flag": "🇪🇸",
+      "file": "es.json"
+    },
+    {
+      "id": "fr",
+      "name": "French",
+      "nativeName": "Français",
+      "flag": "🇫🇷",
+      "file": "fr.json"
+    },
+    {
+      "id": "pl",
+      "name": "Polish",
+      "nativeName": "Polski",
+      "flag": "🇵🇱",
+      "file": "pl.json"
+    },
+    {
+      "id": "pt",
+      "name": "Portuguese",
+      "nativeName": "Português",
+      "flag": "🇵🇹",
+      "file": "pt.json"
+    },
+    {
+      "id": "uk",
+      "name": "Ukrainian",
+      "nativeName": "Українська",
+      "flag": "🇺🇦",
+      "file": "uk.json"
+    },
+    {
+      "id": "cat",
+      "name": "Cat",
+      "nativeName": "Meow",
+      "flag": "🐈",
+      "file": "cat.json"
+    }
+  ]
+}

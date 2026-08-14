@@ -1,6 +1,6 @@
 # WARDOGS Artillery Calculator
 
-A lightweight web-based artillery calculator for [**WARDOGS**](https://store.steampowered.com/app/1867240/WARDOGS/).
+A lightweight web-based artillery calculator for **[WARDOGS](https://store.steampowered.com/app/1867240/WARDOGS/?utm_source=chatgpt.com)**.
 
 The calculator provides an interactive coordinate grid where you can place an artillery position and a target, then calculate the required azimuth and distance between them.
 
@@ -11,33 +11,42 @@ The calculator provides an interactive coordinate grid where you can place an ar
 * Artillery and target markers
 * Automatic azimuth calculation
 * Distance calculation in kilometers and meters
+* ΔX / ΔY calculation
 * Weapon maximum-range visualization
 * Target range status
 * Custom map dimensions
-* JSON-based preset maps
-* Automatic preset map discovery
+* Preset maps loaded from JSON files
+* Automatic discovery of available maps
 * Zoom in/out
 * Right-click map panning
 * Drag-and-drop markers
 * Cursor coordinates
-* English and Russian localization
+* Light and dark themes
+* Automatic system-language detection
+* Multiple interface languages
+* Languages loaded from JSON files
+* Automatic language list generation
 * Responsive layout
-* No frameworks or external dependencies
+* No frameworks or build system
 
 ## Usage
 
-1. Select a map or create a custom map.
-2. Select the weapon.
-3. Place the artillery position on the map.
-4. Place the target.
-5. The calculator automatically displays:
+1. Select a preset map or choose **Custom map**.
+2. If using a custom map, specify its width and height.
+3. Select the weapon.
+4. Select **Artillery** or **Target** mode.
+5. Click on the map to place the selected point.
+6. Drag existing markers to move them.
+7. The calculator automatically displays:
 
    * Azimuth
    * Distance
+   * Distance in meters
    * ΔX / ΔY
-   * Whether the target is within weapon range
+   * Weapon range
+   * Target range status
 
-### Map Controls
+## Map Controls
 
 | Action      | Control                      |
 | ----------- | ---------------------------- |
@@ -55,13 +64,14 @@ The map uses kilometers as its base coordinate system.
 
 Each kilometer is divided into **10 × 10 cells**, with each small cell representing **100 meters**.
 
-Coordinates are displayed with meter-level precision.
+Coordinates are stored and displayed in meters.
 
 For example:
 
 ```text
-1.00 = 1 kilometer
-0.100 = 100 meters
+1000 = 1 kilometer
+5000 = 5 kilometers
+10000 = 10 kilometers
 ```
 
 The azimuth uses the following convention:
@@ -80,24 +90,31 @@ Currently supported weapons:
 * **Mortar** — maximum range: 600 m
 * **SPG** — maximum range: 2 km
 
-The weapon range is displayed directly on the map as a circle around the artillery position.
+Weapon definitions are currently stored in the main JavaScript application.
+
+The selected weapon's maximum range is displayed as a circle around the artillery position.
 
 ## Maps
 
-The calculator supports two types of maps:
+Maps are stored separately from the main application code as JSON files.
 
-* **Custom maps** — dimensions can be configured directly in the application.
-* **Preset maps** — stored as individual JSON files and loaded automatically by the application.
+This allows new maps to be added without modifying `script.js`.
 
-### Custom Maps
+### Custom Map
 
 Custom maps can be configured from **1 × 1 km** up to **100 × 100 km**.
 
 ### Preset Maps
 
-Preset maps are stored separately from the main application code as JSON files.
+Preset maps are automatically discovered by the application.
 
-Each map file contains the map dimensions, display name, markers and zones.
+Current map:
+
+* Bakurani — 10 × 10 km
+
+## Map JSON Format
+
+Each map is represented by a separate JSON file.
 
 Example:
 
@@ -107,7 +124,6 @@ Example:
   "name": "Bakurani",
   "w": 10,
   "h": 10,
-
   "markers": [
     {
       "emoji": "🏠",
@@ -122,7 +138,6 @@ Example:
       "label": "Danger Zone"
     }
   ],
-
   "zones": [
     {
       "color": "#d86666",
@@ -140,35 +155,20 @@ Example:
 }
 ```
 
-### Adding a New Map
+### Map Properties
 
-To add a new preset, create a new `.json` file in the maps directory.
-
-For example:
-
-```text
-maps/
-├── bakurani.json
-├── new-map.json
-└── another-map.json
-```
-
-The application scans the available map files and loads them automatically, so adding a new map does not require modifying the main JavaScript code.
-
-A map must contain:
-
-| Property  | Description                   |
-| --------- | ----------------------------- |
-| `id`      | Unique map identifier         |
-| `name`    | Map name displayed in the UI  |
-| `w`       | Map width in kilometers       |
-| `h`       | Map height in kilometers      |
-| `markers` | Optional array of map markers |
-| `zones`   | Optional array of map zones   |
+| Property  | Description                           |
+| --------- | ------------------------------------- |
+| `id`      | Unique map identifier                 |
+| `name`    | Map name displayed in the application |
+| `w`       | Map width in kilometers               |
+| `h`       | Map height in kilometers              |
+| `markers` | Array of map markers                  |
+| `zones`   | Array of circular zones               |
 
 ### Markers
 
-Markers can be used to display important locations on a map.
+Markers can contain:
 
 ```json
 {
@@ -183,7 +183,7 @@ Coordinates are specified in meters.
 
 ### Zones
 
-Zones can be used to highlight areas on the map.
+Zones can contain:
 
 ```json
 {
@@ -194,7 +194,117 @@ Zones can be used to highlight areas on the map.
 }
 ```
 
-The `x` and `y` coordinates represent the center of the zone in meters, while `radius` is specified in meters.
+`x`, `y`, and `radius` are specified in meters.
+
+### Adding a New Map
+
+Create a new `.json` file in the maps directory.
+
+For example:
+
+```text
+maps/
+├── bakurani.json
+├── new-map.json
+└── another-map.json
+```
+
+The application automatically scans the available maps and adds valid maps to the map selector.
+
+No changes to `script.js` or `index.html` are required.
+
+## Localization
+
+Interface translations are stored separately as JSON files in the `locales` directory.
+
+Current languages:
+
+```text
+locales/
+├── cat.json
+├── de.json
+├── en.json
+├── es.json
+├── fr.json
+├── index.json
+├── pl.json
+├── pt.json
+├── ru.json
+└── uk.json
+```
+
+Currently available languages include:
+
+* 🇬🇧 English
+* 🇷🇺 Русский
+* 🇺🇦 Українська
+* 🇩🇪 Deutsch
+* 🇪🇸 Español
+* 🇫🇷 Français
+* 🇵🇱 Polski
+* 🇵🇹 Português
+* 🐱 Cat
+
+### Language Index
+
+`locales/index.json` contains the list of available translations.
+
+The application uses this file to automatically populate the language selector.
+
+Adding a new language therefore does not require editing `index.html`.
+
+Create a new translation file:
+
+```text
+locales/ja.json
+```
+
+and add the language to `locales/index.json`.
+
+The application will then make it available in the language selector.
+
+### Automatic Language Detection
+
+When the application starts, it checks the user's browser/system language.
+
+If a matching translation is available, it is selected automatically.
+
+If no matching translation exists, the application falls back to English.
+
+Users can manually change the language using the language selector.
+
+## Project Structure
+
+```text
+wardogs-artillery-calculator/
+├── index.html
+├── style.css
+├── script.js
+├── README.md
+├── LICENSE
+├── .gitignore
+│
+├── maps/
+│   ├── bakurani.json
+│   └── ...
+│
+└── locales/
+    ├── index.json
+    ├── en.json
+    ├── ru.json
+    ├── uk.json
+    ├── de.json
+    ├── es.json
+    ├── fr.json
+    ├── pl.json
+    ├── pt.json
+    ├── cat.json
+    └── ...
+```
+
+The main application logic is contained in `script.js`.
+
+Maps and translations are deliberately kept outside the main JavaScript file so that content can be extended without modifying the application logic.
 
 ## Technologies
 
@@ -205,6 +315,7 @@ The project intentionally uses no frameworks or external dependencies.
 * Vanilla JavaScript
 * HTML Canvas API
 * JSON
+* Fetch API
 
 ## Running Locally
 
@@ -216,7 +327,7 @@ Clone the repository:
 git clone https://github.com/YOUR_USERNAME/wardogs-artillery-calculator.git
 ```
 
-Because preset maps are loaded from JSON files, the application should be run through a local static web server rather than opened directly with `file://`.
+Because the application loads maps and translations using `fetch()`, it should be served through a local HTTP server rather than opened directly with `file://`.
 
 For example:
 
@@ -230,22 +341,37 @@ Then open:
 http://localhost:8000
 ```
 
-## Project Structure
+## Static Hosting
+
+The application is completely static and can be hosted on services such as GitHub Pages or other static web hosting providers.
+
+No backend or database is required.
+
+The server must serve the JSON files from the `maps/` and `locales/` directories.
+
+## Adding Content
+
+The project is designed so that most content can be added without modifying the application logic.
+
+### Add a map
 
 ```text
-wardogs-artillery-calculator/
-├── index.html
-├── style.css
-├── script.js
-├── maps/
-│   ├── bakurani.json
-│   └── ...
-├── README.md
-├── LICENSE
-└── .gitignore
+maps/my-map.json
 ```
 
-The main application logic is kept separate from map data. Map-specific information is stored in individual JSON files, making it possible to add or modify maps without changing `script.js`.
+### Add a language
+
+```text
+locales/my-language.json
+```
+
+and register it in:
+
+```text
+locales/index.json
+```
+
+This keeps map data and translations independent from the calculator itself.
 
 ## License
 
@@ -255,6 +381,6 @@ See [LICENSE](LICENSE) for details.
 
 ## Disclaimer
 
-This is a fan-made community tool for [**WARDOGS**](https://store.steampowered.com/app/1867240/WARDOGS/).
+This is a fan-made community tool for **[WARDOGS](https://store.steampowered.com/app/1867240/WARDOGS/?utm_source=chatgpt.com)**.
 
 It is not affiliated with or endorsed by the game's developers or publisher.

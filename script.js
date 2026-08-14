@@ -3,259 +3,11 @@ const WEAPONS = {
         name: 'Mortar',
         range: 0.6
     },
-
     spg: {
         name: 'SPG',
         range: 2
     }
 };
-
-const I18N = {
-    en: {
-        title: 'WARDOGS // ARTILLERY CALCULATOR',
-        gridInfo: '1 km → 10×10 cells of 100 m',
-        map: 'Map',
-        presetMap: 'Preset map',
-        customMap: 'Custom map',
-        width: 'Width, km',
-        height: 'Height, km',
-        apply: 'Apply',
-        weapon: 'Weapon',
-        weaponType: 'Weapon type',
-        mortar: 'Mortar',
-        spg: 'SPG',
-        maxRange: 'Max range',
-        targetStatus: 'Target status',
-        inRange: 'In range',
-        outRange: 'OUT OF RANGE',
-        rangeHint: 'The circle shows the maximum range of the selected weapon from the artillery position.',
-        pointSelection: 'Point selection',
-        artillery: 'Artillery',
-        target: 'Target',
-        artilleryXY: 'Artillery X / Y',
-        targetXY: 'Target X / Y',
-        result: 'Result',
-        azimuth: 'AZIMUTH',
-        distance: 'Distance',
-        meters: 'Meters',
-        azimuthHint: 'Azimuth: 0° north, 90° east, 180° south, 270° west.',
-        controls: 'Controls',
-        fit: 'Fit map',
-        swap: 'Swap points',
-        clear: 'Reset',
-        controlsHint: 'LMB — place point · Drag markers — move points · Scroll — zoom · RMB — move map.',
-        lmb: 'LMB',
-        point: 'point',
-        grid: 'grid',
-        majorGrid: 'major line',
-        customMapStatus: 'Custom map',
-        mapLocked: 'Preset map selected — grid size is locked'
-    },
-
-    ru: {
-        title: 'WARDOGS // АРТИЛЛЕРИЙСКИЙ КАЛЬКУЛЯТОР',
-        gridInfo: '1 км → 10×10 клеток по 100 м',
-        map: 'Карта',
-        presetMap: 'Готовая карта',
-        customMap: 'Своя карта',
-        width: 'Ширина, км',
-        height: 'Высота, км',
-        apply: 'Применить',
-        weapon: 'Оружие',
-        weaponType: 'Тип оружия',
-        mortar: 'Миномёт',
-        spg: 'SPG',
-        maxRange: 'Макс. дальность',
-        targetStatus: 'Статус цели',
-        inRange: 'В пределах',
-        outRange: 'ВНЕ дальности',
-        rangeHint: 'Круг показывает максимальный радиус действия выбранного оружия от позиции орудия.',
-        pointSelection: 'Выбор точки',
-        artillery: 'Орудие',
-        target: 'Цель',
-        artilleryXY: 'Орудие X / Y',
-        targetXY: 'Цель X / Y',
-        result: 'Результат',
-        azimuth: 'АЗИМУТ',
-        distance: 'Дистанция',
-        meters: 'В метрах',
-        azimuthHint: 'Азимут: 0° — север, 90° — восток, 180° — юг, 270° — запад.',
-        controls: 'Управление',
-        fit: 'Вписать поле',
-        swap: 'Поменять точки',
-        clear: 'Сбросить',
-        controlsHint: 'ЛКМ — поставить точку · Перетаскивание — переместить · Скролл — масштаб · ПКМ — перемещение карты.',
-        lmb: 'ЛКМ',
-        point: 'точка',
-        grid: 'сетка',
-        majorGrid: 'жирная линия',
-        customMapStatus: 'Своя карта',
-        mapLocked: 'Выбрана готовая карта — размер сетки заблокирован'
-    }
-};
-
-let LANG = 'en';
-
-const MAPS = {};
-
-function tr(key) {
-    return I18N[LANG][key] || key;
-}
-
-function formatCoord(value) {
-    return Math.round(value)
-        .toString()
-        .padStart(4, '0');
-}
-
-async function loadMaps() {
-    try {
-        const response = await fetch('maps/index.json', {
-            cache: 'no-cache'
-        });
-
-        if (!response.ok) {
-            throw new Error(
-                `Failed to load maps/index.json: ${response.status}`
-            );
-        }
-
-        const files = await response.json();
-
-        if (!Array.isArray(files)) {
-            throw new Error('maps/index.json must contain an array');
-        }
-
-        const loadedMaps = await Promise.all(
-            files.map(async file => {
-                const mapResponse = await fetch(
-                    `maps/${file}`,
-                    {
-                        cache: 'no-cache'
-                    }
-                );
-
-                if (!mapResponse.ok) {
-                    throw new Error(
-                        `Failed to load map ${file}: ${mapResponse.status}`
-                    );
-                }
-
-                return mapResponse.json();
-            })
-        );
-
-        loadedMaps.forEach(map => {
-            if (
-                !map ||
-                typeof map.id !== 'string' ||
-                typeof map.name !== 'string' ||
-                typeof map.w !== 'number' ||
-                typeof map.h !== 'number'
-            ) {
-                console.warn(
-                    'Invalid map preset:',
-                    map
-                );
-
-                return;
-            }
-
-            if (!Array.isArray(map.markers)) {
-                map.markers = [];
-            }
-
-            if (!Array.isArray(map.zones)) {
-                map.zones = [];
-            }
-
-            MAPS[map.id] = map;
-        });
-
-        populateMapSelect();
-
-        const firstMap =
-            Object.keys(MAPS)[0];
-
-        if (
-            firstMap &&
-            $('mapSelect').value === ''
-        ) {
-            $('mapSelect').value =
-                firstMap;
-        }
-
-        updatePresetLock();
-        inputs();
-    } catch (error) {
-        console.error(
-            'Failed to load maps:',
-            error
-        );
-    }
-}
-
-function populateMapSelect() {
-    const select =
-        $('mapSelect');
-
-    const current =
-        select.value;
-
-    select.innerHTML = '';
-
-    const customOption =
-        document.createElement('option');
-
-    customOption.value = 'custom';
-    customOption.textContent =
-        tr('customMap');
-
-    select.appendChild(
-        customOption
-    );
-
-    Object.values(MAPS).forEach(map => {
-        const option =
-            document.createElement('option');
-
-        option.value =
-            map.id;
-
-        option.textContent =
-            map.name;
-
-        select.appendChild(option);
-    });
-
-    if (
-        current === 'custom' ||
-        current in MAPS
-    ) {
-        select.value = current;
-    } else {
-        select.value = 'custom';
-    }
-}
-
-function applyLanguage() {
-    document.documentElement.lang =
-        LANG;
-
-    document
-        .querySelectorAll('[data-i18n]')
-        .forEach(element => {
-            element.textContent =
-                tr(element.dataset.i18n);
-        });
-
-    $('language').value =
-        LANG;
-
-    populateMapSelect();
-    updatePresetLock();
-    draw();
-}
 
 const S = {
     w: 10,
@@ -279,18 +31,265 @@ const S = {
     panY: 0
 };
 
-const $ =
-    id =>
-        document.getElementById(id);
+let LANG = 'en';
+let DEFAULT_LANG = 'en';
+let LANGUAGES = [];
+let I18N = {};
+let MAPS = {};
 
-const c =
-    $('canvas');
+let drag = null;
+let pan = null;
 
-const wrap =
-    document.querySelector('.map');
+const $ = id => document.getElementById(id);
 
-const ctx =
-    c.getContext('2d');
+const c = $('canvas');
+const wrap = document.querySelector('.map');
+const ctx = c.getContext('2d');
+
+async function fetchJSON(url) {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(
+            `Failed to load ${url}: ${response.status} ${response.statusText}`
+        );
+    }
+
+    return response.json();
+}
+
+async function loadLanguages() {
+    const index = await fetchJSON('locales/index.json');
+
+    DEFAULT_LANG =
+        index.default || 'en';
+
+    LANGUAGES =
+        Array.isArray(index.languages)
+            ? index.languages
+            : [];
+
+    if (!LANGUAGES.length) {
+        throw new Error('No languages found in locales/index.json');
+    }
+
+    await Promise.all(
+        LANGUAGES.map(async language => {
+            I18N[language.id] =
+                await fetchJSON(
+                    `locales/${language.file}`
+                );
+        })
+    );
+
+    populateLanguageSelect();
+
+    LANG =
+        detectLanguage();
+
+    $('language').value = LANG;
+}
+
+function populateLanguageSelect() {
+    const select = $('language');
+
+    select.innerHTML = '';
+
+    LANGUAGES.forEach(language => {
+        const option =
+            document.createElement('option');
+
+        option.value =
+            language.id;
+
+        option.textContent =
+            `${language.flag || ''} ${language.nativeName || language.name}`;
+
+        select.appendChild(option);
+    });
+}
+
+function detectLanguage() {
+    const available =
+        new Set(
+            LANGUAGES.map(
+                language => language.id
+            )
+        );
+
+    const saved =
+        localStorage.getItem(
+            'wardogs-language'
+        );
+
+    if (
+        saved &&
+        available.has(saved)
+    ) {
+        return saved;
+    }
+
+    const browserLanguages =
+        navigator.languages &&
+        navigator.languages.length
+            ? navigator.languages
+            : [navigator.language];
+
+    for (const language of browserLanguages) {
+        if (!language) {
+            continue;
+        }
+
+        const exact =
+            language.toLowerCase();
+
+        if (available.has(exact)) {
+            return exact;
+        }
+
+        const base =
+            exact.split('-')[0];
+
+        if (available.has(base)) {
+            return base;
+        }
+    }
+
+    return DEFAULT_LANG;
+}
+
+function tr(key) {
+    const language =
+        I18N[LANG];
+
+    const fallback =
+        I18N[DEFAULT_LANG];
+
+    return (
+        language?.[key] ??
+        fallback?.[key] ??
+        key
+    );
+}
+
+function applyLanguage() {
+    document.documentElement.lang =
+        LANG;
+
+    document
+        .querySelectorAll('[data-i18n]')
+        .forEach(element => {
+            element.textContent =
+                tr(element.dataset.i18n);
+        });
+
+    $('language').value =
+        LANG;
+
+    updatePresetLock();
+    result();
+    draw();
+}
+
+function formatCoord(value) {
+    return Math.round(value)
+        .toString()
+        .padStart(4, '0');
+}
+
+async function loadMaps() {
+    const index =
+        await fetchJSON(
+            'maps/index.json'
+        );
+
+    const files =
+        Array.isArray(index)
+            ? index
+            : Array.isArray(index.maps)
+                ? index.maps
+                : [];
+
+    if (!files.length) {
+        throw new Error(
+            'No maps found in maps/index.json'
+        );
+    }
+
+    const loaded =
+        await Promise.all(
+            files.map(async item => {
+                const file =
+                    typeof item === 'string'
+                        ? item
+                        : item.file;
+
+                if (!file) {
+                    return null;
+                }
+
+                const map =
+                    await fetchJSON(
+                        `maps/${file}`
+                    );
+
+                if (!map.id) {
+                    throw new Error(
+                        `Map ${file} has no id`
+                    );
+                }
+
+                return map;
+            })
+        );
+
+    MAPS = {};
+
+    loaded
+        .filter(Boolean)
+        .forEach(map => {
+            MAPS[map.id] = map;
+        });
+
+    populateMapSelect();
+}
+
+function populateMapSelect() {
+    const select =
+        $('mapSelect');
+
+    select.innerHTML = '';
+
+    const custom =
+        document.createElement('option');
+
+    custom.value =
+        'custom';
+
+    custom.dataset.i18n =
+        'customMap';
+
+    custom.textContent =
+        tr('customMap');
+
+    select.appendChild(custom);
+
+    Object.values(MAPS).forEach(map => {
+        const option =
+            document.createElement('option');
+
+        option.value =
+            map.id;
+
+        option.textContent =
+            map.name;
+
+        select.appendChild(option);
+    });
+
+    select.value =
+        S.map;
+}
 
 function resize() {
     const d =
@@ -480,8 +479,7 @@ function drawPresetZones(map) {
             v.scale;
 
         const y =
-            (S.h -
-                zone.y / 1000) *
+            (S.h - zone.y / 1000) *
             v.scale;
 
         const radius =
@@ -547,8 +545,7 @@ function drawPresetMarkers(map) {
             v.scale;
 
         const y =
-            (S.h -
-                item.y / 1000) *
+            (S.h - item.y / 1000) *
             v.scale;
 
         ctx.save();
@@ -652,10 +649,7 @@ function drawPresetMarkers(map) {
     });
 }
 
-function hexToRgba(
-    color,
-    alpha
-) {
+function hexToRgba(color, alpha) {
     if (!color) {
         return `rgba(215,164,82,${alpha})`;
     }
@@ -681,10 +675,7 @@ function hexToRgba(
     }
 
     const hex =
-        color.replace(
-            '#',
-            ''
-        );
+        color.replace('#', '');
 
     if (
         hex.length !== 3 &&
@@ -756,6 +747,11 @@ function draw() {
     );
 
     ctx.fillStyle =
+        getComputedStyle(
+            document.documentElement
+        ).getPropertyValue(
+            '--map-bg'
+        ).trim() ||
         '#0d1012';
 
     ctx.fillRect(
@@ -773,6 +769,11 @@ function draw() {
     );
 
     ctx.fillStyle =
+        getComputedStyle(
+            document.documentElement
+        ).getPropertyValue(
+            '--panel-bg'
+        ).trim() ||
         '#151a1d';
 
     ctx.fillRect(
@@ -782,20 +783,35 @@ function draw() {
         v.mh
     );
 
+    const styles =
+        getComputedStyle(
+            document.documentElement
+        );
+
+    const major =
+        styles.getPropertyValue(
+            '--grid-major'
+        ).trim() ||
+        '#465058';
+
+    const minor =
+        styles.getPropertyValue(
+            '--grid-minor'
+        ).trim() ||
+        '#252c31';
+
     for (
         let i = 0;
         i <= S.w * 10;
         i++
     ) {
         const x =
-            i *
-            v.scale /
-            10;
+            i * v.scale / 10;
 
         ctx.strokeStyle =
             i % 10 === 0
-                ? '#465058'
-                : '#252c31';
+                ? major
+                : minor;
 
         ctx.lineWidth = 1;
 
@@ -820,14 +836,12 @@ function draw() {
         i++
     ) {
         const y =
-            i *
-            v.scale /
-            10;
+            i * v.scale / 10;
 
         ctx.strokeStyle =
             i % 10 === 0
-                ? '#465058'
-                : '#252c31';
+                ? major
+                : minor;
 
         ctx.beginPath();
 
@@ -845,6 +859,9 @@ function draw() {
     }
 
     ctx.fillStyle =
+        styles.getPropertyValue(
+            '--muted'
+        ).trim() ||
         '#89959e';
 
     ctx.font =
@@ -1019,8 +1036,7 @@ function result() {
     }
 
     $('angle').textContent =
-        a.toFixed(1) +
-        '°';
+        a.toFixed(1) + '°';
 
     $('dist').textContent =
         d.toFixed(2) +
@@ -1068,7 +1084,7 @@ function result() {
             WEAPONS[S.weapon].range *
             1000
         ) +
-        ' м';
+        ' m';
 
     $('rangeStatus').textContent =
         inRange
@@ -1083,9 +1099,8 @@ function result() {
     const mapName =
         S.map === 'custom'
             ? tr('customMap')
-            : MAPS[S.map]
-                ? MAPS[S.map].name
-                : tr('customMap');
+            : MAPS[S.map]?.name ||
+            S.map;
 
     $('status').textContent =
         `${WEAPONS[S.weapon].name} · ` +
@@ -1100,6 +1115,9 @@ function result() {
         `${tr('target')}: ` +
         `${formatCoord(
             S.target.x * 1000
+        )}, ` +
+        `${formatCoord(
+            S.target.y * 1000
         )}`;
 }
 
@@ -1183,527 +1201,450 @@ function updatePresetLock() {
             : '';
 }
 
-$('mapSelect').onchange = () => {
-    const key =
-        $('mapSelect').value;
+function bindEvents() {
+    $('mapSelect').onchange =
+        () => {
+            const key =
+                $('mapSelect').value;
 
-    if (
-        key !== 'custom' &&
-        MAPS[key]
-    ) {
-        S.map = key;
+            if (
+                key !== 'custom'
+            ) {
+                S.map =
+                    key;
 
-        S.w =
-            MAPS[key].w;
+                S.w =
+                    MAPS[key].w;
 
-        S.h =
-            MAPS[key].h;
-    } else {
-        S.map = 'custom';
-    }
+                S.h =
+                    MAPS[key].h;
+            } else {
+                S.map =
+                    'custom';
+            }
 
-    clamp(
-        S.origin
-    );
+            clamp(S.origin);
+            clamp(S.target);
 
-    clamp(
-        S.target
-    );
+            S.zoom = 1;
+            S.panX = 0;
+            S.panY = 0;
 
-    S.zoom = 1;
-    S.panX = 0;
-    S.panY = 0;
-
-    updatePresetLock();
-    inputs();
-};
-
-$('language').onchange = () => {
-    LANG =
-        $('language').value;
-
-    applyLanguage();
-};
-
-$('weapon').onchange = () => {
-    S.weapon =
-        $('weapon').value;
-
-    draw();
-};
-
-$('apply').onclick = () => {
-    S.map =
-        'custom';
-
-    S.w =
-        Math.max(
-            1,
-            Math.min(
-                100,
-                Number(
-                    $('w').value
-                ) || 10
-            )
-        );
-
-    S.h =
-        Math.max(
-            1,
-            Math.min(
-                100,
-                Number(
-                    $('h').value
-                ) || 10
-            )
-        );
-
-    clamp(
-        S.origin
-    );
-
-    clamp(
-        S.target
-    );
-
-    S.zoom = 1;
-    S.panX = 0;
-    S.panY = 0;
-
-    updatePresetLock();
-    inputs();
-};
-
-$('originMode').onclick = () => {
-    S.mode =
-        'origin';
-
-    $('originMode')
-        .classList
-        .add('active');
-
-    $('targetMode')
-        .classList
-        .remove('active');
-};
-
-$('targetMode').onclick = () => {
-    S.mode =
-        'target';
-
-    $('targetMode')
-        .classList
-        .add('active');
-
-    $('originMode')
-        .classList
-        .remove('active');
-};
-
-[
-    'ox',
-    'oy'
-].forEach(id => {
-    $(id).onchange = () =>
-        inputPoint(
-            'origin'
-        );
-});
-
-[
-    'tx',
-    'ty'
-].forEach(id => {
-    $(id).onchange = () =>
-        inputPoint(
-            'target'
-        );
-});
-
-$('zoomIn').onclick = () => {
-    S.zoom =
-        Math.min(
-            3,
-            S.zoom * 1.2
-        );
-
-    draw();
-};
-
-$('zoomOut').onclick = () => {
-    S.zoom =
-        Math.max(
-            0.4,
-            S.zoom / 1.2
-        );
-
-    draw();
-};
-
-$('fit').onclick = () => {
-    S.zoom = 1;
-    S.panX = 0;
-    S.panY = 0;
-
-    draw();
-};
-
-$('swap').onclick = () => {
-    [
-        S.origin,
-        S.target
-    ] = [
-        S.target,
-        S.origin
-    ];
-
-    inputs();
-};
-
-$('clear').onclick = () => {
-    S.origin = {
-        x: 0,
-        y: 0
-    };
-
-    S.target = {
-        x: 0,
-        y: 0
-    };
-
-    inputs();
-};
-
-let drag = null;
-let pan = null;
-
-function updateCursor(e) {
-    const r =
-        wrap.getBoundingClientRect();
-
-    const x =
-        e.clientX -
-        r.left;
-
-    const y =
-        e.clientY -
-        r.top;
-
-    const rect =
-        c.getBoundingClientRect();
-
-    const p =
-        toWorld(
-            e.clientX -
-            rect.left,
-            e.clientY -
-            rect.top
-        );
-
-    const el =
-        $('cursorCoords');
-
-    if (
-        p.x >= 0 &&
-        p.x <= S.w &&
-        p.y >= 0 &&
-        p.y <= S.h
-    ) {
-        el.textContent =
-            `x${formatCoord(
-                p.x * 1000
-            )} ` +
-            `y${formatCoord(
-                p.y * 1000
-            )}`;
-
-        el.style.display =
-            'block';
-
-        const ox = 14;
-        const oy = 14;
-
-        const w =
-            el.offsetWidth;
-
-        const h =
-            el.offsetHeight;
-
-        let offsetX = ox;
-        let offsetY = oy;
-
-        if (
-            x +
-            w +
-            offsetX >
-            r.width
-        ) {
-            offsetX =
-                -w - 14;
-        }
-
-        if (
-            y +
-            h +
-            offsetY >
-            r.height
-        ) {
-            offsetY =
-                -h - 14;
-        }
-
-        el.style.left =
-            Math.max(
-                2,
-                Math.min(
-                    r.width -
-                    w -
-                    2,
-                    x +
-                    offsetX
-                )
-            ) +
-            'px';
-
-        el.style.top =
-            Math.max(
-                2,
-                Math.min(
-                    r.height -
-                    h -
-                    2,
-                    y +
-                    offsetY
-                )
-            ) +
-            'px';
-    } else {
-        el.style.display =
-            'none';
-    }
-
-    return p;
-}
-
-c.onmousedown = e => {
-    e.preventDefault();
-
-    const rect =
-        c.getBoundingClientRect();
-
-    const p =
-        toWorld(
-            e.clientX -
-            rect.left,
-            e.clientY -
-            rect.top
-        );
-
-    if (
-        e.button === 2
-    ) {
-        pan = {
-            startX:
-            e.clientX,
-
-            startY:
-            e.clientY,
-
-            originX:
-            S.panX,
-
-            originY:
-            S.panY
+            updatePresetLock();
+            inputs();
         };
 
-        $('cursorCoords')
-            .style
-            .display =
-            'none';
+    $('language').onchange =
+        () => {
+            LANG =
+                $('language').value;
 
-        return;
-    }
+            localStorage.setItem(
+                'wardogs-language',
+                LANG
+            );
 
-    const d1 =
-        Math.hypot(
-            p.x -
-            S.origin.x,
-            p.y -
-            S.origin.y
-        );
+            applyLanguage();
+        };
 
-    const d2 =
-        Math.hypot(
-            p.x -
-            S.target.x,
-            p.y -
-            S.target.y
-        );
+    $('weapon').onchange =
+        () => {
+            S.weapon =
+                $('weapon').value;
 
-    drag =
-        Math.min(
-            d1,
-            d2
-        ) < 0.3
-            ? (
-                d1 < d2
-                    ? 'origin'
-                    : 'target'
-            )
-            : S.mode;
+            draw();
+        };
 
-    S[drag] = {
-        x: p.x,
-        y: p.y
-    };
+    $('apply').onclick =
+        () => {
+            S.map =
+                'custom';
 
-    clamp(
-        S[drag]
-    );
-
-    inputs();
-    updateCursor(e);
-};
-
-window.onmousemove =
-    e => {
-        if (pan) {
-            S.panX =
-                pan.originX +
-                (
-                    e.clientX -
-                    pan.startX
+            S.w =
+                Math.max(
+                    1,
+                    Math.min(
+                        100,
+                        Number(
+                            $('w').value
+                        ) || 10
+                    )
                 );
 
-            S.panY =
-                pan.originY +
-                (
-                    e.clientY -
-                    pan.startY
+            S.h =
+                Math.max(
+                    1,
+                    Math.min(
+                        100,
+                        Number(
+                            $('h').value
+                        ) || 10
+                    )
+                );
+
+            clamp(S.origin);
+            clamp(S.target);
+
+            S.zoom = 1;
+            S.panX = 0;
+            S.panY = 0;
+
+            updatePresetLock();
+            inputs();
+        };
+
+    $('originMode').onclick =
+        () => {
+            S.mode =
+                'origin';
+
+            $('originMode')
+                .classList.add(
+                'active'
+            );
+
+            $('targetMode')
+                .classList.remove(
+                'active'
+            );
+        };
+
+    $('targetMode').onclick =
+        () => {
+            S.mode =
+                'target';
+
+            $('targetMode')
+                .classList.add(
+                'active'
+            );
+
+            $('originMode')
+                .classList.remove(
+                'active'
+            );
+        };
+
+    ['ox', 'oy'].forEach(id => {
+        $(id).onchange =
+            () =>
+                inputPoint(
+                    'origin'
+                );
+    });
+
+    ['tx', 'ty'].forEach(id => {
+        $(id).onchange =
+            () =>
+                inputPoint(
+                    'target'
+                );
+    });
+
+    $('zoomIn').onclick =
+        () => {
+            S.zoom =
+                Math.min(
+                    3,
+                    S.zoom * 1.2
                 );
 
             draw();
+        };
 
-            return;
-        }
+    $('zoomOut').onclick =
+        () => {
+            S.zoom =
+                Math.max(
+                    0.4,
+                    S.zoom / 1.2
+                );
 
-        const p =
+            draw();
+        };
+
+    $('fit').onclick =
+        () => {
+            S.zoom = 1;
+            S.panX = 0;
+            S.panY = 0;
+
+            draw();
+        };
+
+    $('swap').onclick =
+        () => {
+            [
+                S.origin,
+                S.target
+            ] = [
+                S.target,
+                S.origin
+            ];
+
+            inputs();
+        };
+
+    $('clear').onclick =
+        () => {
+            S.origin = {
+                x: 0,
+                y: 0
+            };
+
+            S.target = {
+                x: 0,
+                y: 0
+            };
+
+            inputs();
+        };
+
+    c.onmousedown =
+        e => {
+            e.preventDefault();
+
+            const rect =
+                c.getBoundingClientRect();
+
+            const p =
+                toWorld(
+                    e.clientX -
+                    rect.left,
+                    e.clientY -
+                    rect.top
+                );
+
+            if (
+                e.button === 2
+            ) {
+                pan = {
+                    startX:
+                    e.clientX,
+
+                    startY:
+                    e.clientY,
+
+                    originX:
+                    S.panX,
+
+                    originY:
+                    S.panY
+                };
+
+                $('cursorCoords')
+                    .style.display =
+                    'none';
+
+                return;
+            }
+
+            const d1 =
+                Math.hypot(
+                    p.x -
+                    S.origin.x,
+                    p.y -
+                    S.origin.y
+                );
+
+            const d2 =
+                Math.hypot(
+                    p.x -
+                    S.target.x,
+                    p.y -
+                    S.target.y
+                );
+
+            drag =
+                Math.min(
+                    d1,
+                    d2
+                ) < 0.3
+                    ? (
+                        d1 < d2
+                            ? 'origin'
+                            : 'target'
+                    )
+                    : S.mode;
+
+            S[drag] = {
+                x: p.x,
+                y: p.y
+            };
+
+            clamp(
+                S[drag]
+            );
+
+            inputs();
+            updateCursor(e);
+        };
+
+    window.onmousemove =
+        e => {
+            if (pan) {
+                S.panX =
+                    pan.originX +
+                    (
+                        e.clientX -
+                        pan.startX
+                    );
+
+                S.panY =
+                    pan.originY +
+                    (
+                        e.clientY -
+                        pan.startY
+                    );
+
+                draw();
+
+                return;
+            }
+
             updateCursor(e);
 
-        if (!drag) {
-            return;
-        }
+            if (!drag) {
+                return;
+            }
 
-        const rect =
-            c.getBoundingClientRect();
+            const rect =
+                c.getBoundingClientRect();
 
-        const world =
-            toWorld(
-                e.clientX -
-                rect.left,
-                e.clientY -
-                rect.top
+            const world =
+                toWorld(
+                    e.clientX -
+                    rect.left,
+                    e.clientY -
+                    rect.top
+                );
+
+            S[drag] =
+                world;
+
+            clamp(
+                S[drag]
             );
 
-        S[drag] =
-            world;
+            inputs();
+            updateCursor(e);
+        };
 
-        clamp(
-            S[drag]
-        );
+    c.oncontextmenu =
+        e => {
+            e.preventDefault();
+        };
+
+    c.onmouseleave =
+        () => {
+            if (!pan) {
+                $('cursorCoords')
+                    .style.display =
+                    'none';
+            }
+        };
+
+    window.onmouseup =
+        () => {
+            drag = null;
+            pan = null;
+        };
+
+    c.onwheel =
+        e => {
+            e.preventDefault();
+
+            const rect =
+                c.getBoundingClientRect();
+
+            const mouseX =
+                e.clientX -
+                rect.left;
+
+            const mouseY =
+                e.clientY -
+                rect.top;
+
+            const before =
+                toWorld(
+                    mouseX,
+                    mouseY
+                );
+
+            S.zoom =
+                Math.max(
+                    0.4,
+                    Math.min(
+                        3,
+                        S.zoom *
+                        (
+                            e.deltaY < 0
+                                ? 1.1
+                                : 0.9
+                        )
+                    )
+                );
+
+            const after =
+                toWorld(
+                    mouseX,
+                    mouseY
+                );
+
+            S.panX +=
+                (
+                    after.x -
+                    before.x
+                ) *
+                view().scale;
+
+            S.panY -=
+                (
+                    after.y -
+                    before.y
+                ) *
+                view().scale;
+
+            draw();
+        };
+
+    window.onresize =
+        resize;
+}
+
+async function init() {
+    try {
+        await loadLanguages();
+
+        await loadMaps();
+
+        bindEvents();
+
+        updatePresetLock();
+
+        applyLanguage();
 
         inputs();
-        updateCursor(e);
-    };
 
-c.oncontextmenu =
-    e => {
-        e.preventDefault();
-    };
+        resize();
+    } catch (error) {
+        console.error(
+            'Failed to initialize application:',
+            error
+        );
 
-c.onmouseleave =
-    () => {
-        if (!pan) {
-            $('cursorCoords')
-                .style
-                .display =
-                'none';
-        }
-    };
+        document.body.innerHTML = `
+            <div style="
+                padding:40px;
+                font-family:system-ui;
+                color:#d86666;
+                background:#101316;
+            ">
+                <h1>Failed to initialize application</h1>
+                <pre>${error.message}</pre>
+            </div>
+        `;
+    }
+}
 
-window.onmouseup =
-    () => {
-        drag = null;
-        pan = null;
-    };
-
-c.onwheel =
-    e => {
-        e.preventDefault();
-
-        const rect =
-            c.getBoundingClientRect();
-
-        const mouseX =
-            e.clientX -
-            rect.left;
-
-        const mouseY =
-            e.clientY -
-            rect.top;
-
-        const before =
-            toWorld(
-                mouseX,
-                mouseY
-            );
-
-        S.zoom =
-            Math.max(
-                0.4,
-                Math.min(
-                    3,
-                    S.zoom *
-                    (
-                        e.deltaY < 0
-                            ? 1.1
-                            : 0.9
-                    )
-                )
-            );
-
-        const after =
-            toWorld(
-                mouseX,
-                mouseY
-            );
-
-        S.panX +=
-            (
-                after.x -
-                before.x
-            ) *
-            view().scale;
-
-        S.panY -=
-            (
-                after.y -
-                before.y
-            ) *
-            view().scale;
-
-        draw();
-    };
-
-window.onresize =
-    resize;
-
-$('language').value =
-    'en';
-
-updatePresetLock();
-applyLanguage();
-inputs();
-resize();
-
-loadMaps();
+init();
