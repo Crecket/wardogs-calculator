@@ -1,65 +1,9 @@
-const MAPS = {
-    bakurani: {
-        name: 'Bakurani',
-        w: 10,
-        h: 10,
-
-        /*
-        Preset map colors:
-
-        #d7a452  — Gold / primary accent
-        #e7edf2  — White
-        #5fa8d3  — Blue
-        #d86666  — Red
-        #82c596  — Green
-        #b88ad9  — Purple
-        #d99a6c  — Orange
-        #6fb7a8  — Teal
-        #89959e  — Gray
-        */
-
-
-        markers: [
-            /*
-            {
-                emoji: '🏠',
-                x: 3000,
-                y: 7000,
-                label: 'Main Base'
-            },
-            {
-                emoji: '⚠️',
-                x: 7000,
-                y: 4000,
-                label: 'Danger Zone'
-            }
-             */
-        ],
-
-        zones: [
-            /*
-            {
-                color: '#d86666',
-                x: 5000,
-                y: 5000,
-                radius: 1500
-            },
-            {
-                color: '#5fa8d3',
-                x: 8000,
-                y: 8000,
-                radius: 1000
-            }
-            */
-        ]
-    }
-};
-
 const WEAPONS = {
     mortar: {
         name: 'Mortar',
         range: 0.6
     },
+
     spg: {
         name: 'SPG',
         range: 2
@@ -152,6 +96,8 @@ const I18N = {
 
 let LANG = 'en';
 
+const MAPS = {};
+
 function tr(key) {
     return I18N[LANG][key] || key;
 }
@@ -162,15 +108,151 @@ function formatCoord(value) {
         .padStart(4, '0');
 }
 
-function applyLanguage() {
-    document.documentElement.lang = LANG;
+async function loadMaps() {
+    try {
+        const response = await fetch('maps/index.json', {
+            cache: 'no-cache'
+        });
 
-    document.querySelectorAll('[data-i18n]').forEach(element => {
-        element.textContent = tr(element.dataset.i18n);
+        if (!response.ok) {
+            throw new Error(
+                `Failed to load maps/index.json: ${response.status}`
+            );
+        }
+
+        const files = await response.json();
+
+        if (!Array.isArray(files)) {
+            throw new Error('maps/index.json must contain an array');
+        }
+
+        const loadedMaps = await Promise.all(
+            files.map(async file => {
+                const mapResponse = await fetch(
+                    `maps/${file}`,
+                    {
+                        cache: 'no-cache'
+                    }
+                );
+
+                if (!mapResponse.ok) {
+                    throw new Error(
+                        `Failed to load map ${file}: ${mapResponse.status}`
+                    );
+                }
+
+                return mapResponse.json();
+            })
+        );
+
+        loadedMaps.forEach(map => {
+            if (
+                !map ||
+                typeof map.id !== 'string' ||
+                typeof map.name !== 'string' ||
+                typeof map.w !== 'number' ||
+                typeof map.h !== 'number'
+            ) {
+                console.warn(
+                    'Invalid map preset:',
+                    map
+                );
+
+                return;
+            }
+
+            if (!Array.isArray(map.markers)) {
+                map.markers = [];
+            }
+
+            if (!Array.isArray(map.zones)) {
+                map.zones = [];
+            }
+
+            MAPS[map.id] = map;
+        });
+
+        populateMapSelect();
+
+        const firstMap =
+            Object.keys(MAPS)[0];
+
+        if (
+            firstMap &&
+            $('mapSelect').value === ''
+        ) {
+            $('mapSelect').value =
+                firstMap;
+        }
+
+        updatePresetLock();
+        inputs();
+    } catch (error) {
+        console.error(
+            'Failed to load maps:',
+            error
+        );
+    }
+}
+
+function populateMapSelect() {
+    const select =
+        $('mapSelect');
+
+    const current =
+        select.value;
+
+    select.innerHTML = '';
+
+    const customOption =
+        document.createElement('option');
+
+    customOption.value = 'custom';
+    customOption.textContent =
+        tr('customMap');
+
+    select.appendChild(
+        customOption
+    );
+
+    Object.values(MAPS).forEach(map => {
+        const option =
+            document.createElement('option');
+
+        option.value =
+            map.id;
+
+        option.textContent =
+            map.name;
+
+        select.appendChild(option);
     });
 
-    $('language').value = LANG;
+    if (
+        current === 'custom' ||
+        current in MAPS
+    ) {
+        select.value = current;
+    } else {
+        select.value = 'custom';
+    }
+}
 
+function applyLanguage() {
+    document.documentElement.lang =
+        LANG;
+
+    document
+        .querySelectorAll('[data-i18n]')
+        .forEach(element => {
+            element.textContent =
+                tr(element.dataset.i18n);
+        });
+
+    $('language').value =
+        LANG;
+
+    populateMapSelect();
     updatePresetLock();
     draw();
 }
@@ -197,86 +279,141 @@ const S = {
     panY: 0
 };
 
-const $ = id => document.getElementById(id);
+const $ =
+    id =>
+        document.getElementById(id);
 
-const c = $('canvas');
-const wrap = document.querySelector('.map');
-const ctx = c.getContext('2d');
+const c =
+    $('canvas');
+
+const wrap =
+    document.querySelector('.map');
+
+const ctx =
+    c.getContext('2d');
 
 function resize() {
-    const d = devicePixelRatio || 1;
+    const d =
+        devicePixelRatio || 1;
 
-    c.width = wrap.clientWidth * d;
-    c.height = wrap.clientHeight * d;
+    c.width =
+        wrap.clientWidth * d;
 
-    ctx.setTransform(d, 0, 0, d, 0, 0);
+    c.height =
+        wrap.clientHeight * d;
+
+    ctx.setTransform(
+        d,
+        0,
+        0,
+        d,
+        0,
+        0
+    );
 
     draw();
 }
 
 function view() {
-    const W = wrap.clientWidth;
-    const H = wrap.clientHeight;
+    const W =
+        wrap.clientWidth;
+
+    const H =
+        wrap.clientHeight;
+
     const p = 34;
 
-    const scale = Math.min(
-        (W - p * 2) / S.w,
-        (H - p * 2) / S.h
-    ) * S.zoom;
+    const scale =
+        Math.min(
+            (W - p * 2) / S.w,
+            (H - p * 2) / S.h
+        ) * S.zoom;
 
-    const mw = S.w * scale;
-    const mh = S.h * scale;
+    const mw =
+        S.w * scale;
+
+    const mh =
+        S.h * scale;
 
     return {
         scale,
-        left: (W - mw) / 2 + S.panX,
-        top: (H - mh) / 2 + S.panY,
+        left:
+            (W - mw) / 2 +
+            S.panX,
+        top:
+            (H - mh) / 2 +
+            S.panY,
         mw,
         mh
     };
 }
 
 function toScreen(x, y) {
-    const v = view();
+    const v =
+        view();
 
     return {
-        x: v.left + x * v.scale,
-        y: v.top + (S.h - y) * v.scale
+        x:
+            v.left +
+            x * v.scale,
+
+        y:
+            v.top +
+            (S.h - y) *
+            v.scale
     };
 }
 
 function toWorld(x, y) {
-    const v = view();
+    const v =
+        view();
 
     return {
-        x: (x - v.left) / v.scale,
-        y: S.h - (y - v.top) / v.scale
+        x:
+            (x - v.left) /
+            v.scale,
+
+        y:
+            S.h -
+            (y - v.top) /
+            v.scale
     };
 }
 
 function clamp(p) {
-    p.x = Math.max(
-        0,
-        Math.min(
-            S.w,
-            Math.round(p.x * 1000) / 1000
-        )
-    );
+    p.x =
+        Math.max(
+            0,
+            Math.min(
+                S.w,
+                Math.round(
+                    p.x * 1000
+                ) / 1000
+            )
+        );
 
-    p.y = Math.max(
-        0,
-        Math.min(
-            S.h,
-            Math.round(p.y * 1000) / 1000
-        )
-    );
+    p.y =
+        Math.max(
+            0,
+            Math.min(
+                S.h,
+                Math.round(
+                    p.y * 1000
+                ) / 1000
+            )
+        );
 }
 
 function marker(p, text) {
-    const v = view();
+    const v =
+        view();
 
-    const x = p.x * v.scale;
-    const y = (S.h - p.y) * v.scale;
+    const x =
+        p.x * v.scale;
+
+    const y =
+        (S.h - p.y) *
+        v.scale;
 
     ctx.beginPath();
 
@@ -295,13 +432,21 @@ function marker(p, text) {
 
     ctx.fill();
 
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle =
+        '#fff';
+
     ctx.lineWidth = 2;
+
     ctx.stroke();
 
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 10px system-ui';
-    ctx.textAlign = 'center';
+    ctx.fillStyle =
+        '#fff';
+
+    ctx.font =
+        'bold 10px system-ui';
+
+    ctx.textAlign =
+        'center';
 
     ctx.fillText(
         text,
@@ -318,7 +463,8 @@ function drawPresetZones(map) {
         return;
     }
 
-    const v = view();
+    const v =
+        view();
 
     map.zones.forEach(zone => {
         if (
@@ -334,7 +480,8 @@ function drawPresetZones(map) {
             v.scale;
 
         const y =
-            (S.h - zone.y / 1000) *
+            (S.h -
+                zone.y / 1000) *
             v.scale;
 
         const radius =
@@ -364,7 +511,11 @@ function drawPresetZones(map) {
             '#d7a452';
 
         ctx.lineWidth = 2;
-        ctx.setLineDash([7, 5]);
+
+        ctx.setLineDash([
+            7,
+            5
+        ]);
 
         ctx.stroke();
 
@@ -380,7 +531,8 @@ function drawPresetMarkers(map) {
         return;
     }
 
-    const v = view();
+    const v =
+        view();
 
     map.markers.forEach(item => {
         if (
@@ -395,13 +547,17 @@ function drawPresetMarkers(map) {
             v.scale;
 
         const y =
-            (S.h - item.y / 1000) *
+            (S.h -
+                item.y / 1000) *
             v.scale;
 
         ctx.save();
 
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.textAlign =
+            'center';
+
+        ctx.textBaseline =
+            'middle';
 
         const emojiSize =
             Math.max(
@@ -496,18 +652,28 @@ function drawPresetMarkers(map) {
     });
 }
 
-function hexToRgba(color, alpha) {
+function hexToRgba(
+    color,
+    alpha
+) {
     if (!color) {
         return `rgba(215,164,82,${alpha})`;
     }
 
-    if (color.startsWith('rgba(')) {
+    if (
+        color.startsWith('rgba(')
+    ) {
         return color;
     }
 
-    if (color.startsWith('rgb(')) {
+    if (
+        color.startsWith('rgb(')
+    ) {
         return color
-            .replace('rgb(', 'rgba(')
+            .replace(
+                'rgb(',
+                'rgba('
+            )
             .replace(
                 ')',
                 `,${alpha})`
@@ -515,7 +681,10 @@ function hexToRgba(color, alpha) {
     }
 
     const hex =
-        color.replace('#', '');
+        color.replace(
+            '#',
+            ''
+        );
 
     if (
         hex.length !== 3 &&
@@ -528,25 +697,37 @@ function hexToRgba(color, alpha) {
         hex.length === 3
             ? hex
                 .split('')
-                .map(char => char + char)
+                .map(
+                    char =>
+                        char + char
+                )
                 .join('')
             : hex;
 
     const r =
         parseInt(
-            normalized.substring(0, 2),
+            normalized.substring(
+                0,
+                2
+            ),
             16
         );
 
     const g =
         parseInt(
-            normalized.substring(2, 4),
+            normalized.substring(
+                2,
+                4
+            ),
             16
         );
 
     const b =
         parseInt(
-            normalized.substring(4, 6),
+            normalized.substring(
+                4,
+                6
+            ),
             16
         );
 
@@ -554,9 +735,18 @@ function hexToRgba(color, alpha) {
 }
 
 function draw() {
-    const W = wrap.clientWidth;
-    const H = wrap.clientHeight;
-    const v = view();
+    if (!wrap) {
+        return;
+    }
+
+    const W =
+        wrap.clientWidth;
+
+    const H =
+        wrap.clientHeight;
+
+    const v =
+        view();
 
     ctx.clearRect(
         0,
@@ -598,7 +788,9 @@ function draw() {
         i++
     ) {
         const x =
-            i * v.scale / 10;
+            i *
+            v.scale /
+            10;
 
         ctx.strokeStyle =
             i % 10 === 0
@@ -628,7 +820,9 @@ function draw() {
         i++
     ) {
         const y =
-            i * v.scale / 10;
+            i *
+            v.scale /
+            10;
 
         ctx.strokeStyle =
             i % 10 === 0
@@ -742,6 +936,7 @@ function draw() {
         '#d7a452';
 
     ctx.lineWidth = 2;
+
     ctx.setLineDash([
         7,
         5
@@ -824,7 +1019,8 @@ function result() {
     }
 
     $('angle').textContent =
-        a.toFixed(1) + '°';
+        a.toFixed(1) +
+        '°';
 
     $('dist').textContent =
         d.toFixed(2) +
@@ -843,7 +1039,9 @@ function result() {
                 : '-'
         ) +
         formatCoord(
-            Math.abs(dx * 1000)
+            Math.abs(
+                dx * 1000
+            )
         ) +
         ' м';
 
@@ -854,7 +1052,9 @@ function result() {
                 : '-'
         ) +
         formatCoord(
-            Math.abs(dy * 1000)
+            Math.abs(
+                dy * 1000
+            )
         ) +
         ' м';
 
@@ -880,18 +1080,27 @@ function result() {
             ? '#82c596'
             : '#d86666';
 
+    const mapName =
+        S.map === 'custom'
+            ? tr('customMap')
+            : MAPS[S.map]
+                ? MAPS[S.map].name
+                : tr('customMap');
+
     $('status').textContent =
         `${WEAPONS[S.weapon].name} · ` +
-        `${S.map === 'custom'
-            ? tr('customMap')
-            : MAPS[S.map].name
-        } · ` +
+        `${mapName} · ` +
         `${tr('artillery')}: ` +
-        `${formatCoord(S.origin.x * 1000)}, ` +
-        `${formatCoord(S.origin.y * 1000)} · ` +
+        `${formatCoord(
+            S.origin.x * 1000
+        )}, ` +
+        `${formatCoord(
+            S.origin.y * 1000
+        )} · ` +
         `${tr('target')}: ` +
-        `${formatCoord(S.target.x * 1000)}, ` +
-        `${formatCoord(S.target.y * 1000)}`;
+        `${formatCoord(
+            S.target.x * 1000
+        )}`;
 }
 
 function inputs() {
@@ -931,7 +1140,8 @@ function inputs() {
 }
 
 function inputPoint(type) {
-    const p = S[type];
+    const p =
+        S[type];
 
     const xInput =
         type === 'origin'
@@ -977,16 +1187,28 @@ $('mapSelect').onchange = () => {
     const key =
         $('mapSelect').value;
 
-    if (key !== 'custom') {
+    if (
+        key !== 'custom' &&
+        MAPS[key]
+    ) {
         S.map = key;
-        S.w = MAPS[key].w;
-        S.h = MAPS[key].h;
+
+        S.w =
+            MAPS[key].w;
+
+        S.h =
+            MAPS[key].h;
     } else {
         S.map = 'custom';
     }
 
-    clamp(S.origin);
-    clamp(S.target);
+    clamp(
+        S.origin
+    );
+
+    clamp(
+        S.target
+    );
 
     S.zoom = 1;
     S.panX = 0;
@@ -1011,66 +1233,91 @@ $('weapon').onchange = () => {
 };
 
 $('apply').onclick = () => {
-    S.map = 'custom';
+    S.map =
+        'custom';
 
-    S.w = Math.max(
-        1,
-        Math.min(
-            100,
-            Number(
-                $('w').value
-            ) || 10
-        )
+    S.w =
+        Math.max(
+            1,
+            Math.min(
+                100,
+                Number(
+                    $('w').value
+                ) || 10
+            )
+        );
+
+    S.h =
+        Math.max(
+            1,
+            Math.min(
+                100,
+                Number(
+                    $('h').value
+                ) || 10
+            )
+        );
+
+    clamp(
+        S.origin
     );
 
-    S.h = Math.max(
-        1,
-        Math.min(
-            100,
-            Number(
-                $('h').value
-            ) || 10
-        )
+    clamp(
+        S.target
     );
-
-    clamp(S.origin);
-    clamp(S.target);
 
     S.zoom = 1;
     S.panX = 0;
     S.panY = 0;
 
+    updatePresetLock();
     inputs();
 };
 
 $('originMode').onclick = () => {
-    S.mode = 'origin';
+    S.mode =
+        'origin';
 
     $('originMode')
-        .classList.add('active');
+        .classList
+        .add('active');
 
     $('targetMode')
-        .classList.remove('active');
+        .classList
+        .remove('active');
 };
 
 $('targetMode').onclick = () => {
-    S.mode = 'target';
+    S.mode =
+        'target';
 
     $('targetMode')
-        .classList.add('active');
+        .classList
+        .add('active');
 
     $('originMode')
-        .classList.remove('active');
+        .classList
+        .remove('active');
 };
 
-['ox', 'oy'].forEach(id => {
+[
+    'ox',
+    'oy'
+].forEach(id => {
     $(id).onchange = () =>
-        inputPoint('origin');
+        inputPoint(
+            'origin'
+        );
 });
 
-['tx', 'ty'].forEach(id => {
+[
+    'tx',
+    'ty'
+].forEach(id => {
     $(id).onchange = () =>
-        inputPoint('target');
+        inputPoint(
+            'target'
+        );
 });
 
 $('zoomIn').onclick = () => {
@@ -1163,8 +1410,12 @@ function updateCursor(e) {
         p.y <= S.h
     ) {
         el.textContent =
-            `x${formatCoord(p.x * 1000)} ` +
-            `y${formatCoord(p.y * 1000)}`;
+            `x${formatCoord(
+                p.x * 1000
+            )} ` +
+            `y${formatCoord(
+                p.y * 1000
+            )}`;
 
         el.style.display =
             'block';
@@ -1182,7 +1433,9 @@ function updateCursor(e) {
         let offsetY = oy;
 
         if (
-            x + w + offsetX >
+            x +
+            w +
+            offsetX >
             r.width
         ) {
             offsetX =
@@ -1190,7 +1443,9 @@ function updateCursor(e) {
         }
 
         if (
-            y + h + offsetY >
+            y +
+            h +
+            offsetY >
             r.height
         ) {
             offsetY =
@@ -1204,7 +1459,8 @@ function updateCursor(e) {
                     r.width -
                     w -
                     2,
-                    x + offsetX
+                    x +
+                    offsetX
                 )
             ) +
             'px';
@@ -1216,7 +1472,8 @@ function updateCursor(e) {
                     r.height -
                     h -
                     2,
-                    y + offsetY
+                    y +
+                    offsetY
                 )
             ) +
             'px';
@@ -1242,15 +1499,26 @@ c.onmousedown = e => {
             rect.top
         );
 
-    if (e.button === 2) {
+    if (
+        e.button === 2
+    ) {
         pan = {
-            startX: e.clientX,
-            startY: e.clientY,
-            originX: S.panX,
-            originY: S.panY
+            startX:
+            e.clientX,
+
+            startY:
+            e.clientY,
+
+            originX:
+            S.panX,
+
+            originY:
+            S.panY
         };
 
-        $('cursorCoords').style.display =
+        $('cursorCoords')
+            .style
+            .display =
             'none';
 
         return;
@@ -1289,137 +1557,153 @@ c.onmousedown = e => {
         y: p.y
     };
 
-    clamp(S[drag]);
+    clamp(
+        S[drag]
+    );
 
     inputs();
     updateCursor(e);
 };
 
-window.onmousemove = e => {
-    if (pan) {
-        S.panX =
-            pan.originX +
-            (
+window.onmousemove =
+    e => {
+        if (pan) {
+            S.panX =
+                pan.originX +
+                (
+                    e.clientX -
+                    pan.startX
+                );
+
+            S.panY =
+                pan.originY +
+                (
+                    e.clientY -
+                    pan.startY
+                );
+
+            draw();
+
+            return;
+        }
+
+        const p =
+            updateCursor(e);
+
+        if (!drag) {
+            return;
+        }
+
+        const rect =
+            c.getBoundingClientRect();
+
+        const world =
+            toWorld(
                 e.clientX -
-                pan.startX
+                rect.left,
+                e.clientY -
+                rect.top
             );
 
-        S.panY =
-            pan.originY +
-            (
-                e.clientY -
-                pan.startY
+        S[drag] =
+            world;
+
+        clamp(
+            S[drag]
+        );
+
+        inputs();
+        updateCursor(e);
+    };
+
+c.oncontextmenu =
+    e => {
+        e.preventDefault();
+    };
+
+c.onmouseleave =
+    () => {
+        if (!pan) {
+            $('cursorCoords')
+                .style
+                .display =
+                'none';
+        }
+    };
+
+window.onmouseup =
+    () => {
+        drag = null;
+        pan = null;
+    };
+
+c.onwheel =
+    e => {
+        e.preventDefault();
+
+        const rect =
+            c.getBoundingClientRect();
+
+        const mouseX =
+            e.clientX -
+            rect.left;
+
+        const mouseY =
+            e.clientY -
+            rect.top;
+
+        const before =
+            toWorld(
+                mouseX,
+                mouseY
             );
+
+        S.zoom =
+            Math.max(
+                0.4,
+                Math.min(
+                    3,
+                    S.zoom *
+                    (
+                        e.deltaY < 0
+                            ? 1.1
+                            : 0.9
+                    )
+                )
+            );
+
+        const after =
+            toWorld(
+                mouseX,
+                mouseY
+            );
+
+        S.panX +=
+            (
+                after.x -
+                before.x
+            ) *
+            view().scale;
+
+        S.panY -=
+            (
+                after.y -
+                before.y
+            ) *
+            view().scale;
 
         draw();
+    };
 
-        return;
-    }
+window.onresize =
+    resize;
 
-    const p =
-        updateCursor(e);
-
-    if (!drag) {
-        return;
-    }
-
-    const rect =
-        c.getBoundingClientRect();
-
-    const world =
-        toWorld(
-            e.clientX -
-            rect.left,
-            e.clientY -
-            rect.top
-        );
-
-    S[drag] = world;
-
-    clamp(S[drag]);
-
-    inputs();
-    updateCursor(e);
-};
-
-c.oncontextmenu = e => {
-    e.preventDefault();
-};
-
-c.onmouseleave = () => {
-    if (!pan) {
-        $('cursorCoords').style.display =
-            'none';
-    }
-};
-
-window.onmouseup = () => {
-    drag = null;
-    pan = null;
-};
-
-c.onwheel = e => {
-    e.preventDefault();
-
-    const rect =
-        c.getBoundingClientRect();
-
-    const mouseX =
-        e.clientX -
-        rect.left;
-
-    const mouseY =
-        e.clientY -
-        rect.top;
-
-    const before =
-        toWorld(
-            mouseX,
-            mouseY
-        );
-
-    S.zoom =
-        Math.max(
-            0.4,
-            Math.min(
-                3,
-                S.zoom *
-                (
-                    e.deltaY < 0
-                        ? 1.1
-                        : 0.9
-                )
-            )
-        );
-
-    const after =
-        toWorld(
-            mouseX,
-            mouseY
-        );
-
-    S.panX +=
-        (
-            after.x -
-            before.x
-        ) *
-        view().scale;
-
-    S.panY -=
-        (
-            after.y -
-            before.y
-        ) *
-        view().scale;
-
-    draw();
-};
-
-window.onresize = resize;
-
-$('language').value = 'en';
+$('language').value =
+    'en';
 
 updatePresetLock();
 applyLanguage();
 inputs();
 resize();
+
+loadMaps();
