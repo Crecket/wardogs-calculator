@@ -2,7 +2,56 @@ const MAPS = {
     bakurani: {
         name: 'Bakurani',
         w: 10,
-        h: 10
+        h: 10,
+
+        /*
+        Preset map colors:
+
+        #d7a452  — Gold / primary accent
+        #e7edf2  — White
+        #5fa8d3  — Blue
+        #d86666  — Red
+        #82c596  — Green
+        #b88ad9  — Purple
+        #d99a6c  — Orange
+        #6fb7a8  — Teal
+        #89959e  — Gray
+        */
+
+
+        markers: [
+            /*
+            {
+                emoji: '🏠',
+                x: 3000,
+                y: 7000,
+                label: 'Main Base'
+            },
+            {
+                emoji: '⚠️',
+                x: 7000,
+                y: 4000,
+                label: 'Danger Zone'
+            }
+             */
+        ],
+
+        zones: [
+            /*
+            {
+                color: '#d86666',
+                x: 5000,
+                y: 5000,
+                radius: 1500
+            },
+            {
+                color: '#5fa8d3',
+                x: 8000,
+                y: 8000,
+                radius: 1000
+            }
+            */
+        ]
     }
 };
 
@@ -55,8 +104,8 @@ const I18N = {
         point: 'point',
         grid: 'grid',
         majorGrid: 'major line',
-        lightTheme: 'Light',
-        darkTheme: 'Dark'
+        customMapStatus: 'Custom map',
+        mapLocked: 'Preset map selected — grid size is locked'
     },
 
     ru: {
@@ -91,52 +140,26 @@ const I18N = {
         fit: 'Вписать поле',
         swap: 'Поменять точки',
         clear: 'Сбросить',
-        controlsHint: 'ЛКМ — поставить точку · Перетаскивание маркеров — перемещение точек · Скролл — масштаб · ПКМ — передвижение карты.',
+        controlsHint: 'ЛКМ — поставить точку · Перетаскивание — переместить · Скролл — масштаб · ПКМ — перемещение карты.',
         lmb: 'ЛКМ',
         point: 'точка',
         grid: 'сетка',
         majorGrid: 'жирная линия',
-        lightTheme: 'Светлая',
-        darkTheme: 'Тёмная'
+        customMapStatus: 'Своя карта',
+        mapLocked: 'Выбрана готовая карта — размер сетки заблокирован'
     }
 };
 
 let LANG = 'en';
 
-const S = {
-    w: 10,
-    h: 10,
-    zoom: 1,
-    panX: 0,
-    panY: 0,
-    mode: 'origin',
-    map: 'custom',
-    weapon: 'mortar',
-    origin: {
-        x: 2,
-        y: 2
-    },
-    target: {
-        x: 2.5,
-        y: 2.5
-    }
-};
-
-const $ = id => document.getElementById(id);
-const canvas = $('canvas');
-const wrap = document.querySelector('.map');
-const ctx = canvas.getContext('2d');
-
-function displayCoordinate(value) {
-    return (value * 10).toFixed(2);
-}
-
-function parseDisplayCoordinate(value) {
-    return Number(value) / 10;
-}
-
 function tr(key) {
     return I18N[LANG][key] || key;
+}
+
+function formatCoord(value) {
+    return Math.round(value)
+        .toString()
+        .padStart(4, '0');
 }
 
 function applyLanguage() {
@@ -148,43 +171,43 @@ function applyLanguage() {
 
     $('language').value = LANG;
 
-    updateThemeButton();
     updatePresetLock();
     draw();
 }
 
-function applyTheme(theme) {
-    document.documentElement.dataset.theme = theme;
+const S = {
+    w: 10,
+    h: 10,
+    zoom: 1,
+    mode: 'origin',
+    map: 'custom',
+    weapon: 'mortar',
 
-    localStorage.setItem(
-        'wardogs-theme',
-        theme
-    );
+    origin: {
+        x: 2,
+        y: 2
+    },
 
-    updateThemeButton();
-    draw();
-}
+    target: {
+        x: 2.5,
+        y: 2.5
+    },
 
-function updateThemeButton() {
-    const theme =
-        document.documentElement.dataset.theme || 'dark';
+    panX: 0,
+    panY: 0
+};
 
-    $('themeIcon').textContent =
-        theme === 'dark'
-            ? '☀'
-            : '☾';
+const $ = id => document.getElementById(id);
 
-    $('themeText').textContent =
-        theme === 'dark'
-            ? tr('lightTheme')
-            : tr('darkTheme');
-}
+const c = $('canvas');
+const wrap = document.querySelector('.map');
+const ctx = c.getContext('2d');
 
 function resize() {
     const d = devicePixelRatio || 1;
 
-    canvas.width = wrap.clientWidth * d;
-    canvas.height = wrap.clientHeight * d;
+    c.width = wrap.clientWidth * d;
+    c.height = wrap.clientHeight * d;
 
     ctx.setTransform(d, 0, 0, d, 0, 0);
 
@@ -194,13 +217,12 @@ function resize() {
 function view() {
     const W = wrap.clientWidth;
     const H = wrap.clientHeight;
-    const padding = 34;
+    const p = 34;
 
-    const scale =
-        Math.min(
-            (W - padding * 2) / S.w,
-            (H - padding * 2) / S.h
-        ) * S.zoom;
+    const scale = Math.min(
+        (W - p * 2) / S.w,
+        (H - p * 2) / S.h
+    ) * S.zoom;
 
     const mw = S.w * scale;
     const mh = S.h * scale;
@@ -232,18 +254,39 @@ function toWorld(x, y) {
     };
 }
 
-function clamp(point) {
-    point.x = Math.max(0, Math.min(S.w, point.x));
-    point.y = Math.max(0, Math.min(S.h, point.y));
+function clamp(p) {
+    p.x = Math.max(
+        0,
+        Math.min(
+            S.w,
+            Math.round(p.x * 1000) / 1000
+        )
+    );
+
+    p.y = Math.max(
+        0,
+        Math.min(
+            S.h,
+            Math.round(p.y * 1000) / 1000
+        )
+    );
 }
 
-function marker(point, text) {
+function marker(p, text) {
     const v = view();
-    const x = point.x * v.scale;
-    const y = (S.h - point.y) * v.scale;
+
+    const x = p.x * v.scale;
+    const y = (S.h - p.y) * v.scale;
 
     ctx.beginPath();
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
+
+    ctx.arc(
+        x,
+        y,
+        8,
+        0,
+        Math.PI * 2
+    );
 
     ctx.fillStyle =
         text === 'O'
@@ -260,7 +303,254 @@ function marker(point, text) {
     ctx.font = 'bold 10px system-ui';
     ctx.textAlign = 'center';
 
-    ctx.fillText(text, x, y + 4);
+    ctx.fillText(
+        text,
+        x,
+        y + 4
+    );
+}
+
+function drawPresetZones(map) {
+    if (
+        !map ||
+        !Array.isArray(map.zones)
+    ) {
+        return;
+    }
+
+    const v = view();
+
+    map.zones.forEach(zone => {
+        if (
+            typeof zone.x !== 'number' ||
+            typeof zone.y !== 'number' ||
+            typeof zone.radius !== 'number'
+        ) {
+            return;
+        }
+
+        const x =
+            (zone.x / 1000) *
+            v.scale;
+
+        const y =
+            (S.h - zone.y / 1000) *
+            v.scale;
+
+        const radius =
+            (zone.radius / 1000) *
+            v.scale;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle =
+            hexToRgba(
+                zone.color,
+                0.12
+            );
+
+        ctx.fill();
+
+        ctx.strokeStyle =
+            zone.color ||
+            '#d7a452';
+
+        ctx.lineWidth = 2;
+        ctx.setLineDash([7, 5]);
+
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+    });
+}
+
+function drawPresetMarkers(map) {
+    if (
+        !map ||
+        !Array.isArray(map.markers)
+    ) {
+        return;
+    }
+
+    const v = view();
+
+    map.markers.forEach(item => {
+        if (
+            typeof item.x !== 'number' ||
+            typeof item.y !== 'number'
+        ) {
+            return;
+        }
+
+        const x =
+            (item.x / 1000) *
+            v.scale;
+
+        const y =
+            (S.h - item.y / 1000) *
+            v.scale;
+
+        ctx.save();
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const emojiSize =
+            Math.max(
+                14,
+                Math.min(
+                    32,
+                    v.scale * 0.35
+                )
+            );
+
+        ctx.font =
+            `${emojiSize}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+
+        ctx.fillText(
+            item.emoji || '📍',
+            x,
+            y
+        );
+
+        if (item.label) {
+            const labelSize =
+                Math.max(
+                    10,
+                    Math.min(
+                        14,
+                        v.scale * 0.15
+                    )
+                );
+
+            ctx.font =
+                `${labelSize}px system-ui, sans-serif`;
+
+            const metrics =
+                ctx.measureText(
+                    item.label
+                );
+
+            const paddingX = 6;
+            const paddingY = 3;
+
+            const labelWidth =
+                metrics.width +
+                paddingX * 2;
+
+            const labelHeight =
+                labelSize +
+                paddingY * 2;
+
+            const labelX =
+                x -
+                labelWidth / 2;
+
+            const labelY =
+                y +
+                emojiSize / 2 +
+                5;
+
+            ctx.fillStyle =
+                'rgba(16, 19, 22, .88)';
+
+            ctx.fillRect(
+                labelX,
+                labelY,
+                labelWidth,
+                labelHeight
+            );
+
+            ctx.strokeStyle =
+                'rgba(255, 255, 255, .12)';
+
+            ctx.lineWidth = 1;
+
+            ctx.strokeRect(
+                labelX,
+                labelY,
+                labelWidth,
+                labelHeight
+            );
+
+            ctx.fillStyle =
+                '#e7edf2';
+
+            ctx.fillText(
+                item.label,
+                x,
+                labelY +
+                labelHeight / 2
+            );
+        }
+
+        ctx.restore();
+    });
+}
+
+function hexToRgba(color, alpha) {
+    if (!color) {
+        return `rgba(215,164,82,${alpha})`;
+    }
+
+    if (color.startsWith('rgba(')) {
+        return color;
+    }
+
+    if (color.startsWith('rgb(')) {
+        return color
+            .replace('rgb(', 'rgba(')
+            .replace(
+                ')',
+                `,${alpha})`
+            );
+    }
+
+    const hex =
+        color.replace('#', '');
+
+    if (
+        hex.length !== 3 &&
+        hex.length !== 6
+    ) {
+        return `rgba(215,164,82,${alpha})`;
+    }
+
+    const normalized =
+        hex.length === 3
+            ? hex
+                .split('')
+                .map(char => char + char)
+                .join('')
+            : hex;
+
+    const r =
+        parseInt(
+            normalized.substring(0, 2),
+            16
+        );
+
+    const g =
+        parseInt(
+            normalized.substring(2, 4),
+            16
+        );
+
+    const b =
+        parseInt(
+            normalized.substring(4, 6),
+            16
+        );
+
+    return `rgba(${r},${g},${b},${alpha})`;
 }
 
 function draw() {
@@ -268,105 +558,166 @@ function draw() {
     const H = wrap.clientHeight;
     const v = view();
 
-    const theme =
-        document.documentElement.dataset.theme || 'dark';
+    ctx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
 
-    const colors =
-        theme === 'light'
-            ? {
-                background: '#e4e8eb',
-                map: '#f1f3f4',
-                major: '#8a959c',
-                minor: '#cbd1d5',
-                text: '#68747d',
-                accent: '#a87924'
-            }
-            : {
-                background: '#0d1012',
-                map: '#151a1d',
-                major: '#465058',
-                minor: '#252c31',
-                text: '#89959e',
-                accent: '#d7a452'
-            };
+    ctx.fillStyle =
+        '#0d1012';
 
-    ctx.clearRect(0, 0, W, H);
-
-    ctx.fillStyle = colors.background;
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
 
     ctx.save();
 
-    ctx.translate(v.left, v.top);
+    ctx.translate(
+        v.left,
+        v.top
+    );
 
-    ctx.fillStyle = colors.map;
-    ctx.fillRect(0, 0, v.mw, v.mh);
+    ctx.fillStyle =
+        '#151a1d';
 
-    for (let i = 0; i <= S.w * 10; i++) {
-        const x = i * v.scale / 10;
+    ctx.fillRect(
+        0,
+        0,
+        v.mw,
+        v.mh
+    );
+
+    for (
+        let i = 0;
+        i <= S.w * 10;
+        i++
+    ) {
+        const x =
+            i * v.scale / 10;
 
         ctx.strokeStyle =
             i % 10 === 0
-                ? colors.major
-                : colors.minor;
+                ? '#465058'
+                : '#252c31';
 
         ctx.lineWidth = 1;
 
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, v.mh);
+
+        ctx.moveTo(
+            x,
+            0
+        );
+
+        ctx.lineTo(
+            x,
+            v.mh
+        );
+
         ctx.stroke();
     }
 
-    for (let i = 0; i <= S.h * 10; i++) {
-        const y = i * v.scale / 10;
+    for (
+        let i = 0;
+        i <= S.h * 10;
+        i++
+    ) {
+        const y =
+            i * v.scale / 10;
 
         ctx.strokeStyle =
             i % 10 === 0
-                ? colors.major
-                : colors.minor;
+                ? '#465058'
+                : '#252c31';
 
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(v.mw, y);
+
+        ctx.moveTo(
+            0,
+            y
+        );
+
+        ctx.lineTo(
+            v.mw,
+            y
+        );
+
         ctx.stroke();
     }
 
-    ctx.fillStyle = colors.text;
-    ctx.font = '10px system-ui';
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'center';
+    ctx.fillStyle =
+        '#89959e';
 
-    for (let x = 0; x <= S.w; x++) {
+    ctx.font =
+        '10px system-ui';
+
+    ctx.textBaseline =
+        'top';
+
+    ctx.textAlign =
+        'center';
+
+    for (
+        let x = 0;
+        x <= S.w;
+        x++
+    ) {
         ctx.fillText(
-            x,
+            formatCoord(
+                x * 1000
+            ),
             x * v.scale,
             v.mh + 9
         );
     }
 
-    ctx.textBaseline = 'middle';
-    ctx.textAlign = 'right';
+    ctx.textBaseline =
+        'middle';
 
-    for (let y = 0; y <= S.h; y++) {
+    ctx.textAlign =
+        'right';
+
+    for (
+        let y = 0;
+        y <= S.h;
+        y++
+    ) {
         ctx.fillText(
-            y,
+            formatCoord(
+                y * 1000
+            ),
             -8,
-            (S.h - y) * v.scale
+            (S.h - y) *
+            v.scale
         );
     }
 
-    ctx.textBaseline = 'alphabetic';
+    ctx.textBaseline =
+        'alphabetic';
 
-    const a = toScreen(
-        S.origin.x,
-        S.origin.y
+    const currentMap =
+        MAPS[S.map];
+
+    drawPresetZones(
+        currentMap
     );
 
-    const b = toScreen(
-        S.target.x,
-        S.target.y
-    );
+    const a =
+        toScreen(
+            S.origin.x,
+            S.origin.y
+        );
+
+    const b =
+        toScreen(
+            S.target.x,
+            S.target.y
+        );
 
     const rangePx =
         WEAPONS[S.weapon].range *
@@ -383,21 +734,32 @@ function draw() {
     );
 
     ctx.fillStyle =
-        theme === 'light'
-            ? 'rgba(168,121,36,.10)'
-            : 'rgba(215,164,82,.08)';
+        'rgba(215,164,82,.08)';
 
     ctx.fill();
 
-    ctx.strokeStyle = colors.accent;
+    ctx.strokeStyle =
+        '#d7a452';
+
     ctx.lineWidth = 2;
-    ctx.setLineDash([7, 5]);
+    ctx.setLineDash([
+        7,
+        5
+    ]);
+
     ctx.stroke();
+
     ctx.setLineDash([]);
 
-    ctx.strokeStyle = colors.accent;
+    ctx.strokeStyle =
+        '#d7a452';
+
     ctx.lineWidth = 2;
-    ctx.setLineDash([8, 6]);
+
+    ctx.setLineDash([
+        8,
+        6
+    ]);
 
     ctx.beginPath();
 
@@ -415,8 +777,19 @@ function draw() {
 
     ctx.setLineDash([]);
 
-    marker(S.origin, 'O');
-    marker(S.target, 'T');
+    marker(
+        S.origin,
+        'O'
+    );
+
+    marker(
+        S.target,
+        'T'
+    );
+
+    drawPresetMarkers(
+        currentMap
+    );
 
     ctx.restore();
 
@@ -425,50 +798,77 @@ function draw() {
 
 function result() {
     const dx =
-        S.target.x - S.origin.x;
+        S.target.x -
+        S.origin.x;
 
     const dy =
-        S.target.y - S.origin.y;
+        S.target.y -
+        S.origin.y;
 
-    const distance =
-        Math.hypot(dx, dy);
+    const d =
+        Math.hypot(
+            dx,
+            dy
+        );
 
-    let azimuth =
-        Math.atan2(dx, dy) *
+    let a =
+        Math.atan2(
+            dx,
+            dy
+        ) *
         180 /
         Math.PI;
 
-    if (azimuth < 0) {
-        azimuth += 360;
+    if (a < 0) {
+        a += 360;
     }
 
     $('angle').textContent =
-        azimuth.toFixed(1) + '°';
+        a.toFixed(1) + '°';
 
     $('dist').textContent =
-        distance.toFixed(2) + ' км';
+        d.toFixed(2) +
+        ' км';
 
     $('distm').textContent =
-        Math.round(distance * 1000) + ' м';
+        Math.round(
+            d * 1000
+        ) +
+        ' м';
 
     $('dx').textContent =
-        (dx >= 0 ? '+' : '') +
-        dx.toFixed(3) +
-        ' км';
+        (
+            dx >= 0
+                ? '+'
+                : '-'
+        ) +
+        formatCoord(
+            Math.abs(dx * 1000)
+        ) +
+        ' м';
 
     $('dy').textContent =
-        (dy >= 0 ? '+' : '') +
-        dy.toFixed(3) +
-        ' км';
+        (
+            dy >= 0
+                ? '+'
+                : '-'
+        ) +
+        formatCoord(
+            Math.abs(dy * 1000)
+        ) +
+        ' м';
 
     const inRange =
-        distance <=
-        WEAPONS[S.weapon].range + 1e-9;
+        d <=
+        WEAPONS[S.weapon].range +
+        1e-9;
 
     $('range').textContent =
         Math.round(
-            WEAPONS[S.weapon].range * 1000
-        ) + ' м';
+            WEAPONS[S.weapon].range *
+            1000
+        ) +
+        ' м';
 
     $('rangeStatus').textContent =
         inRange
@@ -481,49 +881,57 @@ function result() {
             : '#d86666';
 
     $('status').textContent =
-        `${WEAPONS[S.weapon].name} · ${
-            S.map === 'custom'
-                ? tr('customMap')
-                : MAPS[S.map].name
-        } · ${
-            tr('artillery')
-        }: ${
-            displayCoordinate(S.origin.x)
-        }, ${
-            displayCoordinate(S.origin.y)
-        } · ${
-            tr('target')
-        }: ${
-            displayCoordinate(S.target.x)
-        }, ${
-            displayCoordinate(S.target.y)
-        }`;
+        `${WEAPONS[S.weapon].name} · ` +
+        `${S.map === 'custom'
+            ? tr('customMap')
+            : MAPS[S.map].name
+        } · ` +
+        `${tr('artillery')}: ` +
+        `${formatCoord(S.origin.x * 1000)}, ` +
+        `${formatCoord(S.origin.y * 1000)} · ` +
+        `${tr('target')}: ` +
+        `${formatCoord(S.target.x * 1000)}, ` +
+        `${formatCoord(S.target.y * 1000)}`;
 }
 
 function inputs() {
-    $('mapSelect').value = S.map;
-    $('weapon').value = S.weapon;
+    $('mapSelect').value =
+        S.map;
+
+    $('weapon').value =
+        S.weapon;
 
     $('ox').value =
-        displayCoordinate(S.origin.x);
+        formatCoord(
+            S.origin.x * 1000
+        );
 
     $('oy').value =
-        displayCoordinate(S.origin.y);
+        formatCoord(
+            S.origin.y * 1000
+        );
 
     $('tx').value =
-        displayCoordinate(S.target.x);
+        formatCoord(
+            S.target.x * 1000
+        );
 
     $('ty').value =
-        displayCoordinate(S.target.y);
+        formatCoord(
+            S.target.y * 1000
+        );
 
-    $('w').value = S.w;
-    $('h').value = S.h;
+    $('w').value =
+        S.w;
+
+    $('h').value =
+        S.h;
 
     draw();
 }
 
 function inputPoint(type) {
-    const point = S[type];
+    const p = S[type];
 
     const xInput =
         type === 'origin'
@@ -535,41 +943,35 @@ function inputPoint(type) {
             ? $('oy')
             : $('ty');
 
-    point.x =
-        parseDisplayCoordinate(
-            xInput.value
-        ) || 0;
+    p.x =
+        (
+            Number(
+                xInput.value
+            ) || 0
+        ) / 1000;
 
-    point.y =
-        parseDisplayCoordinate(
-            yInput.value
-        ) || 0;
+    p.y =
+        (
+            Number(
+                yInput.value
+            ) || 0
+        ) / 1000;
 
-    clamp(point);
+    clamp(p);
 
     inputs();
 }
 
 function updatePresetLock() {
     const locked =
-        $('mapSelect').value !== 'custom';
+        $('mapSelect').value !==
+        'custom';
 
     $('customMapSizing').style.display =
         locked
             ? 'none'
             : '';
 }
-
-$('themeToggle').onclick = () => {
-    const current =
-        document.documentElement.dataset.theme || 'dark';
-
-    applyTheme(
-        current === 'dark'
-            ? 'light'
-            : 'dark'
-    );
-};
 
 $('mapSelect').onchange = () => {
     const key =
@@ -595,12 +997,16 @@ $('mapSelect').onchange = () => {
 };
 
 $('language').onchange = () => {
-    LANG = $('language').value;
+    LANG =
+        $('language').value;
+
     applyLanguage();
 };
 
 $('weapon').onchange = () => {
-    S.weapon = $('weapon').value;
+    S.weapon =
+        $('weapon').value;
+
     draw();
 };
 
@@ -611,7 +1017,9 @@ $('apply').onclick = () => {
         1,
         Math.min(
             100,
-            Number($('w').value) || 10
+            Number(
+                $('w').value
+            ) || 10
         )
     );
 
@@ -619,7 +1027,9 @@ $('apply').onclick = () => {
         1,
         Math.min(
             100,
-            Number($('h').value) || 10
+            Number(
+                $('h').value
+            ) || 10
         )
     );
 
@@ -637,24 +1047,20 @@ $('originMode').onclick = () => {
     S.mode = 'origin';
 
     $('originMode')
-        .classList
-        .add('active');
+        .classList.add('active');
 
     $('targetMode')
-        .classList
-        .remove('active');
+        .classList.remove('active');
 };
 
 $('targetMode').onclick = () => {
     S.mode = 'target';
 
     $('targetMode')
-        .classList
-        .add('active');
+        .classList.add('active');
 
     $('originMode')
-        .classList
-        .remove('active');
+        .classList.remove('active');
 };
 
 ['ox', 'oy'].forEach(id => {
@@ -696,8 +1102,13 @@ $('fit').onclick = () => {
 };
 
 $('swap').onclick = () => {
-    [S.origin, S.target] =
-        [S.target, S.origin];
+    [
+        S.origin,
+        S.target
+    ] = [
+        S.target,
+        S.origin
+    ];
 
     inputs();
 };
@@ -720,110 +1131,162 @@ let drag = null;
 let pan = null;
 
 function updateCursor(e) {
-    if (pan) {
-        $('cursorCoords').style.display = 'none';
-        return null;
-    }
+    const r =
+        wrap.getBoundingClientRect();
 
-    const canvasRect =
-        canvas.getBoundingClientRect();
+    const x =
+        e.clientX -
+        r.left;
 
-    const cursorX =
-        e.clientX - canvasRect.left;
+    const y =
+        e.clientY -
+        r.top;
 
-    const cursorY =
-        e.clientY - canvasRect.top;
+    const rect =
+        c.getBoundingClientRect();
 
-    const point =
+    const p =
         toWorld(
-            cursorX,
-            cursorY
+            e.clientX -
+            rect.left,
+            e.clientY -
+            rect.top
         );
 
-    const element =
+    const el =
         $('cursorCoords');
 
     if (
-        point.x >= 0 &&
-        point.x <= S.w &&
-        point.y >= 0 &&
-        point.y <= S.h
+        p.x >= 0 &&
+        p.x <= S.w &&
+        p.y >= 0 &&
+        p.y <= S.h
     ) {
-        element.innerHTML = `
-            <span class="cursor-y">
-                y${displayCoordinate(point.y)}
-            </span>
-            <span class="cursor-x">
-                x${displayCoordinate(point.x)}
-            </span>
-        `;
+        el.textContent =
+            `x${formatCoord(p.x * 1000)} ` +
+            `y${formatCoord(p.y * 1000)}`;
 
-        element.style.display = 'block';
-        element.style.left = cursorX + 'px';
-        element.style.top = cursorY + 'px';
+        el.style.display =
+            'block';
+
+        const ox = 14;
+        const oy = 14;
+
+        const w =
+            el.offsetWidth;
+
+        const h =
+            el.offsetHeight;
+
+        let offsetX = ox;
+        let offsetY = oy;
+
+        if (
+            x + w + offsetX >
+            r.width
+        ) {
+            offsetX =
+                -w - 14;
+        }
+
+        if (
+            y + h + offsetY >
+            r.height
+        ) {
+            offsetY =
+                -h - 14;
+        }
+
+        el.style.left =
+            Math.max(
+                2,
+                Math.min(
+                    r.width -
+                    w -
+                    2,
+                    x + offsetX
+                )
+            ) +
+            'px';
+
+        el.style.top =
+            Math.max(
+                2,
+                Math.min(
+                    r.height -
+                    h -
+                    2,
+                    y + offsetY
+                )
+            ) +
+            'px';
     } else {
-        element.style.display = 'none';
+        el.style.display =
+            'none';
     }
 
-    return point;
+    return p;
 }
 
-canvas.onmousedown = e => {
-    if (e.button === 2) {
-        e.preventDefault();
-
-        $('cursorCoords').style.display = 'none';
-
-        pan = {
-            lastX: e.clientX,
-            lastY: e.clientY
-        };
-
-        canvas.style.cursor = 'grabbing';
-
-        return;
-    }
-
-    if (e.button !== 0) {
-        return;
-    }
+c.onmousedown = e => {
+    e.preventDefault();
 
     const rect =
-        canvas.getBoundingClientRect();
+        c.getBoundingClientRect();
 
-    const point =
+    const p =
         toWorld(
-            e.clientX - rect.left,
-            e.clientY - rect.top
+            e.clientX -
+            rect.left,
+            e.clientY -
+            rect.top
         );
 
-    const distanceOrigin =
+    if (e.button === 2) {
+        pan = {
+            startX: e.clientX,
+            startY: e.clientY,
+            originX: S.panX,
+            originY: S.panY
+        };
+
+        $('cursorCoords').style.display =
+            'none';
+
+        return;
+    }
+
+    const d1 =
         Math.hypot(
-            point.x - S.origin.x,
-            point.y - S.origin.y
+            p.x -
+            S.origin.x,
+            p.y -
+            S.origin.y
         );
 
-    const distanceTarget =
+    const d2 =
         Math.hypot(
-            point.x - S.target.x,
-            point.y - S.target.y
+            p.x -
+            S.target.x,
+            p.y -
+            S.target.y
         );
 
     drag =
         Math.min(
-            distanceOrigin,
-            distanceTarget
+            d1,
+            d2
         ) < 0.3
             ? (
-                distanceOrigin < distanceTarget
+                d1 < d2
                     ? 'origin'
                     : 'target'
             )
             : S.mode;
 
     S[drag] = {
-        x: point.x,
-        y: point.y
+        x: p.x,
+        y: p.y
     };
 
     clamp(S[drag]);
@@ -834,42 +1297,44 @@ canvas.onmousedown = e => {
 
 window.onmousemove = e => {
     if (pan) {
-        $('cursorCoords').style.display = 'none';
+        S.panX =
+            pan.originX +
+            (
+                e.clientX -
+                pan.startX
+            );
 
-        const dx =
-            e.clientX - pan.lastX;
-
-        const dy =
-            e.clientY - pan.lastY;
-
-        S.panX += dx;
-        S.panY += dy;
-
-        pan.lastX = e.clientX;
-        pan.lastY = e.clientY;
+        S.panY =
+            pan.originY +
+            (
+                e.clientY -
+                pan.startY
+            );
 
         draw();
 
         return;
     }
 
-    const point =
+    const p =
         updateCursor(e);
 
-    if (!drag || !point) {
+    if (!drag) {
         return;
     }
 
     const rect =
-        canvas.getBoundingClientRect();
+        c.getBoundingClientRect();
 
-    const worldPoint =
+    const world =
         toWorld(
-            e.clientX - rect.left,
-            e.clientY - rect.top
+            e.clientX -
+            rect.left,
+            e.clientY -
+            rect.top
         );
 
-    S[drag] = worldPoint;
+    S[drag] = world;
 
     clamp(S[drag]);
 
@@ -877,30 +1342,41 @@ window.onmousemove = e => {
     updateCursor(e);
 };
 
-window.onmouseup = e => {
-    if (e.button === 2) {
-        pan = null;
-        canvas.style.cursor = 'crosshair';
-        updateCursor(e);
-    }
-
-    if (e.button === 0) {
-        drag = null;
-    }
-};
-
-canvas.oncontextmenu = e => {
+c.oncontextmenu = e => {
     e.preventDefault();
 };
 
-canvas.onmouseleave = () => {
+c.onmouseleave = () => {
     if (!pan) {
-        $('cursorCoords').style.display = 'none';
+        $('cursorCoords').style.display =
+            'none';
     }
 };
 
-canvas.onwheel = e => {
+window.onmouseup = () => {
+    drag = null;
+    pan = null;
+};
+
+c.onwheel = e => {
     e.preventDefault();
+
+    const rect =
+        c.getBoundingClientRect();
+
+    const mouseX =
+        e.clientX -
+        rect.left;
+
+    const mouseY =
+        e.clientY -
+        rect.top;
+
+    const before =
+        toWorld(
+            mouseX,
+            mouseY
+        );
 
     S.zoom =
         Math.max(
@@ -916,32 +1392,32 @@ canvas.onwheel = e => {
             )
         );
 
+    const after =
+        toWorld(
+            mouseX,
+            mouseY
+        );
+
+    S.panX +=
+        (
+            after.x -
+            before.x
+        ) *
+        view().scale;
+
+    S.panY -=
+        (
+            after.y -
+            before.y
+        ) *
+        view().scale;
+
     draw();
 };
 
 window.onresize = resize;
 
-LANG =
-    localStorage.getItem('wardogs-language') || 'en';
-
-const savedTheme =
-    localStorage.getItem('wardogs-theme') || 'dark';
-
-document.documentElement.dataset.theme =
-    savedTheme;
-
-$('language').value = LANG;
-
-$('language').onchange = () => {
-    LANG = $('language').value;
-
-    localStorage.setItem(
-        'wardogs-language',
-        LANG
-    );
-
-    applyLanguage();
-};
+$('language').value = 'en';
 
 updatePresetLock();
 applyLanguage();
