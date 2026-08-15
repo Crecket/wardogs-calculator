@@ -55,6 +55,28 @@ const SAVED_TARGETS_KEY =
 const SAVE_ARTILLERY_KEY =
     'wardogs-save-artillery-position';
 
+const TILE_SIZE = 256;
+const TILE_MIN_ZOOM = 0;
+const TILE_MAX_ZOOM = 5;
+
+const MIN_ZOOM = 0.4;
+const MAX_ZOOM = 8;
+
+const ZOOM_BUTTON_FACTOR = 1.25;
+const ZOOM_WHEEL_IN = 1.15;
+const ZOOM_WHEEL_OUT = 0.87;
+
+const BAKURANI_BOUNDS = {
+    minX: 3.445,
+    maxX: 12.340,
+
+    minY: 3.016,
+    maxY: 11.926
+};
+
+const TILE_CACHE =
+    new Map();
+
 const $ = id =>
     document.getElementById(id);
 
@@ -76,6 +98,7 @@ const BASE_PATH =
    ========================= */
 
 function resourceURL(path) {
+
     return new URL(
         path,
         BASE_PATH
@@ -96,6 +119,7 @@ async function fetchJSON(path) {
         );
 
     if (!response.ok) {
+
         throw new Error(
             `Failed to load ${url}: ${response.status} ${response.statusText}`
         );
@@ -125,6 +149,7 @@ async function loadLanguages() {
             : [];
 
     if (!LANGUAGES.length) {
+
         throw new Error(
             'No languages found in locales/index.json'
         );
@@ -326,9 +351,12 @@ function applyTheme(theme) {
         theme === 'light';
 
     if (isLight) {
+
         root.dataset.theme =
             'light';
+
     } else {
+
         delete root.dataset.theme;
     }
 
@@ -415,6 +443,7 @@ function loadSavedTargets() {
             );
 
         if (!raw) {
+
             savedTargets = [];
             return;
         }
@@ -423,6 +452,7 @@ function loadSavedTargets() {
             JSON.parse(raw);
 
         if (!Array.isArray(parsed)) {
+
             savedTargets = [];
             return;
         }
@@ -601,6 +631,7 @@ function deleteTarget(id) {
     if (
         selectedSavedTargetId === id
     ) {
+
         selectedSavedTargetId =
             null;
     }
@@ -696,6 +727,7 @@ function renderSavedTargets() {
         $('savedTargetsCount');
 
     if (count) {
+
         count.textContent =
             savedTargets.length;
     }
@@ -735,18 +767,19 @@ function renderSavedTargets() {
                 target.id ===
                 selectedSavedTargetId
             ) {
+
                 item.classList.add(
                     'active'
                 );
             }
 
-            /*
-             * Clicking the save itself loads it.
-             */
             item.addEventListener(
                 'click',
                 () => {
-                    restoreTarget(target);
+
+                    restoreTarget(
+                        target
+                    );
                 }
             );
 
@@ -780,8 +813,13 @@ function renderSavedTargets() {
             coords.textContent =
                 `X ${Math.round(target.x * 1000)} · Y ${Math.round(target.y * 1000)}`;
 
-            info.appendChild(name);
-            info.appendChild(coords);
+            info.appendChild(
+                name
+            );
+
+            info.appendChild(
+                coords
+            );
 
             const actions =
                 document.createElement(
@@ -859,13 +897,25 @@ function renderSavedTargets() {
                 }
             );
 
-            actions.appendChild(edit);
-            actions.appendChild(remove);
+            actions.appendChild(
+                edit
+            );
 
-            item.appendChild(info);
-            item.appendChild(actions);
+            actions.appendChild(
+                remove
+            );
 
-            container.appendChild(item);
+            item.appendChild(
+                info
+            );
+
+            item.appendChild(
+                actions
+            );
+
+            container.appendChild(
+                item
+            );
         }
     );
 }
@@ -897,6 +947,7 @@ async function loadMaps() {
                 : [];
 
     if (!files.length) {
+
         throw new Error(
             'No maps found in maps/index.json'
         );
@@ -922,6 +973,7 @@ async function loadMaps() {
                         );
 
                     if (!map.id) {
+
                         throw new Error(
                             `Map ${file} has no id`
                         );
@@ -938,10 +990,23 @@ async function loadMaps() {
         .filter(Boolean)
         .forEach(
             map => {
+
                 MAPS[map.id] =
                     map;
             }
         );
+
+    if (MAPS.bakurani) {
+
+        MAPS.bakurani.w =
+            16;
+
+        MAPS.bakurani.h =
+            16;
+
+        MAPS.bakurani.tilePath =
+            'maps/tiles/bakurani';
+    }
 
     populateMapSelect();
 }
@@ -995,19 +1060,414 @@ function populateMapSelect() {
 
 
 /* =========================
+   WORLD / VIEW BOUNDS
+   ========================= */
+
+function getViewBounds() {
+
+    if (
+        S.map === 'bakurani'
+    ) {
+
+        return {
+            minX:
+            BAKURANI_BOUNDS.minX,
+
+            maxX:
+            BAKURANI_BOUNDS.maxX,
+
+            minY:
+            BAKURANI_BOUNDS.minY,
+
+            maxY:
+            BAKURANI_BOUNDS.maxY
+        };
+    }
+
+    return {
+        minX: 0,
+        maxX: S.w,
+
+        minY: 0,
+        maxY: S.h
+    };
+}
+
+
+/* =========================
+   TILE MAP
+   ========================= */
+
+function getTileZoom() {
+
+    const bounds =
+        BAKURANI_BOUNDS;
+
+    const worldWidth =
+        bounds.maxX -
+        bounds.minX;
+
+    const basePixelsPerKm =
+        TILE_SIZE /
+        worldWidth;
+
+    const desiredPixelsPerKm =
+        view().scale;
+
+    const raw =
+        Math.log2(
+            desiredPixelsPerKm /
+            basePixelsPerKm
+        );
+
+    return Math.max(
+        TILE_MIN_ZOOM,
+        Math.min(
+            TILE_MAX_ZOOM,
+            Math.round(raw)
+        )
+    );
+}
+
+function tileKey(
+    mapId,
+    zoom,
+    x,
+    y
+) {
+
+    return `${mapId}:${zoom}:${x}:${y}`;
+}
+
+function loadTile(
+    mapId,
+    zoom,
+    x,
+    y
+) {
+
+    const key =
+        tileKey(
+            mapId,
+            zoom,
+            x,
+            y
+        );
+
+    if (
+        TILE_CACHE.has(key)
+    ) {
+
+        return TILE_CACHE.get(
+            key
+        );
+    }
+
+    const image =
+        new Image();
+
+    image.decoding =
+        'async';
+
+    const tile = {
+        image,
+        loaded: false,
+        failed: false
+    };
+
+    image.onload =
+        () => {
+
+            tile.loaded =
+                true;
+
+            draw();
+        };
+
+    image.onerror =
+        () => {
+
+            tile.failed =
+                true;
+
+            console.warn(
+                `Failed to load tile: ${mapId}/zoom_${zoom}/${x}_${y}.webp`
+            );
+
+            draw();
+        };
+
+    image.src =
+        resourceURL(
+            `maps/tiles/${mapId}/zoom_${zoom}/${x}_${y}.webp`
+        );
+
+    TILE_CACHE.set(
+        key,
+        tile
+    );
+
+    return tile;
+}
+
+function drawTileMap(map) {
+
+    if (
+        !map ||
+        map.id !== 'bakurani'
+    ) {
+        return;
+    }
+
+    const v =
+        view();
+
+    const bounds =
+        BAKURANI_BOUNDS;
+
+    const zoom =
+        getTileZoom();
+
+    const tileCount =
+        Math.pow(
+            2,
+            zoom
+        );
+
+    const worldWidth =
+        bounds.maxX -
+        bounds.minX;
+
+    const worldHeight =
+        bounds.maxY -
+        bounds.minY;
+
+    const tileWorldWidth =
+        worldWidth /
+        tileCount;
+
+    const tileWorldHeight =
+        worldHeight /
+        tileCount;
+
+    const tileScreenWidth =
+        tileWorldWidth *
+        v.scale;
+
+    const tileScreenHeight =
+        tileWorldHeight *
+        v.scale;
+
+    const topLeft =
+        toWorld(
+            0,
+            0
+        );
+
+    const bottomRight =
+        toWorld(
+            wrap.clientWidth,
+            wrap.clientHeight
+        );
+
+    const visibleLeft =
+        Math.min(
+            topLeft.x,
+            bottomRight.x
+        );
+
+    const visibleRight =
+        Math.max(
+            topLeft.x,
+            bottomRight.x
+        );
+
+    const visibleBottom =
+        Math.min(
+            topLeft.y,
+            bottomRight.y
+        );
+
+    const visibleTop =
+        Math.max(
+            topLeft.y,
+            bottomRight.y
+        );
+
+    const worldLeft =
+        Math.max(
+            bounds.minX,
+            visibleLeft
+        );
+
+    const worldRight =
+        Math.min(
+            bounds.maxX,
+            visibleRight
+        );
+
+    const worldBottom =
+        Math.max(
+            bounds.minY,
+            visibleBottom
+        );
+
+    const worldTop =
+        Math.min(
+            bounds.maxY,
+            visibleTop
+        );
+
+    if (
+        worldLeft >= worldRight ||
+        worldBottom >= worldTop
+    ) {
+        return;
+    }
+
+    const minTileX =
+        Math.max(
+            0,
+            Math.floor(
+                (
+                    worldLeft -
+                    bounds.minX
+                ) /
+                tileWorldWidth
+            ) - 1
+        );
+
+    const maxTileX =
+        Math.min(
+            tileCount - 1,
+            Math.floor(
+                (
+                    worldRight -
+                    bounds.minX
+                ) /
+                tileWorldWidth
+            ) + 1
+        );
+
+    const minTileY =
+        Math.max(
+            0,
+            Math.floor(
+                (
+                    bounds.maxY -
+                    worldTop
+                ) /
+                tileWorldHeight
+            ) - 1
+        );
+
+    const maxTileY =
+        Math.min(
+            tileCount - 1,
+            Math.floor(
+                (
+                    bounds.maxY -
+                    worldBottom
+                ) /
+                tileWorldHeight
+            ) + 1
+        );
+
+    ctx.save();
+
+    for (
+        let tileY =
+            minTileY;
+
+        tileY <=
+        maxTileY;
+
+        tileY++
+    ) {
+
+        const tileWorldTop =
+            bounds.maxY -
+            tileY *
+            tileWorldHeight;
+
+        for (
+            let tileX =
+                minTileX;
+
+            tileX <=
+            maxTileX;
+
+            tileX++
+        ) {
+
+            const tileWorldLeft =
+                bounds.minX +
+                tileX *
+                tileWorldWidth;
+
+            const screen =
+                worldToLocalScreen(
+                    tileWorldLeft,
+                    tileWorldTop
+                );
+
+            const tile =
+                loadTile(
+                    map.id,
+                    zoom,
+                    tileX,
+                    tileY
+                );
+
+            if (
+                tile.loaded &&
+                !tile.failed
+            ) {
+
+                ctx.drawImage(
+                    tile.image,
+                    screen.x,
+                    screen.y,
+                    tileScreenWidth + 0.5,
+                    tileScreenHeight + 0.5
+                );
+
+            } else {
+
+                ctx.fillStyle =
+                    '#151a1d';
+
+                ctx.fillRect(
+                    screen.x,
+                    screen.y,
+                    tileScreenWidth + 0.5,
+                    tileScreenHeight + 0.5
+                );
+            }
+        }
+    }
+
+    ctx.restore();
+}
+
+
+/* =========================
    CANVAS
    ========================= */
 
 function resize() {
 
     const d =
-        window.devicePixelRatio || 1;
+        window.devicePixelRatio ||
+        1;
 
     c.width =
-        wrap.clientWidth * d;
+        wrap.clientWidth *
+        d;
 
     c.height =
-        wrap.clientHeight * d;
+        wrap.clientHeight *
+        d;
 
     ctx.setTransform(
         d,
@@ -1029,30 +1489,68 @@ function view() {
     const H =
         wrap.clientHeight;
 
-    const p =
+    const padding =
         34;
+
+    const bounds =
+        getViewBounds();
+
+    const worldWidth =
+        bounds.maxX -
+        bounds.minX;
+
+    const worldHeight =
+        bounds.maxY -
+        bounds.minY;
 
     const scale =
         Math.min(
-            (W - p * 2) / S.w,
-            (H - p * 2) / S.h
-        ) * S.zoom;
+            (
+                W -
+                padding *
+                2
+            ) /
+            worldWidth,
+
+            (
+                H -
+                padding *
+                2
+            ) /
+            worldHeight
+        ) *
+        S.zoom;
 
     const mw =
-        S.w * scale;
+        worldWidth *
+        scale;
 
     const mh =
-        S.h * scale;
+        worldHeight *
+        scale;
 
     return {
         scale,
 
+        bounds,
+
+        worldWidth,
+        worldHeight,
+
         left:
-            (W - mw) / 2 +
+            (
+                W -
+                mw
+            ) /
+            2 +
             S.panX,
 
         top:
-            (H - mh) / 2 +
+            (
+                H -
+                mh
+            ) /
+            2 +
             S.panY,
 
         mw,
@@ -1060,41 +1558,117 @@ function view() {
     };
 }
 
-function toScreen(x, y) {
+function worldToLocalScreen(
+    x,
+    y
+) {
 
     const v =
         view();
 
     return {
         x:
-            v.left +
-            x * v.scale,
+            (
+                x -
+                v.bounds.minX
+            ) *
+            v.scale,
 
         y:
-            v.top +
-            (S.h - y) *
+            (
+                v.bounds.maxY -
+                y
+            ) *
             v.scale
     };
 }
 
-function toWorld(x, y) {
+function toScreen(
+    x,
+    y
+) {
+
+    const v =
+        view();
+
+    const local =
+        worldToLocalScreen(
+            x,
+            y
+        );
+
+    return {
+        x:
+            v.left +
+            local.x,
+
+        y:
+            v.top +
+            local.y
+    };
+}
+
+function toWorld(
+    x,
+    y
+) {
 
     const v =
         view();
 
     return {
         x:
-            (x - v.left) /
+            v.bounds.minX +
+            (
+                x -
+                v.left
+            ) /
             v.scale,
 
         y:
-            S.h -
-            (y - v.top) /
+            v.bounds.maxY -
+            (
+                y -
+                v.top
+            ) /
             v.scale
     };
 }
 
 function clamp(p) {
+
+    if (
+        S.map === 'bakurani'
+    ) {
+
+        p.x =
+            Math.max(
+                BAKURANI_BOUNDS.minX,
+                Math.min(
+                    BAKURANI_BOUNDS.maxX,
+                    Math.round(
+                        p.x *
+                        1000
+                    ) /
+                    1000
+                )
+            );
+
+        p.y =
+            Math.max(
+                BAKURANI_BOUNDS.minY,
+                Math.min(
+                    BAKURANI_BOUNDS.maxY,
+                    Math.round(
+                        p.y *
+                        1000
+                    ) /
+                    1000
+                )
+            );
+
+        return;
+    }
 
     p.x =
         Math.max(
@@ -1102,8 +1676,10 @@ function clamp(p) {
             Math.min(
                 S.w,
                 Math.round(
-                    p.x * 1000
-                ) / 1000
+                    p.x *
+                    1000
+                ) /
+                1000
             )
         );
 
@@ -1113,29 +1689,30 @@ function clamp(p) {
             Math.min(
                 S.h,
                 Math.round(
-                    p.y * 1000
-                ) / 1000
+                    p.y *
+                    1000
+                ) /
+                1000
             )
         );
 }
 
-function marker(p, text) {
+function marker(
+    p,
+    text
+) {
 
-    const v =
-        view();
-
-    const x =
-        p.x * v.scale;
-
-    const y =
-        (S.h - p.y) *
-        v.scale;
+    const pos =
+        worldToLocalScreen(
+            p.x,
+            p.y
+        );
 
     ctx.beginPath();
 
     ctx.arc(
-        x,
-        y,
+        pos.x,
+        pos.y,
         8,
         0,
         Math.PI * 2
@@ -1167,8 +1744,8 @@ function marker(p, text) {
 
     ctx.fillText(
         text,
-        x,
-        y + 4
+        pos.x,
+        pos.y + 4
     );
 }
 
@@ -1176,7 +1753,9 @@ function drawPresetZones(map) {
 
     if (
         !map ||
-        !Array.isArray(map.zones)
+        !Array.isArray(
+            map.zones
+        )
     ) {
         return;
     }
@@ -1195,23 +1774,27 @@ function drawPresetZones(map) {
                 return;
             }
 
-            const x =
-                (zone.x / 1000) *
-                v.scale;
+            const pos =
+                worldToLocalScreen(
+                    zone.x /
+                    1000,
 
-            const y =
-                (S.h - zone.y / 1000) *
-                v.scale;
+                    zone.y /
+                    1000
+                );
 
             const radius =
-                (zone.radius / 1000) *
+                (
+                    zone.radius /
+                    1000
+                ) *
                 v.scale;
 
             ctx.beginPath();
 
             ctx.arc(
-                x,
-                y,
+                pos.x,
+                pos.y,
                 radius,
                 0,
                 Math.PI * 2
@@ -1248,7 +1831,9 @@ function drawPresetMarkers(map) {
 
     if (
         !map ||
-        !Array.isArray(map.markers)
+        !Array.isArray(
+            map.markers
+        )
     ) {
         return;
     }
@@ -1266,13 +1851,20 @@ function drawPresetMarkers(map) {
                 return;
             }
 
+            const pos =
+                worldToLocalScreen(
+                    item.x /
+                    1000,
+
+                    item.y /
+                    1000
+                );
+
             const x =
-                (item.x / 1000) *
-                v.scale;
+                pos.x;
 
             const y =
-                (S.h - item.y / 1000) *
-                v.scale;
+                pos.y;
 
             ctx.save();
 
@@ -1287,7 +1879,8 @@ function drawPresetMarkers(map) {
                     14,
                     Math.min(
                         32,
-                        v.scale * 0.35
+                        v.scale *
+                        0.35
                     )
                 );
 
@@ -1295,7 +1888,8 @@ function drawPresetMarkers(map) {
                 `${emojiSize}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
 
             ctx.fillText(
-                item.emoji || '📍',
+                item.emoji ||
+                '📍',
                 x,
                 y
             );
@@ -1307,7 +1901,8 @@ function drawPresetMarkers(map) {
                         10,
                         Math.min(
                             14,
-                            v.scale * 0.15
+                            v.scale *
+                            0.15
                         )
                     );
 
@@ -1319,24 +1914,31 @@ function drawPresetMarkers(map) {
                         item.label
                     );
 
-                const paddingX = 6;
-                const paddingY = 3;
+                const paddingX =
+                    6;
+
+                const paddingY =
+                    3;
 
                 const labelWidth =
                     metrics.width +
-                    paddingX * 2;
+                    paddingX *
+                    2;
 
                 const labelHeight =
                     labelSize +
-                    paddingY * 2;
+                    paddingY *
+                    2;
 
                 const labelX =
                     x -
-                    labelWidth / 2;
+                    labelWidth /
+                    2;
 
                 const labelY =
                     y +
-                    emojiSize / 2 +
+                    emojiSize /
+                    2 +
                     5;
 
                 ctx.fillStyle =
@@ -1352,7 +1954,8 @@ function drawPresetMarkers(map) {
                 ctx.strokeStyle =
                     'rgba(255, 255, 255, .12)';
 
-                ctx.lineWidth = 1;
+                ctx.lineWidth =
+                    1;
 
                 ctx.strokeRect(
                     labelX,
@@ -1368,7 +1971,8 @@ function drawPresetMarkers(map) {
                     item.label,
                     x,
                     labelY +
-                    labelHeight / 2
+                    labelHeight /
+                    2
                 );
             }
 
@@ -1377,29 +1981,52 @@ function drawPresetMarkers(map) {
     );
 }
 
-function hexToRgba(color, alpha) {
+function hexToRgba(
+    color,
+    alpha
+) {
 
     if (!color) {
+
         return `rgba(215,164,82,${alpha})`;
     }
 
-    if (color.startsWith('rgba(')) {
+    if (
+        color.startsWith(
+            'rgba('
+        )
+    ) {
         return color;
     }
 
-    if (color.startsWith('rgb(')) {
+    if (
+        color.startsWith(
+            'rgb('
+        )
+    ) {
+
         return color
-            .replace('rgb(', 'rgba(')
-            .replace(')', `,${alpha})`);
+            .replace(
+                'rgb(',
+                'rgba('
+            )
+            .replace(
+                ')',
+                `,${alpha})`
+            );
     }
 
     const hex =
-        color.replace('#', '');
+        color.replace(
+            '#',
+            ''
+        );
 
     if (
         hex.length !== 3 &&
         hex.length !== 6
     ) {
+
         return `rgba(215,164,82,${alpha})`;
     }
 
@@ -1407,30 +2034,327 @@ function hexToRgba(color, alpha) {
         hex.length === 3
             ? hex
                 .split('')
-                .map(char => char + char)
+                .map(
+                    char =>
+                        char +
+                        char
+                )
                 .join('')
             : hex;
 
     const r =
         parseInt(
-            normalized.substring(0, 2),
+            normalized.substring(
+                0,
+                2
+            ),
             16
         );
 
     const g =
         parseInt(
-            normalized.substring(2, 4),
+            normalized.substring(
+                2,
+                4
+            ),
             16
         );
 
     const b =
         parseInt(
-            normalized.substring(4, 6),
+            normalized.substring(
+                4,
+                6
+            ),
             16
         );
 
     return `rgba(${r},${g},${b},${alpha})`;
 }
+
+
+/* =========================
+   GRID
+   ========================= */
+
+function drawGrid() {
+
+    const v =
+        view();
+
+    /*
+     * Higher contrast grid.
+     */
+    const major =
+        '#6f7a82';
+
+    const minor =
+        '#3b444b';
+
+    const minorStep =
+        0.1;
+
+    const startX =
+        Math.ceil(
+            v.bounds.minX /
+            minorStep
+        ) *
+        minorStep;
+
+    const endX =
+        Math.floor(
+            v.bounds.maxX /
+            minorStep
+        ) *
+        minorStep;
+
+    const startY =
+        Math.ceil(
+            v.bounds.minY /
+            minorStep
+        ) *
+        minorStep;
+
+    const endY =
+        Math.floor(
+            v.bounds.maxY /
+            minorStep
+        ) *
+        minorStep;
+
+    for (
+        let x =
+            startX;
+
+        x <=
+        endX +
+        1e-9;
+
+        x +=
+            minorStep
+    ) {
+
+        const rounded =
+            Math.round(
+                x *
+                10
+            ) /
+            10;
+
+        const local =
+            worldToLocalScreen(
+                rounded,
+                v.bounds.maxY
+            );
+
+        const isMajor =
+            Math.abs(
+                rounded -
+                Math.round(
+                    rounded
+                )
+            ) <
+            1e-8;
+
+        ctx.strokeStyle =
+            isMajor
+                ? major
+                : minor;
+
+        ctx.lineWidth =
+            isMajor
+                ? 1.2
+                : 1;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            local.x,
+            0
+        );
+
+        ctx.lineTo(
+            local.x,
+            v.mh
+        );
+
+        ctx.stroke();
+    }
+
+    for (
+        let y =
+            startY;
+
+        y <=
+        endY +
+        1e-9;
+
+        y +=
+            minorStep
+    ) {
+
+        const rounded =
+            Math.round(
+                y *
+                10
+            ) /
+            10;
+
+        const local =
+            worldToLocalScreen(
+                v.bounds.minX,
+                rounded
+            );
+
+        const isMajor =
+            Math.abs(
+                rounded -
+                Math.round(
+                    rounded
+                )
+            ) <
+            1e-8;
+
+        ctx.strokeStyle =
+            isMajor
+                ? major
+                : minor;
+
+        ctx.lineWidth =
+            isMajor
+                ? 1.6
+                : 1;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            0,
+            local.y
+        );
+
+        ctx.lineTo(
+            v.mw,
+            local.y
+        );
+
+        ctx.stroke();
+    }
+}
+
+function drawCoordinateLabels() {
+
+    const v =
+        view();
+
+    const styles =
+        getComputedStyle(
+            document.documentElement
+        );
+
+    ctx.fillStyle =
+        styles
+            .getPropertyValue(
+                '--muted'
+            )
+            .trim() ||
+        '#89959e';
+
+    ctx.font =
+        '10px system-ui';
+
+    const firstX =
+        Math.ceil(
+            v.bounds.minX
+        );
+
+    const lastX =
+        Math.floor(
+            v.bounds.maxX
+        );
+
+    const firstY =
+        Math.ceil(
+            v.bounds.minY
+        );
+
+    const lastY =
+        Math.floor(
+            v.bounds.maxY
+        );
+
+    ctx.textBaseline =
+        'top';
+
+    ctx.textAlign =
+        'center';
+
+    for (
+        let x =
+            firstX;
+
+        x <=
+        lastX;
+
+        x++
+    ) {
+
+        const local =
+            worldToLocalScreen(
+                x,
+                v.bounds.minY
+            );
+
+        ctx.fillText(
+            formatCoord(
+                x *
+                1000
+            ),
+            local.x,
+            v.mh +
+            9
+        );
+    }
+
+    ctx.textBaseline =
+        'middle';
+
+    ctx.textAlign =
+        'right';
+
+    for (
+        let y =
+            firstY;
+
+        y <=
+        lastY;
+
+        y++
+    ) {
+
+        const local =
+            worldToLocalScreen(
+                v.bounds.minX,
+                y
+            );
+
+        ctx.fillText(
+            formatCoord(
+                y *
+                1000
+            ),
+            -8,
+            local.y
+        );
+    }
+
+    ctx.textBaseline =
+        'alphabetic';
+}
+
+
+/* =========================
+   DRAW
+   ========================= */
 
 function draw() {
 
@@ -1461,7 +2385,9 @@ function draw() {
 
     ctx.fillStyle =
         styles
-            .getPropertyValue('--map-bg')
+            .getPropertyValue(
+                '--map-bg'
+            )
             .trim() ||
         '#0d1012';
 
@@ -1481,7 +2407,9 @@ function draw() {
 
     ctx.fillStyle =
         styles
-            .getPropertyValue('--panel-bg')
+            .getPropertyValue(
+                '--panel-bg'
+            )
             .trim() ||
         '#151a1d';
 
@@ -1492,129 +2420,35 @@ function draw() {
         v.mh
     );
 
-    const major =
-        styles
-            .getPropertyValue('--grid-major')
-            .trim() ||
-        '#465058';
-
-    const minor =
-        styles
-            .getPropertyValue('--grid-minor')
-            .trim() ||
-        '#252c31';
-
-    for (
-        let i = 0;
-        i <= S.w * 10;
-        i++
-    ) {
-
-        const x =
-            i * v.scale / 10;
-
-        ctx.strokeStyle =
-            i % 10 === 0
-                ? major
-                : minor;
-
-        ctx.lineWidth = 1;
-
-        ctx.beginPath();
-
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, v.mh);
-
-        ctx.stroke();
-    }
-
-    for (
-        let i = 0;
-        i <= S.h * 10;
-        i++
-    ) {
-
-        const y =
-            i * v.scale / 10;
-
-        ctx.strokeStyle =
-            i % 10 === 0
-                ? major
-                : minor;
-
-        ctx.beginPath();
-
-        ctx.moveTo(0, y);
-        ctx.lineTo(v.mw, y);
-
-        ctx.stroke();
-    }
-
-    ctx.fillStyle =
-        styles
-            .getPropertyValue('--muted')
-            .trim() ||
-        '#89959e';
-
-    ctx.font =
-        '10px system-ui';
-
-    ctx.textBaseline =
-        'top';
-
-    ctx.textAlign =
-        'center';
-
-    for (
-        let x = 0;
-        x <= S.w;
-        x++
-    ) {
-
-        ctx.fillText(
-            formatCoord(x * 1000),
-            x * v.scale,
-            v.mh + 9
-        );
-    }
-
-    ctx.textBaseline =
-        'middle';
-
-    ctx.textAlign =
-        'right';
-
-    for (
-        let y = 0;
-        y <= S.h;
-        y++
-    ) {
-
-        ctx.fillText(
-            formatCoord(y * 1000),
-            -8,
-            (S.h - y) * v.scale
-        );
-    }
-
-    ctx.textBaseline =
-        'alphabetic';
-
     const currentMap =
         MAPS[S.map];
+
+    if (
+        currentMap &&
+        currentMap.id ===
+        'bakurani'
+    ) {
+
+        drawTileMap(
+            currentMap
+        );
+    }
+
+    drawGrid();
+    drawCoordinateLabels();
 
     drawPresetZones(
         currentMap
     );
 
     const a =
-        toScreen(
+        worldToLocalScreen(
             S.origin.x,
             S.origin.y
         );
 
     const b =
-        toScreen(
+        worldToLocalScreen(
             S.target.x,
             S.target.y
         );
@@ -1626,8 +2460,8 @@ function draw() {
     ctx.beginPath();
 
     ctx.arc(
-        a.x - v.left,
-        a.y - v.top,
+        a.x,
+        a.y,
         rangePx,
         0,
         Math.PI * 2
@@ -1641,7 +2475,8 @@ function draw() {
     ctx.strokeStyle =
         '#d7a452';
 
-    ctx.lineWidth = 2;
+    ctx.lineWidth =
+        2;
 
     ctx.setLineDash([
         7,
@@ -1655,7 +2490,8 @@ function draw() {
     ctx.strokeStyle =
         '#d7a452';
 
-    ctx.lineWidth = 2;
+    ctx.lineWidth =
+        2;
 
     ctx.setLineDash([
         8,
@@ -1665,18 +2501,22 @@ function draw() {
     ctx.beginPath();
 
     ctx.moveTo(
-        a.x - v.left,
-        a.y - v.top
+        a.x,
+        a.y
     );
 
     ctx.lineTo(
-        b.x - v.left,
-        b.y - v.top
+        b.x,
+        b.y
     );
 
     ctx.stroke();
 
     ctx.setLineDash([]);
+
+    drawPresetMarkers(
+        currentMap
+    );
 
     marker(
         S.origin,
@@ -1686,10 +2526,6 @@ function draw() {
     marker(
         S.target,
         'T'
-    );
-
-    drawPresetMarkers(
-        currentMap
     );
 
     ctx.restore();
@@ -1726,40 +2562,60 @@ function result() {
         180 /
         Math.PI;
 
-    if (a < 0) {
-        a += 360;
+    if (
+        a <
+        0
+    ) {
+        a +=
+            360;
     }
 
     $('angle').textContent =
-        a.toFixed(1) + '°';
+        a.toFixed(
+            1
+        ) +
+        '°';
 
     $('dist').textContent =
-        d.toFixed(2) +
+        d.toFixed(
+            2
+        ) +
         ' km';
 
     $('distm').textContent =
-        Math.round(d * 1000) +
+        Math.round(
+            d *
+            1000
+        ) +
         ' m';
 
     $('dx').textContent =
         (
-            dx >= 0
+            dx >=
+            0
                 ? '+'
                 : '-'
         ) +
         Math.round(
-            Math.abs(dx * 1000)
+            Math.abs(
+                dx *
+                1000
+            )
         ) +
         ' m';
 
     $('dy').textContent =
         (
-            dy >= 0
+            dy >=
+            0
                 ? '+'
                 : '-'
         ) +
         Math.round(
-            Math.abs(dy * 1000)
+            Math.abs(
+                dy *
+                1000
+            )
         ) +
         ' m';
 
@@ -1786,7 +2642,8 @@ function result() {
             : '#d86666';
 
     const mapName =
-        S.map === 'custom'
+        S.map ===
+        'custom'
             ? tr('customMap')
             : MAPS[S.map]?.name ||
             S.map;
@@ -1796,17 +2653,21 @@ function result() {
         `${mapName} · ` +
         `${tr('artillery')}: ` +
         `${formatCoord(
-            S.origin.x * 1000
+            S.origin.x *
+            1000
         )}, ` +
         `${formatCoord(
-            S.origin.y * 1000
+            S.origin.y *
+            1000
         )} · ` +
         `${tr('target')}: ` +
         `${formatCoord(
-            S.target.x * 1000
+            S.target.x *
+            1000
         )}, ` +
         `${formatCoord(
-            S.target.y * 1000
+            S.target.y *
+            1000
         )}`;
 }
 
@@ -1825,22 +2686,26 @@ function inputs() {
 
     $('ox').value =
         Math.round(
-            S.origin.x * 1000
+            S.origin.x *
+            1000
         );
 
     $('oy').value =
         Math.round(
-            S.origin.y * 1000
+            S.origin.y *
+            1000
         );
 
     $('tx').value =
         Math.round(
-            S.target.x * 1000
+            S.target.x *
+            1000
         );
 
     $('ty').value =
         Math.round(
-            S.target.y * 1000
+            S.target.y *
+            1000
         );
 
     $('w').value =
@@ -1872,17 +2737,23 @@ function inputPoint(type) {
         (
             Number(
                 xInput.value
-            ) || 0
-        ) / 1000;
+            ) ||
+            0
+        ) /
+        1000;
 
     p.y =
         (
             Number(
                 yInput.value
-            ) || 0
-        ) / 1000;
+            ) ||
+            0
+        ) /
+        1000;
 
-    clamp(p);
+    clamp(
+        p
+    );
 
     inputs();
 }
@@ -1923,11 +2794,18 @@ function updateCursor(e) {
             y
         );
 
+    const bounds =
+        getViewBounds();
+
     if (
-        world.x < 0 ||
-        world.x > S.w ||
-        world.y < 0 ||
-        world.y > S.h
+        world.x <
+        bounds.minX ||
+        world.x >
+        bounds.maxX ||
+        world.y <
+        bounds.minY ||
+        world.y >
+        bounds.maxY
     ) {
 
         $('cursorCoords')
@@ -1953,14 +2831,16 @@ function updateCursor(e) {
         '.cursor-x'
     ).textContent =
         `x${formatCoord(
-            world.x * 1000
+            world.x *
+            1000
         )}`;
 
     cursor.querySelector(
         '.cursor-y'
     ).textContent =
         `y${formatCoord(
-            world.y * 1000
+            world.y *
+            1000
         )}`;
 }
 
@@ -1993,7 +2873,10 @@ function bindEvents() {
             const key =
                 $('mapSelect').value;
 
-            if (key !== 'custom') {
+            if (
+                key !==
+                'custom'
+            ) {
 
                 S.map =
                     key;
@@ -2010,14 +2893,25 @@ function bindEvents() {
                     'custom';
             }
 
-            clamp(S.origin);
-            clamp(S.target);
+            clamp(
+                S.origin
+            );
 
-            S.zoom = 1;
-            S.panX = 0;
-            S.panY = 0;
+            clamp(
+                S.target
+            );
+
+            S.zoom =
+                1;
+
+            S.panX =
+                0;
+
+            S.panY =
+                0;
 
             updatePresetLock();
+
             inputs();
         }
     );
@@ -2063,7 +2957,8 @@ function bindEvents() {
                         100,
                         Number(
                             $('w').value
-                        ) || 10
+                        ) ||
+                        10
                     )
                 );
 
@@ -2074,18 +2969,30 @@ function bindEvents() {
                         100,
                         Number(
                             $('h').value
-                        ) || 10
+                        ) ||
+                        10
                     )
                 );
 
-            clamp(S.origin);
-            clamp(S.target);
+            clamp(
+                S.origin
+            );
 
-            S.zoom = 1;
-            S.panX = 0;
-            S.panY = 0;
+            clamp(
+                S.target
+            );
+
+            S.zoom =
+                1;
+
+            S.panX =
+                0;
+
+            S.panY =
+                0;
 
             updatePresetLock();
+
             inputs();
         }
     );
@@ -2098,10 +3005,14 @@ function bindEvents() {
                 'origin';
 
             $('originMode')
-                .classList.add('active');
+                .classList.add(
+                'active'
+            );
 
             $('targetMode')
-                .classList.remove('active');
+                .classList.remove(
+                'active'
+            );
         }
     );
 
@@ -2113,10 +3024,14 @@ function bindEvents() {
                 'target';
 
             $('targetMode')
-                .classList.add('active');
+                .classList.add(
+                'active'
+            );
 
             $('originMode')
-                .classList.remove('active');
+                .classList.remove(
+                'active'
+            );
         }
     );
 
@@ -2152,8 +3067,9 @@ function bindEvents() {
 
             S.zoom =
                 Math.min(
-                    3,
-                    S.zoom * 1.2
+                    MAX_ZOOM,
+                    S.zoom *
+                    ZOOM_BUTTON_FACTOR
                 );
 
             draw();
@@ -2166,8 +3082,9 @@ function bindEvents() {
 
             S.zoom =
                 Math.max(
-                    0.4,
-                    S.zoom / 1.2
+                    MIN_ZOOM,
+                    S.zoom /
+                    ZOOM_BUTTON_FACTOR
                 );
 
             draw();
@@ -2178,9 +3095,14 @@ function bindEvents() {
         'click',
         () => {
 
-            S.zoom = 1;
-            S.panX = 0;
-            S.panY = 0;
+            S.zoom =
+                1;
+
+            S.panX =
+                0;
+
+            S.panY =
+                0;
 
             draw();
         }
@@ -2207,20 +3129,30 @@ function bindEvents() {
         'click',
         () => {
 
+            const bounds =
+                getViewBounds();
+
             S.origin = {
-                x: 0,
-                y: 0
+                x:
+                bounds.minX,
+
+                y:
+                bounds.minY
             };
 
             S.target = {
-                x: 0,
-                y: 0
+                x:
+                bounds.minX,
+
+                y:
+                bounds.minY
             };
 
             selectedSavedTargetId =
                 null;
 
             inputs();
+
             renderSavedTargets();
         }
     );
@@ -2264,13 +3196,23 @@ function bindEvents() {
                     rect.top
                 );
 
-            if (e.button === 2) {
+            if (
+                e.button ===
+                2
+            ) {
 
                 pan = {
-                    startX: e.clientX,
-                    startY: e.clientY,
-                    originX: S.panX,
-                    originY: S.panY
+                    startX:
+                    e.clientX,
+
+                    startY:
+                    e.clientY,
+
+                    originX:
+                    S.panX,
+
+                    originY:
+                    S.panY
                 };
 
                 $('cursorCoords')
@@ -2282,28 +3224,41 @@ function bindEvents() {
 
             const d1 =
                 Math.hypot(
-                    p.x - S.origin.x,
-                    p.y - S.origin.y
+                    p.x -
+                    S.origin.x,
+
+                    p.y -
+                    S.origin.y
                 );
 
             const d2 =
                 Math.hypot(
-                    p.x - S.target.x,
-                    p.y - S.target.y
+                    p.x -
+                    S.target.x,
+
+                    p.y -
+                    S.target.y
                 );
 
             drag =
-                Math.min(d1, d2) < 0.3
+                Math.min(
+                    d1,
+                    d2
+                ) < 0.3
                     ? (
-                        d1 < d2
+                        d1 <
+                        d2
                             ? 'origin'
                             : 'target'
                     )
                     : S.mode;
 
             S[drag] = {
-                x: p.x,
-                y: p.y
+                x:
+                p.x,
+
+                y:
+                p.y
             };
 
             clamp(
@@ -2311,7 +3266,10 @@ function bindEvents() {
             );
 
             inputs();
-            updateCursor(e);
+
+            updateCursor(
+                e
+            );
         }
     );
 
@@ -2340,7 +3298,9 @@ function bindEvents() {
                 return;
             }
 
-            updateCursor(e);
+            updateCursor(
+                e
+            );
 
             if (!drag) {
                 return;
@@ -2366,13 +3326,17 @@ function bindEvents() {
             );
 
             inputs();
-            updateCursor(e);
+
+            updateCursor(
+                e
+            );
         }
     );
 
     c.addEventListener(
         'contextmenu',
         e => {
+
             e.preventDefault();
         }
     );
@@ -2394,8 +3358,11 @@ function bindEvents() {
         'mouseup',
         () => {
 
-            drag = null;
-            pan = null;
+            drag =
+                null;
+
+            pan =
+                null;
         }
     );
 
@@ -2424,14 +3391,15 @@ function bindEvents() {
 
             S.zoom =
                 Math.max(
-                    0.4,
+                    MIN_ZOOM,
                     Math.min(
-                        3,
+                        MAX_ZOOM,
                         S.zoom *
                         (
-                            e.deltaY < 0
-                                ? 1.1
-                                : 0.9
+                            e.deltaY <
+                            0
+                                ? ZOOM_WHEEL_IN
+                                : ZOOM_WHEEL_OUT
                         )
                     )
                 );
@@ -2459,7 +3427,8 @@ function bindEvents() {
             draw();
         },
         {
-            passive: false
+            passive:
+                false
         }
     );
 
