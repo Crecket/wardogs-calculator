@@ -2,6 +2,8 @@
 
 A lightweight web-based artillery calculator for **[WARDOGS](https://store.steampowered.com/app/1867240/WARDOGS/?utm_source=chatgpt.com)**.
 
+**Live Demo:** https://apollyon-sys.github.io/wardogs-calculator/
+
 The calculator provides an interactive coordinate grid where you can place an artillery position and a target, then calculate the required azimuth and distance between them.
 
 ## Features
