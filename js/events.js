@@ -1,0 +1,592 @@
+/* =========================
+   EVENTS
+   ========================= */
+
+function bindThemeToggle() {
+
+    const toggle =
+        $('themeToggle');
+
+    if (!toggle) {
+        return;
+    }
+
+    toggle.addEventListener(
+        'click',
+        toggleTheme
+    );
+}
+
+function bindEvents() {
+
+    $('mapSelect').addEventListener(
+        'change',
+        () => {
+
+            const key =
+                $('mapSelect').value;
+
+            if (
+                key !==
+                'custom'
+            ) {
+
+                S.map =
+                    key;
+
+                S.w =
+                    MAPS[key].w;
+
+                S.h =
+                    MAPS[key].h;
+
+            } else {
+
+                S.map =
+                    'custom';
+            }
+
+            clamp(
+                S.origin
+            );
+
+            clamp(
+                S.target
+            );
+
+            S.zoom =
+                1;
+
+            S.panX =
+                0;
+
+            S.panY =
+                0;
+
+            updatePresetLock();
+
+            inputs();
+        }
+    );
+
+    $('language').addEventListener(
+        'change',
+        () => {
+
+            LANG =
+                $('language').value;
+
+            localStorage.setItem(
+                'wardogs-language',
+                LANG
+            );
+
+            applyLanguage();
+        }
+    );
+
+    $('weapon').addEventListener(
+        'change',
+        () => {
+
+            S.weapon =
+                $('weapon').value;
+
+            draw();
+        }
+    );
+
+    $('apply').addEventListener(
+        'click',
+        () => {
+
+            S.map =
+                'custom';
+
+            S.w =
+                Math.max(
+                    1,
+                    Math.min(
+                        100,
+                        Number(
+                            $('w').value
+                        ) ||
+                        10
+                    )
+                );
+
+            S.h =
+                Math.max(
+                    1,
+                    Math.min(
+                        100,
+                        Number(
+                            $('h').value
+                        ) ||
+                        10
+                    )
+                );
+
+            clamp(
+                S.origin
+            );
+
+            clamp(
+                S.target
+            );
+
+            S.zoom =
+                1;
+
+            S.panX =
+                0;
+
+            S.panY =
+                0;
+
+            updatePresetLock();
+
+            inputs();
+        }
+    );
+
+    $('originMode').addEventListener(
+        'click',
+        () => {
+
+            S.mode =
+                'origin';
+
+            $('originMode')
+                .classList.add(
+                'active'
+            );
+
+            $('targetMode')
+                .classList.remove(
+                'active'
+            );
+        }
+    );
+
+    $('targetMode').addEventListener(
+        'click',
+        () => {
+
+            S.mode =
+                'target';
+
+            $('targetMode')
+                .classList.add(
+                'active'
+            );
+
+            $('originMode')
+                .classList.remove(
+                'active'
+            );
+        }
+    );
+
+    ['ox', 'oy'].forEach(
+        id => {
+
+            $(id).addEventListener(
+                'change',
+                () =>
+                    inputPoint(
+                        'origin'
+                    )
+            );
+        }
+    );
+
+    ['tx', 'ty'].forEach(
+        id => {
+
+            $(id).addEventListener(
+                'change',
+                () =>
+                    inputPoint(
+                        'target'
+                    )
+            );
+        }
+    );
+
+    $('zoomIn').addEventListener(
+        'click',
+        () => {
+
+            S.zoom =
+                Math.min(
+                    MAX_ZOOM,
+                    S.zoom *
+                    ZOOM_BUTTON_FACTOR
+                );
+
+            draw();
+        }
+    );
+
+    $('zoomOut').addEventListener(
+        'click',
+        () => {
+
+            S.zoom =
+                Math.max(
+                    MIN_ZOOM,
+                    S.zoom /
+                    ZOOM_BUTTON_FACTOR
+                );
+
+            draw();
+        }
+    );
+
+    $('fit').addEventListener(
+        'click',
+        () => {
+
+            S.zoom =
+                1;
+
+            S.panX =
+                0;
+
+            S.panY =
+                0;
+
+            draw();
+        }
+    );
+
+    $('swap').addEventListener(
+        'click',
+        () => {
+
+            const oldOrigin =
+                S.origin;
+
+            S.origin =
+                S.target;
+
+            S.target =
+                oldOrigin;
+
+            inputs();
+        }
+    );
+
+    $('clear').addEventListener(
+        'click',
+        () => {
+
+            const bounds =
+                getViewBounds();
+
+            S.origin = {
+                x:
+                bounds.minX,
+
+                y:
+                bounds.minY
+            };
+
+            S.target = {
+                x:
+                bounds.minX,
+
+                y:
+                bounds.minY
+            };
+
+            selectedSavedTargetId =
+                null;
+
+            inputs();
+
+            renderSavedTargets();
+        }
+    );
+
+
+    /* =========================
+       SAVED TARGETS
+       ========================= */
+
+    $('saveTarget').addEventListener(
+        'click',
+        saveCurrentTarget
+    );
+
+    $('saveArtilleryPosition')
+        .addEventListener(
+            'change',
+            saveArtilleryPreference
+        );
+
+
+    /* =========================
+       CANVAS
+       ========================= */
+
+    c.addEventListener(
+        'mousedown',
+        e => {
+
+            e.preventDefault();
+
+            const rect =
+                c.getBoundingClientRect();
+
+            const p =
+                toWorld(
+                    e.clientX -
+                    rect.left,
+
+                    e.clientY -
+                    rect.top
+                );
+
+            if (
+                e.button ===
+                2
+            ) {
+
+                pan = {
+                    startX:
+                    e.clientX,
+
+                    startY:
+                    e.clientY,
+
+                    originX:
+                    S.panX,
+
+                    originY:
+                    S.panY
+                };
+
+                $('cursorCoords')
+                    .style.display =
+                    'none';
+
+                return;
+            }
+
+            const d1 =
+                Math.hypot(
+                    p.x -
+                    S.origin.x,
+
+                    p.y -
+                    S.origin.y
+                );
+
+            const d2 =
+                Math.hypot(
+                    p.x -
+                    S.target.x,
+
+                    p.y -
+                    S.target.y
+                );
+
+            drag =
+                Math.min(
+                    d1,
+                    d2
+                ) < 0.3
+                    ? (
+                        d1 <
+                        d2
+                            ? 'origin'
+                            : 'target'
+                    )
+                    : S.mode;
+
+            S[drag] = {
+                x:
+                p.x,
+
+                y:
+                p.y
+            };
+
+            clamp(
+                S[drag]
+            );
+
+            inputs();
+
+            updateCursor(
+                e
+            );
+        }
+    );
+
+    window.addEventListener(
+        'mousemove',
+        e => {
+
+            if (pan) {
+
+                S.panX =
+                    pan.originX +
+                    (
+                        e.clientX -
+                        pan.startX
+                    );
+
+                S.panY =
+                    pan.originY +
+                    (
+                        e.clientY -
+                        pan.startY
+                    );
+
+                draw();
+
+                return;
+            }
+
+            updateCursor(
+                e
+            );
+
+            if (!drag) {
+                return;
+            }
+
+            const rect =
+                c.getBoundingClientRect();
+
+            const world =
+                toWorld(
+                    e.clientX -
+                    rect.left,
+
+                    e.clientY -
+                    rect.top
+                );
+
+            S[drag] =
+                world;
+
+            clamp(
+                S[drag]
+            );
+
+            inputs();
+
+            updateCursor(
+                e
+            );
+        }
+    );
+
+    c.addEventListener(
+        'contextmenu',
+        e => {
+
+            e.preventDefault();
+        }
+    );
+
+    c.addEventListener(
+        'mouseleave',
+        () => {
+
+            if (!pan) {
+
+                $('cursorCoords')
+                    .style.display =
+                    'none';
+            }
+        }
+    );
+
+    window.addEventListener(
+        'mouseup',
+        () => {
+
+            drag =
+                null;
+
+            pan =
+                null;
+        }
+    );
+
+    c.addEventListener(
+        'wheel',
+        e => {
+
+            e.preventDefault();
+
+            const rect =
+                c.getBoundingClientRect();
+
+            const mouseX =
+                e.clientX -
+                rect.left;
+
+            const mouseY =
+                e.clientY -
+                rect.top;
+
+            const before =
+                toWorld(
+                    mouseX,
+                    mouseY
+                );
+
+            S.zoom =
+                Math.max(
+                    MIN_ZOOM,
+                    Math.min(
+                        MAX_ZOOM,
+                        S.zoom *
+                        (
+                            e.deltaY <
+                            0
+                                ? ZOOM_WHEEL_IN
+                                : ZOOM_WHEEL_OUT
+                        )
+                    )
+                );
+
+            const after =
+                toWorld(
+                    mouseX,
+                    mouseY
+                );
+
+            S.panX +=
+                (
+                    after.x -
+                    before.x
+                ) *
+                view().scale;
+
+            S.panY -=
+                (
+                    after.y -
+                    before.y
+                ) *
+                view().scale;
+
+            draw();
+        },
+        {
+            passive:
+                false
+        }
+    );
+
+    window.addEventListener(
+        'resize',
+        resize
+    );
+}
