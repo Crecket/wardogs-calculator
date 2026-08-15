@@ -1,112 +1,94 @@
 # WARDOGS Artillery Calculator
 
-A lightweight web-based artillery calculator for **[WARDOGS](https://store.steampowered.com/app/1867240/WARDOGS/?utm_source=chatgpt.com)**.
+A lightweight, framework-free artillery calculator for **WARDOGS**.
 
 **Live Demo:** https://apollyon-sys.github.io/wardogs-calculator/
 
-The calculator provides an interactive coordinate grid where you can place an artillery position and a target, then calculate the required azimuth and distance between them.
+The calculator provides an interactive map where you can place an artillery position and target, then automatically calculate azimuth, distance, coordinate deltas, and weapon range status.
 
 ## Features
 
-* Interactive coordinate grid
-* Meter-level coordinate precision
-* Artillery and target markers
-* Automatic azimuth calculation
-* Distance calculation in kilometers and meters
-* ΔX / ΔY calculation
-* Weapon maximum-range visualization
-* Target range status
-* Custom map dimensions
-* Preset maps loaded from JSON files
-* Automatic discovery of available maps
-* Zoom in/out
-* Right-click map panning
-* Drag-and-drop markers
-* Cursor coordinates
-* Light and dark themes
-* Automatic browser/system-language detection
-* Multiple interface languages
-* Languages loaded from JSON files
-* Automatic language list generation
-* Saved target positions
-* Saved artillery positions
-* Restore saved targets with a single click
-* Rename saved targets
-* Delete saved targets
-* Persistent saved targets using `localStorage`
-* Persistent language preference
-* Persistent theme preference
-* Persistent artillery-position saving preference
-* Responsive layout
-* No frameworks or build system
-* No backend or database required
+- Interactive tiled map and coordinate grid
+- Bakurani map support with calibrated in-game coordinate bounds
+- Automatic azimuth and distance calculation
+- Distance in kilometers and meters
+- ΔX / ΔY calculation
+- Mortar and SPG range visualization
+- Automatic recalculation when artillery or target positions change
+- Drag-and-drop artillery and target markers
+- Cursor coordinates
+- Mouse-wheel zoom and dedicated zoom controls
+- Right-click panning
+- Custom map dimensions
+- Preset maps loaded from JSON
+- Map-specific coordinate bounds stored in map JSON
+- Map-specific tile configuration stored in map JSON
+- JSON-defined markers, circular zones, and complex polygons
+- Saved target positions
+- Optional artillery-position saving with targets
+- Rename, restore, and delete saved targets
+- Persistent settings and saved targets through `localStorage`
+- Light and dark themes
+- Multiple interface languages with automatic browser-language detection
+- Responsive layout
+- No framework, build system, backend, or database required
 
 ## Usage
 
-1. Select a preset map or choose **Custom map**.
-2. If using a custom map, specify its width and height.
-3. Select the weapon.
-4. Select **Artillery** or **Target** mode.
-5. Click on the map to place the selected point.
-6. Drag existing markers to move them.
-7. The calculator automatically displays:
-   * Azimuth
-   * Distance
-   * Distance in meters
-   * ΔX / ΔY
-   * Weapon range
-   * Target range status
+1. Select a preset map or **Custom map**.
+2. Select the weapon.
+3. Select **Artillery** or **Target** mode.
+4. Click the map to place the selected point, or enter its coordinates manually.
+5. Move either point whenever necessary; the firing solution is recalculated automatically.
+6. Drag existing markers to reposition them.
+7. Use the mouse wheel to zoom and right mouse button to pan.
 
-### Saving Targets
+The result panel displays:
 
-The calculator allows frequently used target positions to be saved locally.
+- Azimuth
+- Distance
+- Distance in meters
+- ΔX / ΔY
+- Maximum weapon range
+- In-range / out-of-range status
 
-1. Position the artillery and target.
-2. Enable **Save artillery position** if the artillery position should also be stored.
+## Saved Targets
+
+Frequently used targets can be stored locally for quick reuse.
+
+1. Position the target.
+2. Optionally enable **Save artillery position**.
 3. Click **Save**.
-4. A new saved target is added to the saved targets list.
-5. Click a saved target to restore its position.
-6. Use the edit button to rename a saved target.
-7. Use the delete button to remove a saved target.
+4. Click a saved target later to restore it.
+5. Rename or delete saved targets using the controls beside each entry.
 
-Saved targets are stored in the browser's `localStorage` and remain available after restarting or refreshing the application.
+This is useful when the artillery position changes: saved targets can remain in place while you move the artillery marker or enter new artillery coordinates. The solution updates automatically.
 
-Saved target data includes:
-
-* Target coordinates
-* Optional artillery coordinates
-* Target name
-* Saved artillery-position preference
+Saved data includes the target name and coordinates and, optionally, the artillery coordinates.
 
 ## Map Controls
 
-| Action      | Control                      |
-| ----------- | ---------------------------- |
-| Place point | Left mouse button            |
-| Move marker | Drag with left mouse button  |
-| Pan map     | Drag with right mouse button |
-| Zoom        | Mouse wheel                  |
-| Zoom in     | `+`                          |
-| Zoom out    | `−`                          |
-| Reset view  | `Fit map`                    |
+| Action | Control |
+| --- | --- |
+| Place point | Left mouse button |
+| Move marker | Drag with left mouse button |
+| Pan map | Drag with right mouse button |
+| Zoom | Mouse wheel |
+| Zoom in | `+` |
+| Zoom out | `−` |
+| Reset view | `Fit map` |
 
 ## Coordinate System
 
-The map uses kilometers as its base coordinate system.
-
-Each kilometer is divided into **10 × 10 cells**, with each small cell representing **100 meters**.
-
-Coordinates are stored internally in kilometers but are displayed and entered in meters.
-
-For example:
+Application coordinates are stored internally in kilometers and displayed/entered in meters.
 
 ```text
-1000 = 1 kilometer
-5000 = 5 kilometers
-10000 = 10 kilometers
-````
+1000  = 1 km
+5000  = 5 km
+10000 = 10 km
+```
 
-The azimuth uses the following convention:
+Azimuth follows the standard compass convention:
 
 ```text
 0°   — North
@@ -115,40 +97,55 @@ The azimuth uses the following convention:
 270° — West
 ```
 
+Preset maps can define calibrated `bounds`. These describe which in-game coordinates correspond to the edges of the map image. Coordinate conversion is handled generically by the map-view code, so individual maps do not require hardcoded coordinate logic in JavaScript.
+
 ## Weapons
 
 Currently supported weapons:
 
-* **Mortar** — maximum range: 600 m
-* **SPG** — maximum range: 2 km
+- **Mortar** — maximum range: 600 m
+- **SPG** — maximum range: 2 km
 
-Weapon definitions are currently stored in the main JavaScript application.
-
-The selected weapon's maximum range is displayed as a circle around the artillery position.
+The selected weapon's maximum range is drawn around the artillery position.
 
 ## Maps
 
-Maps are stored separately from the main application code as JSON files.
+Preset maps are registered in `maps/index.json` and stored as individual JSON files.
 
-Available maps are loaded through `maps/index.json`, allowing new maps to be added without modifying `script.js`.
+Bakurani is the default preset map. **Custom map** is available at the end of the map selector.
 
-### Custom Map
+### Bakurani
 
-Custom maps can be configured from **1 × 1 km** up to **100 × 100 km**.
+Bakurani uses a multi-resolution tile pyramid:
 
-When a preset map is selected, its dimensions are locked and the custom map size controls are hidden.
+```text
+maps/tiles/bakurani/
+├── zoom_0/
+├── zoom_1/
+├── zoom_2/
+├── zoom_3/
+├── zoom_4/
+└── zoom_5/
+```
 
-### Preset Maps
+Tiles are 256 × 256 WebP images. The tile renderer automatically chooses an appropriate tile zoom level based on the current canvas zoom and only requests the required tiles.
 
-Preset maps are loaded from JSON files registered in `maps/index.json`.
+Bakurani's current calibrated coordinate bounds are stored in `maps/bakurani.json`:
 
-Current map:
+```json
+"bounds": {
+  "minX": 3.445,
+  "maxX": 12.34,
+  "minY": 3.016,
+  "maxY": 11.926
+}
+```
 
-* Bakurani — 10 × 10 km
+The calibration was checked against available in-game footage and may be refined as more reference data becomes available.
 
 ## Map JSON Format
 
-Each map is represented by a separate JSON file.
+Map-specific configuration belongs in the map JSON rather than in `map-view.js` or the tile renderer.
 
 Example:
 
@@ -156,70 +153,101 @@ Example:
 {
   "id": "bakurani",
   "name": "Bakurani",
-  "w": 10,
-  "h": 10,
-  "markers": [
-    {
-      "emoji": "🏠",
-      "x": 3000,
-      "y": 7000,
-      "label": "Main Base"
-    },
-    {
-      "emoji": "⚠️",
-      "x": 7000,
-      "y": 4000,
-      "label": "Danger Zone"
-    }
-  ],
-  "zones": [
-    {
-      "color": "#d86666",
-      "x": 5000,
-      "y": 5000,
-      "radius": 1500
-    },
-    {
-      "color": "#5fa8d3",
-      "x": 8000,
-      "y": 8000,
-      "radius": 1000
-    }
-  ]
+  "w": 16,
+  "h": 16,
+
+  "bounds": {
+    "minX": 3.445,
+    "maxX": 12.34,
+    "minY": 3.016,
+    "maxY": 11.926
+  },
+
+  "tiles": {
+    "path": "maps/tiles/bakurani",
+    "tileSize": 256,
+    "minZoom": 0,
+    "maxZoom": 5,
+    "extension": "webp"
+  },
+
+  "markers": [],
+  "zones": [],
+  "polygons": []
 }
 ```
 
 ### Map Properties
 
-| Property  | Description                           |
-| --------- | ------------------------------------- |
-| `id`      | Unique map identifier                 |
-| `name`    | Map name displayed in the application |
-| `w`       | Map width in kilometers               |
-| `h`       | Map height in kilometers              |
-| `markers` | Array of map markers                  |
-| `zones`   | Array of circular zones               |
+| Property | Description |
+| --- | --- |
+| `id` | Unique map identifier |
+| `name` | Display name |
+| `w` | Full coordinate-space width in kilometers |
+| `h` | Full coordinate-space height in kilometers |
+| `bounds` | Calibrated coordinate bounds of the map image |
+| `tiles` | Optional tile-pyramid configuration |
+| `markers` | Map markers |
+| `zones` | Circular map zones |
+| `polygons` | Arbitrary complex polygon overlays |
+
+### Bounds
+
+```json
+"bounds": {
+  "minX": 3.445,
+  "maxX": 12.34,
+  "minY": 3.016,
+  "maxY": 11.926
+}
+```
+
+`bounds` maps the edges of the rendered map image to the actual coordinate system. Different maps can therefore use different calibrated coordinate ranges without changing JavaScript.
+
+If valid bounds are not provided, the application falls back to the full `0..w` / `0..h` coordinate space.
+
+### Tiles
+
+```json
+"tiles": {
+  "path": "maps/tiles/bakurani",
+  "tileSize": 256,
+  "minZoom": 0,
+  "maxZoom": 5,
+  "extension": "webp"
+}
+```
+
+Tile files use the following layout:
+
+```text
+<path>/zoom_<zoom>/<x>_<y>.<extension>
+```
+
+For example:
+
+```text
+maps/tiles/bakurani/zoom_5/12_18.webp
+```
+
+Maps without a `tiles` configuration can still use the standard coordinate grid and overlays.
 
 ### Markers
 
-Markers can contain:
+Markers are defined in meters:
 
 ```json
 {
   "emoji": "🏠",
-  "x": 3000,
+  "x": 5000,
   "y": 7000,
   "label": "Main Base"
 }
 ```
 
-Coordinates are specified in meters.
+`emoji` and `label` are optional.
 
-The `emoji` and `label` properties are optional.
-
-### Zones
-
-Zones can contain:
+### Circular Zones
 
 ```json
 {
@@ -232,125 +260,57 @@ Zones can contain:
 
 `x`, `y`, and `radius` are specified in meters.
 
-The zone is rendered as a circular area on the map.
+### Polygons
 
-### Adding a New Map
+Maps can also contain arbitrary polygon overlays for irregular areas. Polygon data is stored in the map's `polygons` array and rendered above the map tiles.
 
-Create a new `.json` file in the `maps` directory and register it in `maps/index.json`.
+This can be used for complex zones that cannot be represented accurately by a circle.
 
-For example:
+## Adding a New Map
+
+1. Create a JSON file such as:
 
 ```text
-maps/
-├── index.json
-├── bakurani.json
-├── new-map.json
-└── another-map.json
+maps/my-map.json
 ```
 
-The application loads the registered maps and automatically adds valid maps to the map selector.
+2. Add it to `maps/index.json`.
+3. If the map uses image tiles, place them under `maps/tiles/<map-id>/` and define the `tiles` object in its JSON.
+4. Define the map's calibrated `bounds` if the image does not correspond directly to `0..w` and `0..h`.
 
-No changes to `script.js` or `index.html` are required.
+No map-specific changes to `map-view.js` or `renderer.js` should be necessary.
 
 ## Localization
 
-Interface translations are stored separately as JSON files in the `locales` directory.
+Translations are stored in `locales/` and registered in `locales/index.json`.
 
-Current languages:
+Current localization files include:
 
 ```text
 locales/
-├── cat.json
-├── de.json
+├── index.json
 ├── en.json
+├── ru.json
+├── uk.json
+├── de.json
 ├── es.json
 ├── fr.json
-├── index.json
 ├── pl.json
 ├── pt.json
-├── ru.json
-└── uk.json
+└── cat.json
 ```
 
-Currently available languages include:
+The application first checks the saved language preference, then the browser/system languages, and finally falls back to the default language configured in `locales/index.json`.
 
-* 🇬🇧 English
-* 🇷🇺 Русский
-* 🇺🇦 Українська
-* 🇩🇪 Deutsch
-* 🇪🇸 Español
-* 🇫🇷 Français
-* 🇵🇱 Polski
-* 🇵🇹 Português
-* 🐱 Cat
-
-The Cat localization intentionally uses a humorous WARCATS / MEOWTILLERY theme.
-
-### Language Index
-
-`locales/index.json` contains the list of available translations.
-
-The application uses this file to automatically populate the language selector.
-
-Example:
-
-```json
-{
-  "default": "en",
-  "languages": [
-    {
-      "id": "en",
-      "file": "en.json",
-      "name": "English",
-      "nativeName": "English",
-      "flag": "🇬🇧"
-    }
-  ]
-}
-```
-
-Adding a new language therefore does not require editing `index.html`.
-
-Create a new translation file:
-
-```text
-locales/ja.json
-```
-
-and add the language to `locales/index.json`.
-
-The application will then make it available in the language selector.
-
-### Automatic Language Detection
-
-When the application starts, it checks the user's saved language preference first.
-
-If no saved preference exists, the application checks the user's browser/system languages.
-
-If a matching translation is available, it is selected automatically.
-
-If no matching translation exists, the application falls back to the default language defined in `locales/index.json`.
-
-Users can manually change the language using the language selector.
-
-The selected language is stored in `localStorage`.
+The selected language is persisted in `localStorage`.
 
 ## Themes
 
-The calculator supports two visual themes:
-
-* **Dark**
-* **Light**
-
-The selected theme is stored in `localStorage` and is restored automatically when the application starts.
-
-Theme switching does not require a page reload.
+The calculator supports **Dark** and **Light** themes. The selected theme is persisted locally and restored automatically without requiring a page reload.
 
 ## Local Storage
 
-The application uses browser `localStorage` for client-side preferences and saved targets.
-
-The following data is stored locally:
+The application currently uses:
 
 ```text
 wardogs-language
@@ -359,27 +319,56 @@ wardogs-saved-targets
 wardogs-save-artillery-position
 ```
 
-No account, server-side database, or backend is required.
-
-Saved targets are local to the browser and are not synchronized between devices or browsers.
-
-Clearing the browser's site data will also remove the saved targets and preferences.
+Saved data remains local to the browser. Clearing site data removes these preferences and saved targets.
 
 ## Project Structure
 
 ```text
-wardogs-artillery-calculator/
+wardogs-calculator/
 ├── index.html
 ├── style.css
-├── script.js
 ├── README.md
 ├── LICENSE
 ├── .gitignore
 │
+├── js/
+│   ├── core/
+│   │   ├── core.js
+│   │   └── resources.js
+│   │
+│   ├── features/
+│   │   ├── results.js
+│   │   └── saved-targets.js
+│   │
+│   ├── map/
+│   │   ├── grid.js
+│   │   ├── map-view.js
+│   │   ├── maps.js
+│   │   ├── overlays.js
+│   │   ├── renderer.js
+│   │   └── tiles.js
+│   │
+│   ├── ui/
+│   │   ├── cursor.js
+│   │   ├── i18n.js
+│   │   ├── inputs.js
+│   │   └── theme.js
+│   │
+│   ├── events.js
+│   └── main.js
+│
 ├── maps/
 │   ├── index.json
 │   ├── bakurani.json
-│   └── ...
+│   ├── example_map.json
+│   └── tiles/
+│       └── bakurani/
+│           ├── zoom_0/
+│           ├── zoom_1/
+│           ├── zoom_2/
+│           ├── zoom_3/
+│           ├── zoom_4/
+│           └── zoom_5/
 │
 └── locales/
     ├── index.json
@@ -391,39 +380,43 @@ wardogs-artillery-calculator/
     ├── fr.json
     ├── pl.json
     ├── pt.json
-    ├── cat.json
-    └── ...
+    └── cat.json
 ```
 
-The main application logic is contained in `script.js`.
+### JavaScript Responsibilities
 
-Visual styling is contained in `style.css`.
-
-Maps and translations are deliberately kept outside the main JavaScript file so that content can be extended without modifying the application logic.
+- `core/core.js` — global state, constants, shared DOM references
+- `core/resources.js` — resource URL and JSON loading
+- `map/maps.js` — map loading and normalization
+- `map/map-view.js` — generic world ↔ screen coordinate conversion
+- `map/tiles.js` — tile selection, loading, caching, and rendering
+- `map/grid.js` — coordinate grid and labels
+- `map/overlays.js` — markers, zones, polygons, and map overlays
+- `map/renderer.js` — canvas rendering pipeline and resizing
+- `features/results.js` — firing solution calculations
+- `features/saved-targets.js` — saved target persistence and UI
+- `ui/i18n.js` — localization
+- `ui/theme.js` — theme handling
+- `ui/inputs.js` — coordinate/form synchronization
+- `ui/cursor.js` — cursor coordinate display
+- `events.js` — user interaction and event handlers
+- `main.js` — application initialization
 
 ## Technologies
 
-The project intentionally uses no frameworks or external dependencies.
+- HTML5
+- CSS3
+- Vanilla JavaScript
+- HTML Canvas API
+- JSON
+- Fetch API
+- Browser `localStorage`
 
-* HTML5
-* CSS3
-* Vanilla JavaScript
-* HTML Canvas API
-* JSON
-* Fetch API
-* Browser `localStorage`
+The project intentionally uses no frontend framework or build system.
 
 ## Running Locally
 
-No build process is required.
-
-Clone the repository:
-
-```bash
-git clone https://github.com/YOUR_USERNAME/wardogs-artillery-calculator.git
-```
-
-Because the application loads maps and translations using `fetch()`, it should be served through a local HTTP server rather than opened directly with `file://`.
+Because maps and localization files are loaded with `fetch()`, serve the project through HTTP rather than opening `index.html` directly with `file://`.
 
 For example:
 
@@ -439,67 +432,23 @@ http://localhost:8000
 
 ## Static Hosting
 
-The application is completely static and can be hosted on services such as GitHub Pages or other static web hosting providers.
-
-No backend or database is required.
-
-The server must serve the JSON files from the `maps/` and `locales/` directories.
-
-## Adding Content
-
-The project is designed so that most content can be added without modifying the application logic.
-
-### Add a map
-
-Create a map file:
-
-```text
-maps/my-map.json
-```
-
-Then register it in:
-
-```text
-maps/index.json
-```
-
-### Add a language
-
-Create a translation file:
-
-```text
-locales/my-language.json
-```
-
-Then register it in:
-
-```text
-locales/index.json
-```
-
-This keeps map data and translations independent from the calculator itself.
+The application is fully static and can be deployed to GitHub Pages or another static hosting provider. The host only needs to serve the HTML, CSS, JavaScript, JSON, and map tile files.
 
 ## Browser Compatibility
 
-The application requires a modern browser with support for:
+A modern browser with support for the following is required:
 
-* HTML5 Canvas
-* ES6+ JavaScript
-* `fetch()`
-* `localStorage`
-* CSS custom properties
-* Modern DOM APIs
-
-No browser extensions or additional software are required.
+- HTML5 Canvas
+- ES6+ JavaScript
+- Fetch API
+- `localStorage`
+- CSS custom properties
+- Modern DOM APIs
 
 ## License
 
-This project is licensed under the **MIT License**.
-
-See [LICENSE](LICENSE) for details.
+This project is licensed under the **MIT License**. See `LICENSE` for details.
 
 ## Disclaimer
 
-This is a fan-made community tool for **[WARDOGS](https://store.steampowered.com/app/1867240/WARDOGS/?utm_source=chatgpt.com)**.
-
-It is not affiliated with or endorsed by the game's developers or publisher.
+This is a fan-made community tool for **WARDOGS**. It is not affiliated with or endorsed by the game's developers or publisher.
