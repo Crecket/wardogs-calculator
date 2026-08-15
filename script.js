@@ -11,25 +11,25 @@ const WEAPONS = {
 };
 
 const S = {
-    w: 10,
-    h: 10,
+    w: 16,
+    h: 16,
 
     zoom: 1,
 
     mode: 'origin',
 
-    map: 'custom',
+    map: 'bakurani',
 
     weapon: 'mortar',
 
     origin: {
-        x: 2,
-        y: 2
+        x: 5,
+        y: 5
     },
 
     target: {
-        x: 2.5,
-        y: 2.5
+        x: 5.5,
+        y: 5.5
     },
 
     panX: 0,
@@ -98,7 +98,6 @@ const BASE_PATH =
    ========================= */
 
 function resourceURL(path) {
-
     return new URL(
         path,
         BASE_PATH
@@ -119,7 +118,6 @@ async function fetchJSON(path) {
         );
 
     if (!response.ok) {
-
         throw new Error(
             `Failed to load ${url}: ${response.status} ${response.statusText}`
         );
@@ -149,7 +147,6 @@ async function loadLanguages() {
             : [];
 
     if (!LANGUAGES.length) {
-
         throw new Error(
             'No languages found in locales/index.json'
         );
@@ -336,7 +333,6 @@ function getTheme() {
 }
 
 function loadTheme() {
-
     applyTheme(
         getTheme()
     );
@@ -351,12 +347,9 @@ function applyTheme(theme) {
         theme === 'light';
 
     if (isLight) {
-
         root.dataset.theme =
             'light';
-
     } else {
-
         delete root.dataset.theme;
     }
 
@@ -443,7 +436,6 @@ function loadSavedTargets() {
             );
 
         if (!raw) {
-
             savedTargets = [];
             return;
         }
@@ -452,7 +444,6 @@ function loadSavedTargets() {
             JSON.parse(raw);
 
         if (!Array.isArray(parsed)) {
-
             savedTargets = [];
             return;
         }
@@ -631,7 +622,6 @@ function deleteTarget(id) {
     if (
         selectedSavedTargetId === id
     ) {
-
         selectedSavedTargetId =
             null;
     }
@@ -727,7 +717,6 @@ function renderSavedTargets() {
         $('savedTargetsCount');
 
     if (count) {
-
         count.textContent =
             savedTargets.length;
     }
@@ -767,7 +756,6 @@ function renderSavedTargets() {
                 target.id ===
                 selectedSavedTargetId
             ) {
-
                 item.classList.add(
                     'active'
                 );
@@ -776,7 +764,6 @@ function renderSavedTargets() {
             item.addEventListener(
                 'click',
                 () => {
-
                     restoreTarget(
                         target
                     );
@@ -947,7 +934,6 @@ async function loadMaps() {
                 : [];
 
     if (!files.length) {
-
         throw new Error(
             'No maps found in maps/index.json'
         );
@@ -973,7 +959,6 @@ async function loadMaps() {
                         );
 
                     if (!map.id) {
-
                         throw new Error(
                             `Map ${file} has no id`
                         );
@@ -990,7 +975,6 @@ async function loadMaps() {
         .filter(Boolean)
         .forEach(
             map => {
-
                 MAPS[map.id] =
                     map;
             }
@@ -1018,21 +1002,9 @@ function populateMapSelect() {
 
     select.innerHTML = '';
 
-    const custom =
-        document.createElement(
-            'option'
-        );
-
-    custom.value =
-        'custom';
-
-    custom.textContent =
-        tr('customMap');
-
-    select.appendChild(
-        custom
-    );
-
+    /*
+     * Preset maps first.
+     */
     Object.values(MAPS)
         .forEach(
             map => {
@@ -1054,10 +1026,27 @@ function populateMapSelect() {
             }
         );
 
+    /*
+     * Custom map is always last.
+     */
+    const custom =
+        document.createElement(
+            'option'
+        );
+
+    custom.value =
+        'custom';
+
+    custom.textContent =
+        tr('customMap');
+
+    select.appendChild(
+        custom
+    );
+
     select.value =
         S.map;
 }
-
 
 /* =========================
    WORLD / VIEW BOUNDS
@@ -1157,7 +1146,6 @@ function loadTile(
     if (
         TILE_CACHE.has(key)
     ) {
-
         return TILE_CACHE.get(
             key
         );
@@ -1697,6 +1685,11 @@ function clamp(p) {
         );
 }
 
+
+/* =========================
+   USER MARKERS
+   ========================= */
+
 function marker(
     p,
     text
@@ -1742,12 +1735,20 @@ function marker(
     ctx.textAlign =
         'center';
 
+    ctx.textBaseline =
+        'alphabetic';
+
     ctx.fillText(
         text,
         pos.x,
         pos.y + 4
     );
 }
+
+
+/* =========================
+   PRESET ZONES
+   ========================= */
 
 function drawPresetZones(map) {
 
@@ -1826,6 +1827,416 @@ function drawPresetZones(map) {
         }
     );
 }
+
+
+/* =========================
+   PRESET POLYGONS
+   ========================= */
+
+function getPolygonCenter(points) {
+
+    if (
+        !Array.isArray(points) ||
+        points.length === 0
+    ) {
+        return null;
+    }
+
+    let signedArea =
+        0;
+
+    let centroidX =
+        0;
+
+    let centroidY =
+        0;
+
+    for (
+        let i = 0;
+        i < points.length;
+        i++
+    ) {
+
+        const current =
+            points[i];
+
+        const next =
+            points[
+            (
+                i + 1
+            ) %
+            points.length
+                ];
+
+        const cross =
+            current.x *
+            next.y -
+            next.x *
+            current.y;
+
+        signedArea +=
+            cross;
+
+        centroidX +=
+            (
+                current.x +
+                next.x
+            ) *
+            cross;
+
+        centroidY +=
+            (
+                current.y +
+                next.y
+            ) *
+            cross;
+    }
+
+    signedArea *=
+        0.5;
+
+    if (
+        Math.abs(
+            signedArea
+        ) <
+        1e-9
+    ) {
+
+        const sum =
+            points.reduce(
+                (
+                    result,
+                    point
+                ) => {
+
+                    result.x +=
+                        point.x;
+
+                    result.y +=
+                        point.y;
+
+                    return result;
+                },
+                {
+                    x: 0,
+                    y: 0
+                }
+            );
+
+        return {
+            x:
+                sum.x /
+                points.length,
+
+            y:
+                sum.y /
+                points.length
+        };
+    }
+
+    centroidX /=
+        6 *
+        signedArea;
+
+    centroidY /=
+        6 *
+        signedArea;
+
+    return {
+        x:
+        centroidX,
+
+        y:
+        centroidY
+    };
+}
+
+function drawPolygonLabel(
+    polygon,
+    validPoints
+) {
+
+    if (
+        !polygon.label
+    ) {
+        return;
+    }
+
+    const center =
+        getPolygonCenter(
+            validPoints
+        );
+
+    if (!center) {
+        return;
+    }
+
+    const screen =
+        worldToLocalScreen(
+            center.x /
+            1000,
+
+            center.y /
+            1000
+        );
+
+    ctx.save();
+
+    ctx.font =
+        'bold 11px system-ui, sans-serif';
+
+    ctx.textAlign =
+        'center';
+
+    ctx.textBaseline =
+        'middle';
+
+    const metrics =
+        ctx.measureText(
+            polygon.label
+        );
+
+    const paddingX =
+        7;
+
+    const paddingY =
+        4;
+
+    const labelWidth =
+        metrics.width +
+        paddingX *
+        2;
+
+    const labelHeight =
+        11 +
+        paddingY *
+        2;
+
+    ctx.fillStyle =
+        polygon.labelBackground ||
+        'rgba(16, 19, 22, .85)';
+
+    ctx.fillRect(
+        screen.x -
+        labelWidth /
+        2,
+
+        screen.y -
+        labelHeight /
+        2,
+
+        labelWidth,
+        labelHeight
+    );
+
+    ctx.strokeStyle =
+        polygon.labelBorder ||
+        'rgba(255,255,255,.15)';
+
+    ctx.lineWidth =
+        1;
+
+    ctx.strokeRect(
+        screen.x -
+        labelWidth /
+        2,
+
+        screen.y -
+        labelHeight /
+        2,
+
+        labelWidth,
+        labelHeight
+    );
+
+    ctx.fillStyle =
+        polygon.labelColor ||
+        '#ffffff';
+
+    ctx.fillText(
+        polygon.label,
+        screen.x,
+        screen.y
+    );
+
+    ctx.restore();
+}
+
+function drawPresetPolygons(map) {
+
+    if (
+        !map ||
+        !Array.isArray(
+            map.polygons
+        )
+    ) {
+        return;
+    }
+
+    map.polygons.forEach(
+        polygon => {
+
+            if (
+                !polygon ||
+                !Array.isArray(
+                    polygon.points
+                )
+            ) {
+                return;
+            }
+
+            const validPoints =
+                polygon.points.filter(
+                    point =>
+                        point &&
+                        typeof point.x === 'number' &&
+                        typeof point.y === 'number'
+                );
+
+            if (
+                validPoints.length <
+                3
+            ) {
+                return;
+            }
+
+            const first =
+                worldToLocalScreen(
+                    validPoints[0].x /
+                    1000,
+
+                    validPoints[0].y /
+                    1000
+                );
+
+            ctx.save();
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                first.x,
+                first.y
+            );
+
+            for (
+                let i = 1;
+                i < validPoints.length;
+                i++
+            ) {
+
+                const point =
+                    validPoints[i];
+
+                const screen =
+                    worldToLocalScreen(
+                        point.x /
+                        1000,
+
+                        point.y /
+                        1000
+                    );
+
+                ctx.lineTo(
+                    screen.x,
+                    screen.y
+                );
+            }
+
+            ctx.closePath();
+
+            const color =
+                polygon.color ||
+                '#d7a452';
+
+            const fillOpacity =
+                typeof polygon.fillOpacity ===
+                'number'
+                    ? Math.max(
+                        0,
+                        Math.min(
+                            1,
+                            polygon.fillOpacity
+                        )
+                    )
+                    : 0.15;
+
+            if (
+                polygon.fillColor
+            ) {
+
+                ctx.fillStyle =
+                    hexToRgba(
+                        polygon.fillColor,
+                        fillOpacity
+                    );
+
+            } else {
+
+                ctx.fillStyle =
+                    hexToRgba(
+                        color,
+                        fillOpacity
+                    );
+            }
+
+            ctx.fill();
+
+            ctx.strokeStyle =
+                color;
+
+            ctx.lineWidth =
+                typeof polygon.strokeWidth ===
+                'number'
+                    ? Math.max(
+                        0.5,
+                        polygon.strokeWidth
+                    )
+                    : 2;
+
+            if (
+                polygon.dashed
+            ) {
+
+                ctx.setLineDash(
+                    Array.isArray(
+                        polygon.dash
+                    )
+                        ? polygon.dash
+                        : [
+                            8,
+                            6
+                        ]
+                );
+
+            } else {
+
+                ctx.setLineDash([]);
+            }
+
+            ctx.lineJoin =
+                'round';
+
+            ctx.lineCap =
+                'round';
+
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+
+            ctx.restore();
+
+            drawPolygonLabel(
+                polygon,
+                validPoints
+            );
+        }
+    );
+}
+
+
+/* =========================
+   PRESET MARKERS
+   ========================= */
 
 function drawPresetMarkers(map) {
 
@@ -1981,13 +2392,17 @@ function drawPresetMarkers(map) {
     );
 }
 
+
+/* =========================
+   COLORS
+   ========================= */
+
 function hexToRgba(
     color,
     alpha
 ) {
 
     if (!color) {
-
         return `rgba(215,164,82,${alpha})`;
     }
 
@@ -2026,7 +2441,6 @@ function hexToRgba(
         hex.length !== 3 &&
         hex.length !== 6
     ) {
-
         return `rgba(215,164,82,${alpha})`;
     }
 
@@ -2082,9 +2496,6 @@ function drawGrid() {
     const v =
         view();
 
-    /*
-     * Higher contrast grid.
-     */
     const major =
         '#6f7a82';
 
@@ -2163,7 +2574,7 @@ function drawGrid() {
 
         ctx.lineWidth =
             isMajor
-                ? 1.2
+                ? 1.3
                 : 1;
 
         ctx.beginPath();
@@ -2222,7 +2633,7 @@ function drawGrid() {
 
         ctx.lineWidth =
             isMajor
-                ? 1.6
+                ? 1.3
                 : 1;
 
         ctx.beginPath();
@@ -2423,6 +2834,10 @@ function draw() {
     const currentMap =
         MAPS[S.map];
 
+    /*
+     * Layer 1:
+     * base map tiles.
+     */
     if (
         currentMap &&
         currentMap.id ===
@@ -2434,10 +2849,27 @@ function draw() {
         );
     }
 
+    /*
+     * Layer 2:
+     * coordinate grid.
+     */
     drawGrid();
+
     drawCoordinateLabels();
 
+    /*
+     * Layer 3:
+     * circular zones.
+     */
     drawPresetZones(
+        currentMap
+    );
+
+    /*
+     * Layer 4:
+     * arbitrary polygons.
+     */
+    drawPresetPolygons(
         currentMap
     );
 
@@ -2457,6 +2889,10 @@ function draw() {
         WEAPONS[S.weapon].range *
         v.scale;
 
+    /*
+     * Layer 5:
+     * artillery range.
+     */
     ctx.beginPath();
 
     ctx.arc(
@@ -2487,6 +2923,10 @@ function draw() {
 
     ctx.setLineDash([]);
 
+    /*
+     * Layer 6:
+     * origin -> target line.
+     */
     ctx.strokeStyle =
         '#d7a452';
 
@@ -2514,10 +2954,10 @@ function draw() {
 
     ctx.setLineDash([]);
 
-    drawPresetMarkers(
-        currentMap
-    );
-
+    /*
+     * Layer 7:
+     * artillery / target markers.
+     */
     marker(
         S.origin,
         'O'
@@ -2526,6 +2966,18 @@ function draw() {
     marker(
         S.target,
         'T'
+    );
+
+    /*
+     * Layer 8:
+     * preset icons are ALWAYS drawn last.
+     *
+     * This prevents tiles, grid, zones,
+     * polygons and artillery overlays from
+     * covering map icons.
+     */
+    drawPresetMarkers(
+        currentMap
     );
 
     ctx.restore();
