@@ -1,4 +1,35 @@
 /* =========================
+   CANVAS RESIZE
+   ========================= */
+
+function resize() {
+
+    const d =
+        window.devicePixelRatio ||
+        1;
+
+    c.width =
+        wrap.clientWidth *
+        d;
+
+    c.height =
+        wrap.clientHeight *
+        d;
+
+    ctx.setTransform(
+        d,
+        0,
+        0,
+        d,
+        0,
+        0
+    );
+
+    draw();
+}
+
+
+/* =========================
    DRAW
    ========================= */
 
@@ -67,16 +98,14 @@ function draw() {
     );
 
     const currentMap =
-        MAPS[S.map];
+        getCurrentMap();
 
     /*
      * Layer 1:
      * base map tiles.
      */
     if (
-        currentMap &&
-        currentMap.id ===
-        'bakurani'
+        currentMap?.tiles
     ) {
 
         drawTileMap(

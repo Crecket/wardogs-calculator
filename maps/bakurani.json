@@ -1,15 +1,26 @@
 {
   "id": "bakurani",
   "name": "Bakurani",
-  "w": 10,
-  "h": 10,
 
-  "markers": [
-  ],
+  "w": 16,
+  "h": 16,
 
-  "zones": [
-  ],
+  "bounds": {
+    "minX": 3.445,
+    "maxX": 12.34,
+    "minY": 3.016,
+    "maxY": 11.926
+  },
 
-  "polygons": [
-  ]
+  "tiles": {
+    "path": "maps/tiles/bakurani",
+    "tileSize": 256,
+    "minZoom": 0,
+    "maxZoom": 5,
+    "extension": "webp"
+  },
+
+  "markers": [],
+  "zones": [],
+  "polygons": []
 }

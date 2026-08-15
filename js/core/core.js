@@ -55,9 +55,10 @@ const SAVED_TARGETS_KEY =
 const SAVE_ARTILLERY_KEY =
     'wardogs-save-artillery-position';
 
-const TILE_SIZE = 256;
-const TILE_MIN_ZOOM = 0;
-const TILE_MAX_ZOOM = 5;
+
+/* =========================
+   ZOOM
+   ========================= */
 
 const MIN_ZOOM = 0.4;
 const MAX_ZOOM = 8;
@@ -66,16 +67,29 @@ const ZOOM_BUTTON_FACTOR = 1.25;
 const ZOOM_WHEEL_IN = 1.15;
 const ZOOM_WHEEL_OUT = 0.87;
 
-const BAKURANI_BOUNDS = {
-    minX: 3.445,
-    maxX: 12.340,
 
-    minY: 3.016,
-    maxY: 11.926
-};
+/* =========================
+   TILE DEFAULTS
+   ========================= */
+
+/*
+ * These are only fallback values.
+ *
+ * Real map-specific values belong
+ * inside the map JSON.
+ */
+const DEFAULT_TILE_SIZE = 256;
+const DEFAULT_TILE_MIN_ZOOM = 0;
+const DEFAULT_TILE_MAX_ZOOM = 5;
+const DEFAULT_TILE_EXTENSION = 'webp';
 
 const TILE_CACHE =
     new Map();
+
+
+/* =========================
+   DOM
+   ========================= */
 
 const $ = id =>
     document.getElementById(id);
@@ -90,4 +104,7 @@ const ctx =
     c.getContext('2d');
 
 const BASE_PATH =
-    new URL('.', document.baseURI);
+    new URL(
+        '.',
+        document.baseURI
+    );

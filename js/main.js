@@ -18,6 +18,26 @@ async function init() {
 
         await loadMaps();
 
+        /*
+         * Sync initial state with the
+         * selected preset map after the
+         * map JSON files are available.
+         */
+        if (
+            S.map !== 'custom' &&
+            MAPS[S.map]
+        ) {
+
+            S.w =
+                MAPS[S.map].w;
+
+            S.h =
+                MAPS[S.map].h;
+
+            clamp(S.origin);
+            clamp(S.target);
+        }
+
         bindEvents();
 
         loadSaveArtilleryPreference();

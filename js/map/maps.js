@@ -1,5 +1,5 @@
 /* =========================
-   MAPS
+   MAP HELPERS
    ========================= */
 
 function formatCoord(value) {
@@ -8,6 +8,147 @@ function formatCoord(value) {
         .toString()
         .padStart(4, '0');
 }
+
+function isValidBounds(bounds) {
+
+    return Boolean(
+        bounds &&
+        typeof bounds.minX === 'number' &&
+        typeof bounds.maxX === 'number' &&
+        typeof bounds.minY === 'number' &&
+        typeof bounds.maxY === 'number' &&
+        bounds.maxX > bounds.minX &&
+        bounds.maxY > bounds.minY
+    );
+}
+
+function isValidTileConfig(tiles) {
+
+    return Boolean(
+        tiles &&
+        typeof tiles.path === 'string' &&
+        tiles.path.trim()
+    );
+}
+
+function normalizeMap(map) {
+
+    const normalized = {
+        ...map
+    };
+
+    /*
+     * Width / height describe the
+     * complete game coordinate space.
+     */
+    normalized.w =
+        typeof map.w === 'number' &&
+        map.w > 0
+            ? map.w
+            : 10;
+
+    normalized.h =
+        typeof map.h === 'number' &&
+        map.h > 0
+            ? map.h
+            : 10;
+
+    /*
+     * Optional calibrated image bounds.
+     *
+     * If no bounds are supplied,
+     * the full map coordinate space
+     * is used.
+     */
+    if (
+        !isValidBounds(
+            normalized.bounds
+        )
+    ) {
+
+        normalized.bounds = {
+            minX: 0,
+            maxX: normalized.w,
+            minY: 0,
+            maxY: normalized.h
+        };
+    }
+
+    /*
+     * Normalize tile configuration.
+     */
+    if (
+        isValidTileConfig(
+            normalized.tiles
+        )
+    ) {
+
+        normalized.tiles = {
+            path:
+                normalized.tiles.path
+                    .replace(
+                        /\/+$/,
+                        ''
+                    ),
+
+            tileSize:
+                typeof normalized.tiles.tileSize ===
+                'number'
+                    ? normalized.tiles.tileSize
+                    : DEFAULT_TILE_SIZE,
+
+            minZoom:
+                typeof normalized.tiles.minZoom ===
+                'number'
+                    ? normalized.tiles.minZoom
+                    : DEFAULT_TILE_MIN_ZOOM,
+
+            maxZoom:
+                typeof normalized.tiles.maxZoom ===
+                'number'
+                    ? normalized.tiles.maxZoom
+                    : DEFAULT_TILE_MAX_ZOOM,
+
+            extension:
+                typeof normalized.tiles.extension ===
+                'string' &&
+                normalized.tiles.extension.trim()
+                    ? normalized.tiles.extension
+                        .replace(
+                            /^\./,
+                            ''
+                        )
+                    : DEFAULT_TILE_EXTENSION
+        };
+
+    } else {
+
+        normalized.tiles =
+            null;
+    }
+
+    normalized.markers =
+        Array.isArray(map.markers)
+            ? map.markers
+            : [];
+
+    normalized.zones =
+        Array.isArray(map.zones)
+            ? map.zones
+            : [];
+
+    normalized.polygons =
+        Array.isArray(map.polygons)
+            ? map.polygons
+            : [];
+
+    return normalized;
+}
+
+
+/* =========================
+   LOAD MAPS
+   ========================= */
 
 async function loadMaps() {
 
@@ -24,6 +165,7 @@ async function loadMaps() {
                 : [];
 
     if (!files.length) {
+
         throw new Error(
             'No maps found in maps/index.json'
         );
@@ -49,12 +191,22 @@ async function loadMaps() {
                         );
 
                     if (!map.id) {
+
                         throw new Error(
                             `Map ${file} has no id`
                         );
                     }
 
-                    return map;
+                    if (!map.name) {
+
+                        throw new Error(
+                            `Map ${file} has no name`
+                        );
+                    }
+
+                    return normalizeMap(
+                        map
+                    );
                 }
             )
         );
@@ -65,25 +217,19 @@ async function loadMaps() {
         .filter(Boolean)
         .forEach(
             map => {
+
                 MAPS[map.id] =
                     map;
             }
         );
 
-    if (MAPS.bakurani) {
-
-        MAPS.bakurani.w =
-            16;
-
-        MAPS.bakurani.h =
-            16;
-
-        MAPS.bakurani.tilePath =
-            'maps/tiles/bakurani';
-    }
-
     populateMapSelect();
 }
+
+
+/* =========================
+   MAP SELECT
+   ========================= */
 
 function populateMapSelect() {
 
@@ -117,7 +263,7 @@ function populateMapSelect() {
         );
 
     /*
-     * Custom map is always last.
+     * Custom map always last.
      */
     const custom =
         document.createElement(
@@ -134,40 +280,27 @@ function populateMapSelect() {
         custom
     );
 
-    select.value =
-        S.map;
-}
-
-/* =========================
-   WORLD / VIEW BOUNDS
-   ========================= */
-
-function getViewBounds() {
-
+    /*
+     * If configured default map doesn't
+     * exist for some reason, fall back
+     * to the first available map.
+     */
     if (
-        S.map === 'bakurani'
+        S.map !== 'custom' &&
+        !MAPS[S.map]
     ) {
 
-        return {
-            minX:
-            BAKURANI_BOUNDS.minX,
+        const firstMap =
+            Object.values(
+                MAPS
+            )[0];
 
-            maxX:
-            BAKURANI_BOUNDS.maxX,
-
-            minY:
-            BAKURANI_BOUNDS.minY,
-
-            maxY:
-            BAKURANI_BOUNDS.maxY
-        };
+        S.map =
+            firstMap
+                ? firstMap.id
+                : 'custom';
     }
 
-    return {
-        minX: 0,
-        maxX: S.w,
-
-        minY: 0,
-        maxY: S.h
-    };
+    select.value =
+        S.map;
 }
