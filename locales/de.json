@@ -33,10 +33,19 @@
   "swap": "Punkte tauschen",
   "clear": "Zurücksetzen",
   "controlsHint": "LMB — Punkt setzen · Marker ziehen — Punkt bewegen · Scrollen — Zoom · RMB — Karte verschieben.",
+  "savedTargets": "Gespeicherte Ziele",
+  "noSavedTargets": "Keine gespeicherten Ziele",
+  "saveArtilleryPosition": "Artillerieposition speichern",
+  "save": "Speichern",
+  "edit": "Bearbeiten",
+  "delete": "Löschen",
+  "targetNamePrompt": "Zielname eingeben",
   "lmb": "LMB",
   "point": "Punkt",
   "grid": "Raster",
   "majorGrid": "Hauptlinie",
   "themeLight": "Hell",
-  "themeDark": "Dunkel"
+  "themeDark": "Dunkel",
+  "customMapStatus": "Eigene Karte",
+  "mapLocked": "Vorgefertigte Karte ausgewählt — Rastergröße ist gesperrt"
 }

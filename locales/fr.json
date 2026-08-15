@@ -33,10 +33,19 @@
   "swap": "Échanger les points",
   "clear": "Réinitialiser",
   "controlsHint": "LMB — placer · Glisser — déplacer · Molette — zoom · RMB — déplacer la carte.",
+  "savedTargets": "Cibles enregistrées",
+  "noSavedTargets": "Aucune cible enregistrée",
+  "saveArtilleryPosition": "Enregistrer la position de l'artillerie",
+  "save": "Enregistrer",
+  "edit": "Modifier",
+  "delete": "Supprimer",
+  "targetNamePrompt": "Entrez le nom de la cible",
   "lmb": "LMB",
   "point": "point",
   "grid": "grille",
   "majorGrid": "ligne principale",
   "themeLight": "Clair",
-  "themeDark": "Sombre"
+  "themeDark": "Sombre",
+  "customMapStatus": "Carte personnalisée",
+  "mapLocked": "Carte prédéfinie sélectionnée — la taille de la grille est verrouillée"
 }

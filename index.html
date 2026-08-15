@@ -4,18 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>WARDOGS Artillery Calculator</title>
-  <link rel="icon" href="https://api.firstlook.gg/public/images/8dca3a99-41e2-4a10-9e53-3aea7e0b4ca1/img.png?v=2&amp;w=64&amp;h=64&amp;s=6Qy3Bex2Asx0JbRb2Nzpc4UpbehZkutpIn8QKUsnYbY">
+
+  <link
+          rel="icon"
+          href="https://api.firstlook.gg/public/images/8dca3a99-41e2-4a10-9e53-3aea7e0b4ca1/img.png?v=2&w=64&h=64&s=6Qy3Bex2Asx0JbRb2Nzpc4UpbehZkutpIn8QKUsnYbY"
+  >
+
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <header>
+
   <div class="header-title">
-    <h1 data-i18n="title">WARDOGS // ARTILLERY CALCULATOR</h1>
-    <span data-i18n="gridInfo">1 km → 10×10 cells of 100 m</span>
+
+    <h1 data-i18n="title">
+      WARDOGS // ARTILLERY CALCULATOR
+    </h1>
+
+    <span data-i18n="gridInfo">
+      1 km → 10×10 cells of 100 m
+    </span>
+
   </div>
 
   <div class="header-controls">
+
     <button
             id="themeToggle"
             class="theme-toggle"
@@ -26,30 +41,73 @@
       <span id="themeIcon">☼</span>
     </button>
 
-    <select id="language" class="language-select"></select>
+    <select
+            id="language"
+            class="language-select"
+    ></select>
+
   </div>
+
 </header>
 
-<main>
-  <aside>
-    <div class="section">
-      <h2 data-i18n="map">Map</h2>
 
-      <label data-i18n="presetMap">Preset map</label>
+<main>
+
+  <aside>
+
+    <!-- MAP -->
+
+    <div class="section">
+
+      <h2 data-i18n="map">
+        Map
+      </h2>
+
+      <label data-i18n="presetMap">
+        Preset map
+      </label>
 
       <select id="mapSelect"></select>
 
       <div id="customMapSizing">
-        <div class="grid2" style="margin-top:7px">
+
+        <div
+                class="grid2"
+                style="margin-top:7px"
+        >
+
           <div>
-            <label data-i18n="width">Width, km</label>
-            <input id="w" type="number" min="1" max="100" value="10">
+
+            <label data-i18n="width">
+              Width, km
+            </label>
+
+            <input
+                    id="w"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value="10"
+            >
+
           </div>
 
           <div>
-            <label data-i18n="height">Height, km</label>
-            <input id="h" type="number" min="1" max="100" value="10">
+
+            <label data-i18n="height">
+              Height, km
+            </label>
+
+            <input
+                    id="h"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value="10"
+            >
+
           </div>
+
         </div>
 
         <button
@@ -60,161 +118,446 @@
         >
           Apply
         </button>
+
       </div>
+
     </div>
 
-    <div class="section">
-      <h2 data-i18n="weapon">Weapon</h2>
 
-      <label data-i18n="weaponType">Weapon type</label>
+    <!-- WEAPON -->
+
+    <div class="section">
+
+      <h2 data-i18n="weapon">
+        Weapon
+      </h2>
+
+      <label data-i18n="weaponType">
+        Weapon type
+      </label>
 
       <select id="weapon">
-        <option value="mortar" data-i18n="mortar">Mortar</option>
-        <option value="spg" data-i18n="spg">SPG</option>
+
+        <option
+                value="mortar"
+                data-i18n="mortar"
+        >
+          Mortar
+        </option>
+
+        <option
+                value="spg"
+                data-i18n="spg"
+        >
+          SPG
+        </option>
+
       </select>
 
-      <div class="result" style="margin-top:8px">
+      <div
+              class="result"
+              style="margin-top:8px"
+      >
+
         <div class="row">
-          <span data-i18n="maxRange">Max range</span>
-          <b id="range">600 m</b>
+
+          <span data-i18n="maxRange">
+            Max range
+          </span>
+
+          <b id="range">
+            600 m
+          </b>
+
         </div>
 
         <div class="row">
-          <span data-i18n="targetStatus">Target status</span>
-          <b id="rangeStatus">In range</b>
+
+          <span data-i18n="targetStatus">
+            Target status
+          </span>
+
+          <b id="rangeStatus">
+            In range
+          </b>
+
         </div>
+
       </div>
 
-      <p class="hint" data-i18n="rangeHint">
+      <p
+              class="hint"
+              data-i18n="rangeHint"
+      >
         The circle shows the maximum range of the selected weapon from the artillery position.
       </p>
+
     </div>
 
+
+    <!-- POINT SELECTION -->
+
     <div class="section">
-      <h2 data-i18n="pointSelection">Point selection</h2>
+
+      <h2 data-i18n="pointSelection">
+        Point selection
+      </h2>
 
       <div class="mode">
-        <button id="originMode" class="active" data-i18n="artillery">
+
+        <button
+                id="originMode"
+                class="active"
+                data-i18n="artillery"
+        >
           Artillery
         </button>
 
-        <button id="targetMode" data-i18n="target">
+        <button
+                id="targetMode"
+                data-i18n="target"
+        >
           Target
         </button>
+
       </div>
 
-      <label data-i18n="artilleryXY">Artillery X / Y</label>
+      <label data-i18n="artilleryXY">
+        Artillery X / Y
+      </label>
 
       <div class="grid2">
-        <input id="ox" type="number" step="0.01" value="20.00">
-        <input id="oy" type="number" step="0.01" value="20.00">
+
+        <input
+                id="ox"
+                type="number"
+                step="0.01"
+                value="2000"
+        >
+
+        <input
+                id="oy"
+                type="number"
+                step="0.01"
+                value="2000"
+        >
+
       </div>
 
-      <label data-i18n="targetXY">Target X / Y</label>
+      <label data-i18n="targetXY">
+        Target X / Y
+      </label>
 
       <div class="grid2">
-        <input id="tx" type="number" step="0.01" value="25.00">
-        <input id="ty" type="number" step="0.01" value="25.00">
+
+        <input
+                id="tx"
+                type="number"
+                step="0.01"
+                value="2500"
+        >
+
+        <input
+                id="ty"
+                type="number"
+                step="0.01"
+                value="2500"
+        >
+
       </div>
+
     </div>
 
+
+    <!-- RESULT -->
+
     <div class="section">
-      <h2 data-i18n="result">Result</h2>
+
+      <h2 data-i18n="result">
+        Result
+      </h2>
 
       <div class="result">
-        <div class="unit" data-i18n="azimuth">AZIMUTH</div>
 
-        <div class="angle" id="angle">45.0°</div>
+        <div
+                class="unit"
+                data-i18n="azimuth"
+        >
+          AZIMUTH
+        </div>
 
-        <div class="row">
-          <span data-i18n="distance">Distance</span>
-          <b id="dist">0.71 km</b>
+        <div
+                class="angle"
+                id="angle"
+        >
+          45.0°
         </div>
 
         <div class="row">
-          <span data-i18n="meters">Meters</span>
-          <b id="distm">707 m</b>
+
+          <span data-i18n="distance">
+            Distance
+          </span>
+
+          <b id="dist">
+            0.71 km
+          </b>
+
         </div>
 
         <div class="row">
-          <span>ΔX</span>
-          <b id="dx">+0.500 km</b>
+
+          <span data-i18n="meters">
+            Meters
+          </span>
+
+          <b id="distm">
+            707 m
+          </b>
+
         </div>
 
         <div class="row">
-          <span>ΔY</span>
-          <b id="dy">+0.500 km</b>
+
+          <span>
+            ΔX
+          </span>
+
+          <b id="dx">
+            +500 m
+          </b>
+
         </div>
+
+        <div class="row">
+
+          <span>
+            ΔY
+          </span>
+
+          <b id="dy">
+            +500 m
+          </b>
+
+        </div>
+
       </div>
 
-      <p class="hint" data-i18n="azimuthHint">
+      <p
+              class="hint"
+              data-i18n="azimuthHint"
+      >
         Azimuth: 0° north, 90° east, 180° south, 270° west.
       </p>
+
     </div>
 
+
+    <!-- CONTROLS -->
+
     <div class="section">
-      <h2 data-i18n="controls">Controls</h2>
+
+      <h2 data-i18n="controls">
+        Controls
+      </h2>
 
       <div class="grid2">
-        <button id="zoomOut">−</button>
-        <button id="zoomIn">+</button>
+
+        <button id="zoomOut">
+          −
+        </button>
+
+        <button id="zoomIn">
+          +
+        </button>
+
       </div>
 
-      <button id="fit" style="margin-top:7px" data-i18n="fit">
+      <button
+              id="fit"
+              style="margin-top:7px"
+              data-i18n="fit"
+      >
         Fit map
       </button>
 
-      <button id="swap" style="margin-top:7px" data-i18n="swap">
+      <button
+              id="swap"
+              style="margin-top:7px"
+              data-i18n="swap"
+      >
         Swap points
       </button>
 
-      <button id="clear" style="margin-top:7px" data-i18n="clear">
+      <button
+              id="clear"
+              style="margin-top:7px"
+              data-i18n="clear"
+      >
         Reset
       </button>
 
-      <p class="hint" data-i18n="controlsHint">
+      <p
+              class="hint"
+              data-i18n="controlsHint"
+      >
         LMB — place point · Drag markers — move points · Scroll — zoom · RMB — move map.
       </p>
+
     </div>
+
   </aside>
 
+
+  <!-- WORKSPACE -->
+
   <section class="workspace">
+
     <div class="toolbar">
-      <span class="status" id="status"></span>
+
+      <span
+              class="status"
+              id="status"
+      ></span>
+
     </div>
 
     <div class="map">
+
       <canvas id="canvas"></canvas>
 
-      <div id="cursorCoords" class="cursor-coords">
-        <span class="cursor-y">y0.00</span>
-        <span class="cursor-x">x0.00</span>
+
+      <!-- CURSOR -->
+
+      <div
+              id="cursorCoords"
+              class="cursor-coords"
+      >
+
+        <span class="cursor-y">
+          y0.00
+        </span>
+
+        <span class="cursor-x">
+          x0.00
+        </span>
+
       </div>
+
+
+      <!-- SAVED TARGETS -->
+
+      <div class="saved-targets">
+
+        <div class="saved-targets-header">
+
+    <span data-i18n="savedTargets">
+      Saved targets
+    </span>
+
+          <span
+                  id="savedTargetsCount"
+                  class="saved-targets-count"
+          >
+      0
+    </span>
+
+        </div>
+
+        <div
+                id="savedTargetsList"
+                class="saved-targets-list"
+        ></div>
+
+        <div class="saved-target-options">
+
+          <label class="save-artillery-option">
+
+            <input
+                    id="saveArtilleryPosition"
+                    type="checkbox"
+            >
+
+            <span data-i18n="saveArtilleryPosition">
+        Save artillery position
+      </span>
+
+          </label>
+
+        </div>
+
+        <div class="saved-target-actions">
+
+          <button
+                  id="saveTarget"
+                  class="save-target-button"
+                  type="button"
+                  data-i18n="save"
+          >
+            Save
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- LEGEND -->
 
       <div class="legend">
-        <b data-i18n="lmb">LMB</b>
+
+        <b data-i18n="lmb">
+          LMB
+        </b>
+
         —
-        <span data-i18n="point">point</span>
+
+        <span data-i18n="point">
+          point
+        </span>
+
         ·
-        <b data-i18n="grid">grid</b>
+
+        <b data-i18n="grid">
+          grid
+        </b>
+
         —
-        <span data-i18n="majorGrid">major line</span>
+
+        <span data-i18n="majorGrid">
+          major line
+        </span>
+
       </div>
+
     </div>
+
   </section>
+
 </main>
 
+
 <footer>
+
   <span>
+
     WARDOGS Artillery Calculator by
+
     <a
             href="https://discord.com/users/202109460238434304"
             target="_blank"
             rel="noopener noreferrer"
-    ><strong>Apollyon</strong></a>
-    <span class="footer-version">(v0.1)</span>
+    >
+      <strong>Apollyon</strong>
+    </a>
+
+    <span class="footer-version">
+      (v0.1)
+    </span>
+
   </span>
+
 </footer>
+
 
 <script src="script.js"></script>
 

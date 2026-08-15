@@ -22,12 +22,22 @@ The calculator provides an interactive coordinate grid where you can place an ar
 * Drag-and-drop markers
 * Cursor coordinates
 * Light and dark themes
-* Automatic system-language detection
+* Automatic browser/system-language detection
 * Multiple interface languages
 * Languages loaded from JSON files
 * Automatic language list generation
+* Saved target positions
+* Saved artillery positions
+* Restore saved targets with a single click
+* Rename saved targets
+* Delete saved targets
+* Persistent saved targets using `localStorage`
+* Persistent language preference
+* Persistent theme preference
+* Persistent artillery-position saving preference
 * Responsive layout
 * No frameworks or build system
+* No backend or database required
 
 ## Usage
 
@@ -38,13 +48,33 @@ The calculator provides an interactive coordinate grid where you can place an ar
 5. Click on the map to place the selected point.
 6. Drag existing markers to move them.
 7. The calculator automatically displays:
-
    * Azimuth
    * Distance
    * Distance in meters
    * ΔX / ΔY
    * Weapon range
    * Target range status
+
+### Saving Targets
+
+The calculator allows frequently used target positions to be saved locally.
+
+1. Position the artillery and target.
+2. Enable **Save artillery position** if the artillery position should also be stored.
+3. Click **Save**.
+4. A new saved target is added to the saved targets list.
+5. Click a saved target to restore its position.
+6. Use the edit button to rename a saved target.
+7. Use the delete button to remove a saved target.
+
+Saved targets are stored in the browser's `localStorage` and remain available after restarting or refreshing the application.
+
+Saved target data includes:
+
+* Target coordinates
+* Optional artillery coordinates
+* Target name
+* Saved artillery-position preference
 
 ## Map Controls
 
@@ -64,7 +94,7 @@ The map uses kilometers as its base coordinate system.
 
 Each kilometer is divided into **10 × 10 cells**, with each small cell representing **100 meters**.
 
-Coordinates are stored and displayed in meters.
+Coordinates are stored internally in kilometers but are displayed and entered in meters.
 
 For example:
 
@@ -72,7 +102,7 @@ For example:
 1000 = 1 kilometer
 5000 = 5 kilometers
 10000 = 10 kilometers
-```
+````
 
 The azimuth uses the following convention:
 
@@ -98,15 +128,17 @@ The selected weapon's maximum range is displayed as a circle around the artiller
 
 Maps are stored separately from the main application code as JSON files.
 
-This allows new maps to be added without modifying `script.js`.
+Available maps are loaded through `maps/index.json`, allowing new maps to be added without modifying `script.js`.
 
 ### Custom Map
 
 Custom maps can be configured from **1 × 1 km** up to **100 × 100 km**.
 
+When a preset map is selected, its dimensions are locked and the custom map size controls are hidden.
+
 ### Preset Maps
 
-Preset maps are automatically discovered by the application.
+Preset maps are loaded from JSON files registered in `maps/index.json`.
 
 Current map:
 
@@ -181,6 +213,8 @@ Markers can contain:
 
 Coordinates are specified in meters.
 
+The `emoji` and `label` properties are optional.
+
 ### Zones
 
 Zones can contain:
@@ -196,20 +230,23 @@ Zones can contain:
 
 `x`, `y`, and `radius` are specified in meters.
 
+The zone is rendered as a circular area on the map.
+
 ### Adding a New Map
 
-Create a new `.json` file in the maps directory.
+Create a new `.json` file in the `maps` directory and register it in `maps/index.json`.
 
 For example:
 
 ```text
 maps/
+├── index.json
 ├── bakurani.json
 ├── new-map.json
 └── another-map.json
 ```
 
-The application automatically scans the available maps and adds valid maps to the map selector.
+The application loads the registered maps and automatically adds valid maps to the map selector.
 
 No changes to `script.js` or `index.html` are required.
 
@@ -245,11 +282,30 @@ Currently available languages include:
 * 🇵🇹 Português
 * 🐱 Cat
 
+The Cat localization intentionally uses a humorous WARCATS / MEOWTILLERY theme.
+
 ### Language Index
 
 `locales/index.json` contains the list of available translations.
 
 The application uses this file to automatically populate the language selector.
+
+Example:
+
+```json
+{
+  "default": "en",
+  "languages": [
+    {
+      "id": "en",
+      "file": "en.json",
+      "name": "English",
+      "nativeName": "English",
+      "flag": "🇬🇧"
+    }
+  ]
+}
+```
 
 Adding a new language therefore does not require editing `index.html`.
 
@@ -265,13 +321,47 @@ The application will then make it available in the language selector.
 
 ### Automatic Language Detection
 
-When the application starts, it checks the user's browser/system language.
+When the application starts, it checks the user's saved language preference first.
+
+If no saved preference exists, the application checks the user's browser/system languages.
 
 If a matching translation is available, it is selected automatically.
 
-If no matching translation exists, the application falls back to English.
+If no matching translation exists, the application falls back to the default language defined in `locales/index.json`.
 
 Users can manually change the language using the language selector.
+
+The selected language is stored in `localStorage`.
+
+## Themes
+
+The calculator supports two visual themes:
+
+* **Dark**
+* **Light**
+
+The selected theme is stored in `localStorage` and is restored automatically when the application starts.
+
+Theme switching does not require a page reload.
+
+## Local Storage
+
+The application uses browser `localStorage` for client-side preferences and saved targets.
+
+The following data is stored locally:
+
+```text
+wardogs-language
+wardogs-theme
+wardogs-saved-targets
+wardogs-save-artillery-position
+```
+
+No account, server-side database, or backend is required.
+
+Saved targets are local to the browser and are not synchronized between devices or browsers.
+
+Clearing the browser's site data will also remove the saved targets and preferences.
 
 ## Project Structure
 
@@ -285,6 +375,7 @@ wardogs-artillery-calculator/
 ├── .gitignore
 │
 ├── maps/
+│   ├── index.json
 │   ├── bakurani.json
 │   └── ...
 │
@@ -304,6 +395,8 @@ wardogs-artillery-calculator/
 
 The main application logic is contained in `script.js`.
 
+Visual styling is contained in `style.css`.
+
 Maps and translations are deliberately kept outside the main JavaScript file so that content can be extended without modifying the application logic.
 
 ## Technologies
@@ -316,6 +409,7 @@ The project intentionally uses no frameworks or external dependencies.
 * HTML Canvas API
 * JSON
 * Fetch API
+* Browser `localStorage`
 
 ## Running Locally
 
@@ -355,23 +449,46 @@ The project is designed so that most content can be added without modifying the 
 
 ### Add a map
 
+Create a map file:
+
 ```text
 maps/my-map.json
 ```
 
+Then register it in:
+
+```text
+maps/index.json
+```
+
 ### Add a language
+
+Create a translation file:
 
 ```text
 locales/my-language.json
 ```
 
-and register it in:
+Then register it in:
 
 ```text
 locales/index.json
 ```
 
 This keeps map data and translations independent from the calculator itself.
+
+## Browser Compatibility
+
+The application requires a modern browser with support for:
+
+* HTML5 Canvas
+* ES6+ JavaScript
+* `fetch()`
+* `localStorage`
+* CSS custom properties
+* Modern DOM APIs
+
+No browser extensions or additional software are required.
 
 ## License
 

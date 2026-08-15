@@ -1,10 +1,11 @@
 const WEAPONS = {
     mortar: {
-        name: 'Mortar',
+        nameKey: 'mortar',
         range: 0.6
     },
+
     spg: {
-        name: 'SPG',
+        nameKey: 'spg',
         range: 2
     }
 };
@@ -12,9 +13,13 @@ const WEAPONS = {
 const S = {
     w: 10,
     h: 10,
+
     zoom: 1,
+
     mode: 'origin',
+
     map: 'custom',
+
     weapon: 'mortar',
 
     origin: {
@@ -33,6 +38,7 @@ const S = {
 
 let LANG = 'en';
 let DEFAULT_LANG = 'en';
+
 let LANGUAGES = [];
 let I18N = {};
 let MAPS = {};
@@ -40,14 +46,34 @@ let MAPS = {};
 let drag = null;
 let pan = null;
 
-const $ = id => document.getElementById(id);
+let savedTargets = [];
+let selectedSavedTargetId = null;
 
-const c = $('canvas');
-const wrap = document.querySelector('.map');
-const ctx = c.getContext('2d');
+const SAVED_TARGETS_KEY =
+    'wardogs-saved-targets';
+
+const SAVE_ARTILLERY_KEY =
+    'wardogs-save-artillery-position';
+
+const $ = id =>
+    document.getElementById(id);
+
+const c =
+    $('canvas');
+
+const wrap =
+    document.querySelector('.map');
+
+const ctx =
+    c.getContext('2d');
 
 const BASE_PATH =
     new URL('.', document.baseURI);
+
+
+/* =========================
+   RESOURCES
+   ========================= */
 
 function resourceURL(path) {
     return new URL(
@@ -57,13 +83,17 @@ function resourceURL(path) {
 }
 
 async function fetchJSON(path) {
+
     const url =
         resourceURL(path);
 
     const response =
-        await fetch(url, {
-            cache: 'no-cache'
-        });
+        await fetch(
+            url,
+            {
+                cache: 'no-cache'
+            }
+        );
 
     if (!response.ok) {
         throw new Error(
@@ -74,7 +104,13 @@ async function fetchJSON(path) {
     return response.json();
 }
 
+
+/* =========================
+   LANGUAGES
+   ========================= */
+
 async function loadLanguages() {
+
     const index =
         await fetchJSON(
             'locales/index.json'
@@ -95,19 +131,22 @@ async function loadLanguages() {
     }
 
     await Promise.all(
-        LANGUAGES.map(async language => {
-            if (
-                !language.id ||
-                !language.file
-            ) {
-                return;
-            }
+        LANGUAGES.map(
+            async language => {
 
-            I18N[language.id] =
-                await fetchJSON(
-                    `locales/${language.file}`
-                );
-        })
+                if (
+                    !language.id ||
+                    !language.file
+                ) {
+                    return;
+                }
+
+                I18N[language.id] =
+                    await fetchJSON(
+                        `locales/${language.file}`
+                    );
+            }
+        )
     );
 
     populateLanguageSelect();
@@ -120,34 +159,45 @@ async function loadLanguages() {
 }
 
 function populateLanguageSelect() {
+
     const select =
         $('language');
 
     select.innerHTML = '';
 
-    LANGUAGES.forEach(language => {
-        const option =
-            document.createElement('option');
+    LANGUAGES.forEach(
+        language => {
 
-        option.value =
-            language.id;
+            const option =
+                document.createElement(
+                    'option'
+                );
 
-        option.textContent =
-            `${language.flag || ''} ${
-                language.nativeName ||
-                language.name ||
-                language.id
-            }`;
+            option.value =
+                language.id;
 
-        select.appendChild(option);
-    });
+            option.textContent =
+                `${language.flag || ''} ${
+                    language.nativeName ||
+                    language.name ||
+                    language.id
+                }`;
+
+            select.appendChild(
+                option
+            );
+        }
+    );
 }
 
 function detectLanguage() {
+
     const available =
         new Set(
-            LANGUAGES
-                .map(language => language.id)
+            LANGUAGES.map(
+                language =>
+                    language.id
+            )
         );
 
     const saved =
@@ -172,6 +222,7 @@ function detectLanguage() {
         const language
         of browserLanguages
         ) {
+
         if (!language) {
             continue;
         }
@@ -197,6 +248,7 @@ function detectLanguage() {
 }
 
 function tr(key) {
+
     const language =
         I18N[LANG];
 
@@ -211,14 +263,14 @@ function tr(key) {
 }
 
 function applyLanguage() {
+
     document.documentElement.lang =
         LANG;
 
     document
-        .querySelectorAll(
-            '[data-i18n]'
-        )
+        .querySelectorAll('[data-i18n]')
         .forEach(element => {
+
             element.textContent =
                 tr(
                     element.dataset.i18n
@@ -230,11 +282,19 @@ function applyLanguage() {
 
     updatePresetLock();
     updateThemeButton();
+    renderSavedTargets();
+
     result();
     draw();
 }
 
+
+/* =========================
+   THEME
+   ========================= */
+
 function getTheme() {
+
     const saved =
         localStorage.getItem(
             'wardogs-theme'
@@ -250,7 +310,15 @@ function getTheme() {
     return 'dark';
 }
 
+function loadTheme() {
+
+    applyTheme(
+        getTheme()
+    );
+}
+
 function applyTheme(theme) {
+
     const root =
         document.documentElement;
 
@@ -272,47 +340,45 @@ function applyTheme(theme) {
     );
 
     updateThemeButton();
-
     draw();
 }
 
 function updateThemeButton() {
+
     const icon =
         $('themeIcon');
 
-    const toggle =
-        $('themeToggle');
-
-    if (!icon || !toggle) {
+    if (!icon) {
         return;
     }
 
     const isLight =
-        document.documentElement.dataset.theme ===
-        'light';
+        document.documentElement
+            .dataset.theme === 'light';
 
     icon.textContent =
         isLight
             ? '☾'
             : '☼';
 
-    toggle.setAttribute(
+    $('themeToggle').setAttribute(
         'aria-label',
         isLight
             ? 'Switch to dark theme'
             : 'Switch to light theme'
     );
 
-    toggle.title =
+    $('themeToggle').title =
         isLight
             ? 'Switch to dark theme'
             : 'Switch to light theme';
 }
 
 function toggleTheme() {
+
     const current =
-        document.documentElement.dataset.theme ===
-        'light'
+        document.documentElement
+            .dataset.theme === 'light'
             ? 'light'
             : 'dark';
 
@@ -323,13 +389,501 @@ function toggleTheme() {
     );
 }
 
+
+/* =========================
+   SAVED TARGETS
+   ========================= */
+
+function generateTargetId() {
+
+    return (
+        Date.now().toString(36) +
+        '-' +
+        Math.random()
+            .toString(36)
+            .slice(2, 9)
+    );
+}
+
+function loadSavedTargets() {
+
+    try {
+
+        const raw =
+            localStorage.getItem(
+                SAVED_TARGETS_KEY
+            );
+
+        if (!raw) {
+            savedTargets = [];
+            return;
+        }
+
+        const parsed =
+            JSON.parse(raw);
+
+        if (!Array.isArray(parsed)) {
+            savedTargets = [];
+            return;
+        }
+
+        savedTargets =
+            parsed
+                .filter(
+                    target =>
+                        target &&
+                        typeof target.id === 'string' &&
+                        typeof target.x === 'number' &&
+                        typeof target.y === 'number'
+                )
+                .map(target => ({
+                    ...target,
+
+                    name:
+                        typeof target.name === 'string' &&
+                        target.name.trim()
+                            ? target.name
+                            : createTargetName()
+                }));
+
+    } catch (error) {
+
+        console.error(
+            'Failed to load saved targets:',
+            error
+        );
+
+        savedTargets = [];
+    }
+}
+
+function persistSavedTargets() {
+
+    localStorage.setItem(
+        SAVED_TARGETS_KEY,
+        JSON.stringify(
+            savedTargets
+        )
+    );
+}
+
+function getSaveArtilleryPreference() {
+
+    return (
+        localStorage.getItem(
+            SAVE_ARTILLERY_KEY
+        ) === 'true'
+    );
+}
+
+function loadSaveArtilleryPreference() {
+
+    const checkbox =
+        $('saveArtilleryPosition');
+
+    checkbox.checked =
+        getSaveArtilleryPreference();
+}
+
+function saveArtilleryPreference() {
+
+    localStorage.setItem(
+        SAVE_ARTILLERY_KEY,
+        checkboxValue(
+            $('saveArtilleryPosition')
+        )
+            ? 'true'
+            : 'false'
+    );
+}
+
+function checkboxValue(element) {
+
+    return Boolean(
+        element &&
+        element.checked
+    );
+}
+
+function createTargetName() {
+
+    let number =
+        1;
+
+    const existing =
+        new Set(
+            savedTargets.map(
+                target =>
+                    target.name
+            )
+        );
+
+    while (
+        existing.has(
+            `Target ${number}`
+        )
+        ) {
+        number++;
+    }
+
+    return `Target ${number}`;
+}
+
+function saveCurrentTarget() {
+
+    const saveArtillery =
+        checkboxValue(
+            $('saveArtilleryPosition')
+        );
+
+    const target = {
+
+        id:
+            generateTargetId(),
+
+        name:
+            createTargetName(),
+
+        x:
+            Number(
+                S.target.x
+            ),
+
+        y:
+            Number(
+                S.target.y
+            ),
+
+        saveArtillery,
+
+        origin:
+            saveArtillery
+                ? {
+                    x: Number(
+                        S.origin.x
+                    ),
+                    y: Number(
+                        S.origin.y
+                    )
+                }
+                : null
+    };
+
+    savedTargets.push(
+        target
+    );
+
+    selectedSavedTargetId =
+        target.id;
+
+    persistSavedTargets();
+
+    renderSavedTargets();
+}
+
+function deleteTarget(id) {
+
+    const index =
+        savedTargets.findIndex(
+            target =>
+                target.id === id
+        );
+
+    if (index === -1) {
+        return;
+    }
+
+    savedTargets.splice(
+        index,
+        1
+    );
+
+    if (
+        selectedSavedTargetId === id
+    ) {
+        selectedSavedTargetId =
+            null;
+    }
+
+    persistSavedTargets();
+
+    renderSavedTargets();
+}
+
+function editTargetName(id) {
+
+    const target =
+        savedTargets.find(
+            item =>
+                item.id === id
+        );
+
+    if (!target) {
+        return;
+    }
+
+    const name =
+        window.prompt(
+            tr('targetNamePrompt'),
+            target.name
+        );
+
+    if (name === null) {
+        return;
+    }
+
+    const trimmed =
+        name.trim();
+
+    if (!trimmed) {
+        return;
+    }
+
+    target.name =
+        trimmed;
+
+    persistSavedTargets();
+
+    renderSavedTargets();
+}
+
+function restoreTarget(target) {
+
+    if (!target) {
+        return;
+    }
+
+    S.target = {
+        x: Number(target.x),
+        y: Number(target.y)
+    };
+
+    if (
+        target.saveArtillery &&
+        target.origin &&
+        typeof target.origin.x === 'number' &&
+        typeof target.origin.y === 'number'
+    ) {
+
+        S.origin = {
+            x: Number(target.origin.x),
+            y: Number(target.origin.y)
+        };
+    }
+
+    clamp(S.target);
+    clamp(S.origin);
+
+    selectedSavedTargetId =
+        target.id;
+
+    inputs();
+    renderSavedTargets();
+}
+
+function renderSavedTargets() {
+
+    const container =
+        $('savedTargetsList');
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = '';
+
+    const count =
+        $('savedTargetsCount');
+
+    if (count) {
+        count.textContent =
+            savedTargets.length;
+    }
+
+    if (!savedTargets.length) {
+
+        const empty =
+            document.createElement(
+                'div'
+            );
+
+        empty.className =
+            'saved-target-empty';
+
+        empty.textContent =
+            tr('noSavedTargets');
+
+        container.appendChild(
+            empty
+        );
+
+        return;
+    }
+
+    savedTargets.forEach(
+        target => {
+
+            const item =
+                document.createElement(
+                    'div'
+                );
+
+            item.className =
+                'saved-target';
+
+            if (
+                target.id ===
+                selectedSavedTargetId
+            ) {
+                item.classList.add(
+                    'active'
+                );
+            }
+
+            /*
+             * Clicking the save itself loads it.
+             */
+            item.addEventListener(
+                'click',
+                () => {
+                    restoreTarget(target);
+                }
+            );
+
+            const info =
+                document.createElement(
+                    'div'
+                );
+
+            info.className =
+                'saved-target-info';
+
+            const name =
+                document.createElement(
+                    'span'
+                );
+
+            name.className =
+                'saved-target-name';
+
+            name.textContent =
+                target.name;
+
+            const coords =
+                document.createElement(
+                    'span'
+                );
+
+            coords.className =
+                'saved-target-coords';
+
+            coords.textContent =
+                `X ${Math.round(target.x * 1000)} · Y ${Math.round(target.y * 1000)}`;
+
+            info.appendChild(name);
+            info.appendChild(coords);
+
+            const actions =
+                document.createElement(
+                    'div'
+                );
+
+            actions.className =
+                'saved-target-actions-inline';
+
+            const edit =
+                document.createElement(
+                    'button'
+                );
+
+            edit.type =
+                'button';
+
+            edit.className =
+                'saved-target-icon-button';
+
+            edit.textContent =
+                '✎';
+
+            edit.title =
+                tr('edit');
+
+            edit.setAttribute(
+                'aria-label',
+                tr('edit')
+            );
+
+            edit.addEventListener(
+                'click',
+                event => {
+
+                    event.stopPropagation();
+
+                    editTargetName(
+                        target.id
+                    );
+                }
+            );
+
+            const remove =
+                document.createElement(
+                    'button'
+                );
+
+            remove.type =
+                'button';
+
+            remove.className =
+                'saved-target-icon-button';
+
+            remove.textContent =
+                '×';
+
+            remove.title =
+                tr('delete');
+
+            remove.setAttribute(
+                'aria-label',
+                tr('delete')
+            );
+
+            remove.addEventListener(
+                'click',
+                event => {
+
+                    event.stopPropagation();
+
+                    deleteTarget(
+                        target.id
+                    );
+                }
+            );
+
+            actions.appendChild(edit);
+            actions.appendChild(remove);
+
+            item.appendChild(info);
+            item.appendChild(actions);
+
+            container.appendChild(item);
+        }
+    );
+}
+
+
+/* =========================
+   MAPS
+   ========================= */
+
 function formatCoord(value) {
+
     return Math.round(value)
         .toString()
         .padStart(4, '0');
 }
 
 async function loadMaps() {
+
     const index =
         await fetchJSON(
             'maps/index.json'
@@ -350,44 +904,50 @@ async function loadMaps() {
 
     const loaded =
         await Promise.all(
-            files.map(async item => {
-                const file =
-                    typeof item === 'string'
-                        ? item
-                        : item.file;
+            files.map(
+                async item => {
 
-                if (!file) {
-                    return null;
+                    const file =
+                        typeof item === 'string'
+                            ? item
+                            : item.file;
+
+                    if (!file) {
+                        return null;
+                    }
+
+                    const map =
+                        await fetchJSON(
+                            `maps/${file}`
+                        );
+
+                    if (!map.id) {
+                        throw new Error(
+                            `Map ${file} has no id`
+                        );
+                    }
+
+                    return map;
                 }
-
-                const map =
-                    await fetchJSON(
-                        `maps/${file}`
-                    );
-
-                if (!map.id) {
-                    throw new Error(
-                        `Map ${file} has no id`
-                    );
-                }
-
-                return map;
-            })
+            )
         );
 
     MAPS = {};
 
     loaded
         .filter(Boolean)
-        .forEach(map => {
-            MAPS[map.id] =
-                map;
-        });
+        .forEach(
+            map => {
+                MAPS[map.id] =
+                    map;
+            }
+        );
 
     populateMapSelect();
 }
 
 function populateMapSelect() {
+
     const select =
         $('mapSelect');
 
@@ -401,39 +961,47 @@ function populateMapSelect() {
     custom.value =
         'custom';
 
-    custom.dataset.i18n =
-        'customMap';
-
     custom.textContent =
         tr('customMap');
 
-    select.appendChild(custom);
+    select.appendChild(
+        custom
+    );
 
     Object.values(MAPS)
-        .forEach(map => {
-            const option =
-                document.createElement(
-                    'option'
+        .forEach(
+            map => {
+
+                const option =
+                    document.createElement(
+                        'option'
+                    );
+
+                option.value =
+                    map.id;
+
+                option.textContent =
+                    map.name;
+
+                select.appendChild(
+                    option
                 );
-
-            option.value =
-                map.id;
-
-            option.textContent =
-                map.name;
-
-            select.appendChild(
-                option
-            );
-        });
+            }
+        );
 
     select.value =
         S.map;
 }
 
+
+/* =========================
+   CANVAS
+   ========================= */
+
 function resize() {
+
     const d =
-        devicePixelRatio || 1;
+        window.devicePixelRatio || 1;
 
     c.width =
         wrap.clientWidth * d;
@@ -454,21 +1022,21 @@ function resize() {
 }
 
 function view() {
+
     const W =
         wrap.clientWidth;
 
     const H =
         wrap.clientHeight;
 
-    const p = 34;
-
-    const visualScale = 2;
+    const p =
+        34;
 
     const scale =
         Math.min(
             (W - p * 2) / S.w,
             (H - p * 2) / S.h
-        ) * S.zoom * visualScale;
+        ) * S.zoom;
 
     const mw =
         S.w * scale;
@@ -493,6 +1061,7 @@ function view() {
 }
 
 function toScreen(x, y) {
+
     const v =
         view();
 
@@ -509,6 +1078,7 @@ function toScreen(x, y) {
 }
 
 function toWorld(x, y) {
+
     const v =
         view();
 
@@ -525,6 +1095,7 @@ function toWorld(x, y) {
 }
 
 function clamp(p) {
+
     p.x =
         Math.max(
             0,
@@ -549,6 +1120,7 @@ function clamp(p) {
 }
 
 function marker(p, text) {
+
     const v =
         view();
 
@@ -579,7 +1151,8 @@ function marker(p, text) {
     ctx.strokeStyle =
         '#fff';
 
-    ctx.lineWidth = 2;
+    ctx.lineWidth =
+        2;
 
     ctx.stroke();
 
@@ -600,6 +1173,7 @@ function marker(p, text) {
 }
 
 function drawPresetZones(map) {
+
     if (
         !map ||
         !Array.isArray(map.zones)
@@ -610,63 +1184,68 @@ function drawPresetZones(map) {
     const v =
         view();
 
-    map.zones.forEach(zone => {
-        if (
-            typeof zone.x !== 'number' ||
-            typeof zone.y !== 'number' ||
-            typeof zone.radius !== 'number'
-        ) {
-            return;
-        }
+    map.zones.forEach(
+        zone => {
 
-        const x =
-            (zone.x / 1000) *
-            v.scale;
+            if (
+                typeof zone.x !== 'number' ||
+                typeof zone.y !== 'number' ||
+                typeof zone.radius !== 'number'
+            ) {
+                return;
+            }
 
-        const y =
-            (S.h - zone.y / 1000) *
-            v.scale;
+            const x =
+                (zone.x / 1000) *
+                v.scale;
 
-        const radius =
-            (zone.radius / 1000) *
-            v.scale;
+            const y =
+                (S.h - zone.y / 1000) *
+                v.scale;
 
-        ctx.beginPath();
+            const radius =
+                (zone.radius / 1000) *
+                v.scale;
 
-        ctx.arc(
-            x,
-            y,
-            radius,
-            0,
-            Math.PI * 2
-        );
+            ctx.beginPath();
 
-        ctx.fillStyle =
-            hexToRgba(
-                zone.color,
-                0.12
+            ctx.arc(
+                x,
+                y,
+                radius,
+                0,
+                Math.PI * 2
             );
 
-        ctx.fill();
+            ctx.fillStyle =
+                hexToRgba(
+                    zone.color,
+                    0.12
+                );
 
-        ctx.strokeStyle =
-            zone.color ||
-            '#d7a452';
+            ctx.fill();
 
-        ctx.lineWidth = 2;
+            ctx.strokeStyle =
+                zone.color ||
+                '#d7a452';
 
-        ctx.setLineDash([
-            7,
-            5
-        ]);
+            ctx.lineWidth =
+                2;
 
-        ctx.stroke();
+            ctx.setLineDash([
+                7,
+                5
+            ]);
 
-        ctx.setLineDash([]);
-    });
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+        }
+    );
 }
 
 function drawPresetMarkers(map) {
+
     if (
         !map ||
         !Array.isArray(map.markers)
@@ -677,160 +1256,145 @@ function drawPresetMarkers(map) {
     const v =
         view();
 
-    map.markers.forEach(item => {
-        if (
-            typeof item.x !== 'number' ||
-            typeof item.y !== 'number'
-        ) {
-            return;
-        }
+    map.markers.forEach(
+        item => {
 
-        const x =
-            (item.x / 1000) *
-            v.scale;
+            if (
+                typeof item.x !== 'number' ||
+                typeof item.y !== 'number'
+            ) {
+                return;
+            }
 
-        const y =
-            (S.h - item.y / 1000) *
-            v.scale;
+            const x =
+                (item.x / 1000) *
+                v.scale;
 
-        ctx.save();
+            const y =
+                (S.h - item.y / 1000) *
+                v.scale;
 
-        ctx.textAlign =
-            'center';
+            ctx.save();
 
-        ctx.textBaseline =
-            'middle';
+            ctx.textAlign =
+                'center';
 
-        const emojiSize =
-            Math.max(
-                14,
-                Math.min(
-                    32,
-                    v.scale * 0.35
-                )
-            );
+            ctx.textBaseline =
+                'middle';
 
-        ctx.font =
-            `${emojiSize}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
-
-        ctx.fillText(
-            item.emoji || '📍',
-            x,
-            y
-        );
-
-        if (item.label) {
-            const labelSize =
+            const emojiSize =
                 Math.max(
-                    10,
+                    14,
                     Math.min(
-                        14,
-                        v.scale * 0.15
+                        32,
+                        v.scale * 0.35
                     )
                 );
 
             ctx.font =
-                `${labelSize}px system-ui, sans-serif`;
-
-            const metrics =
-                ctx.measureText(
-                    item.label
-                );
-
-            const paddingX = 6;
-            const paddingY = 3;
-
-            const labelWidth =
-                metrics.width +
-                paddingX * 2;
-
-            const labelHeight =
-                labelSize +
-                paddingY * 2;
-
-            const labelX =
-                x -
-                labelWidth / 2;
-
-            const labelY =
-                y +
-                emojiSize / 2 +
-                5;
-
-            ctx.fillStyle =
-                'rgba(16, 19, 22, .88)';
-
-            ctx.fillRect(
-                labelX,
-                labelY,
-                labelWidth,
-                labelHeight
-            );
-
-            ctx.strokeStyle =
-                'rgba(255, 255, 255, .12)';
-
-            ctx.lineWidth = 1;
-
-            ctx.strokeRect(
-                labelX,
-                labelY,
-                labelWidth,
-                labelHeight
-            );
-
-            ctx.fillStyle =
-                '#e7edf2';
+                `${emojiSize}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
 
             ctx.fillText(
-                item.label,
+                item.emoji || '📍',
                 x,
-                labelY +
-                labelHeight / 2
+                y
             );
-        }
 
-        ctx.restore();
-    });
+            if (item.label) {
+
+                const labelSize =
+                    Math.max(
+                        10,
+                        Math.min(
+                            14,
+                            v.scale * 0.15
+                        )
+                    );
+
+                ctx.font =
+                    `${labelSize}px system-ui, sans-serif`;
+
+                const metrics =
+                    ctx.measureText(
+                        item.label
+                    );
+
+                const paddingX = 6;
+                const paddingY = 3;
+
+                const labelWidth =
+                    metrics.width +
+                    paddingX * 2;
+
+                const labelHeight =
+                    labelSize +
+                    paddingY * 2;
+
+                const labelX =
+                    x -
+                    labelWidth / 2;
+
+                const labelY =
+                    y +
+                    emojiSize / 2 +
+                    5;
+
+                ctx.fillStyle =
+                    'rgba(16, 19, 22, .88)';
+
+                ctx.fillRect(
+                    labelX,
+                    labelY,
+                    labelWidth,
+                    labelHeight
+                );
+
+                ctx.strokeStyle =
+                    'rgba(255, 255, 255, .12)';
+
+                ctx.lineWidth = 1;
+
+                ctx.strokeRect(
+                    labelX,
+                    labelY,
+                    labelWidth,
+                    labelHeight
+                );
+
+                ctx.fillStyle =
+                    '#e7edf2';
+
+                ctx.fillText(
+                    item.label,
+                    x,
+                    labelY +
+                    labelHeight / 2
+                );
+            }
+
+            ctx.restore();
+        }
+    );
 }
 
-function hexToRgba(
-    color,
-    alpha
-) {
+function hexToRgba(color, alpha) {
+
     if (!color) {
         return `rgba(215,164,82,${alpha})`;
     }
 
-    if (
-        color.startsWith(
-            'rgba('
-        )
-    ) {
+    if (color.startsWith('rgba(')) {
         return color;
     }
 
-    if (
-        color.startsWith(
-            'rgb('
-        )
-    ) {
+    if (color.startsWith('rgb(')) {
         return color
-            .replace(
-                'rgb(',
-                'rgba('
-            )
-            .replace(
-                ')',
-                `,${alpha})`
-            );
+            .replace('rgb(', 'rgba(')
+            .replace(')', `,${alpha})`);
     }
 
     const hex =
-        color.replace(
-            '#',
-            ''
-        );
+        color.replace('#', '');
 
     if (
         hex.length !== 3 &&
@@ -843,37 +1407,25 @@ function hexToRgba(
         hex.length === 3
             ? hex
                 .split('')
-                .map(
-                    char =>
-                        char + char
-                )
+                .map(char => char + char)
                 .join('')
             : hex;
 
     const r =
         parseInt(
-            normalized.substring(
-                0,
-                2
-            ),
+            normalized.substring(0, 2),
             16
         );
 
     const g =
         parseInt(
-            normalized.substring(
-                2,
-                4
-            ),
+            normalized.substring(2, 4),
             16
         );
 
     const b =
         parseInt(
-            normalized.substring(
-                4,
-                6
-            ),
+            normalized.substring(4, 6),
             16
         );
 
@@ -881,6 +1433,7 @@ function hexToRgba(
 }
 
 function draw() {
+
     if (!wrap) {
         return;
     }
@@ -907,9 +1460,9 @@ function draw() {
         );
 
     ctx.fillStyle =
-        styles.getPropertyValue(
-            '--map-bg'
-        ).trim() ||
+        styles
+            .getPropertyValue('--map-bg')
+            .trim() ||
         '#0d1012';
 
     ctx.fillRect(
@@ -927,9 +1480,9 @@ function draw() {
     );
 
     ctx.fillStyle =
-        styles.getPropertyValue(
-            '--panel-bg'
-        ).trim() ||
+        styles
+            .getPropertyValue('--panel-bg')
+            .trim() ||
         '#151a1d';
 
     ctx.fillRect(
@@ -940,15 +1493,15 @@ function draw() {
     );
 
     const major =
-        styles.getPropertyValue(
-            '--grid-major'
-        ).trim() ||
+        styles
+            .getPropertyValue('--grid-major')
+            .trim() ||
         '#465058';
 
     const minor =
-        styles.getPropertyValue(
-            '--grid-minor'
-        ).trim() ||
+        styles
+            .getPropertyValue('--grid-minor')
+            .trim() ||
         '#252c31';
 
     for (
@@ -956,6 +1509,7 @@ function draw() {
         i <= S.w * 10;
         i++
     ) {
+
         const x =
             i * v.scale / 10;
 
@@ -968,15 +1522,8 @@ function draw() {
 
         ctx.beginPath();
 
-        ctx.moveTo(
-            x,
-            0
-        );
-
-        ctx.lineTo(
-            x,
-            v.mh
-        );
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, v.mh);
 
         ctx.stroke();
     }
@@ -986,6 +1533,7 @@ function draw() {
         i <= S.h * 10;
         i++
     ) {
+
         const y =
             i * v.scale / 10;
 
@@ -996,23 +1544,16 @@ function draw() {
 
         ctx.beginPath();
 
-        ctx.moveTo(
-            0,
-            y
-        );
-
-        ctx.lineTo(
-            v.mw,
-            y
-        );
+        ctx.moveTo(0, y);
+        ctx.lineTo(v.mw, y);
 
         ctx.stroke();
     }
 
     ctx.fillStyle =
-        styles.getPropertyValue(
-            '--muted'
-        ).trim() ||
+        styles
+            .getPropertyValue('--muted')
+            .trim() ||
         '#89959e';
 
     ctx.font =
@@ -1029,10 +1570,9 @@ function draw() {
         x <= S.w;
         x++
     ) {
+
         ctx.fillText(
-            formatCoord(
-                x * 1000
-            ),
+            formatCoord(x * 1000),
             x * v.scale,
             v.mh + 9
         );
@@ -1049,13 +1589,11 @@ function draw() {
         y <= S.h;
         y++
     ) {
+
         ctx.fillText(
-            formatCoord(
-                y * 1000
-            ),
+            formatCoord(y * 1000),
             -8,
-            (S.h - y) *
-            v.scale
+            (S.h - y) * v.scale
         );
     }
 
@@ -1159,7 +1697,13 @@ function draw() {
     result();
 }
 
+
+/* =========================
+   RESULT
+   ========================= */
+
 function result() {
+
     const dx =
         S.target.x -
         S.origin.x;
@@ -1194,9 +1738,7 @@ function result() {
         ' km';
 
     $('distm').textContent =
-        Math.round(
-            d * 1000
-        ) +
+        Math.round(d * 1000) +
         ' m';
 
     $('dx').textContent =
@@ -1205,10 +1747,8 @@ function result() {
                 ? '+'
                 : '-'
         ) +
-        formatCoord(
-            Math.abs(
-                dx * 1000
-            )
+        Math.round(
+            Math.abs(dx * 1000)
         ) +
         ' m';
 
@@ -1218,10 +1758,8 @@ function result() {
                 ? '+'
                 : '-'
         ) +
-        formatCoord(
-            Math.abs(
-                dy * 1000
-            )
+        Math.round(
+            Math.abs(dy * 1000)
         ) +
         ' m';
 
@@ -1254,7 +1792,7 @@ function result() {
             S.map;
 
     $('status').textContent =
-        `${WEAPONS[S.weapon].name} · ` +
+        `${tr(WEAPONS[S.weapon].nameKey)} · ` +
         `${mapName} · ` +
         `${tr('artillery')}: ` +
         `${formatCoord(
@@ -1272,7 +1810,13 @@ function result() {
         )}`;
 }
 
+
+/* =========================
+   INPUTS
+   ========================= */
+
 function inputs() {
+
     $('mapSelect').value =
         S.map;
 
@@ -1280,22 +1824,22 @@ function inputs() {
         S.weapon;
 
     $('ox').value =
-        formatCoord(
+        Math.round(
             S.origin.x * 1000
         );
 
     $('oy').value =
-        formatCoord(
+        Math.round(
             S.origin.y * 1000
         );
 
     $('tx').value =
-        formatCoord(
+        Math.round(
             S.target.x * 1000
         );
 
     $('ty').value =
-        formatCoord(
+        Math.round(
             S.target.y * 1000
         );
 
@@ -1305,10 +1849,12 @@ function inputs() {
     $('h').value =
         S.h;
 
+    result();
     draw();
 }
 
 function inputPoint(type) {
+
     const p =
         S[type];
 
@@ -1342,6 +1888,7 @@ function inputPoint(type) {
 }
 
 function updatePresetLock() {
+
     const locked =
         $('mapSelect').value !==
         'custom';
@@ -1352,7 +1899,13 @@ function updatePresetLock() {
             : '';
 }
 
+
+/* =========================
+   CURSOR
+   ========================= */
+
 function updateCursor(e) {
+
     const rect =
         c.getBoundingClientRect();
 
@@ -1376,7 +1929,9 @@ function updateCursor(e) {
         world.y < 0 ||
         world.y > S.h
     ) {
-        $('cursorCoords').style.display =
+
+        $('cursorCoords')
+            .style.display =
             'none';
 
         return;
@@ -1389,10 +1944,10 @@ function updateCursor(e) {
         'block';
 
     cursor.style.left =
-        `${e.clientX - rect.left + 14}px`;
+        `${x + 14}px`;
 
     cursor.style.top =
-        `${e.clientY - rect.top + 14}px`;
+        `${y + 14}px`;
 
     cursor.querySelector(
         '.cursor-x'
@@ -1409,33 +1964,13 @@ function updateCursor(e) {
         )}`;
 }
 
-function loadTheme() {
-    const saved =
-        localStorage.getItem(
-            'wardogs-theme'
-        );
 
-    if (
-        saved === 'light' ||
-        saved === 'dark'
-    ) {
-        applyTheme(saved);
-        return;
-    }
-
-    const prefersLight =
-        window.matchMedia(
-            '(prefers-color-scheme: light)'
-        ).matches;
-
-    applyTheme(
-        prefersLight
-            ? 'light'
-            : 'dark'
-    );
-}
+/* =========================
+   EVENTS
+   ========================= */
 
 function bindThemeToggle() {
+
     const toggle =
         $('themeToggle');
 
@@ -1443,30 +1978,23 @@ function bindThemeToggle() {
         return;
     }
 
-    toggle.onclick =
-        () => {
-            const current =
-                document.documentElement
-                    .dataset.theme;
-
-            applyTheme(
-                current === 'light'
-                    ? 'dark'
-                    : 'light'
-            );
-        };
+    toggle.addEventListener(
+        'click',
+        toggleTheme
+    );
 }
 
 function bindEvents() {
 
-    $('mapSelect').onchange =
+    $('mapSelect').addEventListener(
+        'change',
         () => {
+
             const key =
                 $('mapSelect').value;
 
-            if (
-                key !== 'custom'
-            ) {
+            if (key !== 'custom') {
+
                 S.map =
                     key;
 
@@ -1475,18 +2003,15 @@ function bindEvents() {
 
                 S.h =
                     MAPS[key].h;
+
             } else {
+
                 S.map =
                     'custom';
             }
 
-            clamp(
-                S.origin
-            );
-
-            clamp(
-                S.target
-            );
+            clamp(S.origin);
+            clamp(S.target);
 
             S.zoom = 1;
             S.panX = 0;
@@ -1494,10 +2019,13 @@ function bindEvents() {
 
             updatePresetLock();
             inputs();
-        };
+        }
+    );
 
-    $('language').onchange =
+    $('language').addEventListener(
+        'change',
         () => {
+
             LANG =
                 $('language').value;
 
@@ -1507,18 +2035,24 @@ function bindEvents() {
             );
 
             applyLanguage();
-        };
+        }
+    );
 
-    $('weapon').onchange =
+    $('weapon').addEventListener(
+        'change',
         () => {
+
             S.weapon =
                 $('weapon').value;
 
             draw();
-        };
+        }
+    );
 
-    $('apply').onclick =
+    $('apply').addEventListener(
+        'click',
         () => {
+
             S.map =
                 'custom';
 
@@ -1544,13 +2078,8 @@ function bindEvents() {
                     )
                 );
 
-            clamp(
-                S.origin
-            );
-
-            clamp(
-                S.target
-            );
+            clamp(S.origin);
+            clamp(S.target);
 
             S.zoom = 1;
             S.panX = 0;
@@ -1558,58 +2087,69 @@ function bindEvents() {
 
             updatePresetLock();
             inputs();
-        };
+        }
+    );
 
-    $('originMode').onclick =
+    $('originMode').addEventListener(
+        'click',
         () => {
+
             S.mode =
                 'origin';
 
             $('originMode')
-                .classList.add(
-                'active'
-            );
+                .classList.add('active');
 
             $('targetMode')
-                .classList.remove(
-                'active'
-            );
-        };
+                .classList.remove('active');
+        }
+    );
 
-    $('targetMode').onclick =
+    $('targetMode').addEventListener(
+        'click',
         () => {
+
             S.mode =
                 'target';
 
             $('targetMode')
-                .classList.add(
-                'active'
-            );
+                .classList.add('active');
 
             $('originMode')
-                .classList.remove(
-                'active'
+                .classList.remove('active');
+        }
+    );
+
+    ['ox', 'oy'].forEach(
+        id => {
+
+            $(id).addEventListener(
+                'change',
+                () =>
+                    inputPoint(
+                        'origin'
+                    )
             );
-        };
+        }
+    );
 
-    ['ox', 'oy'].forEach(id => {
-        $(id).onchange =
-            () =>
-                inputPoint(
-                    'origin'
-                );
-    });
+    ['tx', 'ty'].forEach(
+        id => {
 
-    ['tx', 'ty'].forEach(id => {
-        $(id).onchange =
-            () =>
-                inputPoint(
-                    'target'
-                );
-    });
+            $(id).addEventListener(
+                'change',
+                () =>
+                    inputPoint(
+                        'target'
+                    )
+            );
+        }
+    );
 
-    $('zoomIn').onclick =
+    $('zoomIn').addEventListener(
+        'click',
         () => {
+
             S.zoom =
                 Math.min(
                     3,
@@ -1617,10 +2157,13 @@ function bindEvents() {
                 );
 
             draw();
-        };
+        }
+    );
 
-    $('zoomOut').onclick =
+    $('zoomOut').addEventListener(
+        'click',
         () => {
+
             S.zoom =
                 Math.max(
                     0.4,
@@ -1628,32 +2171,42 @@ function bindEvents() {
                 );
 
             draw();
-        };
+        }
+    );
 
-    $('fit').onclick =
+    $('fit').addEventListener(
+        'click',
         () => {
+
             S.zoom = 1;
             S.panX = 0;
             S.panY = 0;
 
             draw();
-        };
+        }
+    );
 
-    $('swap').onclick =
+    $('swap').addEventListener(
+        'click',
         () => {
-            [
-                S.origin,
-                S.target
-            ] = [
-                S.target,
-                S.origin
-            ];
+
+            const oldOrigin =
+                S.origin;
+
+            S.origin =
+                S.target;
+
+            S.target =
+                oldOrigin;
 
             inputs();
-        };
+        }
+    );
 
-    $('clear').onclick =
+    $('clear').addEventListener(
+        'click',
         () => {
+
             S.origin = {
                 x: 0,
                 y: 0
@@ -1664,11 +2217,39 @@ function bindEvents() {
                 y: 0
             };
 
-            inputs();
-        };
+            selectedSavedTargetId =
+                null;
 
-    c.onmousedown =
+            inputs();
+            renderSavedTargets();
+        }
+    );
+
+
+    /* =========================
+       SAVED TARGETS
+       ========================= */
+
+    $('saveTarget').addEventListener(
+        'click',
+        saveCurrentTarget
+    );
+
+    $('saveArtilleryPosition')
+        .addEventListener(
+            'change',
+            saveArtilleryPreference
+        );
+
+
+    /* =========================
+       CANVAS
+       ========================= */
+
+    c.addEventListener(
+        'mousedown',
         e => {
+
             e.preventDefault();
 
             const rect =
@@ -1678,25 +2259,18 @@ function bindEvents() {
                 toWorld(
                     e.clientX -
                     rect.left,
+
                     e.clientY -
                     rect.top
                 );
 
-            if (
-                e.button === 2
-            ) {
+            if (e.button === 2) {
+
                 pan = {
-                    startX:
-                    e.clientX,
-
-                    startY:
-                    e.clientY,
-
-                    originX:
-                    S.panX,
-
-                    originY:
-                    S.panY
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    originX: S.panX,
+                    originY: S.panY
                 };
 
                 $('cursorCoords')
@@ -1708,25 +2282,18 @@ function bindEvents() {
 
             const d1 =
                 Math.hypot(
-                    p.x -
-                    S.origin.x,
-                    p.y -
-                    S.origin.y
+                    p.x - S.origin.x,
+                    p.y - S.origin.y
                 );
 
             const d2 =
                 Math.hypot(
-                    p.x -
-                    S.target.x,
-                    p.y -
-                    S.target.y
+                    p.x - S.target.x,
+                    p.y - S.target.y
                 );
 
             drag =
-                Math.min(
-                    d1,
-                    d2
-                ) < 0.3
+                Math.min(d1, d2) < 0.3
                     ? (
                         d1 < d2
                             ? 'origin'
@@ -1745,11 +2312,15 @@ function bindEvents() {
 
             inputs();
             updateCursor(e);
-        };
+        }
+    );
 
-    window.onmousemove =
+    window.addEventListener(
+        'mousemove',
         e => {
+
             if (pan) {
+
                 S.panX =
                     pan.originX +
                     (
@@ -1782,6 +2353,7 @@ function bindEvents() {
                 toWorld(
                     e.clientX -
                     rect.left,
+
                     e.clientY -
                     rect.top
                 );
@@ -1795,30 +2367,42 @@ function bindEvents() {
 
             inputs();
             updateCursor(e);
-        };
+        }
+    );
 
-    c.oncontextmenu =
+    c.addEventListener(
+        'contextmenu',
         e => {
             e.preventDefault();
-        };
+        }
+    );
 
-    c.onmouseleave =
+    c.addEventListener(
+        'mouseleave',
         () => {
+
             if (!pan) {
+
                 $('cursorCoords')
                     .style.display =
                     'none';
             }
-        };
+        }
+    );
 
-    window.onmouseup =
+    window.addEventListener(
+        'mouseup',
         () => {
+
             drag = null;
             pan = null;
-        };
+        }
+    );
 
-    c.onwheel =
+    c.addEventListener(
+        'wheel',
         e => {
+
             e.preventDefault();
 
             const rect =
@@ -1873,23 +2457,42 @@ function bindEvents() {
                 view().scale;
 
             draw();
-        };
+        },
+        {
+            passive: false
+        }
+    );
 
-    window.onresize =
-        resize;
+    window.addEventListener(
+        'resize',
+        resize
+    );
 }
 
+
+/* =========================
+   INIT
+   ========================= */
+
 async function init() {
+
     try {
-        loadTheme();
+
+        applyTheme(
+            getTheme()
+        );
 
         bindThemeToggle();
+
+        loadSavedTargets();
 
         await loadLanguages();
 
         await loadMaps();
 
         bindEvents();
+
+        loadSaveArtilleryPreference();
 
         updatePresetLock();
 
@@ -1898,7 +2501,11 @@ async function init() {
         inputs();
 
         resize();
+
+        renderSavedTargets();
+
     } catch (error) {
+
         console.error(
             'Failed to initialize application:',
             error

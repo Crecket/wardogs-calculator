@@ -33,10 +33,19 @@
   "swap": "Intercambiar puntos",
   "clear": "Restablecer",
   "controlsHint": "LMB — colocar punto · Arrastrar — mover · Rueda — zoom · RMB — mover mapa.",
+  "savedTargets": "Objetivos guardados",
+  "noSavedTargets": "No hay objetivos guardados",
+  "saveArtilleryPosition": "Guardar posición de la artillería",
+  "save": "Guardar",
+  "edit": "Editar",
+  "delete": "Eliminar",
+  "targetNamePrompt": "Introduce el nombre del objetivo",
   "lmb": "LMB",
   "point": "punto",
   "grid": "rejilla",
   "majorGrid": "línea principal",
   "themeLight": "Claro",
-  "themeDark": "Oscuro"
+  "themeDark": "Oscuro",
+  "customMapStatus": "Mapa personalizado",
+  "mapLocked": "Mapa predeterminado seleccionado — el tamaño de la cuadrícula está bloqueado"
 }

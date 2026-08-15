@@ -1,14 +1,17 @@
 {
   "name": "Português",
   "flag": "🇵🇹",
+
   "title": "WARDOGS // CALCULADORA DE ARTILHARIA",
   "gridInfo": "1 km → 10×10 células de 100 m",
+
   "map": "Mapa",
   "presetMap": "Mapa predefinido",
   "customMap": "Mapa personalizado",
   "width": "Largura, km",
   "height": "Altura, km",
   "apply": "Aplicar",
+
   "weapon": "Arma",
   "weaponType": "Tipo de arma",
   "mortar": "Morteiro",
@@ -17,26 +20,42 @@
   "targetStatus": "Estado do alvo",
   "inRange": "Ao alcance",
   "outRange": "FORA DE ALCANCE",
-  "rangeHint": "O círculo mostra o alcance máximo da arma selecionada.",
+  "rangeHint": "O círculo mostra o alcance máximo da arma selecionada a partir da posição da artilharia.",
+
   "pointSelection": "Seleção de pontos",
   "artillery": "Artilharia",
   "target": "Alvo",
   "artilleryXY": "Artilharia X / Y",
   "targetXY": "Alvo X / Y",
+
   "result": "Resultado",
   "azimuth": "AZIMUTE",
   "distance": "Distância",
   "meters": "Metros",
-  "azimuthHint": "Azimute: 0° norte, 90° leste, 180° sul, 270° oeste.",
+  "azimuthHint": "Azimute: 0° — norte, 90° — leste, 180° — sul, 270° — oeste.",
+
   "controls": "Controlos",
   "fit": "Ajustar mapa",
   "swap": "Trocar pontos",
   "clear": "Repor",
-  "controlsHint": "LMB — colocar ponto · Arrastar — mover · Roda — zoom · RMB — mover mapa.",
+  "controlsHint": "LMB — colocar ponto · Arrastar — mover pontos · Roda — zoom · RMB — mover mapa.",
+
+  "savedTargets": "Alvos guardados",
+  "noSavedTargets": "Nenhum alvo guardado",
+  "saveArtilleryPosition": "Guardar posição da artilharia",
+  "save": "Guardar",
+  "edit": "Editar",
+  "delete": "Eliminar",
+  "targetNamePrompt": "Introduza o nome do alvo:",
+
   "lmb": "LMB",
   "point": "ponto",
   "grid": "grelha",
   "majorGrid": "linha principal",
+
   "themeLight": "Claro",
-  "themeDark": "Escuro"
+  "themeDark": "Escuro",
+
+  "customMapStatus": "Mapa personalizado",
+  "mapLocked": "Mapa predefinido selecionado — tamanho da grelha bloqueado"
 }

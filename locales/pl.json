@@ -33,10 +33,19 @@
   "swap": "Zamień punkty",
   "clear": "Reset",
   "controlsHint": "LMB — ustaw punkt · Przeciągnij — przesuń · Kółko — zoom · RMB — przesuń mapę.",
+  "savedTargets": "Zapisane cele",
+  "noSavedTargets": "Brak zapisanych celów",
+  "saveArtilleryPosition": "Zapisz pozycję artylerii",
+  "save": "Zapisz",
+  "edit": "Edytuj",
+  "delete": "Usuń",
+  "targetNamePrompt": "Wprowadź nazwę celu",
   "lmb": "LMB",
   "point": "punkt",
   "grid": "siatka",
   "majorGrid": "główna linia",
   "themeLight": "Jasny",
-  "themeDark": "Ciemny"
+  "themeDark": "Ciemny",
+  "customMapStatus": "Własna mapa",
+  "mapLocked": "Wybrano gotową mapę — rozmiar siatki jest zablokowany"
 }
