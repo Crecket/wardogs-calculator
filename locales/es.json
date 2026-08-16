@@ -74,5 +74,8 @@
   "mapLegendArtillery": "Capa de artillería",
   "mapToolUndo": "Deshacer",
   "mapToolRedo": "Rehacer",
-  "mapToolUndoRedoHint": "Deshacer: {undo} · Rehacer: {redo}"
+  "mapToolUndoRedoHint": "Deshacer: {undo} · Rehacer: {redo}",
+  "motdTitle": "Mensaje del día",
+  "motdDontShowAgain": "No volver a mostrar",
+  "motdClose": "Cerrar"
 }

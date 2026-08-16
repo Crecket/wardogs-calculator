@@ -70,5 +70,8 @@
   "mapLegendArtillery": "Артиллерийский слой",
   "mapToolUndo": "Отменить",
   "mapToolRedo": "Повторить",
-  "mapToolUndoRedoHint": "Отменить: {undo} · Повторить: {redo}"
+  "mapToolUndoRedoHint": "Отменить: {undo} · Повторить: {redo}",
+  "motdTitle": "Сообщение дня",
+  "motdDontShowAgain": "Больше не показывать",
+  "motdClose": "Закрыть"
 }

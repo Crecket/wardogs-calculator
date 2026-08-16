@@ -74,5 +74,8 @@
   "mapLegendArtillery": "Couche artillerie",
   "mapToolUndo": "Annuler",
   "mapToolRedo": "Rétablir",
-  "mapToolUndoRedoHint": "Annuler : {undo} · Rétablir : {redo}"
+  "mapToolUndoRedoHint": "Annuler : {undo} · Rétablir : {redo}",
+  "motdTitle": "Message du jour",
+  "motdDontShowAgain": "Ne plus afficher",
+  "motdClose": "Fermer"
 }

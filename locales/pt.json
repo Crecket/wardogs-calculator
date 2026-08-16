@@ -74,5 +74,8 @@
   "mapLegendArtillery": "Camada de artilharia",
   "mapToolUndo": "Desfazer",
   "mapToolRedo": "Refazer",
-  "mapToolUndoRedoHint": "Desfazer: {undo} · Refazer: {redo}"
+  "mapToolUndoRedoHint": "Desfazer: {undo} · Refazer: {redo}",
+  "motdTitle": "Mensagem do dia",
+  "motdDontShowAgain": "Não mostrar novamente",
+  "motdClose": "Fechar"
 }

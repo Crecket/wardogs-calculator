@@ -74,5 +74,8 @@
   "mapLegendArtillery": "Артилерійний шар",
   "mapToolUndo": "Скасувати",
   "mapToolRedo": "Повторити",
-  "mapToolUndoRedoHint": "Скасувати: {undo} · Повторити: {redo}"
+  "mapToolUndoRedoHint": "Скасувати: {undo} · Повторити: {redo}",
+  "motdTitle": "Повідомлення дня",
+  "motdDontShowAgain": "Більше не показувати",
+  "motdClose": "Закрити"
 }

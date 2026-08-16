@@ -54,6 +54,8 @@ async function init() {
 
         applyLanguage();
 
+        await loadMotd();
+
         inputs();
 
         resize();

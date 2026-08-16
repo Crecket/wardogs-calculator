@@ -74,5 +74,8 @@
   "mapLegendArtillery": "Warstwa artylerii",
   "mapToolUndo": "Cofnij",
   "mapToolRedo": "Ponów",
-  "mapToolUndoRedoHint": "Cofnij: {undo} · Ponów: {redo}"
+  "mapToolUndoRedoHint": "Cofnij: {undo} · Ponów: {redo}",
+  "motdTitle": "Wiadomość dnia",
+  "motdDontShowAgain": "Nie pokazuj ponownie",
+  "motdClose": "Zamknij"
 }

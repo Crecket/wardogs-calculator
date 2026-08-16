@@ -596,3 +596,31 @@ Weapon definitions are stored in `data/weapons.json`, so ranges and additional w
 ## Coordinate Search and Layer Legend
 
 The Map Tools toolbar includes coordinate search (X/Y in meters) and a legend/layer menu. The legend can independently show or hide map tiles, grid, zones, polygons, preset markers, drawings, user markers, and artillery overlays. Layer visibility is persisted locally.
+
+## Message of the Day (MOTD)
+
+The optional MOTD system is configured in `data/motd.json`.
+
+- Set `enabled` to `true` to publish the announcement.
+- Change `id` for every new announcement. The “Don't show again” preference is stored per MOTD ID, so users who dismissed an older announcement will still see a new one.
+- `title` and `message` can contain per-language text.
+- Optional ISO date values can be provided through `startsAt` and `endsAt`.
+- The MOTD is a non-blocking floating card: it does not use a modal backdrop and does not prevent interaction with the calculator.
+- The MOTD file is public frontend data. Never put secrets, private keys, tokens, or unreleased sensitive information in it.
+
+Example:
+
+```json
+{
+  "id": "beta-day-1",
+  "enabled": true,
+  "startsAt": null,
+  "endsAt": null,
+  "title": {
+    "en": "Beta Update"
+  },
+  "message": {
+    "en": "Map data is being updated throughout the beta."
+  }
+}
+```

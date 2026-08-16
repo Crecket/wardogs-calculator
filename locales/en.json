@@ -70,5 +70,8 @@
   "mapLegendArtillery": "Artillery overlay",
   "mapToolUndo": "Undo",
   "mapToolRedo": "Redo",
-  "mapToolUndoRedoHint": "Undo: {undo} · Redo: {redo}"
+  "mapToolUndoRedoHint": "Undo: {undo} · Redo: {redo}",
+  "motdTitle": "Message of the Day",
+  "motdDontShowAgain": "Don't show again",
+  "motdClose": "Close"
 }

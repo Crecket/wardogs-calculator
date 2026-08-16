@@ -240,6 +240,12 @@ function applyLanguage() {
         updateMapToolsLocalization();
     }
 
+    if (
+        typeof updateMotdLocalization === 'function'
+    ) {
+        updateMotdLocalization();
+    }
+
     result();
     draw();
 }

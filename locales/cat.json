@@ -80,5 +80,8 @@
   "mapLegendArtillery": "MEOWTILLERY OVERLAY",
   "mapToolUndo": "UNMEOW",
   "mapToolRedo": "REMEOW",
-  "mapToolUndoRedoHint": "UNMEOW: {undo} · REMEOW: {redo}"
+  "mapToolUndoRedoHint": "UNMEOW: {undo} · REMEOW: {redo}",
+  "motdTitle": "MEOWSSAGE OF THE DAY",
+  "motdDontShowAgain": "DON'T MEOW THIS AGAIN",
+  "motdClose": "CLOSE MEOW"
 }

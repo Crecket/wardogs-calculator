@@ -74,5 +74,8 @@
   "mapLegendArtillery": "Artillerie-Ebene",
   "mapToolUndo": "Rückgängig",
   "mapToolRedo": "Wiederholen",
-  "mapToolUndoRedoHint": "Rückgängig: {undo} · Wiederholen: {redo}"
+  "mapToolUndoRedoHint": "Rückgängig: {undo} · Wiederholen: {redo}",
+  "motdTitle": "Nachricht des Tages",
+  "motdDontShowAgain": "Nicht mehr anzeigen",
+  "motdClose": "Schließen"
 }

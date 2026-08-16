@@ -1,0 +1,28 @@
+{
+  "id": "welcome-001",
+  "enabled": false,
+  "startsAt": null,
+  "endsAt": null,
+  "title": {
+    "en": "Message of the Day",
+    "ru": "Сообщение дня",
+    "uk": "Повідомлення дня",
+    "de": "Nachricht des Tages",
+    "fr": "Message du jour",
+    "es": "Mensaje del día",
+    "pl": "Wiadomość dnia",
+    "pt": "Mensagem do dia",
+    "cat": "MEOWSSAGE OF THE DAY"
+  },
+  "message": {
+    "en": "This is a placeholder MOTD. Edit data/motd.json and set enabled to true when you want to publish an announcement.",
+    "ru": "Это тестовое MOTD. Измените data/motd.json и установите enabled в true, когда захотите опубликовать объявление.",
+    "uk": "Це тестове MOTD. Змініть data/motd.json і встановіть enabled у true, коли захочете опублікувати оголошення.",
+    "de": "Dies ist ein Platzhalter-MOTD. Bearbeite data/motd.json und setze enabled auf true, um eine Ankündigung zu veröffentlichen.",
+    "fr": "Ceci est un MOTD d'exemple. Modifiez data/motd.json et définissez enabled sur true pour publier une annonce.",
+    "es": "Este es un MOTD de ejemplo. Edita data/motd.json y establece enabled en true para publicar un anuncio.",
+    "pl": "To przykładowy MOTD. Edytuj data/motd.json i ustaw enabled na true, aby opublikować ogłoszenie.",
+    "pt": "Este é um MOTD de exemplo. Edite data/motd.json e defina enabled como true para publicar um anúncio.",
+    "cat": "THIS IS A TEST MEOWSSAGE. EDIT data/motd.json AND SET enabled TO true WHEN THE HUMAN ANNOUNCEMENT IS READY."
+  }
+}
