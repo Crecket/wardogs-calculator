@@ -1,0 +1,25 @@
+{
+  "markerIcons": {
+    "tower": {
+      "path": "assets/map-markers/tower.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+    "spawn": {
+      "path": "assets/map-markers/spawn.png",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+    "cz": {
+      "path": "assets/map-markers/cz.png",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    }
+  }
+}

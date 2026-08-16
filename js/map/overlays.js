@@ -550,6 +550,253 @@ function drawPresetPolygons(map) {
    PRESET MARKERS
    ========================= */
 
+function getMarkerEmojiSize(v) {
+
+    return Math.max(
+        14,
+        Math.min(
+            32,
+            v.scale * 0.35
+        )
+    );
+}
+
+function getMarkerImageLayout(
+    item,
+    asset
+) {
+
+    const width =
+        typeof item.width === 'number' &&
+        item.width > 0
+            ? item.width
+            : asset.width;
+
+    const height =
+        typeof item.height === 'number' &&
+        item.height > 0
+            ? item.height
+            : asset.height;
+
+    const scale =
+        typeof item.scale === 'number' &&
+        item.scale > 0
+            ? item.scale
+            : 1;
+
+    const anchorX =
+        typeof item.anchorX === 'number'
+            ? Math.max(
+                0,
+                Math.min(
+                    1,
+                    item.anchorX
+                )
+            )
+            : asset.anchorX;
+
+    const anchorY =
+        typeof item.anchorY === 'number'
+            ? Math.max(
+                0,
+                Math.min(
+                    1,
+                    item.anchorY
+                )
+            )
+            : asset.anchorY;
+
+    return {
+        width:
+            width * scale,
+
+        height:
+            height * scale,
+
+        anchorX,
+        anchorY
+    };
+}
+
+function drawMarkerImage(
+    item,
+    x,
+    y
+) {
+
+    const asset =
+        getMarkerAsset(
+            item.icon
+        );
+
+    if (!asset) {
+        return null;
+    }
+
+    const imageEntry =
+        loadMarkerImage(
+            asset
+        );
+
+    if (
+        !imageEntry ||
+        imageEntry.failed
+    ) {
+        return null;
+    }
+
+    const layout =
+        getMarkerImageLayout(
+            item,
+            asset
+        );
+
+    if (
+        !imageEntry.loaded
+    ) {
+        return {
+            drawn: false,
+            height: layout.height,
+            anchorY: layout.anchorY
+        };
+    }
+
+    const left =
+        x -
+        layout.width *
+        layout.anchorX;
+
+    const top =
+        y -
+        layout.height *
+        layout.anchorY;
+
+    ctx.drawImage(
+        imageEntry.image,
+        left,
+        top,
+        layout.width,
+        layout.height
+    );
+
+    return {
+        drawn: true,
+        height: layout.height,
+        anchorY: layout.anchorY
+    };
+}
+
+function drawMarkerEmoji(
+    item,
+    x,
+    y,
+    v
+) {
+
+    const emojiSize =
+        getMarkerEmojiSize(
+            v
+        );
+
+    ctx.font =
+        `${emojiSize}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+
+    ctx.fillText(
+        item.emoji ||
+        '📍',
+        x,
+        y
+    );
+
+    return emojiSize;
+}
+
+function drawPresetMarkerLabel(
+    item,
+    x,
+    y,
+    visualBottomOffset,
+    v
+) {
+
+    if (!item.label) {
+        return;
+    }
+
+    const labelSize =
+        Math.max(
+            10,
+            Math.min(
+                14,
+                v.scale * 0.15
+            )
+        );
+
+    ctx.font =
+        `${labelSize}px system-ui, sans-serif`;
+
+    const metrics =
+        ctx.measureText(
+            item.label
+        );
+
+    const paddingX =
+        6;
+
+    const paddingY =
+        3;
+
+    const labelWidth =
+        metrics.width +
+        paddingX * 2;
+
+    const labelHeight =
+        labelSize +
+        paddingY * 2;
+
+    const labelX =
+        x -
+        labelWidth / 2;
+
+    const labelY =
+        y +
+        visualBottomOffset +
+        5;
+
+    ctx.fillStyle =
+        'rgba(16, 19, 22, .88)';
+
+    ctx.fillRect(
+        labelX,
+        labelY,
+        labelWidth,
+        labelHeight
+    );
+
+    ctx.strokeStyle =
+        'rgba(255, 255, 255, .12)';
+
+    ctx.lineWidth =
+        1;
+
+    ctx.strokeRect(
+        labelX,
+        labelY,
+        labelWidth,
+        labelHeight
+    );
+
+    ctx.fillStyle =
+        '#e7edf2';
+
+    ctx.fillText(
+        item.label,
+        x,
+        labelY +
+        labelHeight / 2
+    );
+}
+
 function drawPresetMarkers(map) {
 
     if (
@@ -576,11 +823,8 @@ function drawPresetMarkers(map) {
 
             const pos =
                 worldToLocalScreen(
-                    item.x /
-                    1000,
-
-                    item.y /
-                    1000
+                    item.x / 1000,
+                    item.y / 1000
                 );
 
             const x =
@@ -597,107 +841,68 @@ function drawPresetMarkers(map) {
             ctx.textBaseline =
                 'middle';
 
-            const emojiSize =
-                Math.max(
-                    14,
-                    Math.min(
-                        32,
-                        v.scale *
-                        0.35
-                    )
-                );
+            let visualBottomOffset =
+                0;
 
-            ctx.font =
-                `${emojiSize}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+            let imageResult =
+                null;
 
-            ctx.fillText(
-                item.emoji ||
-                '📍',
-                x,
-                y
-            );
+            /*
+             * If "icon" is specified, try to
+             * render an image asset first.
+             */
+            if (
+                typeof item.icon === 'string' &&
+                item.icon
+            ) {
 
-            if (item.label) {
-
-                const labelSize =
-                    Math.max(
-                        10,
-                        Math.min(
-                            14,
-                            v.scale *
-                            0.15
-                        )
+                imageResult =
+                    drawMarkerImage(
+                        item,
+                        x,
+                        y
                     );
-
-                ctx.font =
-                    `${labelSize}px system-ui, sans-serif`;
-
-                const metrics =
-                    ctx.measureText(
-                        item.label
-                    );
-
-                const paddingX =
-                    6;
-
-                const paddingY =
-                    3;
-
-                const labelWidth =
-                    metrics.width +
-                    paddingX *
-                    2;
-
-                const labelHeight =
-                    labelSize +
-                    paddingY *
-                    2;
-
-                const labelX =
-                    x -
-                    labelWidth /
-                    2;
-
-                const labelY =
-                    y +
-                    emojiSize /
-                    2 +
-                    5;
-
-                ctx.fillStyle =
-                    'rgba(16, 19, 22, .88)';
-
-                ctx.fillRect(
-                    labelX,
-                    labelY,
-                    labelWidth,
-                    labelHeight
-                );
-
-                ctx.strokeStyle =
-                    'rgba(255, 255, 255, .12)';
-
-                ctx.lineWidth =
-                    1;
-
-                ctx.strokeRect(
-                    labelX,
-                    labelY,
-                    labelWidth,
-                    labelHeight
-                );
-
-                ctx.fillStyle =
-                    '#e7edf2';
-
-                ctx.fillText(
-                    item.label,
-                    x,
-                    labelY +
-                    labelHeight /
-                    2
-                );
             }
+
+            if (
+                imageResult &&
+                imageResult.drawn
+            ) {
+
+                visualBottomOffset =
+                    imageResult.height *
+                    (
+                        1 -
+                        imageResult.anchorY
+                    );
+
+            } else {
+
+                /*
+                 * Emoji remains fully supported
+                 * and is also used as a fallback
+                 * if an image asset is missing or
+                 * fails to load.
+                 */
+                const emojiSize =
+                    drawMarkerEmoji(
+                        item,
+                        x,
+                        y,
+                        v
+                    );
+
+                visualBottomOffset =
+                    emojiSize / 2;
+            }
+
+            drawPresetMarkerLabel(
+                item,
+                x,
+                y,
+                visualBottomOffset,
+                v
+            );
 
             ctx.restore();
         }

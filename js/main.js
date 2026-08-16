@@ -16,6 +16,8 @@ async function init() {
 
         await loadLanguages();
 
+        await loadMapAssets();
+
         await loadMaps();
 
         /*

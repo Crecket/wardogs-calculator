@@ -191,6 +191,57 @@ Example:
 | `zones` | Circular map zones |
 | `polygons` | Arbitrary complex polygon overlays |
 
+
+### Marker image assets
+
+Map markers can use either Unicode emoji or image assets. Image assets are registered once in `maps/assets.json` and referenced by ID from any map JSON.
+
+Example `maps/assets.json`:
+
+```json
+{
+  "markerIcons": {
+    "tower": {
+      "path": "assets/map-markers/tower.png",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    }
+  }
+}
+```
+
+Then use the asset from a map marker:
+
+```json
+{
+  "icon": "tower",
+  "x": 5000,
+  "y": 7000,
+  "label": "Tower 1"
+}
+```
+
+Emoji markers remain supported:
+
+```json
+{
+  "emoji": "🏠",
+  "x": 4500,
+  "y": 6200,
+  "label": "Main Base"
+}
+```
+
+A marker may contain both `icon` and `emoji`. The image is preferred; the emoji is used as a fallback while the image is loading or if the referenced asset cannot be loaded. Marker-level `width`, `height`, `scale`, `anchorX`, and `anchorY` can override the defaults from `maps/assets.json`.
+
+Image files can be placed anywhere under the project root; the included convention is:
+
+```text
+assets/map-markers/
+```
+
 ### Bounds
 
 ```json

@@ -42,6 +42,7 @@ let DEFAULT_LANG = 'en';
 let LANGUAGES = [];
 let I18N = {};
 let MAPS = {};
+let MAP_ASSETS = {};
 
 let drag = null;
 let pan = null;
@@ -84,6 +85,9 @@ const DEFAULT_TILE_MAX_ZOOM = 5;
 const DEFAULT_TILE_EXTENSION = 'webp';
 
 const TILE_CACHE =
+    new Map();
+
+const MARKER_IMAGE_CACHE =
     new Map();
 
 
