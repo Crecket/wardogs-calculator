@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://apollyon-sys.github.io/wardogs-calculator/sitemap.xml
+Sitemap: https://wardogs-artillery.com/sitemap.xml
