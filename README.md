@@ -2,7 +2,7 @@
 
 A lightweight, framework-free artillery calculator for **WARDOGS**.
 
-**Live Demo:** https://apollyon-sys.github.io/wardogs-calculator/
+**Live Demo:** [wardogs-artillery.com](https://wardogs-artillery.com/)
 
 The calculator provides an interactive map where you can place an artillery position and target, then automatically calculate azimuth, distance, coordinate deltas, and weapon range status.
 

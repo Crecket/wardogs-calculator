@@ -1,28 +1,28 @@
 {
-  "id": "test",
-  "enabled": false,
+  "id": "new-domain-wardogs-artillery",
+  "enabled": true,
   "startsAt": null,
   "endsAt": null,
   "title": {
-    "en": "Message of the Day",
-    "ru": "Сообщение дня",
-    "uk": "Повідомлення дня",
-    "de": "Nachricht des Tages",
-    "fr": "Message du jour",
-    "es": "Mensaje del día",
-    "pl": "Wiadomość dnia",
-    "pt": "Mensagem do dia",
-    "cat": "MEOWSSAGE OF THE DAY"
+    "en": "WE HAVE A NEW HOME!",
+    "ru": "У НАС НОВЫЙ ДОМЕН!",
+    "uk": "У НАС НОВИЙ ДОМЕН!",
+    "de": "WIR HABEN EINE NEUE DOMAIN!",
+    "fr": "NOUS AVONS UN NOUVEAU DOMAINE !",
+    "es": "¡TENEMOS UN NUEVO DOMINIO!",
+    "pl": "MAMY NOWĄ DOMENĘ!",
+    "pt": "TEMOS UM NOVO DOMÍNIO!",
+    "cat": "WE HAVE A NEW MEOWMAIN!"
   },
   "message": {
-    "en": "This is a placeholder MOTD. Edit data/motd.json and set enabled to true when you want to publish an announcement.",
-    "ru": "Это тестовое MOTD. Измените data/motd.json и установите enabled в true, когда захотите опубликовать объявление.",
-    "uk": "Це тестове MOTD. Змініть data/motd.json і встановіть enabled у true, коли захочете опублікувати оголошення.",
-    "de": "Dies ist ein Platzhalter-MOTD. Bearbeite data/motd.json und setze enabled auf true, um eine Ankündigung zu veröffentlichen.",
-    "fr": "Ceci est un MOTD d'exemple. Modifiez data/motd.json et définissez enabled sur true pour publier une annonce.",
-    "es": "Este es un MOTD de ejemplo. Edita data/motd.json y establece enabled en true para publicar un anuncio.",
-    "pl": "To przykładowy MOTD. Edytuj data/motd.json i ustaw enabled na true, aby opublikować ogłoszenie.",
-    "pt": "Este é um MOTD de exemplo. Edite data/motd.json e defina enabled como true para publicar um anúncio.",
-    "cat": "THIS IS A TEST MEOWSSAGE. EDIT data/motd.json AND SET enabled TO true WHEN THE HUMAN ANNOUNCEMENT IS READY."
+    "en": "WARDOGS Artillery Calculator has moved to its new home!\\n\\nhttps://wardogs-artillery.com/\\n\\nThank you everyone for the interest, feedback, and support for the project. It's amazing to see the WARDOGS community using and sharing it. ❤️",
+    "ru": "WARDOGS Artillery Calculator переехал на новый домен!\\n\\nhttps://wardogs-artillery.com/\\n\\nСпасибо всем за интерес к проекту, отзывы и поддержку. Очень приятно видеть, как сообщество WARDOGS пользуется приложением и делится им. ❤️",
+    "uk": "WARDOGS Artillery Calculator переїхав на новий домен!\\n\\nhttps://wardogs-artillery.com/\\n\\nДякую всім за інтерес до проєкту, відгуки та підтримку. Дуже приємно бачити, як спільнота WARDOGS користується застосунком і ділиться ним. ❤️",
+    "de": "Der WARDOGS Artillery Calculator ist auf seine neue Domain umgezogen!\\n\\nhttps://wardogs-artillery.com/\\n\\nVielen Dank für euer Interesse, Feedback und eure Unterstützung. Es ist großartig zu sehen, wie die WARDOGS-Community das Projekt nutzt und teilt. ❤️",
+    "fr": "WARDOGS Artillery Calculator a désormais son propre domaine !\\n\\nhttps://wardogs-artillery.com/\\n\\nMerci à tous pour votre intérêt, vos retours et votre soutien. C'est génial de voir la communauté WARDOGS utiliser et partager le projet. ❤️",
+    "es": "¡WARDOGS Artillery Calculator se ha mudado a su nuevo dominio!\\n\\nhttps://wardogs-artillery.com/\\n\\nGracias a todos por el interés, los comentarios y el apoyo al proyecto. Es genial ver a la comunidad de WARDOGS utilizando y compartiendo la aplicación. ❤️",
+    "pl": "WARDOGS Artillery Calculator przeniósł się na nową domenę!\\n\\nhttps://wardogs-artillery.com/\\n\\nDziękuję wszystkim za zainteresowanie, opinie i wsparcie projektu. Wspaniale jest widzieć, jak społeczność WARDOGS korzysta z aplikacji i ją udostępnia. ❤️",
+    "pt": "O WARDOGS Artillery Calculator mudou-se para o seu novo domínio!\\n\\nhttps://wardogs-artillery.com/\\n\\nObrigado a todos pelo interesse, feedback e apoio ao projeto. É incrível ver a comunidade WARDOGS usando e compartilhando a aplicação. ❤️",
+    "cat": "WARDOGS ARTILLERY CALCULATOR HAS MOVED TO A BRAND NEW MEOWMAIN!\\n\\nhttps://wardogs-artillery.com/\\n\\nTHANK YOU, HUMANS, FOR ALL THE INTEREST, FEEDBACK, AND SUPPORT. THE WARDOGS COMMUNITY HAS GIVEN THIS PROJECT MANY HAPPY PURRS. ❤️🐾"
   }
 }
