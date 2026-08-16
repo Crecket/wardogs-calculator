@@ -1,5 +1,53 @@
 {
   "markerIcons": {
+    "assault": {
+      "path": "assets/map-markers/assault.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
+    "driver": {
+      "path": "assets/map-markers/driver.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
+    "medic": {
+      "path": "assets/map-markers/medic.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
+    "pilot": {
+      "path": "assets/map-markers/pilot.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
+    "recon": {
+      "path": "assets/map-markers/recon.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
+    "support": {
+      "path": "assets/map-markers/support.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
     "tower": {
       "path": "assets/map-markers/tower.webp",
       "width": 32,
@@ -7,15 +55,41 @@
       "anchorX": 0.5,
       "anchorY": 0.5
     },
-    "spawn": {
-      "path": "assets/map-markers/spawn.png",
+
+    "lonestar": {
+      "path": "assets/map-markers/lonestar.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
       "anchorY": 0.5
     },
-    "cz": {
-      "path": "assets/map-markers/cz.png",
+
+    "manticore": {
+      "path": "assets/map-markers/manticore.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
+    "valkyra": {
+      "path": "assets/map-markers/valkyra.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
+    "wardogs": {
+      "path": "assets/map-markers/wardogs.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
+    "bulkhead": {
+      "path": "assets/map-markers/bulkhead.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,

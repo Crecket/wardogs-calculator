@@ -47,5 +47,18 @@
   "themeLight": "Claro",
   "themeDark": "Oscuro",
   "customMapStatus": "Mapa personalizado",
-  "mapLocked": "Mapa predeterminado seleccionado — el tamaño de la cuadrícula está bloqueado"
+  "mapLocked": "Mapa predeterminado seleccionado — el tamaño de la cuadrícula está bloqueado",
+  "mapToolRuler": "Regla",
+  "mapToolPencil": "Lápiz",
+  "mapToolMarkers": "Marcadores",
+  "mapToolNoMarkerAssets": "No hay iconos de marcador disponibles",
+  "mapToolColorDanger": "Peligro / Enemigo",
+  "mapToolColorWarning": "Advertencia / Disputado",
+  "mapToolColorObjective": "Objetivo",
+  "mapToolColorFriendly": "Aliado / Aparición",
+  "mapToolColorBase": "Base / Logística",
+  "mapToolColorUtility": "Utilidad",
+  "mapToolColorSpecial": "Especial",
+  "mapToolColorNeutral": "Neutral",
+  "mapToolColorInactive": "Inactivo"
 }

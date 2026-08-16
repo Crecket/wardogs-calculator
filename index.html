@@ -502,6 +502,32 @@
 
       </div>
 
+
+
+      <!-- MAP TOOLS -->
+
+      <div class="map-tools" id="mapTools">
+
+        <div class="map-tool-popover map-tool-palette" id="pencilPalette"></div>
+
+        <div class="map-tool-popover map-tool-marker-picker" id="markerPicker"></div>
+
+        <div class="map-tools-bar">
+          <button id="mapToolRuler" class="map-tool-button" data-tool="ruler" type="button" title="Ruler" aria-label="Ruler">
+            <span aria-hidden="true">📏</span>
+          </button>
+
+          <button id="mapToolPencil" class="map-tool-button" data-tool="pencil" type="button" title="Pencil" aria-label="Pencil">
+            <span aria-hidden="true">✎</span>
+          </button>
+
+          <button id="mapToolMarker" class="map-tool-button" data-tool="marker" type="button" title="Markers" aria-label="Markers">
+            <span aria-hidden="true">⌖</span>
+          </button>
+        </div>
+
+      </div>
+
       <!-- LEGEND -->
 
       <div class="legend">
@@ -552,7 +578,7 @@
     </a>
 
     <span class="footer-version">
-      (v0.3.5)
+      (v0.4.0)
     </span>
 
   </span>
@@ -573,6 +599,7 @@
 <script src="js/map/map-view.js"></script>
 <script src="js/map/tiles.js"></script>
 <script src="js/map/overlays.js"></script>
+<script src="js/map/map-tools.js"></script>
 <script src="js/map/grid.js"></script>
 <script src="js/map/renderer.js"></script>
 

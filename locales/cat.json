@@ -1,6 +1,6 @@
 {
   "name": "CAT",
-  "flag": "\uD83D\uDC31",
+  "flag": "🐱",
   "title": "WARCATS // MEOWTILLERY PAWCULATOR",
   "gridInfo": "1 km → 10×10 MEOW squares of 100 m",
   "map": "MEOWP",
@@ -53,5 +53,18 @@
   "error": "MEOW ERROR! >:3",
   "success": "MEOW! PAWSOME!",
   "loading": "MEOWING... PLEASE WAIT... PURR...",
-  "ready": "READY TO MEOW :P"
+  "ready": "READY TO MEOW :P",
+  "mapToolRuler": "Meowsure",
+  "mapToolPencil": "Pawcil",
+  "mapToolMarkers": "Pawkers",
+  "mapToolNoMarkerAssets": "No pawker icons found",
+  "mapToolColorDanger": "Hiss / Enemy",
+  "mapToolColorWarning": "Careful / Contested",
+  "mapToolColorObjective": "Treat Target",
+  "mapToolColorFriendly": "Friendly / Spawn",
+  "mapToolColorBase": "Cat Base / Logistics",
+  "mapToolColorUtility": "Utility",
+  "mapToolColorSpecial": "Special",
+  "mapToolColorNeutral": "Neutral",
+  "mapToolColorInactive": "Napping"
 }

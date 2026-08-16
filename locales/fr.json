@@ -47,5 +47,18 @@
   "themeLight": "Clair",
   "themeDark": "Sombre",
   "customMapStatus": "Carte personnalisée",
-  "mapLocked": "Carte prédéfinie sélectionnée — la taille de la grille est verrouillée"
+  "mapLocked": "Carte prédéfinie sélectionnée — la taille de la grille est verrouillée",
+  "mapToolRuler": "Règle",
+  "mapToolPencil": "Crayon",
+  "mapToolMarkers": "Marqueurs",
+  "mapToolNoMarkerAssets": "Aucune icône de marqueur disponible",
+  "mapToolColorDanger": "Danger / Ennemi",
+  "mapToolColorWarning": "Avertissement / Contesté",
+  "mapToolColorObjective": "Objectif",
+  "mapToolColorFriendly": "Allié / Spawn",
+  "mapToolColorBase": "Base / Logistique",
+  "mapToolColorUtility": "Utilitaire",
+  "mapToolColorSpecial": "Spécial",
+  "mapToolColorNeutral": "Neutre",
+  "mapToolColorInactive": "Inactif"
 }

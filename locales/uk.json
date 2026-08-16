@@ -1,17 +1,14 @@
 {
   "name": "Українська",
   "flag": "🇺🇦",
-
   "title": "WARDOGS // АРТИЛЕРІЙСЬКИЙ КАЛЬКУЛЯТОР",
   "gridInfo": "1 км → 10×10 клітинок по 100 м",
-
   "map": "Мапа",
   "presetMap": "Готова мапа",
   "customMap": "Власна мапа",
   "width": "Ширина, км",
   "height": "Висота, км",
   "apply": "Застосувати",
-
   "weapon": "Зброя",
   "weaponType": "Тип зброї",
   "mortar": "Міномет",
@@ -21,25 +18,21 @@
   "inRange": "У межах дальності",
   "outRange": "ПОЗА ДАЛЬНІСТЮ",
   "rangeHint": "Коло показує максимальну дальність обраної зброї від позиції артилерії.",
-
   "pointSelection": "Вибір точки",
   "artillery": "Артилерія",
   "target": "Ціль",
   "artilleryXY": "Артилерія X / Y",
   "targetXY": "Ціль X / Y",
-
   "result": "Результат",
   "azimuth": "АЗИМУТ",
   "distance": "Відстань",
   "meters": "Метрів",
   "azimuthHint": "Азимут: 0° — північ, 90° — схід, 180° — південь, 270° — захід.",
-
   "controls": "Керування",
   "fit": "Вписати мапу",
   "swap": "Поміняти точки",
   "clear": "Скинути",
   "controlsHint": "ЛКМ — поставити точку · Перетягування — перемістити · Колесо — масштаб · ПКМ — переміщення мапи.",
-
   "savedTargets": "Збережені цілі",
   "noSavedTargets": "Немає збережених цілей",
   "saveArtilleryPosition": "Зберегти позицію артилерії",
@@ -47,15 +40,25 @@
   "edit": "Змінити",
   "delete": "Видалити",
   "targetNamePrompt": "Введіть назву цілі:",
-
   "lmb": "ЛКМ",
   "point": "точка",
   "grid": "сітка",
   "majorGrid": "основна лінія",
-
   "themeLight": "Світла",
   "themeDark": "Темна",
-
   "customMapStatus": "Власна мапа",
-  "mapLocked": "Обрано готову мапу — розмір сітки заблоковано"
+  "mapLocked": "Обрано готову мапу — розмір сітки заблоковано",
+  "mapToolRuler": "Лінійка",
+  "mapToolPencil": "Олівець",
+  "mapToolMarkers": "Мітки",
+  "mapToolNoMarkerAssets": "Немає доступних іконок",
+  "mapToolColorDanger": "Небезпека / Ворог",
+  "mapToolColorWarning": "Попередження / Спірна зона",
+  "mapToolColorObjective": "Ціль",
+  "mapToolColorFriendly": "Союзники / Спавн",
+  "mapToolColorBase": "База / Логістика",
+  "mapToolColorUtility": "Службове",
+  "mapToolColorSpecial": "Особливе",
+  "mapToolColorNeutral": "Нейтральне",
+  "mapToolColorInactive": "Неактивне"
 }

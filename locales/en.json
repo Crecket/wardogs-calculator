@@ -1,14 +1,12 @@
 {
   "title": "WARDOGS // ARTILLERY CALCULATOR",
   "gridInfo": "1 km → 10×10 cells of 100 m",
-
   "map": "Map",
   "presetMap": "Preset map",
   "customMap": "Custom map",
   "width": "Width, km",
   "height": "Height, km",
   "apply": "Apply",
-
   "weapon": "Weapon",
   "weaponType": "Weapon type",
   "mortar": "Mortar",
@@ -18,25 +16,21 @@
   "inRange": "In range",
   "outRange": "OUT OF RANGE",
   "rangeHint": "The circle shows the maximum range of the selected weapon from the artillery position.",
-
   "pointSelection": "Point selection",
   "artillery": "Artillery",
   "target": "Target",
   "artilleryXY": "Artillery X / Y",
   "targetXY": "Target X / Y",
-
   "result": "Result",
   "azimuth": "AZIMUTH",
   "distance": "Distance",
   "meters": "Meters",
   "azimuthHint": "Azimuth: 0° north, 90° east, 180° south, 270° west.",
-
   "controls": "Controls",
   "fit": "Fit map",
   "swap": "Swap points",
   "clear": "Reset",
   "controlsHint": "LMB — place point · Drag markers — move points · Scroll — zoom · RMB — move map.",
-
   "savedTargets": "Saved targets",
   "noSavedTargets": "No saved targets",
   "saveArtilleryPosition": "Save artillery position",
@@ -44,12 +38,23 @@
   "edit": "Edit",
   "delete": "Delete",
   "targetNamePrompt": "Enter target name:",
-
   "lmb": "LMB",
   "point": "point",
   "grid": "grid",
   "majorGrid": "major line",
-
   "customMapStatus": "Custom map",
-  "mapLocked": "Preset map selected — grid size is locked"
+  "mapLocked": "Preset map selected — grid size is locked",
+  "mapToolRuler": "Ruler",
+  "mapToolPencil": "Pencil",
+  "mapToolMarkers": "Markers",
+  "mapToolNoMarkerAssets": "No marker assets",
+  "mapToolColorDanger": "Danger / Enemy",
+  "mapToolColorWarning": "Warning / Contested",
+  "mapToolColorObjective": "Objective",
+  "mapToolColorFriendly": "Friendly / Spawn",
+  "mapToolColorBase": "Base / Logistics",
+  "mapToolColorUtility": "Utility",
+  "mapToolColorSpecial": "Special",
+  "mapToolColorNeutral": "Neutral",
+  "mapToolColorInactive": "Inactive"
 }

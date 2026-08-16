@@ -375,6 +375,16 @@ function bindEvents() {
                 return;
             }
 
+            if (
+                handleMapToolMouseDown(
+                    e,
+                    p
+                )
+            ) {
+                drag = null;
+                return;
+            }
+
             const d1 =
                 Math.hypot(
                     p.x -
@@ -455,6 +465,27 @@ function bindEvents() {
                 e
             );
 
+            const toolRect =
+                c.getBoundingClientRect();
+
+            const toolWorld =
+                toWorld(
+                    e.clientX -
+                    toolRect.left,
+                    e.clientY -
+                    toolRect.top
+                );
+
+            if (
+                handleMapToolMouseMove(
+                    e,
+                    toolWorld
+                )
+            ) {
+                drag = null;
+                return;
+            }
+
             if (!drag) {
                 return;
             }
@@ -510,6 +541,8 @@ function bindEvents() {
     window.addEventListener(
         'mouseup',
         () => {
+
+            handleMapToolMouseUp();
 
             drag =
                 null;

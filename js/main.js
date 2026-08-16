@@ -20,6 +20,8 @@ async function init() {
 
         await loadMaps();
 
+        initMapTools();
+
         /*
          * Sync initial state with the
          * selected preset map after the

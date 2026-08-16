@@ -47,5 +47,18 @@
   "themeLight": "Hell",
   "themeDark": "Dunkel",
   "customMapStatus": "Eigene Karte",
-  "mapLocked": "Vorgefertigte Karte ausgewählt — Rastergröße ist gesperrt"
+  "mapLocked": "Vorgefertigte Karte ausgewählt — Rastergröße ist gesperrt",
+  "mapToolRuler": "Lineal",
+  "mapToolPencil": "Stift",
+  "mapToolMarkers": "Marker",
+  "mapToolNoMarkerAssets": "Keine Marker-Symbole verfügbar",
+  "mapToolColorDanger": "Gefahr / Feind",
+  "mapToolColorWarning": "Warnung / Umkämpft",
+  "mapToolColorObjective": "Ziel",
+  "mapToolColorFriendly": "Verbündet / Spawn",
+  "mapToolColorBase": "Basis / Logistik",
+  "mapToolColorUtility": "Versorgung",
+  "mapToolColorSpecial": "Spezial",
+  "mapToolColorNeutral": "Neutral",
+  "mapToolColorInactive": "Inaktiv"
 }

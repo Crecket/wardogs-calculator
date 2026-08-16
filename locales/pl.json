@@ -47,5 +47,18 @@
   "themeLight": "Jasny",
   "themeDark": "Ciemny",
   "customMapStatus": "Własna mapa",
-  "mapLocked": "Wybrano gotową mapę — rozmiar siatki jest zablokowany"
+  "mapLocked": "Wybrano gotową mapę — rozmiar siatki jest zablokowany",
+  "mapToolRuler": "Linijka",
+  "mapToolPencil": "Ołówek",
+  "mapToolMarkers": "Znaczniki",
+  "mapToolNoMarkerAssets": "Brak dostępnych ikon znaczników",
+  "mapToolColorDanger": "Zagrożenie / Wróg",
+  "mapToolColorWarning": "Ostrzeżenie / Sporny",
+  "mapToolColorObjective": "Cel",
+  "mapToolColorFriendly": "Sojuszniczy / Spawn",
+  "mapToolColorBase": "Baza / Logistyka",
+  "mapToolColorUtility": "Użytkowe",
+  "mapToolColorSpecial": "Specjalne",
+  "mapToolColorNeutral": "Neutralne",
+  "mapToolColorInactive": "Nieaktywne"
 }

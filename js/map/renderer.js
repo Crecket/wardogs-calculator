@@ -137,6 +137,13 @@ function draw() {
         currentMap
     );
 
+    /*
+     * User pencil drawings are persistent
+     * map annotations and live below the
+     * artillery solution overlays.
+     */
+    drawMapToolDrawings();
+
     const a =
         worldToLocalScreen(
             S.origin.x,
@@ -243,6 +250,13 @@ function draw() {
     drawPresetMarkers(
         currentMap
     );
+
+    /*
+     * User-placed markers and transient
+     * tool UI are rendered on top.
+     */
+    drawMapToolMarkers();
+    drawMapToolTransient();
 
     ctx.restore();
 

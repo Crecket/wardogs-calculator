@@ -177,6 +177,12 @@ function applyLanguage() {
     updateThemeButton();
     renderSavedTargets();
 
+    if (
+        typeof updateMapToolsLocalization === 'function'
+    ) {
+        updateMapToolsLocalization();
+    }
+
     result();
     draw();
 }
