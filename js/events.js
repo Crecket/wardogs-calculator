@@ -73,15 +73,12 @@ function bindEvents() {
         'change',
         () => {
 
-            LANG =
+            const language =
                 $('language').value;
 
-            localStorage.setItem(
-                'wardogs-language',
-                LANG
+            switchLanguage(
+                language
             );
-
-            applyLanguage();
         }
     );
 

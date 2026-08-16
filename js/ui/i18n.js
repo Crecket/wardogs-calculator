@@ -93,6 +93,23 @@ function detectLanguage() {
             )
         );
 
+    /*
+     * Localized entry pages declare their language
+     * in <html data-page-language="...">.
+     * This takes priority so every language URL
+     * always renders the matching language.
+     */
+    const pageLanguage =
+        document.documentElement
+            .dataset.pageLanguage;
+
+    if (
+        pageLanguage &&
+        available.has(pageLanguage)
+    ) {
+        return pageLanguage;
+    }
+
     const saved =
         localStorage.getItem(
             'wardogs-language'
@@ -153,6 +170,42 @@ function tr(key) {
         fallback?.[key] ??
         key
     );
+}
+
+function getLanguagePageURL(languageId) {
+
+    /*
+     * document.baseURI points at the shared app root.
+     * Localized pages use <base href="../">, so this
+     * also works on GitHub Pages and localhost.
+     */
+    const rootURL =
+        new URL(
+            './',
+            document.baseURI
+        );
+
+    if (languageId === DEFAULT_LANG) {
+        return rootURL.href;
+    }
+
+    return new URL(
+        `${languageId}/`,
+        rootURL
+    ).href;
+}
+
+function switchLanguage(languageId) {
+
+    localStorage.setItem(
+        'wardogs-language',
+        languageId
+    );
+
+    window.location.href =
+        getLanguagePageURL(
+            languageId
+        );
 }
 
 function applyLanguage() {

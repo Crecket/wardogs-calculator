@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 
-<html data-page-language="en" lang="en">
+<html data-page-language="cat" lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/><base href="../"/>
 <script data-website-id="5bf09dda-86d4-43fb-a730-3a8e32351463" defer="" src="https://cloud.umami.is/script.js"></script>
-<title>WARDOGS Artillery Calculator &amp; Interactive Map</title>
+<title>WARDOGS Artillery Calculator</title>
 <link href="https://api.firstlook.gg/public/images/8dca3a99-41e2-4a10-9e53-3aea7e0b4ca1/img.png?v=2&amp;w=64&amp;h=64&amp;s=6Qy3Bex2Asx0JbRb2Nzpc4UpbehZkutpIn8QKUsnYbY" rel="icon"/>
 <link href="style.css" rel="stylesheet"/>
-<meta content="Open-source WARDOGS artillery calculator with an interactive Bakurani map, mortar and SPG solutions, saved targets, ruler, drawing tools, and map markers." name="description"/><meta content="index, follow, max-image-preview:large" name="robots"/><meta content="#101316" name="theme-color"/><link href="https://apollyon-sys.github.io/wardogs-calculator/" rel="canonical"/><link href="https://apollyon-sys.github.io/wardogs-calculator/" hreflang="en" rel="alternate"/><link href="https://apollyon-sys.github.io/wardogs-calculator/ru/" hreflang="ru" rel="alternate"/><link href="https://apollyon-sys.github.io/wardogs-calculator/uk/" hreflang="uk" rel="alternate"/><link href="https://apollyon-sys.github.io/wardogs-calculator/de/" hreflang="de" rel="alternate"/><link href="https://apollyon-sys.github.io/wardogs-calculator/fr/" hreflang="fr" rel="alternate"/><link href="https://apollyon-sys.github.io/wardogs-calculator/es/" hreflang="es" rel="alternate"/><link href="https://apollyon-sys.github.io/wardogs-calculator/pl/" hreflang="pl" rel="alternate"/><link href="https://apollyon-sys.github.io/wardogs-calculator/pt/" hreflang="pt" rel="alternate"/><link href="https://apollyon-sys.github.io/wardogs-calculator/" hreflang="x-default" rel="alternate"/><meta content="website" property="og:type"/><meta content="WARDOGS Artillery Calculator" property="og:site_name"/><meta content="WARDOGS Artillery Calculator &amp; Interactive Map" property="og:title"/><meta content="Open-source WARDOGS artillery calculator with an interactive Bakurani map, mortar and SPG solutions, saved targets, ruler, drawing tools, and map markers." property="og:description"/><meta content="https://apollyon-sys.github.io/wardogs-calculator/" property="og:url"/><meta content="en_GB" property="og:locale"/><meta content="ru_RU" property="og:locale:alternate"/><meta content="uk_UA" property="og:locale:alternate"/><meta content="de_DE" property="og:locale:alternate"/><meta content="fr_FR" property="og:locale:alternate"/><meta content="es_ES" property="og:locale:alternate"/><meta content="pl_PL" property="og:locale:alternate"/><meta content="pt_PT" property="og:locale:alternate"/><meta content="summary" name="twitter:card"/><meta content="WARDOGS Artillery Calculator &amp; Interactive Map" name="twitter:title"/><meta content="Open-source WARDOGS artillery calculator with an interactive Bakurani map, mortar and SPG solutions, saved targets, ruler, drawing tools, and map markers." name="twitter:description"/><script type="application/ld+json">{
+<meta content="Open-source WARDOGS artillery calculator with an interactive Bakurani map, mortar and SPG solutions, saved targets, ruler, drawing tools, and map markers." name="description"/><meta content="noindex, follow" name="robots"/><meta content="#101316" name="theme-color"/><link href="https://apollyon-sys.github.io/wardogs-calculator/cat/" rel="canonical"/><meta content="website" property="og:type"/><meta content="WARDOGS Artillery Calculator" property="og:site_name"/><meta content="WARDOGS Artillery Calculator &amp; Interactive Map" property="og:title"/><meta content="Open-source WARDOGS artillery calculator with an interactive Bakurani map, mortar and SPG solutions, saved targets, ruler, drawing tools, and map markers." property="og:description"/><meta content="https://apollyon-sys.github.io/wardogs-calculator/cat/" property="og:url"/><meta content="summary" name="twitter:card"/><meta content="WARDOGS Artillery Calculator &amp; Interactive Map" name="twitter:title"/><meta content="Open-source WARDOGS artillery calculator with an interactive Bakurani map, mortar and SPG solutions, saved targets, ruler, drawing tools, and map markers." name="twitter:description"/><script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "WebApplication",
   "name": "WARDOGS Artillery Calculator",
-  "url": "https://apollyon-sys.github.io/wardogs-calculator/",
+  "url": "https://apollyon-sys.github.io/wardogs-calculator/cat/",
   "description": "Open-source WARDOGS artillery calculator with an interactive Bakurani map, mortar and SPG solutions, saved targets, ruler, drawing tools, and map markers.",
   "applicationCategory": "GameApplication",
   "operatingSystem": "Any",
@@ -24,8 +24,8 @@
 <body>
 <header>
 <div class="header-title">
-<h1 data-i18n="title">WARDOGS // ARTILLERY CALCULATOR</h1>
-<span data-i18n="gridInfo">1 km → 10×10 cells of 100 m</span>
+<h1 data-i18n="title">WARCATS // MEOWTILLERY PAWCULATOR</h1>
+<span data-i18n="gridInfo">1 km → 10×10 MEOW squares of 100 m</span>
 </div>
 <div class="header-controls">
 <button aria-label="Toggle theme" class="theme-toggle" id="themeToggle" title="Toggle theme" type="button">
@@ -38,60 +38,60 @@
 <aside>
 <!-- MAP -->
 <div class="section">
-<h2 data-i18n="map">Map</h2>
-<label data-i18n="presetMap">Preset map</label>
+<h2 data-i18n="map">MEOWP</h2>
+<label data-i18n="presetMap">PRESET MEOWP</label>
 <select id="mapSelect"></select>
 <div id="customMapSizing">
 <div class="grid2" style="margin-top:7px">
 <div>
-<label data-i18n="width">Width, km</label>
+<label data-i18n="width">MEOWidth, km</label>
 <input id="w" max="100" min="1" type="number" value="10"/>
 </div>
 <div>
-<label data-i18n="height">Height, km</label>
+<label data-i18n="height">MEOWheight, km</label>
 <input id="h" max="100" min="1" type="number" value="10"/>
 </div>
 </div>
-<button class="primary" data-i18n="apply" id="apply" style="margin-top:8px">Apply</button>
+<button class="primary" data-i18n="apply" id="apply" style="margin-top:8px">MEOW!</button>
 </div>
 </div>
 <!-- WEAPON -->
 <div class="section">
-<h2 data-i18n="weapon">Weapon</h2>
-<label data-i18n="weaponType">Weapon type</label>
+<h2 data-i18n="weapon">MEOWPON</h2>
+<label data-i18n="weaponType">WHAT KIND OF MEOWPON?</label>
 <select id="weapon">
-<option data-i18n="mortar" value="mortar">Mortar</option>
-<option data-i18n="spg" value="spg">SPG</option>
+<option data-i18n="mortar" value="mortar">MEOWTAR</option>
+<option data-i18n="spg" value="spg">SPMEOW</option>
 </select>
 <div class="result" style="margin-top:8px">
 <div class="row">
-<span data-i18n="maxRange">Max range</span>
+<span data-i18n="maxRange">MAX MEOWGE</span>
 <b id="range">
             600 m
           </b>
 </div>
 <div class="row">
-<span data-i18n="targetStatus">Target status</span>
+<span data-i18n="targetStatus">TARGET MEOWTUS</span>
 <b id="rangeStatus">
             In range
           </b>
 </div>
 </div>
-<p class="hint" data-i18n="rangeHint">The circle shows the maximum range of the selected weapon from the artillery position.</p>
+<p class="hint" data-i18n="rangeHint">The circle shows how far your MEOWPON can meow.</p>
 </div>
 <!-- POINT SELECTION -->
 <div class="section">
-<h2 data-i18n="pointSelection">Point selection</h2>
+<h2 data-i18n="pointSelection">PICK YOUR PAW-NT</h2>
 <div class="mode">
-<button class="active" data-i18n="artillery" id="originMode">Artillery</button>
-<button data-i18n="target" id="targetMode">Target</button>
+<button class="active" data-i18n="artillery" id="originMode">MEOWTILLERY</button>
+<button data-i18n="target" id="targetMode">MEOWGET</button>
 </div>
-<label data-i18n="artilleryXY">Artillery X / Y</label>
+<label data-i18n="artilleryXY">MEOWTILLERY X / Y</label>
 <div class="grid2">
 <input id="ox" step="0.01" type="number" value="2000"/>
 <input id="oy" step="0.01" type="number" value="2000"/>
 </div>
-<label data-i18n="targetXY">Target X / Y</label>
+<label data-i18n="targetXY">MEOWGET X / Y</label>
 <div class="grid2">
 <input id="tx" step="0.01" type="number" value="2500"/>
 <input id="ty" step="0.01" type="number" value="2500"/>
@@ -99,20 +99,20 @@
 </div>
 <!-- RESULT -->
 <div class="section">
-<h2 data-i18n="result">Result</h2>
+<h2 data-i18n="result">MEOW-SULT :P</h2>
 <div class="result">
-<div class="unit" data-i18n="azimuth">AZIMUTH</div>
+<div class="unit" data-i18n="azimuth">MEOWZIMUTH</div>
 <div class="angle" id="angle">
           45.0°
         </div>
 <div class="row">
-<span data-i18n="distance">Distance</span>
+<span data-i18n="distance">MEOWTANCE</span>
 <b id="dist">
             0.71 km
           </b>
 </div>
 <div class="row">
-<span data-i18n="meters">Meters</span>
+<span data-i18n="meters">MEOWTERS</span>
 <b id="distm">
             707 m
           </b>
@@ -134,11 +134,11 @@
           </b>
 </div>
 </div>
-<p class="hint" data-i18n="azimuthHint">Azimuth: 0° north, 90° east, 180° south, 270° west.</p>
+<p class="hint" data-i18n="azimuthHint">0° MEOWTH, 90° MEOWST, 180° MEOWTH, 270° MEOWEST. PURR PURR.</p>
 </div>
 <!-- CONTROLS -->
 <div class="section">
-<h2 data-i18n="controls">Controls</h2>
+<h2 data-i18n="controls">MEOWNTROLS</h2>
 <div class="grid2">
 <button id="zoomOut">
           −
@@ -147,10 +147,10 @@
           +
         </button>
 </div>
-<button data-i18n="fit" id="fit" style="margin-top:7px">Fit map</button>
-<button data-i18n="swap" id="swap" style="margin-top:7px">Swap points</button>
-<button data-i18n="clear" id="clear" style="margin-top:7px">Reset</button>
-<p class="hint" data-i18n="controlsHint">LMB — place point · Drag markers — move points · Scroll — zoom · RMB — move map.</p>
+<button data-i18n="fit" id="fit" style="margin-top:7px">FIT MEOWP :3</button>
+<button data-i18n="swap" id="swap" style="margin-top:7px">SWAP PAW-NTS</button>
+<button data-i18n="clear" id="clear" style="margin-top:7px">RESET MEOW :(</button>
+<p class="hint" data-i18n="controlsHint">LMB — PLACE PAW · Drag — MOVE MEOW · Scroll — ZOOM · RMB — PAN MEOWP. PURR.</p>
 </div>
 </aside>
 <!-- WORKSPACE -->
@@ -172,7 +172,7 @@
 <!-- SAVED TARGETS -->
 <div class="saved-targets">
 <div class="saved-targets-header">
-<span data-i18n="savedTargets">Saved targets</span>
+<span data-i18n="savedTargets">SAVED MEOWGETS</span>
 <span class="saved-targets-count" id="savedTargetsCount">
       0
     </span>
@@ -181,11 +181,11 @@
 <div class="saved-target-options">
 <label class="save-artillery-option">
 <input id="saveArtilleryPosition" type="checkbox"/>
-<span data-i18n="saveArtilleryPosition">Save artillery position</span>
+<span data-i18n="saveArtilleryPosition">SAVE MEOWTILLERY PAW-SITION</span>
 </label>
 </div>
 <div class="saved-target-actions">
-<button class="save-target-button" data-i18n="save" id="saveTarget" type="button">Save</button>
+<button class="save-target-button" data-i18n="save" id="saveTarget" type="button">SAVE</button>
 </div>
 </div>
 <!-- MAP TOOLS -->
@@ -210,15 +210,15 @@
 
         —
 
-        <span data-i18n="point">point</span>
+        <span data-i18n="point">MEOWPOINT</span>
 
         ·
 
-        <b data-i18n="grid">grid</b>
+        <b data-i18n="grid">MEOWGRID</b>
 
         —
 
-        <span data-i18n="majorGrid">major line</span>
+        <span data-i18n="majorGrid">BIG MEOWLINE</span>
 </div>
 </div>
 </section>
@@ -232,7 +232,7 @@
 <strong>Apollyon</strong>
 </a>
 <span class="footer-version">
-      (v0.4.1)
+      (v0.4.0)
     </span>
 </span>
 </footer>

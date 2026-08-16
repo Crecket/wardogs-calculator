@@ -552,6 +552,30 @@ A modern browser with support for the following is required:
 - CSS custom properties
 - Modern DOM APIs
 
+## Multilingual SEO
+
+The production build exposes dedicated crawlable URLs for each real UI language:
+
+```text
+/          English
+/ru/       Russian
+/uk/       Ukrainian
+/de/       German
+/fr/       French
+/es/       Spanish
+/pl/       Polish
+/pt/       Portuguese
+```
+
+Each page includes a localized title and meta description, a self-referencing canonical URL, reciprocal `hreflang` links (plus `x-default`), Open Graph/Twitter metadata, and Schema.org `WebApplication` structured data. `sitemap.xml` contains every indexable language URL and its language alternates.
+
+The novelty `cat` locale remains available at `/cat/`, but is intentionally marked `noindex` and excluded from `hreflang` and the sitemap because it is not a real Catalan translation.
+
+Language switching navigates between the dedicated language URLs while all pages continue to share the same CSS, JavaScript, maps, tiles, and locale JSON files.
+
+> Note: on a GitHub Pages **project site**, `robots.txt` is served below the project path rather than at the origin root, so crawlers do not treat it as the origin-level robots file. The sitemap and page-level robots metadata remain valid. If the project moves to a custom domain (or an origin where this repository controls `/robots.txt`), the included `robots.txt` can be used directly.
+
+
 ## License
 
 This project is licensed under the **MIT License**. See `LICENSE` for details.
