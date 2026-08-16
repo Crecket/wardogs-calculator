@@ -18,6 +18,8 @@ async function init() {
 
         await loadAppConfig();
 
+        renderFooter();
+
         await loadWeapons();
 
         await loadMapAssets();
