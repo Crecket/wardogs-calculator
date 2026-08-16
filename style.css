@@ -1639,14 +1639,13 @@ canvas.map-tool-pencil-active {
     border-left: 3px solid var(--accent);
     border-radius: 8px;
 
-    background: var(--aside-bg);
     background:
-        color-mix(in srgb, var(--aside-bg) 94%, transparent);
+            color-mix(in srgb, var(--aside-bg) 94%, transparent);
 
     color: var(--text);
 
     box-shadow:
-        0 12px 32px rgba(0, 0, 0, .26);
+            0 12px 32px rgba(0, 0, 0, .26);
 
     backdrop-filter: blur(8px);
 
@@ -1654,18 +1653,18 @@ canvas.map-tool-pencil-active {
     transform: translateY(-8px);
 
     transition:
-        opacity .18s ease,
-        transform .18s ease;
+            opacity .18s ease,
+            transform .18s ease;
 
     pointer-events: auto;
 }
 
-.motd-visible {
+.motd--visible {
     opacity: 1;
     transform: translateY(0);
 }
 
-.motd-hidden {
+.motd--closing {
     opacity: 0;
     transform: translateY(-8px);
 }
@@ -1719,25 +1718,25 @@ canvas.map-tool-pencil-active {
 }
 
 .motd-message {
-    color: var(--text);
-
-    font-size: 12px;
-    line-height: 1.55;
-
     white-space: pre-wrap;
-    overflow-wrap: anywhere;
+    line-height: 1.6;
 }
 
-.motd-dismiss {
+.motd-footer {
+    margin-top: 10px;
+    padding-top: 9px;
+
+    border-top: 1px solid var(--border);
+}
+
+.motd-dismiss-label {
     display: grid;
     grid-template-columns: 16px minmax(0, 1fr);
     align-items: center;
     gap: 8px;
 
-    margin: 10px 0 0;
-    padding: 9px 0 0;
-
-    border-top: 1px solid var(--border);
+    margin: 0;
+    padding: 0;
 
     color: var(--muted);
 
@@ -1747,7 +1746,7 @@ canvas.map-tool-pencil-active {
     cursor: pointer;
 }
 
-.motd-dismiss input[type="checkbox"] {
+.motd-dismiss-checkbox {
     appearance: auto;
 
     width: 16px;

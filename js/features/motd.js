@@ -1,82 +1,54 @@
-/* =========================
-   MESSAGE OF THE DAY
-   ========================= */
+const MOTD_DISMISSED_PREFIX = 'wardogs-motd-dismissed:';
 
-let MOTD = null;
-let motdElement = null;
-
-const MOTD_DISMISSED_PREFIX =
-    'wardogs-motd-dismissed:';
-
-function motdText(value) {
-
-    if (
-        value &&
-        typeof value === 'object' &&
-        !Array.isArray(value)
-    ) {
-        return (
-            value[LANG] ??
-            value[DEFAULT_LANG] ??
-            Object.values(value)[0] ??
-            ''
-        );
+function getLocalizedMotdValue(value) {
+    if (typeof value === 'string') {
+        return value;
     }
 
-    return typeof value === 'string'
-        ? value
-        : '';
-}
-
-function getMotdDismissKey() {
-
-    if (!MOTD?.id) {
-        return null;
+    if (!value || typeof value !== 'object') {
+        return '';
     }
 
     return (
-        MOTD_DISMISSED_PREFIX +
-        MOTD.id
+        value[LANG] ??
+        value[DEFAULT_LANG] ??
+        value.en ??
+        Object.values(value).find(
+            item => typeof item === 'string'
+        ) ??
+        ''
     );
 }
 
-function isMotdDismissed() {
-
-    const key =
-        getMotdDismissKey();
-
-    return Boolean(
-        key &&
-        localStorage.getItem(key) === 'true'
-    );
+function formatMotdMessage(message) {
+    return String(message ?? '')
+        .replace(/\\n/g, '\n');
 }
 
-function isMotdWithinSchedule() {
+function isMotdActive(motd) {
+    if (!motd || motd.enabled !== true) {
+        return false;
+    }
 
-    const now =
-        Date.now();
+    const now = Date.now();
 
-    if (MOTD?.startsAt) {
-
-        const startsAt =
-            Date.parse(MOTD.startsAt);
+    if (motd.startsAt) {
+        const startsAt = Date.parse(motd.startsAt);
 
         if (
-            Number.isFinite(startsAt) &&
+            !Number.isNaN(startsAt) &&
             now < startsAt
         ) {
             return false;
         }
     }
 
-    if (MOTD?.endsAt) {
-
-        const endsAt =
-            Date.parse(MOTD.endsAt);
+    if (motd.endsAt) {
+        const endsAt = Date.parse(motd.endsAt);
 
         if (
-            Number.isFinite(endsAt) &&
-            now > endsAt
+            !Number.isNaN(endsAt) &&
+            now >= endsAt
         ) {
             return false;
         }
@@ -85,228 +57,321 @@ function isMotdWithinSchedule() {
     return true;
 }
 
-function shouldShowMotd() {
-
-    return Boolean(
-        MOTD &&
-        MOTD.enabled !== false &&
-        MOTD.id &&
-        motdText(MOTD.message).trim() &&
-        isMotdWithinSchedule() &&
-        !isMotdDismissed()
-    );
+function getMotdStorageKey(id) {
+    return `${MOTD_DISMISSED_PREFIX}${id}`;
 }
 
-function closeMotd() {
+function isMotdDismissed(id) {
+    if (!id) {
+        return false;
+    }
 
-    if (!motdElement) {
+    try {
+        return (
+            localStorage.getItem(
+                getMotdStorageKey(id)
+            ) === 'true'
+        );
+    } catch (error) {
+        console.warn(
+            'Failed to read MOTD state:',
+            error
+        );
+
+        return false;
+    }
+}
+
+function dismissMotd(id) {
+    if (!id) {
         return;
     }
 
-    motdElement.classList.add(
-        'motd-hidden'
+    try {
+        localStorage.setItem(
+            getMotdStorageKey(id),
+            'true'
+        );
+    } catch (error) {
+        console.warn(
+            'Failed to save MOTD state:',
+            error
+        );
+    }
+}
+
+function removeExistingMotd() {
+    document
+        .querySelectorAll('.motd')
+        .forEach(
+            element => {
+                element.remove();
+            }
+        );
+}
+
+function closeMotd(
+    container,
+    motd,
+    dontShowAgain
+) {
+    if (
+        dontShowAgain?.checked &&
+        motd.id
+    ) {
+        dismissMotd(
+            motd.id
+        );
+    }
+
+    container.classList.add(
+        'motd--closing'
     );
 
-    const element =
-        motdElement;
-
-    motdElement = null;
-
     window.setTimeout(
-        () => element.remove(),
-        180
+        () => {
+            container.remove();
+        },
+        150
     );
 }
 
-function createMotdElement() {
+function createMotd(motd) {
+    removeExistingMotd();
 
-    const card =
-        document.createElement('aside');
+    const container =
+        document.createElement(
+            'aside'
+        );
 
-    card.className =
+    container.className =
         'motd';
 
-    card.setAttribute(
+    container.setAttribute(
         'role',
         'status'
     );
 
-    card.setAttribute(
+    container.setAttribute(
         'aria-live',
         'polite'
     );
 
     const header =
-        document.createElement('div');
+        document.createElement(
+            'div'
+        );
 
     header.className =
         'motd-header';
 
     const title =
-        document.createElement('div');
+        document.createElement(
+            'div'
+        );
 
     title.className =
         'motd-title';
 
-    const close =
-        document.createElement('button');
+    title.textContent =
+        getLocalizedMotdValue(
+            motd.title
+        ) ||
+        'Message';
 
-    close.type = 'button';
-    close.className =
+    const closeButton =
+        document.createElement(
+            'button'
+        );
+
+    closeButton.className =
         'motd-close';
-    close.textContent = '×';
 
-    close.addEventListener(
-        'click',
-        closeMotd
+    closeButton.type =
+        'button';
+
+    closeButton.textContent =
+        '×';
+
+    closeButton.setAttribute(
+        'aria-label',
+        tr('close')
     );
 
-    header.appendChild(title);
-    header.appendChild(close);
+    closeButton.title =
+        tr('close');
+
+    header.append(
+        title,
+        closeButton
+    );
 
     const message =
-        document.createElement('div');
+        document.createElement(
+            'div'
+        );
 
     message.className =
         'motd-message';
 
+    message.textContent =
+        formatMotdMessage(
+            getLocalizedMotdValue(
+                motd.message
+            )
+        );
+
     const footer =
-        document.createElement('label');
+        document.createElement(
+            'div'
+        );
 
     footer.className =
-        'motd-dismiss';
+        'motd-footer';
 
-    const checkbox =
-        document.createElement('input');
+    const dontShowLabel =
+        document.createElement(
+            'label'
+        );
 
-    checkbox.type =
+    dontShowLabel.className =
+        'motd-dismiss-label';
+
+    const dontShowAgain =
+        document.createElement(
+            'input'
+        );
+
+    dontShowAgain.type =
         'checkbox';
 
-    checkbox.addEventListener(
-        'change',
+    dontShowAgain.className =
+        'motd-dismiss-checkbox';
+
+    const dontShowText =
+        document.createElement(
+            'span'
+        );
+
+    dontShowText.textContent =
+        tr('motdDontShowAgain');
+
+    dontShowLabel.append(
+        dontShowAgain,
+        dontShowText
+    );
+
+    footer.appendChild(
+        dontShowLabel
+    );
+
+    container.append(
+        header,
+        message,
+        footer
+    );
+
+    closeButton.addEventListener(
+        'click',
         () => {
 
-            const key =
-                getMotdDismissKey();
-
-            if (!key) {
-                return;
-            }
-
-            if (checkbox.checked) {
-                localStorage.setItem(
-                    key,
-                    'true'
-                );
-            } else {
-                localStorage.removeItem(
-                    key
-                );
-            }
+            closeMotd(
+                container,
+                motd,
+                dontShowAgain
+            );
         }
     );
 
-    const dismissText =
-        document.createElement('span');
-
-    footer.appendChild(checkbox);
-    footer.appendChild(dismissText);
-
-    card.appendChild(header);
-    card.appendChild(message);
-    card.appendChild(footer);
-
-    card._motd = {
-        title,
-        message,
-        close,
-        dismissText
-    };
-
-    return card;
-}
-
-function updateMotdLocalization() {
-
-    if (!motdElement) {
-        return;
-    }
-
-    const refs =
-        motdElement._motd;
-
-    if (!refs) {
-        return;
-    }
-
-    refs.title.textContent =
-        motdText(MOTD.title) ||
-        tr('motdTitle');
-
-    refs.message.textContent =
-        motdText(MOTD.message);
-
-    refs.dismissText.textContent =
-        tr('motdDontShowAgain');
-
-    refs.close.title =
-        tr('motdClose');
-
-    refs.close.setAttribute(
-        'aria-label',
-        tr('motdClose')
-    );
-}
-
-function renderMotd() {
-
-    if (!shouldShowMotd()) {
-        return;
-    }
-
-    if (motdElement) {
-        motdElement.remove();
-    }
-
-    motdElement =
-        createMotdElement();
-
-    updateMotdLocalization();
-
     document.body.appendChild(
-        motdElement
+        container
     );
 
     requestAnimationFrame(
         () => {
-            motdElement?.classList.add(
-                'motd-visible'
+
+            container.classList.add(
+                'motd--visible'
             );
         }
     );
+
+    return container;
 }
 
 async function loadMotd() {
-
     try {
-
-        MOTD =
-            await fetchJSON(
-                'data/motd.json'
+        const response =
+            await fetch(
+                resourceURL(
+                    'data/motd.json'
+                ),
+                {
+                    cache: 'no-store'
+                }
             );
 
-        renderMotd();
+        if (!response.ok) {
+            if (
+                response.status !== 404
+            ) {
+                console.warn(
+                    `Failed to load MOTD: ${response.status}`
+                );
+            }
+
+            return null;
+        }
+
+        const motd =
+            await response.json();
+
+        if (
+            !isMotdActive(
+                motd
+            )
+        ) {
+            return null;
+        }
+
+        if (!motd.id) {
+            console.warn(
+                'MOTD is enabled but has no id.'
+            );
+
+            return null;
+        }
+
+        if (
+            isMotdDismissed(
+                motd.id
+            )
+        ) {
+            return null;
+        }
+
+        return motd;
 
     } catch (error) {
 
-        /*
-         * MOTD is optional. A missing or
-         * malformed file must never prevent
-         * the calculator from starting.
-         */
         console.warn(
             'Failed to load MOTD:',
             error
         );
+
+        return null;
     }
+}
+
+async function initMotd() {
+    const motd =
+        await loadMotd();
+
+    if (!motd) {
+        return;
+    }
+
+    createMotd(
+        motd
+    );
 }

@@ -54,7 +54,10 @@ async function init() {
 
         applyLanguage();
 
-        await loadMotd();
+        /*
+         * Load and display MOTD.
+         */
+        await initMotd();
 
         inputs();
 
