@@ -1495,3 +1495,126 @@ canvas.map-tool-active {
 canvas.map-tool-pencil-active {
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M4 20l4.5-1 10-10-3.5-3.5-10 10z' fill='%23d7a452' stroke='%23101316' stroke-width='1.5'/%3E%3C/svg%3E") 3 21, crosshair;
 }
+
+
+/* =========================
+   MAP TOOLS — SEARCH / LEGEND
+   ========================= */
+
+.map-tool-coordinate-search {
+    width: 238px;
+    gap: 8px;
+}
+
+.map-tool-popover-title {
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.map-tool-search-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.map-tool-search-grid input {
+    min-width: 0;
+    width: 100%;
+}
+
+.map-tool-search-go {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--accent-border);
+    border-radius: 6px;
+    background: var(--active-bg);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.map-tool-search-go:hover {
+    background: var(--input-hover-bg);
+}
+
+.map-tool-search-error {
+    min-height: 12px;
+    color: #d86666;
+    font-size: 10px;
+}
+
+.map-tool-legend {
+    width: 220px;
+    gap: 4px;
+    padding: 10px;
+}
+
+.map-tool-legend .map-tool-popover-title {
+    margin: 0 0 4px;
+    padding: 0 2px 7px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.map-layer-toggle {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 10px;
+
+    width: 100%;
+    min-height: 34px;
+
+    margin: 0;
+    padding: 6px 7px;
+
+    border-radius: 6px;
+
+    color: var(--text);
+    font-size: 11px;
+    line-height: 1.25;
+
+    cursor: pointer;
+}
+
+.map-layer-toggle:hover {
+    background: var(--input-hover-bg);
+}
+
+.map-layer-toggle input[type="checkbox"] {
+    appearance: auto;
+
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    min-height: 16px;
+
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+    border-radius: 3px;
+
+    accent-color: var(--accent);
+
+    cursor: pointer;
+}
+
+.map-layer-toggle span {
+    display: block;
+    min-width: 0;
+    margin: 0;
+
+    color: var(--text);
+    text-align: left;
+    white-space: normal;
+}
+
+.map-tool-shortcuts-hint {
+    margin: 4px 0 8px;
+    font-size: 10px;
+    line-height: 1.35;
+    color: var(--muted);
+    white-space: nowrap;
+}

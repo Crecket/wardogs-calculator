@@ -34,7 +34,23 @@ const MAP_TOOL_STATE = {
 
     hoverPathId: null,
     hoverDeletePoint: null,
-    hoverMarkerId: null
+    hoverMarkerId: null,
+
+    searchPoint: null,
+
+    undoStack: [],
+    redoStack: [],
+
+    layers: {
+        tiles: true,
+        grid: true,
+        zones: true,
+        polygons: true,
+        presetMarkers: true,
+        drawings: true,
+        userMarkers: true,
+        artillery: true
+    }
 };
 
 function mapToolId() {
@@ -49,13 +65,62 @@ function currentMapToolMapId() {
     return S.map || 'custom';
 }
 
+function snapshotMapToolContent() {
+    return {
+        drawings: structuredClone(MAP_TOOL_STATE.drawings),
+        markers: structuredClone(MAP_TOOL_STATE.markers)
+    };
+}
+
+function restoreMapToolContent(snapshot) {
+    MAP_TOOL_STATE.drawings = structuredClone(snapshot.drawings || []);
+    MAP_TOOL_STATE.markers = structuredClone(snapshot.markers || []);
+    MAP_TOOL_STATE.hoverPathId = null;
+    MAP_TOOL_STATE.hoverDeletePoint = null;
+    MAP_TOOL_STATE.hoverMarkerId = null;
+    saveMapToolState();
+    draw();
+}
+
+function pushMapToolHistory() {
+    MAP_TOOL_STATE.undoStack.push(snapshotMapToolContent());
+    if (MAP_TOOL_STATE.undoStack.length > 100) MAP_TOOL_STATE.undoStack.shift();
+    MAP_TOOL_STATE.redoStack = [];
+}
+
+function undoMapToolAction() {
+    if (!MAP_TOOL_STATE.undoStack.length) return false;
+    MAP_TOOL_STATE.redoStack.push(snapshotMapToolContent());
+    restoreMapToolContent(MAP_TOOL_STATE.undoStack.pop());
+    return true;
+}
+
+function redoMapToolAction() {
+    if (!MAP_TOOL_STATE.redoStack.length) return false;
+    MAP_TOOL_STATE.undoStack.push(snapshotMapToolContent());
+    restoreMapToolContent(MAP_TOOL_STATE.redoStack.pop());
+    return true;
+}
+
+function matchesConfiguredCombo(event, combo) {
+    if (!combo) return false;
+    const parts = String(combo).toLowerCase().split('+').map(part => part.trim());
+    const key = parts.pop();
+    return String(event.key || '').toLowerCase() === key &&
+        event.ctrlKey === parts.includes('ctrl') &&
+        event.metaKey === parts.includes('meta') &&
+        event.altKey === parts.includes('alt') &&
+        event.shiftKey === parts.includes('shift');
+}
+
 function saveMapToolState() {
     try {
         localStorage.setItem(
             MAP_TOOLS_STORAGE_KEY,
             JSON.stringify({
                 drawings: MAP_TOOL_STATE.drawings,
-                markers: MAP_TOOL_STATE.markers
+                markers: MAP_TOOL_STATE.markers,
+                layers: MAP_TOOL_STATE.layers
             })
         );
     } catch (error) {
@@ -90,6 +155,13 @@ function loadMapToolState() {
                 ? parsed.markers
                 : [];
 
+        if (parsed?.layers && typeof parsed.layers === 'object') {
+            MAP_TOOL_STATE.layers = {
+                ...MAP_TOOL_STATE.layers,
+                ...parsed.layers
+            };
+        }
+
     } catch (error) {
         console.warn(
             'Failed to load map tools state:',
@@ -121,7 +193,7 @@ function setMapTool(tool) {
 }
 
 function closeMapToolMenus(except = null) {
-    ['pencilPalette', 'markerPicker'].forEach(
+    ['pencilPalette', 'markerPicker', 'coordinateSearchPopover', 'mapLegendPopover'].forEach(
         id => {
             if (id === except) {
                 return;
@@ -190,7 +262,7 @@ function updateMapToolsUI() {
     if (c) {
         c.classList.toggle(
             'map-tool-active',
-            Boolean(MAP_TOOL_STATE.tool)
+            ['ruler', 'pencil', 'marker'].includes(MAP_TOOL_STATE.tool)
         );
 
         c.classList.toggle(
@@ -340,29 +412,275 @@ function buildMarkerPicker() {
     });
 }
 
+function formatShortcut(action) {
+    const shortcut = getMapToolShortcut(action);
+
+    if (!shortcut) {
+        return '';
+    }
+
+    if (shortcut === 'escape') {
+        return 'Esc';
+    }
+
+    return shortcut.length === 1
+        ? shortcut.toUpperCase()
+        : shortcut;
+}
+
+function setToolButtonLabel(button, key, shortcutAction = null) {
+    if (!button) {
+        return;
+    }
+
+    const label = tr(key);
+    const shortcut = shortcutAction
+        ? formatShortcut(shortcutAction)
+        : '';
+    const fullLabel = shortcut
+        ? `${label} (${shortcut})`
+        : label;
+
+    button.title = fullLabel;
+    button.setAttribute('aria-label', fullLabel);
+}
+
+function isMapLayerVisible(layer) {
+    return MAP_TOOL_STATE.layers[layer] !== false;
+}
+
+function setMapLayerVisible(layer, visible) {
+    if (!(layer in MAP_TOOL_STATE.layers)) {
+        return;
+    }
+
+    MAP_TOOL_STATE.layers[layer] = Boolean(visible);
+    saveMapToolState();
+    draw();
+}
+
+function buildMapLegend() {
+    const container = $('mapLegendPopover');
+
+    if (!container) {
+        return;
+    }
+
+    const layers = [
+        ['tiles', 'mapLegendMap'],
+        ['grid', 'mapLegendGrid'],
+        ['zones', 'mapLegendZones'],
+        ['polygons', 'mapLegendPolygons'],
+        ['presetMarkers', 'mapLegendPresetMarkers'],
+        ['drawings', 'mapLegendDrawings'],
+        ['userMarkers', 'mapLegendUserMarkers'],
+        ['artillery', 'mapLegendArtillery']
+    ];
+
+    container.innerHTML = '';
+
+    const title = document.createElement('div');
+    title.className = 'map-tool-popover-title';
+    title.textContent = tr('mapToolLegend');
+    container.appendChild(title);
+
+    const shortcutHint = document.createElement('div');
+    shortcutHint.className = 'map-tool-shortcuts-hint';
+    shortcutHint.textContent = tr('mapToolUndoRedoHint')
+        .replace('{undo}', formatShortcut('undo'))
+        .replace('{redo}', formatShortcut('redo'));
+    shortcutHint.title = `${tr('mapToolUndo')} / ${tr('mapToolRedo')}`;
+    container.appendChild(shortcutHint);
+
+    layers.forEach(([id, key]) => {
+        const label = document.createElement('label');
+        label.className = 'map-layer-toggle';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isMapLayerVisible(id);
+        checkbox.addEventListener('change', () => {
+            setMapLayerVisible(id, checkbox.checked);
+        });
+
+        const text = document.createElement('span');
+        text.textContent = tr(key);
+
+        label.appendChild(checkbox);
+        label.appendChild(text);
+        container.appendChild(label);
+    });
+}
+
+function centerMapOnWorldPoint(point) {
+    if (!isWorldPointInsideMap(point)) {
+        return false;
+    }
+
+    const rect = c.getBoundingClientRect();
+    const current = toScreen(point.x, point.y);
+
+    S.panX += rect.width / 2 - current.x;
+    S.panY += rect.height / 2 - current.y;
+
+    MAP_TOOL_STATE.searchPoint = {
+        x: point.x,
+        y: point.y
+    };
+
+    draw();
+    return true;
+}
+
+function submitCoordinateSearch() {
+    const xInput = $('coordinateSearchX');
+    const yInput = $('coordinateSearchY');
+    const error = $('coordinateSearchError');
+
+    const xMeters = Number(xInput?.value);
+    const yMeters = Number(yInput?.value);
+
+    if (!Number.isFinite(xMeters) || !Number.isFinite(yMeters)) {
+        if (error) error.textContent = tr('mapToolSearchInvalid');
+        return;
+    }
+
+    const point = {
+        x: xMeters / 1000,
+        y: yMeters / 1000
+    };
+
+    if (!centerMapOnWorldPoint(point)) {
+        if (error) error.textContent = tr('mapToolSearchOutOfBounds');
+        return;
+    }
+
+    if (error) error.textContent = '';
+    closeMapToolMenus();
+}
+
+function updateCoordinateSearchDefaults() {
+    const xInput = $('coordinateSearchX');
+    const yInput = $('coordinateSearchY');
+
+    if (!xInput || !yInput) {
+        return;
+    }
+
+    const bounds = getViewBounds();
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
+
+    if (!xInput.value) xInput.value = Math.round(centerX * 1000);
+    if (!yInput.value) yInput.value = Math.round(centerY * 1000);
+}
+
+function handleMapToolShortcut(event) {
+    const target = event.target;
+
+    if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable
+    ) {
+        return false;
+    }
+
+    const undoShortcut = getMapToolShortcut('undo') || 'ctrl+z';
+    const redoShortcut = getMapToolShortcut('redo') || 'ctrl+y';
+    const redoAltShortcut = getMapToolShortcut('redoAlt') || 'ctrl+shift+z';
+
+    if (matchesConfiguredCombo(event, undoShortcut)) return undoMapToolAction();
+    if (matchesConfiguredCombo(event, redoShortcut) || matchesConfiguredCombo(event, redoAltShortcut)) {
+        return redoMapToolAction();
+    }
+
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+        return false;
+    }
+
+    const key = String(event.key || '').toLowerCase();
+    const shortcuts = {
+        ruler: getMapToolShortcut('ruler'),
+        pencil: getMapToolShortcut('pencil'),
+        marker: getMapToolShortcut('marker'),
+        coordinateSearch: getMapToolShortcut('coordinateSearch'),
+        legend: getMapToolShortcut('legend'),
+        clearTool: getMapToolShortcut('clearTool')
+    };
+
+    if (key === shortcuts.clearTool) {
+        MAP_TOOL_STATE.tool = null;
+        MAP_TOOL_STATE.searchPoint = null;
+        closeMapToolMenus();
+        updateMapToolsUI();
+        draw();
+        return true;
+    }
+
+    if (key === shortcuts.ruler) {
+        closeMapToolMenus();
+        setMapTool('ruler');
+        return true;
+    }
+
+    if (key === shortcuts.pencil) {
+        MAP_TOOL_STATE.tool = 'pencil';
+        updateMapToolsUI();
+        toggleMapToolMenu('pencilPalette');
+        return true;
+    }
+
+    if (key === shortcuts.marker) {
+        MAP_TOOL_STATE.tool = 'marker';
+        updateMapToolsUI();
+        toggleMapToolMenu('markerPicker');
+        return true;
+    }
+
+    if (key === shortcuts.coordinateSearch) {
+        MAP_TOOL_STATE.tool = 'coordinateSearch';
+        updateMapToolsUI();
+        updateCoordinateSearchDefaults();
+        toggleMapToolMenu('coordinateSearchPopover');
+        $('coordinateSearchX')?.focus();
+        return true;
+    }
+
+    if (key === shortcuts.legend) {
+        MAP_TOOL_STATE.tool = 'legend';
+        updateMapToolsUI();
+        buildMapLegend();
+        toggleMapToolMenu('mapLegendPopover');
+        return true;
+    }
+
+    return false;
+}
+
 function updateMapToolsLocalization() {
     const rulerButton = $('mapToolRuler');
     const pencilButton = $('mapToolPencil');
     const markerButton = $('mapToolMarker');
+    const searchButton = $('mapToolCoordinateSearch');
+    const legendButton = $('mapToolLegend');
 
-    const labels = [
-        [rulerButton, 'mapToolRuler'],
-        [pencilButton, 'mapToolPencil'],
-        [markerButton, 'mapToolMarkers']
-    ];
-
-    labels.forEach(([button, key]) => {
-        if (!button) {
-            return;
-        }
-
-        const label = tr(key);
-        button.title = label;
-        button.setAttribute('aria-label', label);
-    });
+    setToolButtonLabel(rulerButton, 'mapToolRuler', 'ruler');
+    setToolButtonLabel(pencilButton, 'mapToolPencil', 'pencil');
+    setToolButtonLabel(markerButton, 'mapToolMarkers', 'marker');
+    setToolButtonLabel(searchButton, 'mapToolCoordinateSearch', 'coordinateSearch');
+    setToolButtonLabel(legendButton, 'mapToolLegend', 'legend');
 
     buildPencilPalette();
     buildMarkerPicker();
+    buildMapLegend();
+
+    const goButton = $('coordinateSearchGo');
+    if (goButton) goButton.textContent = tr('mapToolSearchGo');
+    const searchTitle = $('coordinateSearchTitle');
+    if (searchTitle) searchTitle.textContent = tr('mapToolCoordinateSearch');
+
     updateMapToolsUI();
 }
 
@@ -376,6 +694,10 @@ function initMapTools() {
         $('mapToolPencil');
     const markerButton =
         $('mapToolMarker');
+    const searchButton =
+        $('mapToolCoordinateSearch');
+    const legendButton =
+        $('mapToolLegend');
 
     rulerButton?.addEventListener(
         'click',
@@ -425,6 +747,46 @@ function initMapTools() {
             );
         }
     );
+
+    searchButton?.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+            MAP_TOOL_STATE.tool = 'coordinateSearch';
+            updateMapToolsUI();
+            updateCoordinateSearchDefaults();
+            toggleMapToolMenu('coordinateSearchPopover');
+            $('coordinateSearchX')?.focus();
+        }
+    );
+
+    legendButton?.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+            MAP_TOOL_STATE.tool = 'legend';
+            updateMapToolsUI();
+            buildMapLegend();
+            toggleMapToolMenu('mapLegendPopover');
+        }
+    );
+
+    $('coordinateSearchGo')?.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+            submitCoordinateSearch();
+        }
+    );
+
+    ['coordinateSearchX', 'coordinateSearchY'].forEach(id => {
+        $(id)?.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                submitCoordinateSearch();
+            }
+        });
+    });
 
     document.addEventListener(
         'click',
@@ -505,6 +867,8 @@ function placeMapToolMarker(point) {
         return;
     }
 
+    pushMapToolHistory();
+
     MAP_TOOL_STATE.markers.push({
         id: mapToolId(),
         mapId: currentMapToolMapId(),
@@ -524,6 +888,8 @@ function deleteHoveredPencilPath() {
 
     const before =
         MAP_TOOL_STATE.drawings.length;
+
+    pushMapToolHistory();
 
     MAP_TOOL_STATE.drawings =
         MAP_TOOL_STATE.drawings.filter(
@@ -568,6 +934,8 @@ function deleteHoveredMapToolMarker() {
 
     const before =
         MAP_TOOL_STATE.markers.length;
+
+    pushMapToolHistory();
 
     MAP_TOOL_STATE.markers =
         MAP_TOOL_STATE.markers.filter(
@@ -895,6 +1263,7 @@ function handleMapToolMouseUp() {
             path &&
             path.points.length >= 2
         ) {
+            pushMapToolHistory();
             MAP_TOOL_STATE.drawings.push(
                 path
             );
@@ -1430,7 +1799,34 @@ function drawMarkerDeleteAffordance() {
     ctx.restore();
 }
 
+function drawCoordinateSearchPoint() {
+    const point = MAP_TOOL_STATE.searchPoint;
+
+    if (!point || !isWorldPointInsideMap(point)) {
+        return;
+    }
+
+    const pos = worldToLocalScreen(point.x, point.y);
+
+    ctx.save();
+    ctx.strokeStyle = '#d7a452';
+    ctx.fillStyle = 'rgba(215,164,82,.16)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x - 18, pos.y);
+    ctx.lineTo(pos.x + 18, pos.y);
+    ctx.moveTo(pos.x, pos.y - 18);
+    ctx.lineTo(pos.x, pos.y + 18);
+    ctx.stroke();
+    ctx.restore();
+}
+
 function drawMapToolTransient() {
+    drawCoordinateSearchPoint();
     drawRulerOverlay();
     drawPencilDeleteAffordance();
     drawMarkerDeleteAffordance();

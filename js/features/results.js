@@ -4,6 +4,12 @@
 
 function result() {
 
+    const weapon = WEAPONS[S.weapon];
+
+    if (!weapon) {
+        return;
+    }
+
     const dx =
         S.target.x -
         S.origin.x;
@@ -85,12 +91,12 @@ function result() {
 
     const inRange =
         d <=
-        WEAPONS[S.weapon].range +
+        weapon.range +
         1e-9;
 
     $('range').textContent =
         Math.round(
-            WEAPONS[S.weapon].range *
+            weapon.range *
             1000
         ) +
         ' m';
@@ -113,7 +119,7 @@ function result() {
             S.map;
 
     $('status').textContent =
-        `${tr(WEAPONS[S.weapon].nameKey)} · ` +
+        `${getWeaponName(weapon)} · ` +
         `${mapName} · ` +
         `${tr('artillery')}: ` +
         `${formatCoord(

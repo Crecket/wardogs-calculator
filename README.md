@@ -583,3 +583,16 @@ This project is licensed under the **MIT License**. See `LICENSE` for details.
 ## Disclaimer
 
 This is a fan-made community tool for **WARDOGS**. It is not affiliated with or endorsed by the game's developers or publisher.
+
+
+## Configurable Map Tool Shortcuts
+
+Keyboard shortcuts are configured in `config/app.json`. The default bindings are `R` ruler, `P` pencil, `M` markers, `F` coordinate search, `L` legend, and `Esc` to leave the active tool.
+
+## Weapon Data
+
+Weapon definitions are stored in `data/weapons.json`, so ranges and additional weapons can be updated without editing JavaScript. `rangeKm` is expressed in kilometers.
+
+## Coordinate Search and Layer Legend
+
+The Map Tools toolbar includes coordinate search (X/Y in meters) and a legend/layer menu. The legend can independently show or hide map tiles, grid, zones, polygons, preset markers, drawings, user markers, and artillery overlays. Layer visibility is persisted locally.

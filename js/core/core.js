@@ -1,14 +1,5 @@
-const WEAPONS = {
-    mortar: {
-        nameKey: 'mortar',
-        range: 0.6
-    },
-
-    spg: {
-        nameKey: 'spg',
-        range: 2
-    }
-};
+let WEAPONS = {};
+let APP_CONFIG = {};
 
 const S = {
     w: 16,
@@ -20,7 +11,7 @@ const S = {
 
     map: 'bakurani',
 
-    weapon: 'mortar',
+    weapon: null,
 
     origin: {
         x: 5,

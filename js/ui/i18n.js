@@ -228,6 +228,10 @@ function applyLanguage() {
 
     updatePresetLock();
     updateThemeButton();
+
+    if (typeof populateWeaponSelect === 'function' && Object.keys(WEAPONS).length) {
+        populateWeaponSelect();
+    }
     renderSavedTargets();
 
     if (

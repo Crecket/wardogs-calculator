@@ -1,0 +1,35 @@
+{
+  "default": "mortar",
+  "weapons": [
+    {
+      "id": "mortar",
+      "rangeKm": 0.6,
+      "names": {
+        "en": "Mortar",
+        "ru": "Миномёт",
+        "uk": "Міномет",
+        "de": "Mörser",
+        "fr": "Mortier",
+        "es": "Mortero",
+        "pl": "Moździerz",
+        "pt": "Morteiro",
+        "cat": "MEOWTAR"
+      }
+    },
+    {
+      "id": "spg",
+      "rangeKm": 2.0,
+      "names": {
+        "en": "SPG",
+        "ru": "SPG",
+        "uk": "SPG",
+        "de": "SPG",
+        "fr": "SPG",
+        "es": "SPG",
+        "pl": "SPG",
+        "pt": "SPG",
+        "cat": "SPMEOW"
+      }
+    }
+  ]
+}

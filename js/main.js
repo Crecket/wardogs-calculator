@@ -16,6 +16,10 @@ async function init() {
 
         await loadLanguages();
 
+        await loadAppConfig();
+
+        await loadWeapons();
+
         await loadMapAssets();
 
         await loadMaps();

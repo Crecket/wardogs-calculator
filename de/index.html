@@ -59,10 +59,7 @@
 <div class="section">
 <h2 data-i18n="weapon">Waffe</h2>
 <label data-i18n="weaponType">Waffentyp</label>
-<select id="weapon">
-<option data-i18n="mortar" value="mortar">Mörser</option>
-<option data-i18n="spg" value="spg">SPG</option>
-</select>
+<select id="weapon"></select>
 <div class="result" style="margin-top:8px">
 <div class="row">
 <span data-i18n="maxRange">Max. Reichweite</span>
@@ -192,6 +189,16 @@
 <div class="map-tools" id="mapTools">
 <div class="map-tool-popover map-tool-palette" id="pencilPalette"></div>
 <div class="map-tool-popover map-tool-marker-picker" id="markerPicker"></div>
+<div class="map-tool-popover map-tool-coordinate-search" id="coordinateSearchPopover">
+<div class="map-tool-popover-title" id="coordinateSearchTitle">Coordinate search</div>
+<div class="map-tool-search-grid">
+<input id="coordinateSearchX" inputmode="numeric" placeholder="X" type="number"/>
+<input id="coordinateSearchY" inputmode="numeric" placeholder="Y" type="number"/>
+</div>
+<button class="map-tool-search-go" id="coordinateSearchGo" type="button">Go</button>
+<div class="map-tool-search-error" id="coordinateSearchError"></div>
+</div>
+<div class="map-tool-popover map-tool-legend" id="mapLegendPopover"></div>
 <div class="map-tools-bar">
 <button aria-label="Ruler" class="map-tool-button" data-tool="ruler" id="mapToolRuler" title="Ruler" type="button">
 <span aria-hidden="true">📏</span>
@@ -201,6 +208,12 @@
 </button>
 <button aria-label="Markers" class="map-tool-button" data-tool="marker" id="mapToolMarker" title="Markers" type="button">
 <span aria-hidden="true">⌖</span>
+</button>
+<button aria-label="Coordinate search" class="map-tool-button" data-tool="coordinateSearch" id="mapToolCoordinateSearch" title="Coordinate search" type="button">
+<span aria-hidden="true">⌕</span>
+</button>
+<button aria-label="Legend" class="map-tool-button" data-tool="legend" id="mapToolLegend" title="Legend" type="button">
+<span aria-hidden="true">☷</span>
 </button>
 </div>
 </div>
@@ -238,9 +251,11 @@
 </footer>
 <script src="js/core/core.js"></script>
 <script src="js/core/resources.js"></script>
+<script src="js/core/config.js"></script>
 <script src="js/ui/i18n.js"></script>
 <script src="js/ui/theme.js"></script>
 <script src="js/features/saved-targets.js"></script>
+<script src="js/features/weapons.js"></script>
 <script src="js/map/assets.js"></script>
 <script src="js/map/maps.js"></script>
 <script src="js/map/map-view.js"></script>

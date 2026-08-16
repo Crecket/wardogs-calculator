@@ -1,0 +1,15 @@
+{
+  "mapTools": {
+    "shortcuts": {
+      "ruler": "r",
+      "pencil": "p",
+      "marker": "m",
+      "coordinateSearch": "f",
+      "legend": "l",
+      "clearTool": "escape",
+      "undo": "ctrl+z",
+      "redo": "ctrl+y",
+      "redoAlt": "ctrl+shift+z"
+    }
+  }
+}

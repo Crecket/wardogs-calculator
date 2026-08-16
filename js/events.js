@@ -616,6 +616,15 @@ function bindEvents() {
     );
 
     window.addEventListener(
+        'keydown',
+        e => {
+            if (handleMapToolShortcut(e)) {
+                e.preventDefault();
+            }
+        }
+    );
+
+    window.addEventListener(
         'resize',
         resize
     );
