@@ -3,7 +3,7 @@
   "weapons": [
     {
       "id": "mortar",
-      "rangeKm": 0.6,
+      "rangeKm": 0.65,
       "names": {
         "en": "Mortar",
         "ru": "Миномёт",
@@ -18,17 +18,17 @@
     },
     {
       "id": "spg",
-      "rangeKm": 2.0,
+      "rangeKm": 2.5,
       "names": {
-        "en": "SPG",
-        "ru": "SPG",
-        "uk": "SPG",
-        "de": "SPG",
-        "fr": "SPG",
-        "es": "SPG",
-        "pl": "SPG",
-        "pt": "SPG",
-        "cat": "SPMEOW"
+        "en": "SPH-2",
+        "ru": "SPH-2",
+        "uk": "SPH-2",
+        "de": "SPH-2",
+        "fr": "SPH-2",
+        "es": "SPH-2",
+        "pl": "SPH-2",
+        "pt": "SPH-2",
+        "cat": "SPH-2"
       }
     }
   ]
