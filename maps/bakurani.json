@@ -20,7 +20,122 @@
     "extension": "webp"
   },
 
-  "markers": [],
+  "markers": [
+    {
+      "icon": "tower",
+      "x": 8345,
+      "y": 7294,
+      "label": "Tower"
+    },
+    {
+      "icon": "tower",
+      "x": 7701,
+      "y": 7349,
+      "label": "Tower"
+    },
+    {
+      "icon": "tower",
+      "x": 7704,
+      "y": 7009,
+      "label": "Tower"
+    },
+    {
+      "icon": "tower",
+      "x": 8034,
+      "y": 6992,
+      "label": "Tower"
+    },
+    {
+      "icon": "tower",
+      "x": 8202,
+      "y": 6850,
+      "label": "Tower"
+    },
+    {
+      "emoji": "⛪",
+      "x": 8724,
+      "y": 7117,
+      "label": "Church"
+    }
+  ],
   "zones": [],
-  "polygons": []
+  "polygons": [{
+    "color": "#d86666",
+    "fillOpacity": 0.12,
+    "strokeWidth": 2,
+    "dashed": true,
+    "label": "VALKYRA Spawn",
+    "points": [
+      {
+        "x": 8641,
+        "y": 3601
+      },
+      {
+        "x": 8350,
+        "y": 3390
+      },
+      {
+        "x": 8591,
+        "y": 3113
+      },
+      {
+        "x": 8908,
+        "y": 3324
+      }
+
+    ]
+  },
+    {
+      "color": "#82c596",
+      "fillOpacity": 0.12,
+      "strokeWidth": 2,
+      "dashed": true,
+      "label": "MANTICORE Spawn",
+      "points": [
+        {
+          "x": 4233,
+          "y": 7765
+        },
+        {
+          "x": 4040,
+          "y": 7506
+        },
+        {
+          "x": 3795,
+          "y": 7676
+        },
+        {
+          "x": 4009,
+          "y": 7933
+        }
+
+      ]
+    },
+    {
+      "color": "#5fa8d3",
+      "fillOpacity": 0.12,
+      "strokeWidth": 2,
+      "dashed": true,
+      "label": "LONESTAR Spawn",
+      "points": [
+        {
+          "x": 11754,
+          "y": 6887
+        },
+        {
+          "x": 11567,
+          "y": 7291
+        },
+        {
+          "x": 11835,
+          "y": 7422
+        },
+        {
+          "x": 12069,
+          "y": 7016
+        }
+
+      ]
+    }
+  ]
 }
