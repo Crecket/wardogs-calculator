@@ -22,10 +22,11 @@ A lightweight, open-source artillery calculator and tactical map tool for **WARD
 - ΔX / ΔY calculation
 - Weapon maximum-range visualization
 - In-range / out-of-range status
-- Drag-and-drop artillery and target positions
+- Interactive artillery and target positioning
 - Automatic recalculation when positions change
 - Saved target positions
 - Optional artillery-position saving with targets
+- JSON-based weapon definitions
 
 ### Tactical Map
 
@@ -34,11 +35,10 @@ A lightweight, open-source artillery calculator and tactical map tool for **WARD
 - Cursor coordinates
 - Coordinate search
 - Mouse-wheel zoom
-- Right-click panning
+- Map panning
+- Fullscreen mode
 - Preset and custom maps
-- JSON-defined markers, zones and polygons
-- Clickable preset markers — click a map icon to use it as the current target
-- Collapsible sidebar with animated map expansion
+- JSON-defined markers, zones, and polygons
 - Configurable map layers
 
 ### Map Tools
@@ -47,17 +47,16 @@ The floating Map Tools toolbar provides:
 
 - **Ruler** — measure distance and azimuth
 - **Pencil** — draw directly on the map
-- **Markers** — place custom tactical markers
-- **Coordinate Search** — jump to specific X/Y coordinates
-- **Legend** — independently toggle map layers
-- **Fullscreen** — expand the tactical map to the full display
+- **Markers** — place tactical markers
+- **Coordinate Search** — jump to specific coordinates
+- **Legend** — toggle map layers
 - **Undo / Redo**
 
 Drawings and user markers are stored locally per map.
 
 ### Default Shortcuts
 
-| Key | Action |
+| Shortcut | Action |
 |---|---|
 | `R` | Ruler |
 | `P` | Pencil |
@@ -66,42 +65,52 @@ Drawings and user markers are stored locally per map.
 | `L` | Legend |
 | `Esc` | Leave active tool |
 | `Ctrl + Z` | Undo |
-| `Ctrl + Y` / `Ctrl + Shift + Z` | Redo |
+| `Ctrl + Y` | Redo |
+| `Ctrl + Shift + Z` | Redo |
 
-Map Tool shortcuts can be changed in `config/app.json`.
+Map Tool shortcuts can be configured in:
+
+```text
+config/app.json
+```
 
 ---
 
 ## Supported Weapons
 
-Weapon definitions are stored in:
+Weapon definitions are stored separately from the application logic:
 
 ```text
 data/weapons.json
-````
+```
 
-Current weapons include:
+This allows weapons and their properties to be updated without modifying the core JavaScript.
+
+Current weapon support includes:
 
 | Weapon | Maximum Range |
-| ------ | ------------: |
-| Mortar |         600 m |
-| SPG    |          2 km |
-
-Additional weapons and range changes can be added without modifying JavaScript.
+|---|---:|
+| Mortar | 600 m |
+| SPG | 2 km |
 
 ---
 
 ## Maps
 
-Preset maps are registered in:
+Maps are registered in:
 
 ```text
 maps/index.json
 ```
 
-Each map has its own JSON configuration.
+Each map has its own JSON configuration and may define:
 
-Currently included:
+- Coordinate bounds
+- Tile configuration
+- Markers
+- Zones
+- Polygons
+- Map-specific metadata
 
 ### Bakurani
 
@@ -117,7 +126,7 @@ maps/tiles/bakurani/
 └── zoom_5/
 ```
 
-Map-specific configuration can contain:
+Map configuration can define coordinate bounds:
 
 ```json
 {
@@ -139,17 +148,13 @@ Map-specific configuration can contain:
         "minZoom": 0,
         "maxZoom": 5,
         "extension": "webp"
-    },
-
-    "markers": [],
-    "zones": [],
-    "polygons": []
+    }
 }
 ```
 
-`bounds` maps the edges of the rendered map to the in-game coordinate system.
+`bounds` maps the rendered map image to the in-game coordinate system.
 
-Map calibration is based on available in-game reference footage and may be refined as more accurate reference data becomes available.
+Map calibration is based on available in-game reference data and may be refined as more accurate information becomes available.
 
 ---
 
@@ -161,21 +166,21 @@ Map calibration is based on available in-game reference footage and may be refin
 maps/my-map.json
 ```
 
-2. Register it in:
+2. Register the map in:
 
 ```text
 maps/index.json
 ```
 
-3. Add tiles if required:
+3. Add map tiles if required:
 
 ```text
 maps/tiles/my-map/
 ```
 
-4. Configure its coordinate `bounds`.
+4. Configure the coordinate bounds.
 
-The renderer is map-independent, so adding a map should not require changes to the core JavaScript.
+The map renderer is designed to be map-independent, so additional maps can be added without modifying the core rendering logic.
 
 ---
 
@@ -204,25 +209,29 @@ Azimuth follows standard compass bearings:
 
 The application currently supports:
 
-* English
-* Russian
-* Ukrainian
-* German
-* French
-* Spanish
-* Polish
-* Portuguese
-* Cat 🐈
+- English
+- Russian
+- Ukrainian
+- German
+- French
+- Spanish
+- Polish
+- Portuguese
+- Cat 🐈
 
-Translations are stored under:
+Translation data is stored under:
 
 ```text
 locales/
 ```
 
-The application automatically detects the browser language and remembers the selected language.
+The application automatically selects a language based on the user's browser/system locale.
 
-Dedicated indexable URLs are available for real languages:
+If the user manually selects another language, that preference is stored locally and takes priority on future visits.
+
+### Localized URLs
+
+Search-indexable localized pages are available at:
 
 ```text
 /
@@ -235,7 +244,49 @@ Dedicated indexable URLs are available for real languages:
 └── pt/
 ```
 
-The `/cat/` localization is intentionally excluded from search indexing.
+For example:
+
+```text
+https://wardogs-artillery.com/ru/
+https://wardogs-artillery.com/de/
+```
+
+The Cat localization is intentionally excluded from search indexing.
+
+---
+
+## Localized Page Sources
+
+Localized HTML entry pages are kept outside the repository root:
+
+```text
+src/
+└── pages/
+    ├── index.html
+    └── locales/
+        ├── ru.html
+        ├── uk.html
+        ├── de.html
+        ├── fr.html
+        ├── es.html
+        ├── pl.html
+        ├── pt.html
+        └── cat.html
+```
+
+These files are transformed into the public directory structure during the build process.
+
+For example:
+
+```text
+src/pages/locales/ru.html
+        ↓
+dist/ru/index.html
+        ↓
+https://wardogs-artillery.com/ru/
+```
+
+This keeps the repository root clean without changing any public URLs.
 
 ---
 
@@ -249,14 +300,14 @@ data/motd.json
 
 MOTD supports:
 
-* Multiple languages
-* Scheduled start time
-* Scheduled end time
-* Per-message IDs
-* “Don't show again”
-* Local dismissal persistence
+- Multiple languages
+- Scheduled start time
+- Scheduled end time
+- Per-message IDs
+- "Don't show again"
+- Local dismissal persistence
 
-No application code needs to be modified to publish a new announcement.
+A new announcement can therefore be published without modifying the application logic.
 
 ---
 
@@ -264,19 +315,36 @@ No application code needs to be modified to publish a new announcement.
 
 ```text
 wardogs-calculator/
+├── .github/
+│   └── workflows/
+│       └── pages.yml
+│
 ├── assets/
+│   ├── flags/
+│   ├── favicon.png
+│   └── preview.png
+│
 ├── config/
 ├── data/
-├── locales/
-├── maps/
-│   └── tiles/
 ├── js/
 │   ├── core/
 │   ├── features/
 │   ├── map/
 │   └── ui/
 │
-├── index.html
+├── locales/
+├── maps/
+│   └── tiles/
+│
+├── scripts/
+│   └── build-pages.mjs
+│
+├── src/
+│   └── pages/
+│       ├── index.html
+│       └── locales/
+│
+├── package.json
 ├── style.css
 ├── robots.txt
 ├── sitemap.xml
@@ -285,65 +353,164 @@ wardogs-calculator/
 └── README.md
 ```
 
+`dist/` is generated during the build process and is not committed to the repository.
+
 ---
 
 ## Technologies
 
-* HTML5
-* CSS3
-* Vanilla JavaScript
-* HTML Canvas API
-* Fetch API
-* JSON
-* Browser `localStorage`
+- HTML5
+- CSS3
+- Vanilla JavaScript
+- HTML Canvas API
+- Fetch API
+- JSON
+- Browser `localStorage`
+- Node.js build script
+- GitHub Actions
+- GitHub Pages
 
-The project intentionally uses **no frontend framework or build system**.
+The application itself intentionally uses **no frontend framework**.
+
+Node.js is only used for the build/deployment process.
 
 ---
 
 ## Running Locally
 
-Because maps, configuration and localization files are loaded using `fetch()`, serve the project over HTTP instead of opening `index.html` directly.
+The project should be served over HTTP because maps, configuration files, localization files, and other resources are loaded using `fetch()`.
 
-For example:
+### Requirements
+
+Install a recent version of Node.js.
+
+Python can optionally be used to run a simple local HTTP server.
+
+### 1. Build the site
+
+From the project root:
 
 ```bash
+npm run build
+```
+
+This generates:
+
+```text
+dist/
+```
+
+with the same directory structure that is deployed to production.
+
+### 2. Start a local server
+
+Using Python:
+
+```bash
+cd dist
 python -m http.server 8000
 ```
 
 Then open:
 
 ```text
-http://localhost:8000
+http://localhost:8000/
 ```
+
+Localized pages can be tested using the same URL structure as production:
+
+```text
+http://localhost:8000/ru/
+http://localhost:8000/uk/
+http://localhost:8000/de/
+```
+
+### Development Workflow
+
+When modifying the project:
+
+```text
+Edit source
+    ↓
+npm run build
+    ↓
+Refresh browser
+```
+
+You can keep the HTTP server running while rebuilding the project from another terminal.
 
 ---
 
-## Hosting
+## Deployment
 
-The production version is available at:
+Production is available at:
 
-**[https://wardogs-artillery.com/](https://wardogs-artillery.com/)**
+**https://wardogs-artillery.com/**
 
-The application is completely static and is currently hosted using GitHub Pages.
+Deployment is handled automatically by GitHub Actions.
+
+The workflow is located at:
+
+```text
+.github/workflows/pages.yml
+```
+
+On a push to `main`, GitHub Actions:
+
+1. Checks out the repository
+2. Sets up Node.js
+3. Runs:
+
+```bash
+npm run build
+```
+
+4. Generates the production site in:
+
+```text
+dist/
+```
+
+5. Uploads the generated site as a GitHub Pages artifact
+6. Deploys it to GitHub Pages
+
+GitHub Pages should therefore be configured to use:
+
+```text
+Settings
+→ Pages
+→ Build and deployment
+→ Source
+→ GitHub Actions
+```
+
+Do not manually edit files inside `dist/`, as they will be regenerated during the next build.
 
 ---
 
 ## Contributing
 
-Contributions, corrections and improvements are welcome.
+Contributions, corrections, and improvements are welcome.
 
 Useful contributions include:
 
-* Map coordinate calibration
-* POI and marker corrections
-* New map data
-* Weapon range corrections
-* Localization improvements
-* Bug fixes
-* UI / QoL improvements
+- Map coordinate calibration
+- POI and marker corrections
+- New map data
+- Weapon range corrections
+- Localization improvements
+- Bug fixes
+- UI / QoL improvements
 
 Feel free to open an issue or submit a pull request.
+
+When changing localized entry pages, modify the files under:
+
+```text
+src/pages/
+```
+
+rather than generated files in `dist/`.
 
 ---
 
@@ -356,9 +523,11 @@ You are free to use, modify, and distribute the source code in accordance with t
 ### Third-Party Assets
 
 The MIT License applies only to original source code and other original material created for this project.
+
 WARDOGS game assets, map imagery, icons, textures, logos, trademarks, names, and other third-party materials included in or referenced by this project are **not covered by the MIT License**.
 
 All such materials remain the property of their respective copyright holders.
+
 No ownership of WARDOGS or other third-party intellectual property is claimed by this project.
 
 ---
@@ -369,4 +538,4 @@ No ownership of WARDOGS or other third-party intellectual property is claimed by
 
 It is not affiliated with, endorsed by, or officially associated with **BULKHEAD** or the **WARDOGS development team**.
 
-WARDOGS and related names, trademarks and assets belong to their respective owners.
+WARDOGS and related names, trademarks, and assets belong to their respective owners.

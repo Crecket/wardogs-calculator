@@ -1,0 +1,7 @@
+{
+  "name": "wardogs-artillery-calculator",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-pages.mjs"
+  }
+}
