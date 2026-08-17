@@ -1,38 +1,36 @@
 {
-  "id": "update-v1-2",
+  "id": "update-v1-2-1",
   "enabled": true,
   "startsAt": null,
   "endsAt": null,
-
   "title": {
-    "en": "UPDATE — v1.2",
-    "ru": "ОБНОВЛЕНИЕ — v1.2",
-    "uk": "ОНОВЛЕННЯ — v1.2",
-    "de": "UPDATE — v1.2",
-    "fr": "MISE À JOUR — v1.2",
-    "es": "ACTUALIZACIÓN — v1.2",
-    "pl": "AKTUALIZACJA — v1.2",
-    "pt": "ATUALIZAÇÃO — v1.2",
-    "cat": "MEOWDATE — v1.2"
+    "en": "UPDATE — v1.2.1",
+    "ru": "ОБНОВЛЕНИЕ — v1.2.1",
+    "uk": "ОНОВЛЕННЯ — v1.2.1",
+    "de": "UPDATE — v1.2.1",
+    "fr": "MISE À JOUR — v1.2.1",
+    "es": "ACTUALIZACIÓN — v1.2.1",
+    "pl": "AKTUALIZACJA — v1.2.1",
+    "pt": "ATUALIZAÇÃO — v1.2.1",
+    "cat": "MEOWPDATE — v1.2.1"
   },
-
   "message": {
-    "en": "New Map Tools update!\\n\\n• Added fullscreen map mode\\n• Added collapsible sidebar\\n• Map now expands when the sidebar is hidden\\n• Map markers can now be clicked to select them as the current target\\n• Added target selection animation\\n• Improved Map Tools icons and light theme consistency\\n\\nThanks for using WARDOGS Artillery Calculator! ❤️",
+    "en": "Minor localization & QoL update!\\n\\n• Improved automatic language detection based on the user's system/browser locale\\n• Manually selected language is now remembered and takes priority on future visits\\n• Reorganized localization pages and the deployment workflow\\n• Calculator sidebar is now accessible in fullscreen mode\\n• Fixed language flags displaying incorrectly in Google Chrome\\n• Fixed Map Tools icons staying active after their menus were closed\\n\\nThanks for using WARDOGS Artillery Calculator! ❤️",
 
-    "ru": "Новое обновление Map Tools!\\n\\n• Добавлен полноэкранный режим карты\\n• Добавлена возможность скрыть боковую панель\\n• Карта теперь расширяется при скрытии боковой панели\\n• Маркеры на карте теперь можно нажимать, чтобы выбрать их текущей целью\\n• Добавлена анимация выбора цели\\n• Улучшены иконки Map Tools и их отображение в светлой теме\\n\\nСпасибо, что пользуетесь WARDOGS Artillery Calculator! ❤️",
+    "ru": "Небольшое обновление локализации и QoL!\\n\\n• Улучшено автоматическое определение языка на основе языка системы/браузера пользователя\\n• Выбранный вручную язык теперь запоминается и имеет приоритет при следующих посещениях\\n• Реорганизованы страницы локализации и процесс деплоя\\n• Меню калькулятора теперь доступно в полноэкранном режиме\\n• Исправлено некорректное отображение флагов в Google Chrome\\n• Исправлена подсветка иконок Map Tools после закрытия их меню\\n\\nСпасибо за использование WARDOGS Artillery Calculator! ❤️",
 
-    "uk": "Нове оновлення Map Tools!\\n\\n• Додано повноекранний режим карти\\n• Додано можливість приховувати бічну панель\\n• Карта тепер розширюється, коли бічну панель приховано\\n• Маркери на карті тепер можна натискати, щоб вибрати їх поточною ціллю\\n• Додано анімацію вибору цілі\\n• Покращено іконки Map Tools та їх відображення у світлій темі\\n\\nДякуємо, що користуєтеся WARDOGS Artillery Calculator! ❤️",
+    "uk": "Невелике оновлення локалізації та QoL!\\n\\n• Покращено автоматичне визначення мови на основі мови системи/браузера користувача\\n• Вибрана вручну мова тепер запам'ятовується та має пріоритет під час наступних відвідувань\\n• Реорганізовано сторінки локалізації та процес розгортання\\n• Панель калькулятора тепер доступна в повноекранному режимі\\n• Виправлено некоректне відображення прапорів у Google Chrome\\n• Виправлено підсвічування іконок Map Tools після закриття їхніх меню\\n\\nДякуємо за використання WARDOGS Artillery Calculator! ❤️",
 
-    "de": "Neues Map-Tools-Update!\\n\\n• Vollbildmodus für die Karte hinzugefügt\\n• Einklappbare Seitenleiste hinzugefügt\\n• Die Karte erweitert sich jetzt, wenn die Seitenleiste ausgeblendet wird\\n• Kartenmarker können jetzt angeklickt und als aktuelles Ziel ausgewählt werden\\n• Animation für die Zielauswahl hinzugefügt\\n• Map-Tools-Symbole und Darstellung im hellen Design verbessert\\n\\nDanke, dass du den WARDOGS Artillery Calculator nutzt! ❤️",
+    "de": "Kleines Lokalisierungs- & QoL-Update!\\n\\n• Verbesserte automatische Spracherkennung anhand der System-/Browsersprache\\n• Manuell ausgewählte Sprachen werden jetzt gespeichert und bei zukünftigen Besuchen bevorzugt\\n• Lokalisierungsseiten und Deployment-Workflow wurden reorganisiert\\n• Die Rechner-Seitenleiste ist jetzt auch im Vollbildmodus verfügbar\\n• Fehlerhafte Darstellung von Sprachflaggen in Google Chrome behoben\\n• Map-Tools-Symbole bleiben nach dem Schließen ihrer Menüs nicht mehr fälschlicherweise aktiv\\n\\nDanke, dass du WARDOGS Artillery Calculator verwendest! ❤️",
 
-    "fr": "Nouvelle mise à jour des Map Tools !\\n\\n• Ajout du mode plein écran pour la carte\\n• Ajout d'une barre latérale rétractable\\n• La carte s'agrandit désormais lorsque la barre latérale est masquée\\n• Les marqueurs de la carte peuvent maintenant être sélectionnés comme cible actuelle\\n• Ajout d'une animation de sélection de cible\\n• Amélioration des icônes Map Tools et de leur affichage en thème clair\\n\\nMerci d'utiliser WARDOGS Artillery Calculator ! ❤️",
+    "fr": "Petite mise à jour de localisation & QoL !\\n\\n• Amélioration de la détection automatique de la langue selon la langue du système/navigateur\\n• La langue sélectionnée manuellement est désormais mémorisée et prioritaire lors des prochaines visites\\n• Réorganisation des pages de localisation et du processus de déploiement\\n• Le panneau du calculateur est désormais accessible en mode plein écran\\n• Correction de l'affichage incorrect des drapeaux dans Google Chrome\\n• Correction des icônes Map Tools qui restaient actives après la fermeture de leur menu\\n\\nMerci d'utiliser WARDOGS Artillery Calculator ! ❤️",
 
-    "es": "¡Nueva actualización de Map Tools!\\n\\n• Añadido el modo de mapa a pantalla completa\\n• Añadida una barra lateral plegable\\n• El mapa ahora se expande al ocultar la barra lateral\\n• Los marcadores del mapa ahora se pueden seleccionar como objetivo actual\\n• Añadida una animación de selección de objetivo\\n• Mejorados los iconos de Map Tools y su apariencia en el tema claro\\n\\n¡Gracias por usar WARDOGS Artillery Calculator! ❤️",
+    "es": "¡Pequeña actualización de localización y QoL!\\n\\n• Mejorada la detección automática del idioma según el idioma del sistema/navegador\\n• El idioma seleccionado manualmente ahora se recuerda y tiene prioridad en futuras visitas\\n• Reorganizadas las páginas de localización y el proceso de despliegue\\n• El panel de la calculadora ahora está disponible en modo de pantalla completa\\n• Corregida la visualización incorrecta de las banderas en Google Chrome\\n• Corregidos los iconos de Map Tools que permanecían activos después de cerrar sus menús\\n\\n¡Gracias por usar WARDOGS Artillery Calculator! ❤️",
 
-    "pl": "Nowa aktualizacja Map Tools!\\n\\n• Dodano tryb pełnoekranowy mapy\\n• Dodano możliwość zwijania panelu bocznego\\n• Mapa rozszerza się teraz po ukryciu panelu bocznego\\n• Markery na mapie można teraz kliknąć, aby wybrać je jako aktualny cel\\n• Dodano animację wyboru celu\\n• Ulepszono ikony Map Tools i ich wygląd w jasnym motywie\\n\\nDziękujemy za korzystanie z WARDOGS Artillery Calculator! ❤️",
+    "pl": "Mała aktualizacja lokalizacji i QoL!\\n\\n• Ulepszono automatyczne wykrywanie języka na podstawie języka systemu/przeglądarki\\n• Ręcznie wybrany język jest teraz zapamiętywany i ma pierwszeństwo podczas kolejnych wizyt\\n• Zreorganizowano strony lokalizacyjne i proces wdrażania\\n• Panel kalkulatora jest teraz dostępny w trybie pełnoekranowym\\n• Naprawiono nieprawidłowe wyświetlanie flag w Google Chrome\\n• Naprawiono ikony Map Tools pozostające aktywne po zamknięciu ich menu\\n\\nDziękujemy za korzystanie z WARDOGS Artillery Calculator! ❤️",
 
-    "pt": "Nova atualização das Map Tools!\\n\\n• Adicionado modo de mapa em ecrã inteiro\\n• Adicionada barra lateral recolhível\\n• O mapa agora expande quando a barra lateral é ocultada\\n• Os marcadores do mapa agora podem ser selecionados como alvo atual\\n• Adicionada animação de seleção de alvo\\n• Melhorados os ícones das Map Tools e a sua aparência no tema claro\\n\\nObrigado por usar o WARDOGS Artillery Calculator! ❤️",
+    "pt": "Pequena atualização de localização e QoL!\\n\\n• Melhorada a deteção automática do idioma com base no idioma do sistema/navegador\\n• O idioma selecionado manualmente agora é memorizado e tem prioridade em visitas futuras\\n• Reorganizadas as páginas de localização e o processo de deployment\\n• O painel da calculadora agora está disponível no modo de ecrã inteiro\\n• Corrigida a exibição incorreta das bandeiras no Google Chrome\\n• Corrigidos os ícones de Map Tools que permaneciam ativos após fechar os respetivos menus\\n\\nObrigado por usar o WARDOGS Artillery Calculator! ❤️",
 
-    "cat": "NEW MAP TOOLS MEOWDATE!\\n\\n• BIG MAP NOW GOES FULLSCREEN\\n• HUMAN SIDEBAR CAN BE YEETED AWAY\\n• MAP GETS BIGGER WHEN SIDEBAR GOES BYE-BYE\\n• CLICK MAP THINGS TO MAKE THEM THE TARGET\\n• TARGET NOW DOES A FANCY LITTLE ANIMATION\\n• TOOL ICONS ARE LESS WEIRD IN LIGHT MODE\\n\\nTHANKS FOR USING WARDOGS ARTILLERY CALCULATOR, HUMAN! ❤️🐈"
+    "cat": "MINOR MEOWCALIZATION & QOL UPDATE!\\n\\n• SMARTER AUTOMATIC HUMAN-LANGUAGE DETECTION\\n• YOUR CHOSEN LANGUAGE IS NOW REMEMBERED, UNLIKE WHERE YOU LEFT THE TREATS\\n• LOCALIZATION PAGES AND DEPLOYMENT HAVE BEEN REORGANIZED BY HIGHLY TRAINED CATS\\n• CALCULATOR SIDEBAR NOW WORKS IN FULLSCREEN\\n• FIXED FLAGS LOOKING WEIRD IN GOOGLE CHROME\\n• FIXED MAP TOOLS ICONS PRETENDING TO BE ACTIVE AFTER THEIR MENUS WERE CLOSED\\n\\nTHANKS FOR USING WARDOGS ARTILLERY CALCULATOR! ❤️🐈"
   }
 }
