@@ -9,9 +9,7 @@ A lightweight, open-source artillery calculator and tactical map tool for **WARD
 
 **Live app:** https://wardogs-artillery.com/
 
-The calculator provides an interactive tactical map for placing artillery and target positions and automatically calculates azimuth, distance, coordinate deltas, and weapon range status.
-
-No framework, build system, backend, or database required.
+![WARDOGS Artillery Calculator](assets/preview.png)
 
 ---
 
