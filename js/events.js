@@ -217,7 +217,7 @@ function bindEvents() {
 
             S.zoom =
                 Math.min(
-                    MAX_ZOOM,
+                    getMaxCameraZoom(),
                     S.zoom *
                     ZOOM_BUTTON_FACTOR
                 );
@@ -602,7 +602,7 @@ function bindEvents() {
                 Math.max(
                     MIN_ZOOM,
                     Math.min(
-                        MAX_ZOOM,
+                        getMaxCameraZoom(),
                         S.zoom *
                         (
                             e.deltaY <

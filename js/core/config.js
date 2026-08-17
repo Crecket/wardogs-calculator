@@ -3,6 +3,12 @@
    ========================= */
 
 const DEFAULT_APP_CONFIG = {
+    map: {
+        camera: {
+            maxZoom: 8
+        }
+    },
+
     site: {
         footer: {
             disclaimer:
@@ -39,6 +45,15 @@ function mergeAppConfig(base, override) {
     return {
         ...base,
         ...(override || {}),
+
+        map: {
+            ...base.map,
+            ...(override?.map || {}),
+            camera: {
+                ...base.map.camera,
+                ...(override?.map?.camera || {})
+            }
+        },
 
         site: {
             ...base.site,
@@ -95,4 +110,21 @@ function getMapToolShortcut(action) {
     )
         .trim()
         .toLowerCase();
+}
+
+function getMaxCameraZoom() {
+    const configured =
+        Number(
+            APP_CONFIG
+                ?.map
+                ?.camera
+                ?.maxZoom
+        );
+
+    return (
+        Number.isFinite(configured) &&
+        configured > 0
+            ? configured
+            : DEFAULT_APP_CONFIG.map.camera.maxZoom
+    );
 }

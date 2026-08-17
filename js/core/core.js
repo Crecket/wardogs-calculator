@@ -53,7 +53,6 @@ const SAVE_ARTILLERY_KEY =
    ========================= */
 
 const MIN_ZOOM = 0.4;
-const MAX_ZOOM = 8;
 
 const ZOOM_BUTTON_FACTOR = 1.25;
 const ZOOM_WHEEL_IN = 1.15;
