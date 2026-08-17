@@ -77,5 +77,9 @@
   "mapToolUndoRedoHint": "Deshacer: {undo} · Rehacer: {redo}",
   "motdTitle": "Mensaje del día",
   "motdDontShowAgain": "No volver a mostrar",
-  "motdClose": "Cerrar"
+  "motdClose": "Cerrar",
+  "mapToolFullscreen": "Pantalla completa",
+  "mapToolExitFullscreen": "Salir de pantalla completa",
+  "sidebarHide": "Ocultar barra lateral",
+  "sidebarShow": "Mostrar barra lateral"
 }

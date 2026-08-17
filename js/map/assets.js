@@ -187,3 +187,18 @@ function loadMarkerImage(asset) {
 
     return entry;
 }
+
+
+/* =========================
+   MAP ICON APPEARANCE
+   ========================= */
+
+function getMapIconCanvasFilter() {
+
+    return (
+        document.documentElement
+            .dataset.theme === 'light'
+            ? 'brightness(0.88) saturate(0.92) contrast(1.06)'
+            : 'none'
+    );
+}

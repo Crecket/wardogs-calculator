@@ -241,6 +241,12 @@ function applyLanguage() {
     }
 
     if (
+        typeof updateLayoutLocalization === 'function'
+    ) {
+        updateLayoutLocalization();
+    }
+
+    if (
         typeof updateMotdLocalization === 'function'
     ) {
         updateMotdLocalization();

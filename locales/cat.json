@@ -83,5 +83,9 @@
   "mapToolUndoRedoHint": "UNMEOW: {undo} · REMEOW: {redo}",
   "motdTitle": "MEOWSSAGE OF THE DAY",
   "motdDontShowAgain": "DON'T MEOW THIS AGAIN",
-  "motdClose": "CLOSE MEOW"
+  "motdClose": "CLOSE MEOW",
+  "mapToolFullscreen": "FULLSCREEN MEOWDE",
+  "mapToolExitFullscreen": "ESCAPE BIG MEOWP",
+  "sidebarHide": "HIDE THE PAW-NEL",
+  "sidebarShow": "SHOW THE PAW-NEL"
 }

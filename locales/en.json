@@ -73,5 +73,9 @@
   "mapToolUndoRedoHint": "Undo: {undo} · Redo: {redo}",
   "motdTitle": "Message of the Day",
   "motdDontShowAgain": "Don't show again",
-  "motdClose": "Close"
+  "motdClose": "Close",
+  "mapToolFullscreen": "Fullscreen",
+  "mapToolExitFullscreen": "Exit fullscreen",
+  "sidebarHide": "Hide sidebar",
+  "sidebarShow": "Show sidebar"
 }

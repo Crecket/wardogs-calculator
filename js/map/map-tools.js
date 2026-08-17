@@ -659,18 +659,133 @@ function handleMapToolShortcut(event) {
     return false;
 }
 
+/* =========================
+   FULLSCREEN
+   ========================= */
+
+function getMapFullscreenElement() {
+
+    return document.querySelector(
+        '.map'
+    );
+}
+
+function isMapFullscreen() {
+
+    const map =
+        getMapFullscreenElement();
+
+    return Boolean(
+        map &&
+        (
+            document.fullscreenElement ===
+            map ||
+            document.webkitFullscreenElement ===
+            map
+        )
+    );
+}
+
+function updateMapFullscreenButton() {
+
+    const button =
+        $('mapToolFullscreen');
+
+    if (!button) {
+        return;
+    }
+
+    const active =
+        isMapFullscreen();
+
+    const label =
+        active
+            ? tr('mapToolExitFullscreen')
+            : tr('mapToolFullscreen');
+
+    button.title =
+        label;
+
+    button.setAttribute(
+        'aria-label',
+        label
+    );
+
+    button.classList.toggle(
+        'active',
+        active
+    );
+}
+
+async function toggleMapFullscreen() {
+
+    const map =
+        getMapFullscreenElement();
+
+    if (!map) {
+        return;
+    }
+
+    try {
+
+        if (isMapFullscreen()) {
+
+            if (
+                document.exitFullscreen
+            ) {
+
+                await document
+                    .exitFullscreen();
+
+            } else if (
+                document.webkitExitFullscreen
+            ) {
+
+                document
+                    .webkitExitFullscreen();
+            }
+
+        } else if (
+            map.requestFullscreen
+        ) {
+
+            await map
+                .requestFullscreen();
+
+        } else if (
+            map.webkitRequestFullscreen
+        ) {
+
+            map
+                .webkitRequestFullscreen();
+        }
+
+    } catch (error) {
+
+        console.warn(
+            'Failed to toggle map fullscreen:',
+            error
+        );
+    }
+}
+
 function updateMapToolsLocalization() {
     const rulerButton = $('mapToolRuler');
     const pencilButton = $('mapToolPencil');
     const markerButton = $('mapToolMarker');
     const searchButton = $('mapToolCoordinateSearch');
     const legendButton = $('mapToolLegend');
+    const fullscreenButton = $('mapToolFullscreen');
 
     setToolButtonLabel(rulerButton, 'mapToolRuler', 'ruler');
     setToolButtonLabel(pencilButton, 'mapToolPencil', 'pencil');
     setToolButtonLabel(markerButton, 'mapToolMarkers', 'marker');
     setToolButtonLabel(searchButton, 'mapToolCoordinateSearch', 'coordinateSearch');
     setToolButtonLabel(legendButton, 'mapToolLegend', 'legend');
+
+    if (fullscreenButton) {
+        updateMapFullscreenButton();
+    }
 
     buildPencilPalette();
     buildMarkerPicker();
@@ -698,6 +813,8 @@ function initMapTools() {
         $('mapToolCoordinateSearch');
     const legendButton =
         $('mapToolLegend');
+    const fullscreenButton =
+        $('mapToolFullscreen');
 
     rulerButton?.addEventListener(
         'click',
@@ -768,6 +885,41 @@ function initMapTools() {
             updateMapToolsUI();
             buildMapLegend();
             toggleMapToolMenu('mapLegendPopover');
+        }
+    );
+
+    fullscreenButton?.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+            closeMapToolMenus();
+            toggleMapFullscreen();
+        }
+    );
+
+    document.addEventListener(
+        'fullscreenchange',
+        () => {
+            updateMapFullscreenButton();
+            if (
+                typeof resize ===
+                'function'
+            ) {
+                resize();
+            }
+        }
+    );
+
+    document.addEventListener(
+        'webkitfullscreenchange',
+        () => {
+            updateMapFullscreenButton();
+            if (
+                typeof resize ===
+                'function'
+            ) {
+                resize();
+            }
         }
     );
 
@@ -1513,6 +1665,11 @@ function drawMapToolMarker(item) {
     const height =
         asset.height;
 
+    ctx.save();
+
+    ctx.filter =
+        getMapIconCanvasFilter();
+
     ctx.drawImage(
         entry.image,
         pos.x - width * asset.anchorX,
@@ -1520,6 +1677,8 @@ function drawMapToolMarker(item) {
         width,
         height
     );
+
+    ctx.restore();
 }
 
 function drawMapToolMarkers() {

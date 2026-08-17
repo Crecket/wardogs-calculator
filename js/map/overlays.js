@@ -547,6 +547,635 @@ function drawPresetPolygons(map) {
 
 
 /* =========================
+   PRESET MARKER TARGETING
+   ========================= */
+
+let SELECTED_PRESET_TARGET_KEY =
+    null;
+
+let PRESET_TARGET_SELECTED_AT =
+    0;
+
+let PRESET_TARGET_ANIMATION_FRAME =
+    null;
+
+let PRESET_MARKER_HOVER_KEY =
+    null;
+
+function getPresetMarkerKey(
+    item,
+    index,
+    mapId = S.map
+) {
+
+    return [
+        mapId,
+        index,
+        item.icon || item.emoji || 'marker',
+        item.x,
+        item.y
+    ].join(':');
+}
+
+function getPresetMarkerScreenGeometry(
+    item
+) {
+
+    if (
+        !item ||
+        typeof item.x !== 'number' ||
+        typeof item.y !== 'number'
+    ) {
+        return null;
+    }
+
+    const center =
+        toScreen(
+            item.x / 1000,
+            item.y / 1000
+        );
+
+    const asset =
+        typeof item.icon === 'string'
+            ? getMarkerAsset(
+                item.icon
+            )
+            : null;
+
+    if (asset) {
+
+        const layout =
+            getMarkerImageLayout(
+                item,
+                asset
+            );
+
+        return {
+            center,
+            width:
+                layout.width,
+            height:
+                layout.height,
+            left:
+                center.x -
+                layout.width *
+                layout.anchorX,
+            top:
+                center.y -
+                layout.height *
+                layout.anchorY,
+            right:
+                center.x +
+                layout.width *
+                (
+                    1 -
+                    layout.anchorX
+                ),
+            bottom:
+                center.y +
+                layout.height *
+                (
+                    1 -
+                    layout.anchorY
+                )
+        };
+    }
+
+    const size =
+        getMarkerEmojiSize(
+            view()
+        );
+
+    return {
+        center,
+        width: size,
+        height: size,
+        left:
+            center.x -
+            size / 2,
+        top:
+            center.y -
+            size / 2,
+        right:
+            center.x +
+            size / 2,
+        bottom:
+            center.y +
+            size / 2
+    };
+}
+
+function findPresetMarkerAtCanvasPoint(
+    x,
+    y
+) {
+
+    const map =
+        getCurrentMap();
+
+    if (
+        typeof isMapLayerVisible ===
+        'function' &&
+        !isMapLayerVisible(
+            'presetMarkers'
+        )
+    ) {
+        return null;
+    }
+
+    if (
+        !map ||
+        !Array.isArray(
+            map.markers
+        )
+    ) {
+        return null;
+    }
+
+    let best =
+        null;
+
+    map.markers.forEach(
+        (
+            item,
+            index
+        ) => {
+
+            const geometry =
+                getPresetMarkerScreenGeometry(
+                    item
+                );
+
+            if (!geometry) {
+                return;
+            }
+
+            const padding =
+                7;
+
+            if (
+                x <
+                geometry.left -
+                padding ||
+                x >
+                geometry.right +
+                padding ||
+                y <
+                geometry.top -
+                padding ||
+                y >
+                geometry.bottom +
+                padding
+            ) {
+                return;
+            }
+
+            const distance =
+                Math.hypot(
+                    x -
+                    geometry.center.x,
+                    y -
+                    geometry.center.y
+                );
+
+            if (
+                !best ||
+                distance <
+                best.distance
+            ) {
+
+                best = {
+                    item,
+                    index,
+                    geometry,
+                    distance
+                };
+            }
+        }
+    );
+
+    return best;
+}
+
+function setPresetMarkerHover(
+    markerInfo
+) {
+
+    const nextKey =
+        markerInfo
+            ? getPresetMarkerKey(
+                markerInfo.item,
+                markerInfo.index
+            )
+            : null;
+
+    if (
+        nextKey ===
+        PRESET_MARKER_HOVER_KEY
+    ) {
+        return;
+    }
+
+    PRESET_MARKER_HOVER_KEY =
+        nextKey;
+
+    c.classList.toggle(
+        'preset-marker-hover',
+        Boolean(
+            nextKey
+        )
+    );
+}
+
+function updatePresetMarkerHover(
+    event
+) {
+
+    if (
+        typeof MAP_TOOL_STATE !==
+        'undefined' &&
+        [
+            'ruler',
+            'pencil',
+            'marker'
+        ].includes(
+            MAP_TOOL_STATE.tool
+        )
+    ) {
+
+        setPresetMarkerHover(
+            null
+        );
+
+        return;
+    }
+
+    const rect =
+        c.getBoundingClientRect();
+
+    setPresetMarkerHover(
+        findPresetMarkerAtCanvasPoint(
+            event.clientX -
+            rect.left,
+            event.clientY -
+            rect.top
+        )
+    );
+}
+
+function startPresetTargetSelectionAnimation() {
+
+    if (
+        PRESET_TARGET_ANIMATION_FRAME
+    ) {
+
+        cancelAnimationFrame(
+            PRESET_TARGET_ANIMATION_FRAME
+        );
+    }
+
+    const tick =
+        () => {
+
+            draw();
+
+            if (
+                performance.now() -
+                PRESET_TARGET_SELECTED_AT <
+                900
+            ) {
+
+                PRESET_TARGET_ANIMATION_FRAME =
+                    requestAnimationFrame(
+                        tick
+                    );
+
+            } else {
+
+                PRESET_TARGET_ANIMATION_FRAME =
+                    null;
+
+                draw();
+            }
+        };
+
+    PRESET_TARGET_ANIMATION_FRAME =
+        requestAnimationFrame(
+            tick
+        );
+}
+
+function selectPresetMarkerAsTarget(
+    item,
+    index
+) {
+
+    if (
+        !item ||
+        typeof item.x !== 'number' ||
+        typeof item.y !== 'number'
+    ) {
+        return false;
+    }
+
+    SELECTED_PRESET_TARGET_KEY =
+        getPresetMarkerKey(
+            item,
+            index
+        );
+
+    PRESET_TARGET_SELECTED_AT =
+        performance.now();
+
+    S.target = {
+        x:
+            item.x /
+            1000,
+        y:
+            item.y /
+            1000
+    };
+
+    clamp(
+        S.target
+    );
+
+    S.mode =
+        'target';
+
+    selectedSavedTargetId =
+        null;
+
+    $('targetMode')
+        ?.classList
+        .add(
+            'active'
+        );
+
+    $('originMode')
+        ?.classList
+        .remove(
+            'active'
+        );
+
+    inputs();
+
+    renderSavedTargets();
+
+    startPresetTargetSelectionAnimation();
+
+    return true;
+}
+
+function handlePresetMarkerTargetMouseDown(
+    event
+) {
+
+    if (
+        event.button !==
+        0
+    ) {
+        return false;
+    }
+
+    if (
+        typeof MAP_TOOL_STATE !==
+        'undefined' &&
+        [
+            'ruler',
+            'pencil',
+            'marker'
+        ].includes(
+            MAP_TOOL_STATE.tool
+        )
+    ) {
+        return false;
+    }
+
+    const rect =
+        c.getBoundingClientRect();
+
+    const markerInfo =
+        findPresetMarkerAtCanvasPoint(
+            event.clientX -
+            rect.left,
+            event.clientY -
+            rect.top
+        );
+
+    if (!markerInfo) {
+        return false;
+    }
+
+    return selectPresetMarkerAsTarget(
+        markerInfo.item,
+        markerInfo.index
+    );
+}
+
+function getPresetMarkerSelectionProgress(
+    item,
+    index
+) {
+
+    const key =
+        getPresetMarkerKey(
+            item,
+            index
+        );
+
+    if (
+        key !==
+        SELECTED_PRESET_TARGET_KEY
+    ) {
+        return null;
+    }
+
+    const targetMatches =
+        Math.abs(
+            S.target.x -
+            item.x / 1000
+        ) <
+        0.0005 &&
+        Math.abs(
+            S.target.y -
+            item.y / 1000
+        ) <
+        0.0005;
+
+    if (!targetMatches) {
+
+        SELECTED_PRESET_TARGET_KEY =
+            null;
+
+        return null;
+    }
+
+    return Math.min(
+        1,
+        Math.max(
+            0,
+            (
+                performance.now() -
+                PRESET_TARGET_SELECTED_AT
+            ) /
+            900
+        )
+    );
+}
+
+function getPresetMarkerSelectionScale(
+    item,
+    index
+) {
+
+    const progress =
+        getPresetMarkerSelectionProgress(
+            item,
+            index
+        );
+
+    if (progress === null) {
+        return 1;
+    }
+
+    if (
+        progress >=
+        0.6
+    ) {
+        return 1;
+    }
+
+    return (
+        1 +
+        Math.sin(
+            (
+                progress /
+                0.6
+            ) *
+            Math.PI
+        ) *
+        0.18
+    );
+}
+
+function drawPresetMarkerSelection(
+    item,
+    index,
+    x,
+    y,
+    iconSize
+) {
+
+    const progress =
+        getPresetMarkerSelectionProgress(
+            item,
+            index
+        );
+
+    if (progress === null) {
+        return;
+    }
+
+    const baseRadius =
+        Math.max(
+            15,
+            iconSize *
+            0.62
+        );
+
+    const pulse =
+        progress < 1
+            ? Math.sin(
+                progress *
+                Math.PI *
+                3
+            )
+            : 0;
+
+    const radius =
+        baseRadius +
+        (
+            progress < 1
+                ? 4 +
+                pulse * 2
+                : 2
+        );
+
+    ctx.save();
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle =
+        document.documentElement
+            .dataset.theme ===
+            'light'
+            ? 'rgba(168,121,36,.13)'
+            : 'rgba(215,164,82,.12)';
+
+    ctx.fill();
+
+    ctx.strokeStyle =
+        getComputedStyle(
+            document.documentElement
+        )
+            .getPropertyValue(
+                '--accent'
+            )
+            .trim() ||
+        '#d7a452';
+
+    ctx.lineWidth =
+        2;
+
+    ctx.stroke();
+
+    if (
+        progress <
+        1
+    ) {
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            radius +
+            7 +
+            progress * 8,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.globalAlpha =
+            Math.max(
+                0,
+                0.55 *
+                (
+                    1 -
+                    progress
+                )
+            );
+
+        ctx.lineWidth =
+            1.5;
+
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+
+/* =========================
    PRESET MARKERS
    ========================= */
 
@@ -621,7 +1250,8 @@ function getMarkerImageLayout(
 function drawMarkerImage(
     item,
     x,
-    y
+    y,
+    scaleMultiplier = 1
 ) {
 
     const asset =
@@ -661,27 +1291,42 @@ function drawMarkerImage(
         };
     }
 
+    const drawWidth =
+        layout.width *
+        scaleMultiplier;
+
+    const drawHeight =
+        layout.height *
+        scaleMultiplier;
+
     const left =
         x -
-        layout.width *
+        drawWidth *
         layout.anchorX;
 
     const top =
         y -
-        layout.height *
+        drawHeight *
         layout.anchorY;
+
+    ctx.save();
+
+    ctx.filter =
+        getMapIconCanvasFilter();
 
     ctx.drawImage(
         imageEntry.image,
         left,
         top,
-        layout.width,
-        layout.height
+        drawWidth,
+        drawHeight
     );
+
+    ctx.restore();
 
     return {
         drawn: true,
-        height: layout.height,
+        height: drawHeight,
         anchorY: layout.anchorY
     };
 }
@@ -690,13 +1335,15 @@ function drawMarkerEmoji(
     item,
     x,
     y,
-    v
+    v,
+    scaleMultiplier = 1
 ) {
 
     const emojiSize =
         getMarkerEmojiSize(
             v
-        );
+        ) *
+        scaleMultiplier;
 
     ctx.font =
         `${emojiSize}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
@@ -812,7 +1459,10 @@ function drawPresetMarkers(map) {
         view();
 
     map.markers.forEach(
-        item => {
+        (
+            item,
+            index
+        ) => {
 
             if (
                 typeof item.x !== 'number' ||
@@ -847,6 +1497,43 @@ function drawPresetMarkers(map) {
             let imageResult =
                 null;
 
+            const selectionScale =
+                getPresetMarkerSelectionScale(
+                    item,
+                    index
+                );
+
+            const markerAsset =
+                typeof item.icon === 'string'
+                    ? getMarkerAsset(
+                        item.icon
+                    )
+                    : null;
+
+            const baseIconSize =
+                markerAsset
+                    ? Math.max(
+                        getMarkerImageLayout(
+                            item,
+                            markerAsset
+                        ).width,
+                        getMarkerImageLayout(
+                            item,
+                            markerAsset
+                        ).height
+                    )
+                    : getMarkerEmojiSize(
+                        v
+                    );
+
+            drawPresetMarkerSelection(
+                item,
+                index,
+                x,
+                y,
+                baseIconSize
+            );
+
             /*
              * If "icon" is specified, try to
              * render an image asset first.
@@ -860,7 +1547,8 @@ function drawPresetMarkers(map) {
                     drawMarkerImage(
                         item,
                         x,
-                        y
+                        y,
+                        selectionScale
                     );
             }
 
@@ -889,7 +1577,8 @@ function drawPresetMarkers(map) {
                         item,
                         x,
                         y,
-                        v
+                        v,
+                        selectionScale
                     );
 
                 visualBottomOffset =

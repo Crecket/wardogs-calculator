@@ -28,6 +28,8 @@ async function init() {
 
         initMapTools();
 
+        initLayout();
+
         /*
          * Sync initial state with the
          * selected preset map after the

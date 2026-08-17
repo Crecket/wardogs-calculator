@@ -369,6 +369,10 @@ function bindEvents() {
                     .style.display =
                     'none';
 
+                setPresetMarkerHover(
+                    null
+                );
+
                 return;
             }
 
@@ -379,6 +383,20 @@ function bindEvents() {
                 )
             ) {
                 drag = null;
+                return;
+            }
+
+            if (
+                handlePresetMarkerTargetMouseDown(
+                    e
+                )
+            ) {
+                drag = null;
+
+                updateCursor(
+                    e
+                );
+
                 return;
             }
 
@@ -483,6 +501,10 @@ function bindEvents() {
                 return;
             }
 
+            updatePresetMarkerHover(
+                e
+            );
+
             if (!drag) {
                 return;
             }
@@ -525,6 +547,10 @@ function bindEvents() {
     c.addEventListener(
         'mouseleave',
         () => {
+
+            setPresetMarkerHover(
+                null
+            );
 
             if (!pan) {
 

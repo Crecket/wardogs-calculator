@@ -73,5 +73,9 @@
   "mapToolUndoRedoHint": "Отменить: {undo} · Повторить: {redo}",
   "motdTitle": "Сообщение дня",
   "motdDontShowAgain": "Больше не показывать",
-  "motdClose": "Закрыть"
+  "motdClose": "Закрыть",
+  "mapToolFullscreen": "Полный экран",
+  "mapToolExitFullscreen": "Выйти из полноэкранного режима",
+  "sidebarHide": "Скрыть боковую панель",
+  "sidebarShow": "Показать боковую панель"
 }

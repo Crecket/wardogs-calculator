@@ -77,5 +77,9 @@
   "mapToolUndoRedoHint": "Cofnij: {undo} · Ponów: {redo}",
   "motdTitle": "Wiadomość dnia",
   "motdDontShowAgain": "Nie pokazuj ponownie",
-  "motdClose": "Zamknij"
+  "motdClose": "Zamknij",
+  "mapToolFullscreen": "Pełny ekran",
+  "mapToolExitFullscreen": "Wyjdź z pełnego ekranu",
+  "sidebarHide": "Ukryj panel boczny",
+  "sidebarShow": "Pokaż panel boczny"
 }

@@ -39,6 +39,8 @@ No framework, build system, backend, or database required.
 - Right-click panning
 - Preset and custom maps
 - JSON-defined markers, zones and polygons
+- Clickable preset markers — click a map icon to use it as the current target
+- Collapsible sidebar with animated map expansion
 - Configurable map layers
 
 ### Map Tools
@@ -50,6 +52,7 @@ The floating Map Tools toolbar provides:
 - **Markers** — place custom tactical markers
 - **Coordinate Search** — jump to specific X/Y coordinates
 - **Legend** — independently toggle map layers
+- **Fullscreen** — expand the tactical map to the full display
 - **Undo / Redo**
 
 Drawings and user markers are stored locally per map.

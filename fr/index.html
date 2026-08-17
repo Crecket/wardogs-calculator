@@ -150,6 +150,9 @@
 <p class="hint" data-i18n="controlsHint">LMB — placer · Glisser — déplacer · Molette — zoom · RMB — déplacer la carte.</p>
 </div>
 </aside>
+<button aria-label="Hide sidebar" aria-expanded="true" class="sidebar-toggle" id="sidebarToggle" title="Hide sidebar" type="button">
+<span aria-hidden="true" class="sidebar-toggle-icon">‹</span>
+</button>
 <!-- WORKSPACE -->
 <section class="workspace">
 <div class="toolbar">
@@ -215,6 +218,9 @@
 <button aria-label="Legend" class="map-tool-button" data-tool="legend" id="mapToolLegend" title="Legend" type="button">
 <span aria-hidden="true">☷</span>
 </button>
+<button aria-label="Fullscreen" class="map-tool-button map-tool-fullscreen-button" id="mapToolFullscreen" title="Fullscreen" type="button">
+<span aria-hidden="true" class="map-tool-fullscreen-icon">⛶</span>
+</button>
 </div>
 </div>
 <!-- LEGEND -->
@@ -242,6 +248,7 @@
 <script src="js/core/config.js"></script>
 <script src="js/ui/i18n.js"></script>
 <script src="js/ui/theme.js"></script><script src="js/ui/footer.js"></script>
+<script src="js/ui/layout.js"></script>
 <script src="js/features/saved-targets.js"></script>
 <script src="js/features/motd.js"></script>
 <script src="js/features/weapons.js"></script>
