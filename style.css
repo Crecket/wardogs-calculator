@@ -652,21 +652,31 @@ canvas {
    MAP FULLSCREEN
    ========================= */
 
-.map:fullscreen,
-.map:-webkit-full-screen {
+main:fullscreen,
+main:-webkit-full-screen {
     width: 100vw;
     height: 100vh;
     max-width: none;
     max-height: none;
 
-    border: 0;
-    border-radius: 0;
-
-    background: var(--map-bg);
+    background: var(--body-bg);
 }
 
-.map:fullscreen canvas,
-.map:-webkit-full-screen canvas {
+main:fullscreen .workspace,
+main:-webkit-full-screen .workspace {
+    min-width: 0;
+    min-height: 0;
+    height: 100vh;
+}
+
+main:fullscreen .map,
+main:-webkit-full-screen .map {
+    min-height: 0;
+    border-radius: 0;
+}
+
+main:fullscreen canvas,
+main:-webkit-full-screen canvas {
     width: 100%;
     height: 100%;
 }
@@ -1251,6 +1261,161 @@ footer a:hover {
 
     padding:
             7px 34px 7px 10px;
+}
+
+/*
+ * The native select remains in the DOM as a
+ * functional fallback, while the custom picker
+ * renders local SVG flags consistently in Chrome,
+ * Firefox and other browsers.
+ */
+.language-select-native {
+    position: absolute !important;
+
+    width: 1px !important;
+    min-width: 1px !important;
+    height: 1px !important;
+    min-height: 1px !important;
+
+    margin: -1px !important;
+    padding: 0 !important;
+
+    overflow: hidden;
+
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+
+    white-space: nowrap;
+
+    border: 0 !important;
+}
+
+.language-picker {
+    position: relative;
+
+    width: 150px;
+
+    flex: 0 0 auto;
+}
+
+.language-picker-button {
+    width: 100%;
+    min-height: 36px;
+
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 7px 9px;
+
+    text-align: left;
+}
+
+.language-picker-current-name {
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.language-picker-arrow {
+    color: var(--accent);
+
+    font-size: 11px;
+    line-height: 1;
+}
+
+.language-picker-menu {
+    position: absolute;
+
+    top: calc(100% + 6px);
+    right: 0;
+
+    z-index: 100;
+
+    width: max(180px, 100%);
+
+    display: none;
+
+    padding: 5px;
+
+    border: 1px solid var(--border-light);
+    border-radius: 7px;
+
+    background: var(--header-bg);
+
+    box-shadow:
+        0 8px 24px
+        rgba(0, 0, 0, .28);
+}
+
+.language-picker.open
+.language-picker-menu {
+    display: grid;
+
+    gap: 3px;
+}
+
+.language-picker-option {
+    width: 100%;
+    min-height: 34px;
+
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 6px 8px;
+
+    border-color: transparent;
+
+    background: transparent;
+
+    text-align: left;
+}
+
+.language-picker-option:hover {
+    border-color: var(--border-light);
+
+    background: var(--input-hover-bg);
+}
+
+.language-picker-option.active {
+    border-color: var(--accent-border);
+
+    background: var(--active-bg);
+}
+
+.language-flag {
+    width: 20px;
+    height: 14px;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 2px;
+
+    box-shadow:
+        0 0 0 1px
+        rgba(255, 255, 255, .12);
+}
+
+.language-flag-text {
+    height: auto;
+
+    display: inline-grid;
+    place-items: center;
+
+    box-shadow: none;
+
+    font-size: 14px;
+    line-height: 1;
 }
 
 

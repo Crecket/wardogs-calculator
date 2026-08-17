@@ -6,63 +6,72 @@
       "file": "en.json",
       "name": "English",
       "nativeName": "English",
-      "flag": "🇬🇧"
+      "flag": "🇬🇧",
+      "flagAsset": "assets/flags/gb.svg"
     },
     {
       "id": "ru",
       "file": "ru.json",
       "name": "Russian",
       "nativeName": "Русский",
-      "flag": "🇷🇺"
+      "flag": "🇷🇺",
+      "flagAsset": "assets/flags/ru.svg"
     },
     {
       "id": "uk",
       "file": "uk.json",
       "name": "Ukrainian",
       "nativeName": "Українська",
-      "flag": "🇺🇦"
+      "flag": "🇺🇦",
+      "flagAsset": "assets/flags/ua.svg"
     },
     {
       "id": "de",
       "file": "de.json",
       "name": "German",
       "nativeName": "Deutsch",
-      "flag": "🇩🇪"
+      "flag": "🇩🇪",
+      "flagAsset": "assets/flags/de.svg"
     },
     {
       "id": "fr",
       "file": "fr.json",
       "name": "French",
       "nativeName": "Français",
-      "flag": "🇫🇷"
+      "flag": "🇫🇷",
+      "flagAsset": "assets/flags/fr.svg"
     },
     {
       "id": "es",
       "file": "es.json",
       "name": "Spanish",
       "nativeName": "Español",
-      "flag": "🇪🇸"
+      "flag": "🇪🇸",
+      "flagAsset": "assets/flags/es.svg"
     },
     {
       "id": "pl",
       "file": "pl.json",
       "name": "Polish",
       "nativeName": "Polski",
-      "flag": "🇵🇱"
+      "flag": "🇵🇱",
+      "flagAsset": "assets/flags/pl.svg"
     },
     {
       "id": "pt",
       "file": "pt.json",
       "name": "Portuguese",
       "nativeName": "Português",
-      "flag": "🇵🇹"
+      "flag": "🇵🇹",
+      "flagAsset": "assets/flags/pt.svg"
     },
     {
       "id": "cat",
       "file": "cat.json",
       "name": "Cat",
       "nativeName": "Meow",
-      "flag": "🐱"
+      "flag": "🐱",
+      "shortLabel": "🐱"
     }
   ]
 }

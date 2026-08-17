@@ -206,6 +206,18 @@ function closeMapToolMenus(except = null) {
             }
         }
     );
+
+    /*
+     * Keep toolbar highlight state synchronized
+     * when menus are closed by outside clicks,
+     * Escape, fullscreen, or another tool.
+     */
+    if (
+        typeof updateMapToolsUI ===
+        'function'
+    ) {
+        updateMapToolsUI();
+    }
 }
 
 function toggleMapToolMenu(id) {
@@ -226,16 +238,65 @@ function toggleMapToolMenu(id) {
         'open',
         shouldOpen
     );
+
+    updateMapToolsUI();
+}
+
+function isMapToolMenuOpen(id) {
+
+    return Boolean(
+        $(id)?.classList.contains(
+            'open'
+        )
+    );
 }
 
 function updateMapToolsUI() {
     document
         .querySelectorAll('.map-tool-button[data-tool]')
         .forEach(button => {
+
+            const tool =
+                button.dataset.tool;
+
+            let active =
+                tool ===
+                MAP_TOOL_STATE.tool;
+
+            /*
+             * Menu-only tools should only look active
+             * while their popover is actually open.
+             * Their internal tool state can remain set
+             * without leaving a permanently highlighted
+             * toolbar icon.
+             */
+            if (tool === 'marker') {
+                active =
+                    isMapToolMenuOpen(
+                        'markerPicker'
+                    );
+            }
+
+            if (
+                tool ===
+                'coordinateSearch'
+            ) {
+                active =
+                    isMapToolMenuOpen(
+                        'coordinateSearchPopover'
+                    );
+            }
+
+            if (tool === 'legend') {
+                active =
+                    isMapToolMenuOpen(
+                        'mapLegendPopover'
+                    );
+            }
+
             button.classList.toggle(
                 'active',
-                button.dataset.tool ===
-                MAP_TOOL_STATE.tool
+                active
             );
         });
 
@@ -665,8 +726,13 @@ function handleMapToolShortcut(event) {
 
 function getMapFullscreenElement() {
 
+    /*
+     * Fullscreen the whole calculator layout instead
+     * of only the map so the sidebar/calculator
+     * controls remain available in fullscreen mode.
+     */
     return document.querySelector(
-        '.map'
+        'main'
     );
 }
 
