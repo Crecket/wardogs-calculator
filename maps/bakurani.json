@@ -25,37 +25,67 @@
       "icon": "tower",
       "x": 8345,
       "y": 7294,
-      "label": "Tower"
+      "label": "Tower 4"
     },
     {
       "icon": "tower",
       "x": 7701,
       "y": 7349,
-      "label": "Tower"
+      "label": "Tower 3"
     },
     {
       "icon": "tower",
       "x": 7704,
       "y": 7009,
-      "label": "Tower"
+      "label": "Tower 2"
     },
     {
       "icon": "tower",
       "x": 8034,
       "y": 6992,
-      "label": "Tower"
+      "label": "Tower 1"
     },
     {
       "icon": "tower",
       "x": 8202,
       "y": 6850,
-      "label": "Tower"
+      "label": "Tower 5"
     },
     {
-      "emoji": "⛪",
-      "x": 8724,
-      "y": 7117,
-      "label": "Church"
+      "icon": "tower-inactive",
+      "x": 7682,
+      "y": 7800,
+      "label": ""
+    },
+    {
+      "icon": "tower-inactive",
+      "x": 7262,
+      "y": 7223,
+      "label": ""
+    },
+    {
+      "icon": "tower-inactive",
+      "x": 7857,
+      "y": 6395,
+      "label": ""
+    },
+    {
+      "icon": "tower-inactive",
+      "x": 8543,
+      "y": 6796,
+      "label": ""
+    },
+    {
+      "icon": "tower-inactive",
+      "x": 8723,
+      "y": 6773,
+      "label": ""
+    },
+    {
+      "icon": "tower-inactive",
+      "x": 8474,
+      "y": 7375,
+      "label": ""
     }
   ],
   "zones": [],
@@ -67,22 +97,21 @@
     "label": "VALKYRA Spawn",
     "points": [
       {
-        "x": 8641,
-        "y": 3601
+        "x": 11754,
+        "y": 6887
       },
       {
-        "x": 8350,
-        "y": 3390
+        "x": 11567,
+        "y": 7291
       },
       {
-        "x": 8591,
-        "y": 3113
+        "x": 11835,
+        "y": 7422
       },
       {
-        "x": 8908,
-        "y": 3324
+        "x": 12069,
+        "y": 7016
       }
-
     ]
   },
     {
@@ -118,23 +147,23 @@
       "dashed": true,
       "label": "LONESTAR Spawn",
       "points": [
-        {
-          "x": 11754,
-          "y": 6887
-        },
-        {
-          "x": 11567,
-          "y": 7291
-        },
-        {
-          "x": 11835,
-          "y": 7422
-        },
-        {
-          "x": 12069,
-          "y": 7016
-        }
 
+        {
+          "x": 8641,
+          "y": 3601
+        },
+        {
+          "x": 8350,
+          "y": 3390
+        },
+        {
+          "x": 8591,
+          "y": 3113
+        },
+        {
+          "x": 8908,
+          "y": 3324
+        }
       ]
     }
   ]

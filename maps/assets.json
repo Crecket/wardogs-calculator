@@ -56,6 +56,14 @@
       "anchorY": 0.5
     },
 
+    "tower-inactive": {
+      "path": "assets/map-markers/tower-inactive.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
     "lonestar": {
       "path": "assets/map-markers/lonestar.webp",
       "width": 32,
