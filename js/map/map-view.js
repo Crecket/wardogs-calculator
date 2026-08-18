@@ -242,6 +242,11 @@ function clamp(p) {
     const bounds =
         getViewBounds();
 
+    const precision =
+        getCoordinateMetersPerUnit() === 100
+            ? 100
+            : 1000;
+
     p.x =
         Math.max(
             bounds.minX,
@@ -249,9 +254,9 @@ function clamp(p) {
                 bounds.maxX,
                 Math.round(
                     p.x *
-                    1000
+                    precision
                 ) /
-                1000
+                precision
             )
         );
 
@@ -262,9 +267,9 @@ function clamp(p) {
                 bounds.maxY,
                 Math.round(
                     p.y *
-                    1000
+                    precision
                 ) /
-                1000
+                precision
             )
         );
 }

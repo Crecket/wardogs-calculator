@@ -15,7 +15,7 @@
   "targetStatus": "Status celu",
   "inRange": "W zasięgu",
   "outRange": "POZA ZASIĘGIEM",
-  "rangeHint": "Okrąg pokazuje maksymalny zasięg wybranej broni.",
+  "rangeHint": "Okręgi pokazują minimalny i maksymalny zasięg wybranej broni.",
   "pointSelection": "Wybór punktu",
   "artillery": "Artyleria",
   "target": "Cel",
@@ -81,5 +81,6 @@
   "mapToolFullscreen": "Pełny ekran",
   "mapToolExitFullscreen": "Wyjdź z pełnego ekranu",
   "sidebarHide": "Ukryj panel boczny",
-  "sidebarShow": "Pokaż panel boczny"
+  "sidebarShow": "Pokaż panel boczny",
+  "weaponRange": "Zasięg"
 }

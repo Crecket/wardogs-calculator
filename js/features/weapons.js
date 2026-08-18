@@ -9,9 +9,24 @@ function normalizeWeapon(item) {
         return null;
     }
 
-    const rangeKm = Number(item.rangeKm ?? item.range);
+    const maxRangeKm = Number(
+        item.maxRangeKm ??
+        item.rangeKm ??
+        item.range
+    );
 
-    if (!Number.isFinite(rangeKm) || rangeKm <= 0) {
+    const minRangeKm = Number(
+        item.minRangeKm ??
+        0
+    );
+
+    if (
+        !Number.isFinite(maxRangeKm) ||
+        maxRangeKm <= 0 ||
+        !Number.isFinite(minRangeKm) ||
+        minRangeKm < 0 ||
+        minRangeKm > maxRangeKm
+    ) {
         return null;
     }
 
@@ -23,7 +38,15 @@ function normalizeWeapon(item) {
     return {
         id: item.id.trim(),
         names,
-        range: rangeKm
+        minRange: minRangeKm,
+        maxRange: maxRangeKm,
+        range: maxRangeKm,
+        minElevationMil: Number.isFinite(Number(item.minElevationMil))
+            ? Number(item.minElevationMil)
+            : null,
+        maxElevationMil: Number.isFinite(Number(item.maxElevationMil))
+            ? Number(item.maxElevationMil)
+            : null
     };
 }
 

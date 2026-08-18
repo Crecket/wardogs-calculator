@@ -606,10 +606,16 @@ function submitCoordinateSearch() {
         return;
     }
 
-    const point = {
-        x: xMeters / 1000,
-        y: yMeters / 1000
-    };
+    const point =
+        getCoordinateMetersPerUnit() === 100
+            ? {
+                x: xMeters,
+                y: yMeters
+            }
+            : {
+                x: xMeters / 1000,
+                y: yMeters / 1000
+            };
 
     if (!centerMapOnWorldPoint(point)) {
         if (error) error.textContent = tr('mapToolSearchOutOfBounds');
@@ -632,8 +638,8 @@ function updateCoordinateSearchDefaults() {
     const centerX = (bounds.minX + bounds.maxX) / 2;
     const centerY = (bounds.minY + bounds.maxY) / 2;
 
-    if (!xInput.value) xInput.value = Math.round(centerX * 1000);
-    if (!yInput.value) yInput.value = Math.round(centerY * 1000);
+    if (!xInput.value) xInput.value = formatGameCoordinate(centerX);
+    if (!yInput.value) yInput.value = formatGameCoordinate(centerY);
 }
 
 function handleMapToolShortcut(event) {
@@ -1757,9 +1763,12 @@ function drawMapToolMarkers() {
         .forEach(drawMapToolMarker);
 }
 
-function formatRulerDistance(distanceKm) {
+function formatRulerDistance(distanceWorld) {
     const meters =
-        distanceKm * 1000;
+        worldDistanceToMeters(distanceWorld);
+
+    const distanceKm =
+        meters / 1000;
 
     if (meters < 1000) {
         return `${Math.round(meters)} m`;

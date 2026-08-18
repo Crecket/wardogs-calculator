@@ -15,7 +15,7 @@
   "targetStatus": "État de la cible",
   "inRange": "À portée",
   "outRange": "HORS DE PORTÉE",
-  "rangeHint": "Le cercle indique la portée maximale de l'arme sélectionnée.",
+  "rangeHint": "Les cercles indiquent la portée minimale et maximale de l’arme sélectionnée.",
   "pointSelection": "Sélection des points",
   "artillery": "Artillerie",
   "target": "Cible",
@@ -81,5 +81,6 @@
   "mapToolFullscreen": "Plein écran",
   "mapToolExitFullscreen": "Quitter le plein écran",
   "sidebarHide": "Masquer la barre latérale",
-  "sidebarShow": "Afficher la barre latérale"
+  "sidebarShow": "Afficher la barre latérale",
+  "weaponRange": "Portée"
 }

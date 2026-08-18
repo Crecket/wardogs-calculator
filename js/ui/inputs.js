@@ -10,29 +10,13 @@ function inputs() {
     $('weapon').value =
         S.weapon;
 
-    $('ox').value =
-        Math.round(
-            S.origin.x *
-            1000
-        );
+    $('ox').value = formatGameCoordinate(S.origin.x);
 
-    $('oy').value =
-        Math.round(
-            S.origin.y *
-            1000
-        );
+    $('oy').value = formatGameCoordinate(S.origin.y);
 
-    $('tx').value =
-        Math.round(
-            S.target.x *
-            1000
-        );
+    $('tx').value = formatGameCoordinate(S.target.x);
 
-    $('ty').value =
-        Math.round(
-            S.target.y *
-            1000
-        );
+    $('ty').value = formatGameCoordinate(S.target.y);
 
     $('w').value =
         S.w;
@@ -59,23 +43,18 @@ function inputPoint(type) {
             ? $('oy')
             : $('ty');
 
+    const coordinateScale =
+        getCoordinateMetersPerUnit();
+
     p.x =
-        (
-            Number(
-                xInput.value
-            ) ||
-            0
-        ) /
-        1000;
+        coordinateScale === 100
+            ? (Number(xInput.value) || 0)
+            : (Number(xInput.value) || 0) / 1000;
 
     p.y =
-        (
-            Number(
-                yInput.value
-            ) ||
-            0
-        ) /
-        1000;
+        coordinateScale === 100
+            ? (Number(yInput.value) || 0)
+            : (Number(yInput.value) || 0) / 1000;
 
     clamp(
         p

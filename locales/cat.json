@@ -15,7 +15,7 @@
   "targetStatus": "TARGET MEOWTUS",
   "inRange": "PURR-FECT RANGE",
   "outRange": "TOO FAR, MEOW! >:(",
-  "rangeHint": "The circle shows how far your MEOWPON can meow.",
+  "rangeHint": "THE CIRCLES SHOW THE MINIMUM AND MAXIMUM MEOWGE OF YOUR SELECTED MEOWPON.",
   "pointSelection": "PICK YOUR PAW-NT",
   "artillery": "MEOWTILLERY",
   "target": "MEOWGET",
@@ -87,5 +87,6 @@
   "mapToolFullscreen": "FULLSCREEN MEOWDE",
   "mapToolExitFullscreen": "ESCAPE BIG MEOWP",
   "sidebarHide": "HIDE THE PAW-NEL",
-  "sidebarShow": "SHOW THE PAW-NEL"
+  "sidebarShow": "SHOW THE PAW-NEL",
+  "weaponRange": "MEOWGE"
 }

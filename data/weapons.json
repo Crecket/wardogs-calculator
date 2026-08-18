@@ -3,7 +3,7 @@
   "weapons": [
     {
       "id": "mortar",
-      "rangeKm": 0.65,
+      "rangeKm": 0.684,
       "names": {
         "en": "Mortar",
         "ru": "Миномёт",
@@ -14,11 +14,15 @@
         "pl": "Moździerz",
         "pt": "Morteiro",
         "cat": "MEOWTAR"
-      }
+      },
+      "minRangeKm": 0.132,
+      "maxRangeKm": 0.684,
+      "minElevationMil": 150,
+      "maxElevationMil": 900
     },
     {
       "id": "spg",
-      "rangeKm": 2.5,
+      "rangeKm": 2.629,
       "names": {
         "en": "SPH-2",
         "ru": "SPH-2",
@@ -29,7 +33,11 @@
         "pl": "SPH-2",
         "pt": "SPH-2",
         "cat": "SPH-2"
-      }
+      },
+      "minRangeKm": 0.78,
+      "maxRangeKm": 2.629,
+      "minElevationMil": 30,
+      "maxElevationMil": 610
     }
   ]
 }

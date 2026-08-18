@@ -77,8 +77,8 @@ Current weapon support includes:
 
 | Weapon | Maximum Range |
 |---|---:|
-| Mortar | 600 m |
-| SPG | 2 km |
+| Mortar | 132–684 m |
+| SPH-2 | 780–2629 m |
 
 ---
 

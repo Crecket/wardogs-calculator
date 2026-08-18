@@ -13,8 +13,18 @@ function drawGrid() {
     const minor =
         '#3b444b';
 
+    const coordinateMetersPerUnit =
+        getCoordinateMetersPerUnit();
+
     const minorStep =
-        0.1;
+        coordinateMetersPerUnit === 100
+            ? 1
+            : 0.1;
+
+    const majorStep =
+        coordinateMetersPerUnit === 100
+            ? 10
+            : 1;
 
     const startX =
         Math.ceil(
@@ -71,9 +81,9 @@ function drawGrid() {
 
         const isMajor =
             Math.abs(
-                rounded -
+                rounded / majorStep -
                 Math.round(
-                    rounded
+                    rounded / majorStep
                 )
             ) <
             1e-8;
@@ -130,9 +140,9 @@ function drawGrid() {
 
         const isMajor =
             Math.abs(
-                rounded -
+                rounded / majorStep -
                 Math.round(
-                    rounded
+                    rounded / majorStep
                 )
             ) <
             1e-8;
@@ -184,25 +194,25 @@ function drawCoordinateLabels() {
     ctx.font =
         '10px system-ui';
 
+    const coordinateMetersPerUnit =
+        getCoordinateMetersPerUnit();
+
+    const labelStep =
+        coordinateMetersPerUnit === 100
+            ? 10
+            : 1;
+
     const firstX =
-        Math.ceil(
-            v.bounds.minX
-        );
+        Math.ceil(v.bounds.minX / labelStep) * labelStep;
 
     const lastX =
-        Math.floor(
-            v.bounds.maxX
-        );
+        Math.floor(v.bounds.maxX / labelStep) * labelStep;
 
     const firstY =
-        Math.ceil(
-            v.bounds.minY
-        );
+        Math.ceil(v.bounds.minY / labelStep) * labelStep;
 
     const lastY =
-        Math.floor(
-            v.bounds.maxY
-        );
+        Math.floor(v.bounds.maxY / labelStep) * labelStep;
 
     ctx.textBaseline =
         'top';
@@ -217,7 +227,7 @@ function drawCoordinateLabels() {
         x <=
         lastX;
 
-        x++
+        x += labelStep
     ) {
 
         const local =
@@ -227,10 +237,7 @@ function drawCoordinateLabels() {
             );
 
         ctx.fillText(
-            formatCoord(
-                x *
-                1000
-            ),
+            formatGameCoordinate(x),
             local.x,
             v.mh +
             9
@@ -250,7 +257,7 @@ function drawCoordinateLabels() {
         y <=
         lastY;
 
-        y++
+        y += labelStep
     ) {
 
         const local =
@@ -260,10 +267,7 @@ function drawCoordinateLabels() {
             );
 
         ctx.fillText(
-            formatCoord(
-                y *
-                1000
-            ),
+            formatGameCoordinate(y),
             -8,
             local.y
         );

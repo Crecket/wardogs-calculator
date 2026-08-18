@@ -9,6 +9,46 @@ function formatCoord(value) {
         .padStart(4, '0');
 }
 
+
+function getCoordinateMetersPerUnit() {
+    const map = getCurrentMap?.();
+
+    const configured =
+        Number(map?.coordinateMetersPerUnit);
+
+    return (
+        Number.isFinite(configured) &&
+        configured > 0
+            ? configured
+            : 1000
+    );
+}
+
+function worldDistanceToMeters(distance) {
+    return distance * getCoordinateMetersPerUnit();
+}
+
+function metersToWorldDistance(meters) {
+    return meters / getCoordinateMetersPerUnit();
+}
+
+function kilometersToWorldDistance(kilometers) {
+    return metersToWorldDistance(kilometers * 1000);
+}
+
+function storedMetersToWorldCoordinate(meters) {
+    return meters / getCoordinateMetersPerUnit();
+}
+
+function formatGameCoordinate(value) {
+    const precision =
+        getCoordinateMetersPerUnit() === 100
+            ? 2
+            : 0;
+
+    return Number(value).toFixed(precision);
+}
+
 function isValidBounds(bounds) {
 
     return Boolean(

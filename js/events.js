@@ -422,7 +422,7 @@ function bindEvents() {
                 Math.min(
                     d1,
                     d2
-                ) < 0.3
+                ) < metersToWorldDistance(300)
                     ? (
                         d1 <
                         d2

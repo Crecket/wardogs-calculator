@@ -16,33 +16,85 @@ function getTileConfig(map) {
     return map.tiles;
 }
 
+
+/* =========================
+   TILE WORLD BOUNDS
+   ========================= */
+
+/*
+ * map.bounds
+ *     Actual playable/searchable map bounds.
+ *
+ * map.tileBounds
+ *     World-coordinate extent covered by the complete
+ *     tile pyramid.
+ *
+ * Most maps can omit tileBounds. In that case tiles
+ * continue to use map.bounds exactly as before.
+ */
+function getTileBounds(map) {
+
+    if (
+        map &&
+        isValidBounds(
+            map.tileBounds
+        )
+    ) {
+        return map.tileBounds;
+    }
+
+    return map?.bounds || null;
+}
+
+
+/* =========================
+   TILE ZOOM
+   ========================= */
+
 function getTileZoom(map) {
 
     const tiles =
         getTileConfig(map);
 
-    if (!tiles) {
+    const tileBounds =
+        getTileBounds(map);
+
+    if (
+        !tiles ||
+        !tileBounds
+    ) {
         return null;
     }
 
-    const bounds =
-        map.bounds;
+    /*
+     * zoom_0 contains one tile covering the complete
+     * tileBounds extent. Therefore tile resolution has
+     * to be calculated from tileBounds, not map.bounds.
+     */
+    const tileWorldWidth =
+        tileBounds.maxX -
+        tileBounds.minX;
 
-    const worldWidth =
-        bounds.maxX -
-        bounds.minX;
+    if (
+        !Number.isFinite(
+            tileWorldWidth
+        ) ||
+        tileWorldWidth <= 0
+    ) {
+        return null;
+    }
 
-    const basePixelsPerKm =
+    const basePixelsPerWorldUnit =
         tiles.tileSize /
-        worldWidth;
+        tileWorldWidth;
 
-    const desiredPixelsPerKm =
+    const desiredPixelsPerWorldUnit =
         view().scale;
 
     const raw =
         Math.log2(
-            desiredPixelsPerKm /
-            basePixelsPerKm
+            desiredPixelsPerWorldUnit /
+            basePixelsPerWorldUnit
         );
 
     return Math.max(
@@ -53,6 +105,11 @@ function getTileZoom(map) {
         )
     );
 }
+
+
+/* =========================
+   CACHE / URL
+   ========================= */
 
 function tileKey(
     mapId,
@@ -159,19 +216,34 @@ function loadTile(
     return tile;
 }
 
+
+/* =========================
+   DRAW TILE MAP
+   ========================= */
+
 function drawTileMap(map) {
 
     const tiles =
         getTileConfig(map);
 
-    if (!tiles) {
+    const tileBounds =
+        getTileBounds(map);
+
+    if (
+        !tiles ||
+        !tileBounds
+    ) {
         return;
     }
 
     const v =
         view();
 
-    const bounds =
+    /*
+     * View / coordinate grid are clipped to map.bounds.
+     * Tile placement itself uses tileBounds.
+     */
+    const mapBounds =
         map.bounds;
 
     const zoom =
@@ -189,20 +261,18 @@ function drawTileMap(map) {
             zoom
         );
 
-    const worldWidth =
-        bounds.maxX -
-        bounds.minX;
-
-    const worldHeight =
-        bounds.maxY -
-        bounds.minY;
-
     const tileWorldWidth =
-        worldWidth /
+        (
+            tileBounds.maxX -
+            tileBounds.minX
+        ) /
         tileCount;
 
     const tileWorldHeight =
-        worldHeight /
+        (
+            tileBounds.maxY -
+            tileBounds.minY
+        ) /
         tileCount;
 
     const tileScreenWidth =
@@ -249,27 +319,37 @@ function drawTileMap(map) {
             bottomRight.y
         );
 
+    /*
+     * Only draw the intersection of:
+     *   - current viewport,
+     *   - actual map bounds,
+     *   - available tile imagery.
+     */
     const worldLeft =
         Math.max(
-            bounds.minX,
+            mapBounds.minX,
+            tileBounds.minX,
             visibleLeft
         );
 
     const worldRight =
         Math.min(
-            bounds.maxX,
+            mapBounds.maxX,
+            tileBounds.maxX,
             visibleRight
         );
 
     const worldBottom =
         Math.max(
-            bounds.minY,
+            mapBounds.minY,
+            tileBounds.minY,
             visibleBottom
         );
 
     const worldTop =
         Math.min(
-            bounds.maxY,
+            mapBounds.maxY,
+            tileBounds.maxY,
             visibleTop
         );
 
@@ -286,7 +366,7 @@ function drawTileMap(map) {
             Math.floor(
                 (
                     worldLeft -
-                    bounds.minX
+                    tileBounds.minX
                 ) /
                 tileWorldWidth
             ) - 1
@@ -298,7 +378,7 @@ function drawTileMap(map) {
             Math.floor(
                 (
                     worldRight -
-                    bounds.minX
+                    tileBounds.minX
                 ) /
                 tileWorldWidth
             ) + 1
@@ -309,7 +389,7 @@ function drawTileMap(map) {
             0,
             Math.floor(
                 (
-                    bounds.maxY -
+                    tileBounds.maxY -
                     worldTop
                 ) /
                 tileWorldHeight
@@ -321,7 +401,7 @@ function drawTileMap(map) {
             tileCount - 1,
             Math.floor(
                 (
-                    bounds.maxY -
+                    tileBounds.maxY -
                     worldBottom
                 ) /
                 tileWorldHeight
@@ -330,6 +410,11 @@ function drawTileMap(map) {
 
     ctx.save();
 
+    /*
+     * Renderer is already translated by v.left/v.top.
+     * This rect therefore represents the actual map
+     * coordinate extent, not the entire tile pyramid.
+     */
     ctx.beginPath();
 
     ctx.rect(
@@ -348,7 +433,7 @@ function drawTileMap(map) {
     ) {
 
         const tileWorldTop =
-            bounds.maxY -
+            tileBounds.maxY -
             tileY *
             tileWorldHeight;
 
@@ -359,7 +444,7 @@ function drawTileMap(map) {
         ) {
 
             const tileWorldLeft =
-                bounds.minX +
+                tileBounds.minX +
                 tileX *
                 tileWorldWidth;
 

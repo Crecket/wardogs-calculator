@@ -26,7 +26,9 @@ maps/tiles/bakurani/
 ├── zoom_2/
 ├── zoom_3/
 ├── zoom_4/
-└── zoom_5/
+├── zoom_5/
+├── zoom_6/
+└── zoom_7/
 ```
 
 Map configuration can define coordinate bounds:
@@ -39,17 +41,26 @@ Map configuration can define coordinate bounds:
     "h": 16,
 
     "bounds": {
-        "minX": 3.445,
-        "maxX": 12.34,
-        "minY": 3.016,
-        "maxY": 11.926
+        "minX": 23.35,
+        "maxX": 133.60,
+        "minY": 19.34,
+        "maxY": 129.65
     },
+
+    "tileBounds": {
+        "minX": 0.0,
+        "maxX": 163.84,
+        "minY": 0.0,
+        "maxY": 163.84
+    },
+
+    "coordinateMetersPerUnit": 100,
 
     "tiles": {
         "path": "maps/tiles/bakurani",
         "tileSize": 256,
         "minZoom": 0,
-        "maxZoom": 5,
+        "maxZoom": 7,
         "extension": "webp"
     }
 }
@@ -60,6 +71,29 @@ Map configuration can define coordinate bounds:
 Map calibration is based on available in-game reference data and may be refined as more accurate information becomes available.
 
 ---
+
+---
+
+
+## Marker zoom visibility
+
+Preset map markers support optional `minZoom` and `maxZoom` properties. These values use the **camera zoom multiplier** (`1` = Fit, `2` = 2× zoom, etc.). Both limits are inclusive.
+
+```json
+{
+    "icon": "tower",
+    "x": 8345,
+    "y": 7294,
+    "label": "Tower 4",
+    "minZoom": 2,
+    "maxZoom": 15
+}
+```
+
+- `minZoom`: marker is hidden while camera zoom is below this value.
+- `maxZoom`: marker is hidden while camera zoom is above this value.
+- If either property is omitted, that side of the range is unrestricted.
+- Hidden markers are also excluded from hover/click target detection.
 
 ---
 

@@ -15,7 +15,7 @@
   "targetStatus": "Zielstatus",
   "inRange": "In Reichweite",
   "outRange": "AUSSER REICHWEITE",
-  "rangeHint": "Der Kreis zeigt die maximale Reichweite der ausgewählten Waffe.",
+  "rangeHint": "Die Kreise zeigen die minimale und maximale Reichweite der ausgewählten Waffe.",
   "pointSelection": "Punktauswahl",
   "artillery": "Artillerie",
   "target": "Ziel",
@@ -81,5 +81,6 @@
   "mapToolFullscreen": "Vollbild",
   "mapToolExitFullscreen": "Vollbild beenden",
   "sidebarHide": "Seitenleiste ausblenden",
-  "sidebarShow": "Seitenleiste anzeigen"
+  "sidebarShow": "Seitenleiste anzeigen",
+  "weaponRange": "Reichweite"
 }

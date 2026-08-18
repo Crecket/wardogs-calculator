@@ -3,22 +3,24 @@
   "name": "Test map",
   "w": 10,
   "h": 10,
-
   "markers": [
     {
       "emoji": "🏠",
       "x": 3000,
       "y": 7000,
-      "label": "Main Base"
+      "label": "Main Base",
+      "minZoom": 0.4,
+      "maxZoom": 50
     },
     {
       "emoji": "⚠️",
       "x": 7000,
       "y": 4000,
-      "label": "Danger Zone"
+      "label": "Danger Zone",
+      "minZoom": 0.4,
+      "maxZoom": 50
     }
   ],
-
   "zones": [
     {
       "color": "#d86666",
@@ -33,7 +35,6 @@
       "radius": 1000
     }
   ],
-
   "polygons": [
     {
       "color": "#d86666",
@@ -67,7 +68,6 @@
         }
       ]
     },
-
     {
       "color": "#d7a452",
       "fillOpacity": 0.12,

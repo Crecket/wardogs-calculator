@@ -18,11 +18,17 @@ function result() {
         S.target.y -
         S.origin.y;
 
-    const d =
+    const dWorld =
         Math.hypot(
             dx,
             dy
         );
+
+    const dMeters =
+        worldDistanceToMeters(dWorld);
+
+    const d =
+        dMeters / 1000;
 
     let a =
         Math.atan2(
@@ -68,8 +74,7 @@ function result() {
         ) +
         Math.round(
             Math.abs(
-                dx *
-                1000
+                worldDistanceToMeters(dx)
             )
         ) +
         ' m';
@@ -83,23 +88,27 @@ function result() {
         ) +
         Math.round(
             Math.abs(
-                dy *
-                1000
+                worldDistanceToMeters(dy)
             )
         ) +
         ' m';
 
+    const minRange =
+        weapon.minRange ??
+        0;
+
+    const maxRange =
+        weapon.maxRange ??
+        weapon.range;
+
     const inRange =
-        d <=
-        weapon.range +
-        1e-9;
+        d + 1e-9 >= minRange &&
+        d <= maxRange + 1e-9;
 
     $('range').textContent =
-        Math.round(
-            weapon.range *
-            1000
-        ) +
-        ' m';
+        minRange > 0
+            ? `${Math.round(minRange * 1000)}–${Math.round(maxRange * 1000)} m`
+            : `${Math.round(maxRange * 1000)} m`;
 
     $('rangeStatus').textContent =
         inRange
@@ -122,21 +131,9 @@ function result() {
         `${getWeaponName(weapon)} · ` +
         `${mapName} · ` +
         `${tr('artillery')}: ` +
-        `${formatCoord(
-            S.origin.x *
-            1000
-        )}, ` +
-        `${formatCoord(
-            S.origin.y *
-            1000
-        )} · ` +
+        `${formatGameCoordinate(S.origin.x)}, ` +
+        `${formatGameCoordinate(S.origin.y)} · ` +
         `${tr('target')}: ` +
-        `${formatCoord(
-            S.target.x *
-            1000
-        )}, ` +
-        `${formatCoord(
-            S.target.y *
-            1000
-        )}`;
+        `${formatGameCoordinate(S.target.x)}, ` +
+        `${formatGameCoordinate(S.target.y)}`;
 }

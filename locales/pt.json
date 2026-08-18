@@ -15,7 +15,7 @@
   "targetStatus": "Estado do alvo",
   "inRange": "Ao alcance",
   "outRange": "FORA DE ALCANCE",
-  "rangeHint": "O círculo mostra o alcance máximo da arma selecionada a partir da posição da artilharia.",
+  "rangeHint": "Os círculos mostram o alcance mínimo e máximo da arma selecionada.",
   "pointSelection": "Seleção de pontos",
   "artillery": "Artilharia",
   "target": "Alvo",
@@ -81,5 +81,6 @@
   "mapToolFullscreen": "Ecrã inteiro",
   "mapToolExitFullscreen": "Sair do ecrã inteiro",
   "sidebarHide": "Ocultar barra lateral",
-  "sidebarShow": "Mostrar barra lateral"
+  "sidebarShow": "Mostrar barra lateral",
+  "weaponRange": "Alcance"
 }

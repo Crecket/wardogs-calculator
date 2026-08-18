@@ -13,7 +13,7 @@
   "targetStatus": "Target status",
   "inRange": "In range",
   "outRange": "OUT OF RANGE",
-  "rangeHint": "The circle shows the maximum range of the selected weapon from the artillery position.",
+  "rangeHint": "The circles show the minimum and maximum range of the selected weapon from the artillery position.",
   "pointSelection": "Point selection",
   "artillery": "Artillery",
   "target": "Target",
@@ -77,5 +77,6 @@
   "mapToolFullscreen": "Fullscreen",
   "mapToolExitFullscreen": "Exit fullscreen",
   "sidebarHide": "Hide sidebar",
-  "sidebarShow": "Show sidebar"
+  "sidebarShow": "Show sidebar",
+  "weaponRange": "Range"
 }

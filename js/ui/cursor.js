@@ -57,16 +57,10 @@ function updateCursor(e) {
     cursor.querySelector(
         '.cursor-x'
     ).textContent =
-        `x${formatCoord(
-            world.x *
-            1000
-        )}`;
+        `x${formatGameCoordinate(world.x)}`;
 
     cursor.querySelector(
         '.cursor-y'
     ).textContent =
-        `y${formatCoord(
-            world.y *
-            1000
-        )}`;
+        `y${formatGameCoordinate(world.y)}`;
 }

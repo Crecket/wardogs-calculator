@@ -385,7 +385,7 @@ function renderSavedTargets() {
                 'saved-target-coords';
 
             coords.textContent =
-                `X ${Math.round(target.x * 1000)} · Y ${Math.round(target.y * 1000)}`;
+                `X ${formatGameCoordinate(target.x)} · Y ${formatGameCoordinate(target.y)}`;
 
             info.appendChild(
                 name

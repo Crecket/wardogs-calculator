@@ -89,17 +89,14 @@ function drawPresetZones(map) {
 
             const pos =
                 worldToLocalScreen(
-                    zone.x /
-                    1000,
+                    storedMetersToWorldCoordinate(zone.x),
 
-                    zone.y /
-                    1000
+                    storedMetersToWorldCoordinate(zone.y)
                 );
 
             const radius =
                 (
-                    zone.radius /
-                    1000
+                    metersToWorldDistance(zone.radius)
                 ) *
                 v.scale;
 
@@ -285,11 +282,9 @@ function drawPolygonLabel(
 
     const screen =
         worldToLocalScreen(
-            center.x /
-            1000,
+            storedMetersToWorldCoordinate(center.x),
 
-            center.y /
-            1000
+            storedMetersToWorldCoordinate(center.y)
         );
 
     ctx.save();
@@ -414,11 +409,9 @@ function drawPresetPolygons(map) {
 
             const first =
                 worldToLocalScreen(
-                    validPoints[0].x /
-                    1000,
+                    storedMetersToWorldCoordinate(validPoints[0].x),
 
-                    validPoints[0].y /
-                    1000
+                    storedMetersToWorldCoordinate(validPoints[0].y)
                 );
 
             ctx.save();
@@ -441,11 +434,9 @@ function drawPresetPolygons(map) {
 
                 const screen =
                     worldToLocalScreen(
-                        point.x /
-                        1000,
+                        storedMetersToWorldCoordinate(point.x),
 
-                        point.y /
-                        1000
+                        storedMetersToWorldCoordinate(point.y)
                     );
 
                 ctx.lineTo(
@@ -562,6 +553,63 @@ let PRESET_TARGET_ANIMATION_FRAME =
 let PRESET_MARKER_HOVER_KEY =
     null;
 
+/* =========================
+   PRESET MARKER ZOOM VISIBILITY
+   ========================= */
+
+/*
+ * Marker minZoom / maxZoom values use the actual camera
+ * zoom multiplier (S.zoom). Both limits are inclusive.
+ * Missing limits mean unbounded.
+ *
+ * Example:
+ *   minZoom: 2   -> hidden below 2x camera zoom
+ *   maxZoom: 10  -> hidden above 10x camera zoom
+ */
+function getPresetMarkerZoomLevel() {
+
+    const zoom =
+        Number(S.zoom);
+
+    return Number.isFinite(zoom)
+        ? zoom
+        : 1;
+}
+
+function isPresetMarkerVisibleAtZoom(
+    item
+) {
+
+    if (!item) {
+        return false;
+    }
+
+    const zoom =
+        getPresetMarkerZoomLevel();
+
+    const minZoom =
+        Number(item.minZoom);
+
+    const maxZoom =
+        Number(item.maxZoom);
+
+    if (
+        Number.isFinite(minZoom) &&
+        zoom < minZoom
+    ) {
+        return false;
+    }
+
+    if (
+        Number.isFinite(maxZoom) &&
+        zoom > maxZoom
+    ) {
+        return false;
+    }
+
+    return true;
+}
+
 function getPresetMarkerKey(
     item,
     index,
@@ -591,8 +639,8 @@ function getPresetMarkerScreenGeometry(
 
     const center =
         toScreen(
-            item.x / 1000,
-            item.y / 1000
+            storedMetersToWorldCoordinate(item.x),
+            storedMetersToWorldCoordinate(item.y)
         );
 
     const asset =
@@ -700,6 +748,14 @@ function findPresetMarkerAtCanvasPoint(
             item,
             index
         ) => {
+
+            if (
+                !isPresetMarkerVisibleAtZoom(
+                    item
+                )
+            ) {
+                return;
+            }
 
             const geometry =
                 getPresetMarkerScreenGeometry(
@@ -889,11 +945,9 @@ function selectPresetMarkerAsTarget(
 
     S.target = {
         x:
-            item.x /
-            1000,
+            storedMetersToWorldCoordinate(item.x),
         y:
-            item.y /
-            1000
+            storedMetersToWorldCoordinate(item.y)
     };
 
     clamp(
@@ -994,12 +1048,12 @@ function getPresetMarkerSelectionProgress(
     const targetMatches =
         Math.abs(
             S.target.x -
-            item.x / 1000
+            storedMetersToWorldCoordinate(item.x)
         ) <
         0.0005 &&
         Math.abs(
             S.target.y -
-            item.y / 1000
+            storedMetersToWorldCoordinate(item.y)
         ) <
         0.0005;
 
@@ -1465,6 +1519,14 @@ function drawPresetMarkers(map) {
         ) => {
 
             if (
+                !isPresetMarkerVisibleAtZoom(
+                    item
+                )
+            ) {
+                return;
+            }
+
+            if (
                 typeof item.x !== 'number' ||
                 typeof item.y !== 'number'
             ) {
@@ -1473,8 +1535,8 @@ function drawPresetMarkers(map) {
 
             const pos =
                 worldToLocalScreen(
-                    item.x / 1000,
-                    item.y / 1000
+                    storedMetersToWorldCoordinate(item.x),
+                    storedMetersToWorldCoordinate(item.y)
                 );
 
             const x =

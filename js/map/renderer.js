@@ -167,8 +167,20 @@ function draw() {
                 S.target.y
             );
 
+        const maxRange =
+            currentWeapon.maxRange ??
+            currentWeapon.range;
+
+        const minRange =
+            currentWeapon.minRange ??
+            0;
+
         const rangePx =
-            currentWeapon.range *
+            kilometersToWorldDistance(maxRange) *
+            v.scale;
+
+        const minRangePx =
+            kilometersToWorldDistance(minRange) *
             v.scale;
 
         /*
@@ -204,6 +216,32 @@ function draw() {
         ctx.stroke();
 
         ctx.setLineDash([]);
+
+        if (minRangePx > 0) {
+            ctx.beginPath();
+
+            ctx.arc(
+                a.x,
+                a.y,
+                minRangePx,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.strokeStyle =
+                '#d86666';
+
+            ctx.lineWidth =
+                1.5;
+
+            ctx.setLineDash([
+                4,
+                4
+            ]);
+
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
 
         /*
          * Layer 6:

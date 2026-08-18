@@ -24,7 +24,7 @@
   },
   "map": {
     "camera": {
-      "maxZoom": 15
+      "maxZoom": 100
     }
   }
 }
