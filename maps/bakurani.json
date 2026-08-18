@@ -23,7 +23,7 @@
       "y": 7294,
       "label": "Tower 4",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     },
     {
       "icon": "tower",
@@ -31,7 +31,7 @@
       "y": 7349,
       "label": "Tower 3",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     },
     {
       "icon": "tower",
@@ -39,7 +39,7 @@
       "y": 7009,
       "label": "Tower 2",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     },
     {
       "icon": "tower",
@@ -47,7 +47,7 @@
       "y": 6992,
       "label": "Tower 1",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     },
     {
       "icon": "tower",
@@ -55,7 +55,7 @@
       "y": 6850,
       "label": "Tower 5",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     },
     {
       "icon": "tower-inactive",
@@ -63,7 +63,7 @@
       "y": 7800,
       "label": "",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     },
     {
       "icon": "tower-inactive",
@@ -71,7 +71,7 @@
       "y": 7223,
       "label": "",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     },
     {
       "icon": "tower-inactive",
@@ -79,7 +79,7 @@
       "y": 6395,
       "label": "",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     },
     {
       "icon": "tower-inactive",
@@ -87,7 +87,7 @@
       "y": 6796,
       "label": "",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     },
     {
       "icon": "tower-inactive",
@@ -95,7 +95,7 @@
       "y": 6773,
       "label": "",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     },
     {
       "icon": "tower-inactive",
@@ -103,7 +103,7 @@
       "y": 7375,
       "label": "",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     }
   ],
   "zones": [],

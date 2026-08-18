@@ -52,6 +52,13 @@ async function init() {
 
         bindEvents();
 
+        if (
+            typeof initMobileUI ===
+            'function'
+        ) {
+            initMobileUI();
+        }
+
         loadSaveArtilleryPreference();
 
         updatePresetLock();

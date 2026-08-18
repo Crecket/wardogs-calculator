@@ -10,7 +10,7 @@
       "y": 7000,
       "label": "Main Base",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     },
     {
       "emoji": "⚠️",
@@ -18,7 +18,7 @@
       "y": 4000,
       "label": "Danger Zone",
       "minZoom": 0.4,
-      "maxZoom": 50
+      "maxZoom": 100
     }
   ],
   "zones": [

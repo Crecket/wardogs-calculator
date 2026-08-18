@@ -5,7 +5,7 @@
 const DEFAULT_APP_CONFIG = {
     map: {
         camera: {
-            maxZoom: 8
+            maxZoom: 100
         }
     },
 

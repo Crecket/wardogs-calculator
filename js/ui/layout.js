@@ -172,6 +172,11 @@ function updateLayoutLocalization() {
 
 function initLayout() {
 
+    const mobileApp =
+        document.body.classList.contains(
+            'mobile-app'
+        );
+
     const button =
         $('sidebarToggle');
 
@@ -186,10 +191,12 @@ function initLayout() {
         }
     );
 
-    setSidebarCollapsed(
-        loadSidebarState(),
-        false
-    );
+    if (!mobileApp) {
+        setSidebarCollapsed(
+            loadSidebarState(),
+            false
+        );
+    }
 
     const map =
         document.querySelector(

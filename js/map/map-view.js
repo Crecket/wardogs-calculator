@@ -71,7 +71,11 @@ function view() {
         wrap.clientHeight;
 
     const padding =
-        34;
+        document.body.classList.contains(
+            'mobile-app'
+        )
+            ? 12
+            : 34;
 
     const bounds =
         getViewBounds();
