@@ -1,0 +1,83 @@
+/* =========================
+   DESKTOP LAYOUT OVERRIDES
+   ========================= */
+
+.mobile-app .sidebar-toggle,
+.mobile-app footer,
+.mobile-app .toolbar,
+.mobile-app .legend {
+    display: none !important;
+}
+
+.mobile-app .mobile-main.sidebar-collapsed,
+.mobile-app .mobile-main.sidebar-collapsed > aside {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+}
+
+.mobile-app main:fullscreen,
+.mobile-app main:-webkit-full-screen {
+    top: 0;
+    height: 100vh;
+}
+
+.mobile-app main:fullscreen .mobile-sheet,
+.mobile-app main:-webkit-full-screen .mobile-sheet {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mobile-app .motd {
+    top: calc(var(--mobile-header-height) + env(safe-area-inset-top) + 10px);
+    right: 10px;
+    bottom: auto;
+    left: 10px;
+    width: auto;
+    z-index: 200;
+}
+
+/* =========================
+   SMALL / SHORT SCREENS
+   ========================= */
+
+@media (max-width: 370px) {
+    body.mobile-app {
+        --mobile-sheet-peek: 88px;
+    }
+
+    .mobile-brand-copy > span {
+        display: none;
+    }
+
+    .mobile-brand-icon {
+        width: 28px;
+        height: 28px;
+        flex-basis: 28px;
+    }
+
+    .mobile-solution-hud {
+        width: 146px;
+    }
+
+    .mobile-app .map-tool-button {
+        width: 38px;
+        height: 38px;
+        min-height: 38px;
+    }
+}
+
+@media (max-height: 650px) {
+    .mobile-sheet {
+        height: 74vh;
+    }
+
+    .mobile-app .map-tools {
+        top: 38px;
+    }
+
+    .mobile-app .map-tool-button {
+        width: 36px;
+        height: 36px;
+        min-height: 36px;
+    }
+}

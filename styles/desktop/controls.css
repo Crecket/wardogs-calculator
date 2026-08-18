@@ -1,0 +1,223 @@
+/* =========================
+   LABELS
+   ========================= */
+
+label {
+    display: block;
+
+    color: var(--muted);
+
+    font-size: 11px;
+
+    margin: 9px 0 5px;
+}
+
+
+/* =========================
+   INPUTS / BUTTONS / SELECTS
+   ========================= */
+
+input,
+button,
+select {
+    width: 100%;
+    min-height: 36px;
+
+    padding: 9px;
+
+    border: 1px solid var(--border-light);
+
+    border-radius: 6px;
+
+    background: var(--input-bg);
+    color: var(--text);
+
+    font: inherit;
+
+    transition:
+            border-color .15s ease,
+            background-color .15s ease,
+            box-shadow .15s ease,
+            transform .15s ease;
+}
+
+input:hover,
+button:hover,
+select:hover {
+    border-color: var(--accent-border);
+}
+
+input:focus,
+select:focus {
+    outline: none;
+
+    border-color: var(--accent-border);
+
+    box-shadow:
+            0 0 0 2px
+            color-mix(
+                    in srgb,
+                    var(--accent) 15%,
+                    transparent
+            );
+}
+
+
+/* =========================
+   SELECT
+   ========================= */
+
+select {
+    appearance: none;
+    -webkit-appearance: none;
+
+    background:
+            linear-gradient(
+                    45deg,
+                    transparent 50%,
+                    var(--accent) 50%
+            )
+            calc(100% - 16px) 50% / 6px 6px no-repeat,
+
+            linear-gradient(
+                    135deg,
+                    var(--accent) 50%,
+                    transparent 50%
+            )
+            calc(100% - 11px) 50% / 6px 6px no-repeat,
+
+            var(--input-bg);
+
+    padding-right: 34px;
+
+    cursor: pointer;
+}
+
+select option {
+    background: var(--input-bg);
+    color: var(--text);
+}
+
+
+/* =========================
+   BUTTONS
+   ========================= */
+
+button {
+    cursor: pointer;
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+button:disabled {
+    opacity: .4;
+
+    cursor: not-allowed;
+}
+
+.primary {
+    background: var(--primary-bg);
+
+    border-color: var(--primary-border);
+}
+
+
+/* =========================
+   GRID
+   ========================= */
+
+.grid2 {
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 7px;
+}
+
+
+/* =========================
+   POINT MODE
+   ========================= */
+
+.mode {
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 6px;
+}
+
+.mode .active {
+    border-color: var(--accent-border);
+
+    background: var(--active-bg);
+}
+
+
+/* =========================
+   RESULT
+   ========================= */
+
+.result {
+    padding: 13px;
+
+    border: 1px solid var(--border-light);
+
+    border-radius: 7px;
+
+    background: var(--panel-bg);
+}
+
+.unit {
+    font-size: 10px;
+
+    color: var(--muted);
+
+    letter-spacing: .08em;
+}
+
+.angle {
+    font-size: 30px;
+
+    color: var(--accent);
+
+    font-weight: 700;
+
+    margin: 2px 0 10px;
+
+    line-height: 1.1;
+}
+
+.row {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin: 7px 0;
+}
+
+.row b {
+    text-align: right;
+}
+
+
+/* =========================
+   HINT / STATUS
+   ========================= */
+
+.hint,
+.status {
+    font-size: 11px;
+
+    color: var(--muted);
+
+    line-height: 1.45;
+}
+
+

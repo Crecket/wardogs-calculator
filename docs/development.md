@@ -27,6 +27,23 @@ wardogs-calculator/
 ├── maps/
 │   └── tiles/
 │
+├── styles/
+│   ├── desktop/
+│   │   ├── base.css
+│   │   ├── layout.css
+│   │   ├── controls.css
+│   │   ├── map.css
+│   │   ├── saved-targets.css
+│   │   ├── chrome.css
+│   │   ├── map-tools.css
+│   │   └── motd.css
+│   └── mobile/
+│       ├── shell.css
+│       ├── map.css
+│       ├── tools.css
+│       ├── sheet.css
+│       └── responsive.css
+│
 ├── scripts/
 │   └── build-pages.mjs
 │
@@ -48,6 +65,18 @@ wardogs-calculator/
 ```
 
 `dist/` is generated during the build process and is not committed to the repository.
+
+CSS source is split into focused modules under `styles/desktop/` and `styles/mobile/`.
+The root `style.css` and `mobile.css` files are lightweight development entry points that import those modules.
+
+During `npm run build`, the modules are concatenated in a fixed order into:
+
+```text
+dist/style.css
+dist/mobile.css
+```
+
+This keeps the source maintainable while production still loads only one desktop stylesheet and one mobile override stylesheet.
 
 The old standalone `dist-mobile/` output is no longer used. Desktop and mobile are built into one artifact.
 
@@ -156,10 +185,11 @@ You can keep the HTTP server running while rebuilding the project from another t
 `scripts/build-pages.mjs` now creates both interfaces in a single pass:
 
 1. Clears `dist/`
-2. Copies shared assets, JavaScript, locales, map data, map tiles, config, and CSS once
-3. Generates desktop language pages
-4. Generates `/mobile/` and its language routes from the mobile template
-5. Copies the root `CNAME` and sitemap
+2. Copies shared assets, JavaScript, locales, map data, map tiles, and config
+3. Bundles modular desktop/mobile CSS into `dist/style.css` and `dist/mobile.css`
+4. Generates desktop language pages
+5. Generates `/mobile/` and its language routes from the mobile template
+6. Copies the root `CNAME` and sitemap
 
 There is no separate mobile CNAME or mobile deployment artifact.
 

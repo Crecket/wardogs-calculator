@@ -16,10 +16,27 @@ const sourceDirs = [
 ];
 
 const commonSourceFiles = [
-    'style.css',
-    'mobile.css',
     'robots.txt',
     'LICENSE'
+];
+
+const desktopStyleFiles = [
+    'styles/desktop/base.css',
+    'styles/desktop/layout.css',
+    'styles/desktop/controls.css',
+    'styles/desktop/map.css',
+    'styles/desktop/saved-targets.css',
+    'styles/desktop/chrome.css',
+    'styles/desktop/map-tools.css',
+    'styles/desktop/motd.css'
+];
+
+const mobileStyleFiles = [
+    'styles/mobile/shell.css',
+    'styles/mobile/map.css',
+    'styles/mobile/tools.css',
+    'styles/mobile/sheet.css',
+    'styles/mobile/responsive.css'
 ];
 
 async function exists(path) {
@@ -34,6 +51,35 @@ async function exists(path) {
 async function copyIfExists(source, target) {
     if (!(await exists(source))) return;
     await cp(source, target, { recursive: true });
+}
+
+async function bundleStyleFiles(files, outputName) {
+    let css = '';
+
+    for (const file of files) {
+        css += await readFile(
+            join(root, file),
+            'utf8'
+        );
+    }
+
+    await writeFile(
+        join(dist, outputName),
+        css,
+        'utf8'
+    );
+}
+
+async function bundleStyles() {
+    await bundleStyleFiles(
+        desktopStyleFiles,
+        'style.css'
+    );
+
+    await bundleStyleFiles(
+        mobileStyleFiles,
+        'mobile.css'
+    );
 }
 
 async function copySharedStatic() {
@@ -230,6 +276,7 @@ await mkdir(
 );
 
 await copySharedStatic();
+await bundleStyles();
 await buildDesktopPages();
 await buildMobilePages();
 
