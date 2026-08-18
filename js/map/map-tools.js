@@ -623,6 +623,19 @@ function submitCoordinateSearch() {
     }
 
     if (error) error.textContent = '';
+
+    if (
+        typeof trackAnalytics ===
+        'function'
+    ) {
+        trackAnalytics(
+            'coordinate-search',
+            {
+                map: S.map
+            }
+        );
+    }
+
     closeMapToolMenus();
 }
 
@@ -1102,6 +1115,19 @@ function placeMapToolMarker(point) {
     });
 
     saveMapToolState();
+
+    if (
+        typeof trackAnalytics ===
+        'function'
+    ) {
+        trackAnalytics(
+            'user-marker-placed',
+            {
+                map: S.map
+            }
+        );
+    }
+
     draw();
 }
 
@@ -1464,12 +1490,40 @@ function handleMapToolMouseUp() {
     if (
         MAP_TOOL_STATE.rulerDragging
     ) {
+        const start =
+            MAP_TOOL_STATE.rulerStart;
+
+        const end =
+            MAP_TOOL_STATE.rulerEnd;
+
         MAP_TOOL_STATE.rulerDragging =
             false;
         MAP_TOOL_STATE.rulerStart =
             null;
         MAP_TOOL_STATE.rulerEnd =
             null;
+
+        if (
+            start &&
+            end &&
+            Math.hypot(
+                end.x - start.x,
+                end.y - start.y
+            ) > 0
+        ) {
+            if (
+                typeof trackAnalytics ===
+                'function'
+            ) {
+                trackAnalytics(
+                    'ruler-used',
+                    {
+                        map: S.map
+                    }
+                );
+            }
+        }
+
         draw();
         return true;
     }
@@ -1492,6 +1546,18 @@ function handleMapToolMouseUp() {
                 path
             );
             saveMapToolState();
+
+            if (
+                typeof trackAnalytics ===
+                'function'
+            ) {
+                trackAnalytics(
+                    'drawing-created',
+                    {
+                        map: S.map
+                    }
+                );
+            }
         }
 
         MAP_TOOL_STATE.activePath =

@@ -65,6 +65,18 @@ function bindEvents() {
 
             updatePresetLock();
 
+            if (
+                typeof trackAnalytics ===
+                'function'
+            ) {
+                trackAnalytics(
+                    'map-changed',
+                    {
+                        map: S.map
+                    }
+                );
+            }
+
             inputs();
         }
     );
@@ -88,6 +100,18 @@ function bindEvents() {
 
             S.weapon =
                 $('weapon').value;
+
+            if (
+                typeof trackAnalytics ===
+                'function'
+            ) {
+                trackAnalytics(
+                    'weapon-changed',
+                    {
+                        weapon: S.weapon
+                    }
+                );
+            }
 
             draw();
         }
@@ -142,6 +166,18 @@ function bindEvents() {
                 0;
 
             updatePresetLock();
+
+            if (
+                typeof trackAnalytics ===
+                'function'
+            ) {
+                trackAnalytics(
+                    'map-changed',
+                    {
+                        map: 'custom'
+                    }
+                );
+            }
 
             inputs();
         }
@@ -565,7 +601,23 @@ function bindEvents() {
         'mouseup',
         () => {
 
+            const placedPoint =
+                drag;
+
             handleMapToolMouseUp();
+
+            if (
+                placedPoint &&
+                typeof trackAnalytics ===
+                'function'
+            ) {
+                trackAnalytics(
+                    `${placedPoint}-placed`,
+                    {
+                        map: S.map
+                    }
+                );
+            }
 
             drag =
                 null;

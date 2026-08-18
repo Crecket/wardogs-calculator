@@ -10,7 +10,20 @@ A lightweight, open-source artillery calculator and tactical map tool for **WARD
 **Live app:** https://wardogs-artillery.com/  
 **Mobile UI:** https://wardogs-artillery.com/mobile/
 
-![WARDOGS Artillery Calculator](assets/preview.png)
+<table>
+  <tr>
+    <th width="72%">Desktop</th>
+    <th width="28%">Mobile</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/preview.png" alt="WARDOGS Artillery Calculator — Desktop">
+    </td>
+    <td align="center">
+      <img src="assets/preview_mobile.png" alt="WARDOGS Artillery Calculator — Mobile">
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -34,6 +47,7 @@ Detailed documentation is split into focused files to keep this README concise.
 - [Mobile interface](docs/mobile.md) — mobile routes, automatic routing, touch controls, and deployment architecture
 - [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, and localized URLs
 - [Development](docs/development.md) — project structure, local development, unified build process, and GitHub Pages deployment
+- [Analytics](docs/analytics.md) — Umami custom events, event payloads, debouncing, and privacy considerations
 - [Message of the Day](docs/motd.md) — MOTD configuration and behavior
 - [Contributing](docs/contributing.md) — contribution guidelines
 - [License & Disclaimer](docs/legal.md) — MIT scope, third-party assets, and project disclaimer

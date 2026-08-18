@@ -136,4 +136,13 @@ function result() {
         `${tr('target')}: ` +
         `${formatGameCoordinate(S.target.x)}, ` +
         `${formatGameCoordinate(S.target.y)}`;
+
+    if (
+        typeof trackCalculationState ===
+        'function'
+    ) {
+        trackCalculationState(
+            inRange
+        );
+    }
 }

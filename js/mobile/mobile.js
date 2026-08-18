@@ -417,13 +417,29 @@ function finishMobileTap(event, gesture) {
         return;
     }
 
-    S[S.mode] = {
+    const pointType =
+        S.mode;
+
+    S[pointType] = {
         x: world.x,
         y: world.y
     };
 
-    clamp(S[S.mode]);
+    clamp(S[pointType]);
     selectedSavedTargetId = null;
+
+    if (
+        typeof trackAnalytics ===
+        'function'
+    ) {
+        trackAnalytics(
+            `${pointType}-placed`,
+            {
+                map: S.map
+            }
+        );
+    }
+
     inputs();
     renderSavedTargets();
 }
@@ -455,6 +471,20 @@ function handleMobilePointerUp(event) {
         handleMapToolMouseUp();
         MOBILE_TOUCH.gesture = null;
         return;
+    }
+
+    if (
+        gesture?.type === 'point' &&
+        gesture.pointerId === event.pointerId &&
+        typeof trackAnalytics ===
+        'function'
+    ) {
+        trackAnalytics(
+            `${gesture.pointType}-placed`,
+            {
+                map: S.map
+            }
+        );
     }
 
     if (gesture?.type === 'pinch') {
@@ -815,6 +845,22 @@ function initMobileUI() {
     }
 
     updateMobileDesktopLink();
+
+    $('mobileDesktopVersion')
+        ?.addEventListener(
+            'click',
+            () => {
+                if (
+                    typeof trackAnalytics ===
+                    'function'
+                ) {
+                    trackAnalytics(
+                        'desktop-version'
+                    );
+                }
+            }
+        );
+
     bindMobileCanvas();
     bindMobileSheet();
     setMobileSheetOpen(false);

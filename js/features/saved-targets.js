@@ -186,6 +186,19 @@ function saveCurrentTarget() {
 
     persistSavedTargets();
 
+    if (
+        typeof trackAnalytics ===
+        'function'
+    ) {
+        trackAnalytics(
+            'target-saved',
+            {
+                withArtillery:
+                    saveArtillery
+            }
+        );
+    }
+
     renderSavedTargets();
 }
 
@@ -284,6 +297,22 @@ function restoreTarget(target) {
 
     selectedSavedTargetId =
         target.id;
+
+    if (
+        typeof trackAnalytics ===
+        'function'
+    ) {
+        trackAnalytics(
+            'target-restored',
+            {
+                withArtillery:
+                    Boolean(
+                        target.saveArtillery &&
+                        target.origin
+                    )
+            }
+        );
+    }
 
     inputs();
     renderSavedTargets();
