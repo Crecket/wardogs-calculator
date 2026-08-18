@@ -12,19 +12,21 @@ The application currently supports:
 - Portuguese
 - Cat 🐈
 
-Translation data is stored under:
+Translation data is stored once under:
 
 ```text
 locales/
 ```
 
-The application automatically selects a language based on the user's browser/system locale.
+The **same locale JSON files are used by both desktop and mobile interfaces**. Mobile translations are not duplicated.
 
-If the user manually selects another language, that preference is stored locally and takes priority on future visits.
+The application automatically selects a language based on the user's browser/system locale. If the user manually selects another language, that preference is stored under the shared `wardogs-language` localStorage key and takes priority on future visits.
 
-### Localized URLs
+Because desktop and mobile are served from the same origin, a language selected in one interface is immediately available to the other.
 
-Search-indexable localized pages are available at:
+## Localized URLs
+
+Desktop pages:
 
 ```text
 /
@@ -34,25 +36,48 @@ Search-indexable localized pages are available at:
 ├── fr/
 ├── es/
 ├── pl/
-└── pt/
+├── pt/
+└── cat/
+```
+
+Mobile pages:
+
+```text
+/mobile/
+├── ru/
+├── uk/
+├── de/
+├── fr/
+├── es/
+├── pl/
+├── pt/
+└── cat/
 ```
 
 For example:
 
 ```text
 https://wardogs-artillery.com/ru/
-https://wardogs-artillery.com/de/
+https://wardogs-artillery.com/mobile/ru/
 ```
 
-The Cat localization is intentionally excluded from search indexing.
+Changing language from the mobile UI keeps the user inside `/mobile/`. Changing language from the desktop UI keeps the user on the desktop routes.
 
----
+Automatic device routing also preserves explicit language routes:
+
+```text
+/de/ -> /mobile/de/
+```
+
+The root entry (`/` or `/mobile/`) may still use the browser/system locale automatically when there is no saved manual preference.
+
+Desktop localized pages are search-indexable. Mobile pages are intentionally `noindex` and canonicalize to the matching desktop language URL. The Cat localization remains excluded from normal search indexing.
 
 ---
 
 ## Localized Page Sources
 
-Localized HTML entry pages are kept outside the repository root:
+Desktop localized HTML entry pages are kept under:
 
 ```text
 src/
@@ -69,18 +94,21 @@ src/
         └── cat.html
 ```
 
-These files are transformed into the public directory structure during the build process.
-
-For example:
+The mobile interface uses one HTML template:
 
 ```text
-src/pages/locales/ru.html
-        ↓
-dist/ru/index.html
-        ↓
-https://wardogs-artillery.com/ru/
+src/pages/mobile/index.html
 ```
 
-This keeps the repository root clean without changing any public URLs.
+The build script generates the language-specific mobile routes automatically from `locales/index.json`:
 
----
+```text
+src/pages/mobile/index.html
+        ↓
+dist/mobile/index.html
+dist/mobile/ru/index.html
+dist/mobile/de/index.html
+...
+```
+
+All generated mobile pages reference the shared root-level assets, JavaScript, locales, map configuration, and map tiles instead of creating duplicate copies.

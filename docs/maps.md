@@ -66,7 +66,11 @@ Map configuration can define coordinate bounds:
 }
 ```
 
-`bounds` maps the rendered map image to the in-game coordinate system.
+`bounds` defines the playable/searchable in-game coordinate extent. It is used for coordinate search, point clamping, the visible grid, and camera fit.
+
+`tileBounds` is independent from `bounds` and defines the world-coordinate extent covered by the complete tile pyramid. This separation allows the source render to contain terrain outside the playable coordinate rectangle without shifting the in-game grid.
+
+`coordinateMetersPerUnit` converts map-coordinate deltas into physical meters. For Bakurani, `100` means one coordinate unit equals 100 meters, so `0.01` coordinate equals 1 meter.
 
 Map calibration is based on available in-game reference data and may be refined as more accurate information becomes available.
 

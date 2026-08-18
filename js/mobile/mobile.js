@@ -762,11 +762,59 @@ function bindMobileCanvas() {
     );
 }
 
+function updateMobileDesktopLink() {
+    const link =
+        $('mobileDesktopVersion');
+
+    if (!link) {
+        return;
+    }
+
+    const siteRoot =
+        new URL(
+            './',
+            document.baseURI
+        );
+
+    const languagePath =
+        LANG &&
+        LANG !== DEFAULT_LANG
+            ? `${LANG}/`
+            : '';
+
+    const target =
+        new URL(
+            languagePath,
+            siteRoot
+        );
+
+    target.searchParams.set(
+        'desktop',
+        '1'
+    );
+
+    link.href =
+        target.href;
+}
+
 function initMobileUI() {
     if (!isMobileApp()) {
         return;
     }
 
+    /*
+     * Visiting the mobile route explicitly restores
+     * automatic device routing for future desktop visits.
+     */
+    try {
+        sessionStorage.removeItem(
+            'wardogs-force-desktop'
+        );
+    } catch (_) {
+        // Storage access is optional.
+    }
+
+    updateMobileDesktopLink();
     bindMobileCanvas();
     bindMobileSheet();
     setMobileSheetOpen(false);

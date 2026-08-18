@@ -82,5 +82,6 @@
   "mapToolExitFullscreen": "Quitter le plein écran",
   "sidebarHide": "Masquer la barre latérale",
   "sidebarShow": "Afficher la barre latérale",
-  "weaponRange": "Portée"
+  "weaponRange": "Portée",
+  "desktopVersion": "Version bureau"
 }

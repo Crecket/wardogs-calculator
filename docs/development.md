@@ -8,6 +8,7 @@ wardogs-calculator/
 │
 ├── assets/
 │   ├── flags/
+│   ├── map-markers/
 │   ├── favicon.png
 │   └── preview.png
 │
@@ -15,8 +16,11 @@ wardogs-calculator/
 ├── data/
 ├── js/
 │   ├── core/
+│   │   └── mobile-redirect.js
 │   ├── features/
 │   ├── map/
+│   ├── mobile/
+│   │   └── mobile.js
 │   └── ui/
 │
 ├── locales/
@@ -29,10 +33,13 @@ wardogs-calculator/
 ├── src/
 │   └── pages/
 │       ├── index.html
-│       └── locales/
+│       ├── locales/
+│       └── mobile/
+│           └── index.html
 │
 ├── package.json
 ├── style.css
+├── mobile.css
 ├── robots.txt
 ├── sitemap.xml
 ├── CNAME
@@ -42,7 +49,7 @@ wardogs-calculator/
 
 `dist/` is generated during the build process and is not committed to the repository.
 
----
+The old standalone `dist-mobile/` output is no longer used. Desktop and mobile are built into one artifact.
 
 ---
 
@@ -52,9 +59,10 @@ wardogs-calculator/
 - CSS3
 - Vanilla JavaScript
 - HTML Canvas API
+- Pointer Events
 - Fetch API
 - JSON
-- Browser `localStorage`
+- Browser `localStorage` / `sessionStorage`
 - Node.js build script
 - GitHub Actions
 - GitHub Pages
@@ -62,8 +70,6 @@ wardogs-calculator/
 The application itself intentionally uses **no frontend framework**.
 
 Node.js is only used for the build/deployment process.
-
----
 
 ---
 
@@ -85,13 +91,28 @@ From the project root:
 npm run build
 ```
 
-This generates:
+This generates one production artifact:
 
 ```text
 dist/
+├── index.html
+├── ru/
+├── de/
+├── ...
+├── mobile/
+│   ├── index.html
+│   ├── ru/
+│   ├── de/
+│   └── ...
+├── assets/
+├── js/
+├── locales/
+├── maps/
+├── config/
+└── data/
 ```
 
-with the same directory structure that is deployed to production.
+Large shared resources such as the Bakurani tile pyramid exist only once under `dist/maps/` and are reused by both interfaces.
 
 ### 2. Start a local server
 
@@ -102,23 +123,21 @@ cd dist
 python -m http.server 8000
 ```
 
-Then open:
+Desktop:
 
 ```text
 http://localhost:8000/
+http://localhost:8000/ru/
 ```
 
-Localized pages can be tested using the same URL structure as production:
+Mobile:
 
 ```text
-http://localhost:8000/ru/
-http://localhost:8000/uk/
-http://localhost:8000/de/
+http://localhost:8000/mobile/
+http://localhost:8000/mobile/ru/
 ```
 
 ### Development Workflow
-
-When modifying the project:
 
 ```text
 Edit source
@@ -132,6 +151,18 @@ You can keep the HTTP server running while rebuilding the project from another t
 
 ---
 
+## Unified Build
+
+`scripts/build-pages.mjs` now creates both interfaces in a single pass:
+
+1. Clears `dist/`
+2. Copies shared assets, JavaScript, locales, map data, map tiles, config, and CSS once
+3. Generates desktop language pages
+4. Generates `/mobile/` and its language routes from the mobile template
+5. Copies the root `CNAME` and sitemap
+
+There is no separate mobile CNAME or mobile deployment artifact.
+
 ---
 
 ## Deployment
@@ -140,9 +171,11 @@ Production is available at:
 
 **https://wardogs-artillery.com/**
 
-Deployment is handled automatically by GitHub Actions.
+Mobile is part of the same deployment:
 
-The workflow is located at:
+**https://wardogs-artillery.com/mobile/**
+
+Deployment is handled automatically by GitHub Actions through:
 
 ```text
 .github/workflows/pages.yml
@@ -158,16 +191,11 @@ On a push to `main`, GitHub Actions:
 npm run build
 ```
 
-4. Generates the production site in:
-
-```text
-dist/
-```
-
-5. Uploads the generated site as a GitHub Pages artifact
+4. Generates the complete production site in `dist/`
+5. Uploads `dist/` as one GitHub Pages artifact
 6. Deploys it to GitHub Pages
 
-GitHub Pages should therefore be configured to use:
+GitHub Pages should be configured to use:
 
 ```text
 Settings
@@ -177,6 +205,12 @@ Settings
 → GitHub Actions
 ```
 
-Do not manually edit files inside `dist/`, as they will be regenerated during the next build.
+The only custom domain required is:
 
----
+```text
+wardogs-artillery.com
+```
+
+No `m.wardogs-artillery.com` DNS record or second repository is required.
+
+Do not manually edit files inside `dist/`, as they will be regenerated during the next build.

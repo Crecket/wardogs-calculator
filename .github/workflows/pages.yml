@@ -32,7 +32,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build
+      - name: Build desktop + mobile
         run: npm run build
 
       - name: Setup Pages

@@ -82,5 +82,6 @@
   "mapToolExitFullscreen": "Salir de pantalla completa",
   "sidebarHide": "Ocultar barra lateral",
   "sidebarShow": "Mostrar barra lateral",
-  "weaponRange": "Alcance"
+  "weaponRange": "Alcance",
+  "desktopVersion": "Versión de escritorio"
 }

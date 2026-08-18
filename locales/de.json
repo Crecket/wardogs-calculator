@@ -82,5 +82,6 @@
   "mapToolExitFullscreen": "Vollbild beenden",
   "sidebarHide": "Seitenleiste ausblenden",
   "sidebarShow": "Seitenleiste anzeigen",
-  "weaponRange": "Reichweite"
+  "weaponRange": "Reichweite",
+  "desktopVersion": "Desktop-Version"
 }

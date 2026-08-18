@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
+const dist = join(root, 'dist');
 
 const sourceDirs = [
     'assets',
@@ -16,6 +17,7 @@ const sourceDirs = [
 
 const commonSourceFiles = [
     'style.css',
+    'mobile.css',
     'robots.txt',
     'LICENSE'
 ];
@@ -34,28 +36,20 @@ async function copyIfExists(source, target) {
     await cp(source, target, { recursive: true });
 }
 
-async function copySharedStatic(target) {
+async function copySharedStatic() {
     for (const dir of sourceDirs) {
         await copyIfExists(
             join(root, dir),
-            join(target, dir)
+            join(dist, dir)
         );
     }
 
     for (const file of commonSourceFiles) {
         await copyIfExists(
             join(root, file),
-            join(target, file)
+            join(dist, file)
         );
     }
-}
-
-async function buildDesktop() {
-    const dist = join(root, 'dist');
-
-    await rm(dist, { recursive: true, force: true });
-    await mkdir(dist, { recursive: true });
-    await copySharedStatic(dist);
 
     for (const file of ['sitemap.xml', 'CNAME']) {
         await copyIfExists(
@@ -63,7 +57,9 @@ async function buildDesktop() {
             join(dist, file)
         );
     }
+}
 
+async function buildDesktopPages() {
     await copyIfExists(
         join(root, 'src', 'pages', 'index.html'),
         join(dist, 'index.html')
@@ -76,50 +72,54 @@ async function buildDesktop() {
         'locales'
     );
 
-    if (await exists(localizedDir)) {
-        const files = await readdir(localizedDir);
-
-        for (const file of files) {
-            if (!file.endsWith('.html')) continue;
-
-            const lang = file.slice(0, -5);
-            const targetDir = join(dist, lang);
-
-            await mkdir(targetDir, { recursive: true });
-            await cp(
-                join(localizedDir, file),
-                join(targetDir, 'index.html')
-            );
-        }
+    if (!(await exists(localizedDir))) {
+        return;
     }
 
-    console.log(`Built desktop site into ${dist}`);
+    const files = await readdir(localizedDir);
+
+    for (const file of files) {
+        if (!file.endsWith('.html')) continue;
+
+        const lang = file.slice(0, -5);
+        const targetDir = join(dist, lang);
+
+        await mkdir(targetDir, { recursive: true });
+        await cp(
+            join(localizedDir, file),
+            join(targetDir, 'index.html')
+        );
+    }
 }
 
 function renderMobileLocale(template, language) {
     const isDefault = language === 'en';
+
     const desktopCanonical = isDefault
         ? 'https://wardogs-artillery.com/'
         : `https://wardogs-artillery.com/${language}/`;
 
-    let html = template
+    const baseHref = isDefault
+        ? '../'
+        : '../../';
+
+    return template
         .replace(
             '<html data-page-language="en" lang="en">',
             `<html data-page-language="${language}" lang="${language}">`
         )
         .replace(
+            '<base href="../"/>',
+            `<base href="${baseHref}"/>`
+        )
+        .replace(
             '<link href="https://wardogs-artillery.com/" rel="canonical"/>',
             `<link href="${desktopCanonical}" rel="canonical"/>`
+        )
+        .replace(
+            'href="../?desktop=1"',
+            `href="${desktopCanonical}?desktop=1"`
         );
-
-    if (!isDefault) {
-        html = html.replace(
-            '<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>',
-            '<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>\n<base href="../"/>'
-        );
-    }
-
-    return html;
 }
 
 async function getMobileLanguages() {
@@ -144,24 +144,30 @@ async function getMobileLanguages() {
     );
 }
 
-async function buildMobile() {
-    const dist = join(root, 'dist-mobile');
+async function buildMobilePages() {
+    const mobileRoot = join(
+        dist,
+        'mobile'
+    );
 
-    await rm(dist, { recursive: true, force: true });
-    await mkdir(dist, { recursive: true });
-    await copySharedStatic(dist);
-
-    await copyIfExists(
-        join(root, 'mobile.css'),
-        join(dist, 'mobile.css')
+    await mkdir(
+        mobileRoot,
+        { recursive: true }
     );
 
     const template = await readFile(
-        join(root, 'src', 'pages', 'mobile', 'index.html'),
+        join(
+            root,
+            'src',
+            'pages',
+            'mobile',
+            'index.html'
+        ),
         'utf8'
     );
 
-    const languages = await getMobileLanguages();
+    const languages =
+        await getMobileLanguages();
 
     for (const language of languages) {
         const html = renderMobileLocale(
@@ -171,45 +177,61 @@ async function buildMobile() {
 
         if (language === 'en') {
             await writeFile(
-                join(dist, 'index.html'),
+                join(
+                    mobileRoot,
+                    'index.html'
+                ),
                 html,
                 'utf8'
             );
             continue;
         }
 
-        const targetDir = join(dist, language);
-        await mkdir(targetDir, { recursive: true });
+        const targetDir = join(
+            mobileRoot,
+            language
+        );
+
+        await mkdir(
+            targetDir,
+            { recursive: true }
+        );
+
         await writeFile(
-            join(targetDir, 'index.html'),
+            join(
+                targetDir,
+                'index.html'
+            ),
             html,
             'utf8'
         );
     }
-
-    await writeFile(
-        join(dist, 'CNAME'),
-        'm.wardogs-artillery.com\n',
-        'utf8'
-    );
-
-    console.log(`Built mobile site into ${dist}`);
 }
 
-const mode = String(
-    process.argv[2] || 'desktop'
-).toLowerCase();
+/*
+ * One repository, one Pages artifact, one custom domain.
+ * Desktop and mobile page shells share the same JS, locales,
+ * maps, tiles, configuration and localStorage origin.
+ */
+await rm(
+    dist,
+    { recursive: true, force: true }
+);
 
-if (!['desktop', 'mobile', 'all'].includes(mode)) {
-    throw new Error(
-        `Unknown build mode: ${mode}. Use desktop, mobile, or all.`
-    );
-}
+/* Remove the legacy standalone mobile build if it exists. */
+await rm(
+    join(root, 'dist-mobile'),
+    { recursive: true, force: true }
+);
 
-if (mode === 'desktop' || mode === 'all') {
-    await buildDesktop();
-}
+await mkdir(
+    dist,
+    { recursive: true }
+);
 
-if (mode === 'mobile' || mode === 'all') {
-    await buildMobile();
-}
+await copySharedStatic();
+await buildDesktopPages();
+await buildMobilePages();
+
+console.log(`Built desktop + mobile site into ${dist}`);
+console.log(`Mobile entry: ${join(dist, 'mobile', 'index.html')}`);

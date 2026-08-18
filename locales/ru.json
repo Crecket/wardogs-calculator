@@ -78,5 +78,6 @@
   "mapToolExitFullscreen": "Выйти из полноэкранного режима",
   "sidebarHide": "Скрыть боковую панель",
   "sidebarShow": "Показать боковую панель",
-  "weaponRange": "Дальность"
+  "weaponRange": "Дальность",
+  "desktopVersion": "Версия для ПК"
 }

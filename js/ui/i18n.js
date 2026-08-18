@@ -660,19 +660,32 @@ function tr(key) {
 
 function getLanguagePageURL(languageId) {
 
-    const rootURL =
+    const siteRoot =
         new URL(
             './',
             document.baseURI
         );
 
+    const mobileApp =
+        document.body.classList.contains(
+            'mobile-app'
+        );
+
+    const interfaceRoot =
+        mobileApp
+            ? new URL(
+                'mobile/',
+                siteRoot
+            )
+            : siteRoot;
+
     if (languageId === DEFAULT_LANG) {
-        return rootURL.href;
+        return interfaceRoot.href;
     }
 
     return new URL(
         `${languageId}/`,
-        rootURL
+        interfaceRoot
     ).href;
 }
 
@@ -751,6 +764,13 @@ function applyLanguage() {
         'function'
     ) {
         updateMotdLocalization();
+    }
+
+    if (
+        typeof updateMobileDesktopLink ===
+        'function'
+    ) {
+        updateMobileDesktopLink();
     }
 
     result();

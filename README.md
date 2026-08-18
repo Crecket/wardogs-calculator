@@ -7,22 +7,33 @@
 
 A lightweight, open-source artillery calculator and tactical map tool for **WARDOGS**.
 
-**Live app:** https://wardogs-artillery.com/
+**Live app:** https://wardogs-artillery.com/  
+**Mobile UI:** https://wardogs-artillery.com/mobile/
 
 ![WARDOGS Artillery Calculator](assets/preview.png)
 
 ---
 
----
+## Interfaces
+
+The project ships two interfaces from the same repository and GitHub Pages deployment:
+
+- **Desktop** — `/`
+- **Mobile** — `/mobile/`
+
+Phones are automatically routed from the desktop entry pages to the matching mobile route. The mobile UI is a separate map-first interface with touch panning, pinch zoom, touch-friendly point placement, Map Tools, and a bottom-sheet calculator.
+
+Both interfaces reuse the same calculator logic, maps, tile pyramid, configuration, translations, saved targets, drawings, and browser storage.
 
 ## Documentation
 
 Detailed documentation is split into focused files to keep this README concise.
 
-- [Features & weapons](docs/features.md) — calculator features, Map Tools, weapons, shortcuts, and coordinate system
-- [Maps](docs/maps.md) — map configuration, tile structure, bounds, and adding new maps
-- [Localization](docs/localization.md) — supported languages, automatic language selection, localized URLs, and page sources
-- [Development](docs/development.md) — project structure, technologies, local development, build process, and deployment
+- [Features & weapons](docs/features.md) — calculator features, Map Tools, weapons, touch controls, and coordinate system
+- [Maps](docs/maps.md) — map configuration, tile structure, bounds, marker zoom visibility, and adding new maps
+- [Mobile interface](docs/mobile.md) — mobile routes, automatic routing, touch controls, and deployment architecture
+- [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, and localized URLs
+- [Development](docs/development.md) — project structure, local development, unified build process, and GitHub Pages deployment
 - [Message of the Day](docs/motd.md) — MOTD configuration and behavior
 - [Contributing](docs/contributing.md) — contribution guidelines
 - [License & Disclaimer](docs/legal.md) — MIT scope, third-party assets, and project disclaimer
@@ -35,7 +46,12 @@ cd dist
 python -m http.server 8000
 ```
 
-Then open `http://localhost:8000/`.
+Then open:
+
+```text
+Desktop: http://localhost:8000/
+Mobile:  http://localhost:8000/mobile/
+```
 
 ## Contributing
 
