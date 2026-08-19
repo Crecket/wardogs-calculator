@@ -40,12 +40,15 @@
 
 .mobile-app .map-tool-layers {
     /*
-     * Keep the Layers popover inside the usable map area so the
-     * bottom sheet never covers the last toggles. The explicit
-     * height constraint also gives touch devices a proper scroll
-     * container instead of letting the grid grow behind the sheet.
+     * Layers is taller than the other tool popovers. Keep it beside
+     * the vertical toolbar instead of stacking it underneath, which
+     * gives the list nearly the full usable phone height.
      */
-    max-height: min(68dvh, calc(100dvh - 150px));
+    position: absolute;
+    top: 0;
+    right: 52px;
+
+    max-height: calc(100dvh - 170px);
     overflow-y: auto;
 
     overscroll-behavior: contain;

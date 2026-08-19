@@ -34,7 +34,7 @@ The floating Map Tools toolbar provides:
 
 - **Ruler** — measure distance and azimuth
 - **Pencil** — draw directly on the map
-- **Eraser** — remove pencil strokes
+- **Eraser** — remove pencil strokes and user-placed map markers
 - **Markers** — place tactical markers
 - **Coordinate Search** — jump to specific coordinates
 - **Layers** — toggle map tiles, overlays, drawings, markers, and cursor coordinates

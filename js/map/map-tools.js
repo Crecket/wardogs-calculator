@@ -1421,19 +1421,37 @@ function setPencilPathHover(hit) {
         hit?.point || null;
 }
 
-function erasePencilPathAtCanvasPoint(
+function eraseMapToolItemAtCanvasPoint(
     canvasX,
     canvasY
 ) {
-    const hit =
+    /*
+     * User markers sit visually above pencil strokes, so the eraser
+     * checks them first. This also makes touch deletion predictable
+     * when a marker happens to overlap a drawing.
+     */
+    const markerHit =
+        findMapToolMarkerAtCanvasPoint(
+            canvasX,
+            canvasY
+        );
+
+    setMapToolMarkerHover(markerHit);
+
+    if (markerHit) {
+        setPencilPathHover(null);
+        return deleteHoveredMapToolMarker();
+    }
+
+    const pathHit =
         findPencilPathAtCanvasPoint(
             canvasX,
             canvasY
         );
 
-    setPencilPathHover(hit);
+    setPencilPathHover(pathHit);
 
-    if (!hit) {
+    if (!pathHit) {
         draw();
         return false;
     }
@@ -1556,16 +1574,10 @@ function getMapToolMarkerScreenGeometry(item) {
     };
 }
 
-function updateMapToolMarkerHover(event) {
-    const rect =
-        c.getBoundingClientRect();
-
-    const mouseX =
-        event.clientX - rect.left;
-
-    const mouseY =
-        event.clientY - rect.top;
-
+function findMapToolMarkerAtCanvasPoint(
+    canvasX,
+    canvasY
+) {
     let best = null;
 
     MAP_TOOL_STATE.markers
@@ -1582,18 +1594,18 @@ function updateMapToolMarkerHover(event) {
                 return;
             }
 
-            const padding = 6;
+            const padding = 8;
 
             if (
-                mouseX >= geometry.left - padding &&
-                mouseX <= geometry.right + padding &&
-                mouseY >= geometry.top - padding &&
-                mouseY <= geometry.bottom + padding
+                canvasX >= geometry.left - padding &&
+                canvasX <= geometry.right + padding &&
+                canvasY >= geometry.top - padding &&
+                canvasY <= geometry.bottom + padding
             ) {
                 const distance =
                     Math.hypot(
-                        mouseX - geometry.center.x,
-                        mouseY - geometry.center.y
+                        canvasX - geometry.center.x,
+                        canvasY - geometry.center.y
                     );
 
                 if (
@@ -1608,15 +1620,37 @@ function updateMapToolMarkerHover(event) {
             }
         });
 
+    return best;
+}
+
+function setMapToolMarkerHover(hit) {
     const nextId =
-        best?.id || null;
+        hit?.id || null;
 
     if (
-        nextId !==
+        nextId ===
         MAP_TOOL_STATE.hoverMarkerId
     ) {
-        MAP_TOOL_STATE.hoverMarkerId =
-            nextId;
+        return false;
+    }
+
+    MAP_TOOL_STATE.hoverMarkerId =
+        nextId;
+
+    return true;
+}
+
+function updateMapToolMarkerHover(event) {
+    const rect =
+        c.getBoundingClientRect();
+
+    const hit =
+        findMapToolMarkerAtCanvasPoint(
+            event.clientX - rect.left,
+            event.clientY - rect.top
+        );
+
+    if (setMapToolMarkerHover(hit)) {
         draw();
     }
 }
@@ -1638,7 +1672,7 @@ function handleMapToolMouseDown(
         const rect =
             c.getBoundingClientRect();
 
-        erasePencilPathAtCanvasPoint(
+        eraseMapToolItemAtCanvasPoint(
             event.clientX - rect.left,
             event.clientY - rect.top
         );
@@ -1772,7 +1806,47 @@ function handleMapToolMouseMove(
     if (
         MAP_TOOL_STATE.tool === 'eraser'
     ) {
-        updatePencilHover(event);
+        const rect =
+            c.getBoundingClientRect();
+
+        const canvasX =
+            event.clientX - rect.left;
+
+        const canvasY =
+            event.clientY - rect.top;
+
+        const markerHit =
+            findMapToolMarkerAtCanvasPoint(
+                canvasX,
+                canvasY
+            );
+
+        const markerChanged =
+            setMapToolMarkerHover(
+                markerHit
+            );
+
+        const pathHit =
+            markerHit
+                ? null
+                : findPencilPathAtCanvasPoint(
+                    canvasX,
+                    canvasY
+                );
+
+        const previousPathId =
+            MAP_TOOL_STATE.hoverPathId;
+
+        setPencilPathHover(pathHit);
+
+        if (
+            markerChanged ||
+            previousPathId !==
+            MAP_TOOL_STATE.hoverPathId
+        ) {
+            draw();
+        }
+
         return false;
     }
 
@@ -2258,7 +2332,9 @@ function drawEraserAffordance() {
 
 function drawMarkerDeleteAffordance() {
     if (
-        MAP_TOOL_STATE.tool !== 'marker' ||
+        !['marker', 'eraser'].includes(
+            MAP_TOOL_STATE.tool
+        ) ||
         !MAP_TOOL_STATE.hoverMarkerId
     ) {
         return;
