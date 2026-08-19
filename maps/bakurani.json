@@ -234,9 +234,9 @@
   ],
   "coordinateMetersPerUnit": 100,
   "tileBounds": {
-    "minX": 0.0,
-    "maxX": 163.84,
-    "minY": 0.0,
-    "maxY": 163.84
+    "minX": -0.05,
+    "maxX": 163.79,
+    "minY": 0.03,
+    "maxY": 163.87
   }
 }
