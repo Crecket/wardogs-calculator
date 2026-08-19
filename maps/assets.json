@@ -102,6 +102,38 @@
       "height": 32,
       "anchorX": 0.5,
       "anchorY": 0.5
+    },
+
+    "garage_vendor": {
+      "path": "assets/map-markers/garage_vendor.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
+    "spawn_board": {
+      "path": "assets/map-markers/spawn_board.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
+    "vendor": {
+      "path": "assets/map-markers/vendor.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
+    },
+
+    "weapons_vendor": {
+      "path": "assets/map-markers/weapons_vendor.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5
     }
   }
 }

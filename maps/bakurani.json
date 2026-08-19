@@ -19,90 +19,138 @@
   "markers": [
     {
       "icon": "tower",
-      "x": 8345,
-      "y": 7294,
+      "x": 8364,
+      "y": 7285,
       "label": "Tower 4",
       "minZoom": 0.4,
       "maxZoom": 100
     },
     {
       "icon": "tower",
-      "x": 7701,
-      "y": 7349,
+      "x": 7719,
+      "y": 7344,
       "label": "Tower 3",
       "minZoom": 0.4,
       "maxZoom": 100
     },
     {
       "icon": "tower",
-      "x": 7704,
-      "y": 7009,
+      "x": 7719,
+      "y": 7000,
       "label": "Tower 2",
       "minZoom": 0.4,
       "maxZoom": 100
     },
     {
       "icon": "tower",
-      "x": 8034,
-      "y": 6992,
+      "x": 8052,
+      "y": 6985,
       "label": "Tower 1",
       "minZoom": 0.4,
       "maxZoom": 100
     },
     {
       "icon": "tower",
-      "x": 8202,
-      "y": 6850,
+      "x": 8222,
+      "y": 6841,
       "label": "Tower 5",
       "minZoom": 0.4,
       "maxZoom": 100
     },
     {
-      "icon": "tower-inactive",
-      "x": 7682,
-      "y": 7800,
-      "label": "",
-      "minZoom": 0.4,
+      "icon": "valkyra",
+      "x": 11875,
+      "y": 7093,
+      "label": "Valkyra",
+      "minZoom": 10,
       "maxZoom": 100
     },
     {
-      "icon": "tower-inactive",
-      "x": 7262,
-      "y": 7223,
-      "label": "",
-      "minZoom": 0.4,
+      "icon": "weapons_vendor",
+      "x": 11830,
+      "y": 7073,
+      "label": "Weapons Vendor",
+      "minZoom": 10,
       "maxZoom": 100
     },
     {
-      "icon": "tower-inactive",
-      "x": 7857,
-      "y": 6395,
-      "label": "",
-      "minZoom": 0.4,
+      "icon": "garage_vendor",
+      "x": 11814,
+      "y": 7045,
+      "label": "Garage Vendor",
+      "minZoom": 10,
       "maxZoom": 100
     },
     {
-      "icon": "tower-inactive",
-      "x": 8543,
-      "y": 6796,
-      "label": "",
-      "minZoom": 0.4,
+      "icon": "spawn_board",
+      "x": 11837,
+      "y": 7049,
+      "label": "Spawn Board",
+      "minZoom": 10,
       "maxZoom": 100
     },
     {
-      "icon": "tower-inactive",
+      "icon": "manticore",
+      "x": 4009,
+      "y": 7752,
+      "label": "manticore",
+      "minZoom": 10,
+      "maxZoom": 100
+    },
+    {
+      "icon": "weapons_vendor",
+      "x": 4033,
+      "y": 7771,
+      "label": "Weapons Vendor",
+      "minZoom": 10,
+      "maxZoom": 100
+    },
+    {
+      "icon": "garage_vendor",
+      "x": 4012,
+      "y": 7728,
+      "label": "Garage Vendor",
+      "minZoom": 10,
+      "maxZoom": 100
+    },
+    {
+      "icon": "spawn_board",
+      "x": 4031,
+      "y": 7745,
+      "label": "Spawn Board",
+      "minZoom": 10,
+      "maxZoom": 100
+    },
+    {
+      "icon": "lonestar",
+      "x": 8746,
+      "y": 3250,
+      "label": "lonestar",
+      "minZoom": 10,
+      "maxZoom": 100
+    },
+    {
+      "icon": "weapons_vendor",
+      "x": 8722,
+      "y": 3269,
+      "label": "Weapons Vendor",
+      "minZoom": 10,
+      "maxZoom": 100
+    },
+    {
+      "icon": "garage_vendor",
+      "x": 8687,
+      "y": 3266,
+      "label": "Garage Vendor",
+      "minZoom": 10,
+      "maxZoom": 100
+    },
+    {
+      "icon": "spawn_board",
       "x": 8723,
-      "y": 6773,
-      "label": "",
-      "minZoom": 0.4,
-      "maxZoom": 100
-    },
-    {
-      "icon": "tower-inactive",
-      "x": 8474,
-      "y": 7375,
-      "label": "",
-      "minZoom": 0.4,
+      "y": 3250,
+      "label": "Spawn Board",
+      "minZoom": 10,
       "maxZoom": 100
     }
   ],
