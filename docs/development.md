@@ -45,7 +45,8 @@ wardogs-calculator/
 │       └── responsive.css
 │
 ├── scripts/
-│   └── build-pages.mjs
+│   ├── build-pages.mjs
+│   └── dev-server.mjs
 │
 ├── src/
 │   └── pages/
@@ -92,7 +93,7 @@ The old standalone `dist-mobile/` output is no longer used. Desktop and mobile a
 - Fetch API
 - JSON
 - Browser `localStorage` / `sessionStorage`
-- Node.js build script
+- Node.js build and development scripts
 - GitHub Actions
 - GitHub Pages
 
@@ -110,17 +111,75 @@ The project should be served over HTTP because maps, configuration files, locali
 
 Install a recent version of Node.js.
 
-Python can optionally be used to run a simple local HTTP server.
-
-### 1. Build the site
+### Development server
 
 From the project root:
+
+```bash
+npm run dev
+```
+
+The development server serves source files directly, so it does **not** generate or copy `dist/` on every change.
+
+Desktop:
+
+```text
+http://localhost:8000/
+http://localhost:8000/ru/
+```
+
+Mobile:
+
+```text
+http://localhost:8000/mobile/
+http://localhost:8000/mobile/ru/
+```
+
+The dev server includes live reload for JavaScript, modular CSS, page sources, locales, config, data, assets, and top-level map configuration files.
+
+The Bakurani tile pyramid is intentionally not watched because of its size. Tiles are served directly from disk, so after replacing a tile a manual browser refresh is enough to see the new file.
+
+Production Umami analytics are disabled automatically on the development server so local testing does not pollute analytics data.
+
+Browser caching is also disabled for local responses.
+
+### Testing on another device
+
+To expose the development server on the local network:
+
+```bash
+npm run dev -- --host 0.0.0.0
+```
+
+You can also change the port:
+
+```bash
+npm run dev -- --port 8080
+```
+
+Environment variables are supported as well:
+
+```bash
+HOST=0.0.0.0 PORT=8080 npm run dev
+```
+
+On PowerShell:
+
+```powershell
+$env:HOST = "0.0.0.0"
+$env:PORT = "8080"
+npm run dev
+```
+
+### Production build
+
+Before committing or deploying, run:
 
 ```bash
 npm run build
 ```
 
-This generates one production artifact:
+This generates the production artifact:
 
 ```text
 dist/
@@ -143,40 +202,17 @@ dist/
 
 Large shared resources such as the Bakurani tile pyramid exist only once under `dist/maps/` and are reused by both interfaces.
 
-### 2. Start a local server
-
-Using Python:
-
-```bash
-cd dist
-python -m http.server 8000
-```
-
-Desktop:
-
-```text
-http://localhost:8000/
-http://localhost:8000/ru/
-```
-
-Mobile:
-
-```text
-http://localhost:8000/mobile/
-http://localhost:8000/mobile/ru/
-```
-
 ### Development Workflow
 
 ```text
+npm run dev
+    ↓
 Edit source
     ↓
-npm run build
+Browser reloads automatically
     ↓
-Refresh browser
+npm run build before deploy
 ```
-
-You can keep the HTTP server running while rebuilding the project from another terminal.
 
 ---
 
