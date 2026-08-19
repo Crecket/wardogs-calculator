@@ -46,15 +46,25 @@ function inputPoint(type) {
     const coordinateScale =
         getCoordinateMetersPerUnit();
 
-    p.x =
+    const nextX =
         coordinateScale === 100
             ? (Number(xInput.value) || 0)
             : (Number(xInput.value) || 0) / 1000;
 
-    p.y =
+    const nextY =
         coordinateScale === 100
             ? (Number(yInput.value) || 0)
             : (Number(yInput.value) || 0) / 1000;
+
+    if (
+        nextX !== p.x ||
+        nextY !== p.y
+    ) {
+        pushMapToolHistory();
+    }
+
+    p.x = nextX;
+    p.y = nextY;
 
     clamp(
         p

@@ -96,8 +96,10 @@ Opening the mobile route explicitly restores automatic routing for future deskto
 - **Drag** an existing Artillery/Target point to reposition it.
 - **Drag with one finger** on empty map space to pan.
 - **Pinch with two fingers** to zoom around the gesture midpoint and pan naturally with the gesture.
-- **Ruler** and **Pencil** use direct one-finger interaction while active.
+- **Ruler**, **Pencil**, and **Eraser** use direct one-finger interaction while active.
 - Preset map markers can be tapped and selected as the current target.
+- **Layers** includes a toggle for cursor-coordinate visibility and touch-accessible Undo / Redo controls.
+- The fullscreen Map Tool is desktop-only and is intentionally hidden on mobile browsers.
 - The calculator/settings area is a swipeable bottom sheet.
 
 The map canvas uses Pointer Events and disables native touch gestures on the canvas so browser scrolling and page zoom do not interfere with map interaction.

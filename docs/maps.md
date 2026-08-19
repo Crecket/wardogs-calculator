@@ -79,6 +79,37 @@ Map calibration is based on available in-game reference data and may be refined 
 ---
 
 
+
+## Marker assets and user placement
+
+Marker assets are defined in:
+
+```text
+maps/assets.json
+```
+
+Each marker asset supports a `placeable` flag:
+
+```json
+{
+    "tower": {
+        "path": "assets/map-markers/tower.webp",
+        "width": 32,
+        "height": 32,
+        "anchorX": 0.5,
+        "anchorY": 0.5,
+        "placeable": true
+    }
+}
+```
+
+- `placeable: true` makes the asset available in the user **Markers** tool and allows it to be placed manually.
+- `placeable: false` hides the asset from the picker and prevents user placement.
+- Preset markers in map JSON can still use a non-placeable asset. The flag only controls user placement.
+- If `placeable` is omitted, it defaults to `true` for backwards compatibility.
+
+---
+
 ## Marker zoom visibility
 
 Preset map markers support optional `minZoom` and `maxZoom` properties. These values use the **camera zoom multiplier** (`1` = Fit, `2` = 2× zoom, etc.). Both limits are inclusive.

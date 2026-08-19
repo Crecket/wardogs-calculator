@@ -17,7 +17,8 @@ function normalizeMarkerAsset(
             width: 32,
             height: 32,
             anchorX: 0.5,
-            anchorY: 0.5
+            anchorY: 0.5,
+            placeable: true
         };
     }
 
@@ -68,7 +69,10 @@ function normalizeMarkerAsset(
                         asset.anchorY
                     )
                 )
-                : 0.5
+                : 0.5,
+
+        placeable:
+            asset.placeable !== false
     };
 }
 

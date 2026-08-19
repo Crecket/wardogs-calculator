@@ -5,119 +5,120 @@
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": true
     },
-
     "driver": {
       "path": "assets/map-markers/driver.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": true
     },
-
     "medic": {
       "path": "assets/map-markers/medic.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": true
     },
-
     "pilot": {
       "path": "assets/map-markers/pilot.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": true
     },
-
     "recon": {
       "path": "assets/map-markers/recon.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": true
     },
-
     "support": {
       "path": "assets/map-markers/support.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": true
     },
-
     "tower": {
       "path": "assets/map-markers/tower.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": false
     },
-
     "lonestar": {
       "path": "assets/map-markers/lonestar.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": true
     },
-
     "manticore": {
       "path": "assets/map-markers/manticore.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": true
     },
-
     "valkyra": {
       "path": "assets/map-markers/valkyra.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": true
     },
-
     "wardogs": {
       "path": "assets/map-markers/wardogs.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": true
     },
-
     "bulkhead": {
       "path": "assets/map-markers/bulkhead.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": true
     },
-
     "garage_vendor": {
       "path": "assets/map-markers/garage_vendor.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": false
     },
-
     "spawn_board": {
       "path": "assets/map-markers/spawn_board.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": false
     },
-
     "weapons_vendor": {
       "path": "assets/map-markers/weapons_vendor.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
-      "anchorY": 0.5
+      "anchorY": 0.5,
+      "placeable": false
     }
   }
 }

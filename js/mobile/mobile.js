@@ -225,7 +225,7 @@ function handleMobilePointerDown(event) {
 
     if (
         typeof MAP_TOOL_STATE !== 'undefined' &&
-        ['ruler', 'pencil', 'marker'].includes(
+        ['ruler', 'pencil', 'eraser', 'marker'].includes(
             MAP_TOOL_STATE.tool
         )
     ) {
@@ -249,6 +249,8 @@ function handleMobilePointerDown(event) {
     );
 
     if (markerType) {
+        pushMapToolHistory();
+
         MOBILE_TOUCH.gesture = {
             type: 'point',
             pointerId: event.pointerId,
@@ -389,7 +391,7 @@ function finishMobileTap(event, gesture) {
 
     if (
         typeof MAP_TOOL_STATE === 'undefined' ||
-        !['ruler', 'pencil', 'marker'].includes(
+        !['ruler', 'pencil', 'eraser', 'marker'].includes(
             MAP_TOOL_STATE.tool
         )
     ) {
@@ -419,6 +421,8 @@ function finishMobileTap(event, gesture) {
 
     const pointType =
         S.mode;
+
+    pushMapToolHistory();
 
     S[pointType] = {
         x: world.x,

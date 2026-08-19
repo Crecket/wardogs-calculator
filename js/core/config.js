@@ -30,9 +30,10 @@ const DEFAULT_APP_CONFIG = {
         shortcuts: {
             ruler: 'r',
             pencil: 'p',
+            eraser: 'e',
             marker: 'm',
             coordinateSearch: 'f',
-            legend: 'l',
+            layers: 'l',
             clearTool: 'escape',
             undo: 'ctrl+z',
             redo: 'ctrl+y',

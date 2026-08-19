@@ -17,12 +17,12 @@
 
 - Interactive tiled map
 - Calibrated in-game coordinate system
-- Cursor coordinates
+- Cursor coordinates with a Layers toggle
 - Coordinate search
 - Mouse-wheel zoom on desktop
 - Touch pinch zoom on mobile
 - Mouse/touch map panning
-- Fullscreen mode
+- Fullscreen mode on desktop
 - Preset and custom maps
 - JSON-defined markers, zones, and polygons
 - Configurable map layers
@@ -34,10 +34,11 @@ The floating Map Tools toolbar provides:
 
 - **Ruler** — measure distance and azimuth
 - **Pencil** — draw directly on the map
+- **Eraser** — remove pencil strokes
 - **Markers** — place tactical markers
 - **Coordinate Search** — jump to specific coordinates
-- **Legend** — toggle map layers
-- **Undo / Redo**
+- **Layers** — toggle map tiles, overlays, drawings, markers, and cursor coordinates
+- **Undo / Redo** — drawings, erased strokes, user markers, and Artillery/Target position changes
 
 Drawings and user markers are stored locally per map and are shared between desktop and mobile because both interfaces use the same site origin.
 
@@ -49,7 +50,8 @@ The dedicated `/mobile/` UI is designed around touch input rather than being a s
 - Two-finger pinch zoom around the gesture midpoint
 - Tap-to-place Artillery/Target
 - Drag-to-move Artillery/Target
-- Touch Map Tools
+- Touch Map Tools, including Pencil, Eraser, Markers, and Layers
+- Touch-accessible Undo / Redo buttons inside Layers
 - Tap preset marker to select it as Target
 - Swipeable bottom sheet for calculator, map settings, and saved targets
 - Automatic routing from narrow coarse-pointer devices
@@ -65,9 +67,10 @@ Desktop Map Tool shortcuts:
 |---|---|
 | `R` | Ruler |
 | `P` | Pencil |
+| `E` | Eraser |
 | `M` | Markers |
 | `F` | Coordinate Search |
-| `L` | Legend |
+| `L` | Layers |
 | `Esc` | Leave active tool |
 | `Ctrl + Z` | Undo |
 | `Ctrl + Y` | Redo |

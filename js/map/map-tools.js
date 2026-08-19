@@ -49,7 +49,8 @@ const MAP_TOOL_STATE = {
         presetMarkers: true,
         drawings: true,
         userMarkers: true,
-        artillery: true
+        artillery: true,
+        cursorCoords: true
     }
 };
 
@@ -67,38 +68,143 @@ function currentMapToolMapId() {
 
 function snapshotMapToolContent() {
     return {
+        mapId: currentMapToolMapId(),
         drawings: structuredClone(MAP_TOOL_STATE.drawings),
-        markers: structuredClone(MAP_TOOL_STATE.markers)
+        markers: structuredClone(MAP_TOOL_STATE.markers),
+        origin: structuredClone(S.origin),
+        target: structuredClone(S.target),
+        mode: S.mode,
+        selectedSavedTargetId
     };
 }
 
+function updateMapToolHistoryUI() {
+    const undoButton =
+        $('mapToolUndoButton');
+
+    const redoButton =
+        $('mapToolRedoButton');
+
+    if (undoButton) {
+        undoButton.disabled =
+            MAP_TOOL_STATE.undoStack.length === 0;
+    }
+
+    if (redoButton) {
+        redoButton.disabled =
+            MAP_TOOL_STATE.redoStack.length === 0;
+    }
+}
+
 function restoreMapToolContent(snapshot) {
-    MAP_TOOL_STATE.drawings = structuredClone(snapshot.drawings || []);
-    MAP_TOOL_STATE.markers = structuredClone(snapshot.markers || []);
+    if (!snapshot) {
+        return;
+    }
+
+    MAP_TOOL_STATE.drawings =
+        structuredClone(snapshot.drawings || []);
+
+    MAP_TOOL_STATE.markers =
+        structuredClone(snapshot.markers || []);
+
+    if (
+        snapshot.origin &&
+        Number.isFinite(snapshot.origin.x) &&
+        Number.isFinite(snapshot.origin.y)
+    ) {
+        S.origin = structuredClone(snapshot.origin);
+        clamp(S.origin);
+    }
+
+    if (
+        snapshot.target &&
+        Number.isFinite(snapshot.target.x) &&
+        Number.isFinite(snapshot.target.y)
+    ) {
+        S.target = structuredClone(snapshot.target);
+        clamp(S.target);
+    }
+
+    if (
+        snapshot.mode === 'origin' ||
+        snapshot.mode === 'target'
+    ) {
+        S.mode = snapshot.mode;
+    }
+
+    selectedSavedTargetId =
+        snapshot.selectedSavedTargetId || null;
+
+    $('originMode')?.classList.toggle(
+        'active',
+        S.mode === 'origin'
+    );
+
+    $('targetMode')?.classList.toggle(
+        'active',
+        S.mode === 'target'
+    );
+
     MAP_TOOL_STATE.hoverPathId = null;
     MAP_TOOL_STATE.hoverDeletePoint = null;
     MAP_TOOL_STATE.hoverMarkerId = null;
+
     saveMapToolState();
-    draw();
+    inputs();
+    renderSavedTargets();
+    updateMapToolHistoryUI();
 }
 
 function pushMapToolHistory() {
-    MAP_TOOL_STATE.undoStack.push(snapshotMapToolContent());
-    if (MAP_TOOL_STATE.undoStack.length > 100) MAP_TOOL_STATE.undoStack.shift();
+    MAP_TOOL_STATE.undoStack.push(
+        snapshotMapToolContent()
+    );
+
+    if (
+        MAP_TOOL_STATE.undoStack.length > 100
+    ) {
+        MAP_TOOL_STATE.undoStack.shift();
+    }
+
     MAP_TOOL_STATE.redoStack = [];
+    updateMapToolHistoryUI();
+}
+
+function resetMapToolHistory() {
+    MAP_TOOL_STATE.undoStack = [];
+    MAP_TOOL_STATE.redoStack = [];
+    updateMapToolHistoryUI();
 }
 
 function undoMapToolAction() {
-    if (!MAP_TOOL_STATE.undoStack.length) return false;
-    MAP_TOOL_STATE.redoStack.push(snapshotMapToolContent());
-    restoreMapToolContent(MAP_TOOL_STATE.undoStack.pop());
+    if (!MAP_TOOL_STATE.undoStack.length) {
+        return false;
+    }
+
+    MAP_TOOL_STATE.redoStack.push(
+        snapshotMapToolContent()
+    );
+
+    restoreMapToolContent(
+        MAP_TOOL_STATE.undoStack.pop()
+    );
+
     return true;
 }
 
 function redoMapToolAction() {
-    if (!MAP_TOOL_STATE.redoStack.length) return false;
-    MAP_TOOL_STATE.undoStack.push(snapshotMapToolContent());
-    restoreMapToolContent(MAP_TOOL_STATE.redoStack.pop());
+    if (!MAP_TOOL_STATE.redoStack.length) {
+        return false;
+    }
+
+    MAP_TOOL_STATE.undoStack.push(
+        snapshotMapToolContent()
+    );
+
+    restoreMapToolContent(
+        MAP_TOOL_STATE.redoStack.pop()
+    );
+
     return true;
 }
 
@@ -193,7 +299,7 @@ function setMapTool(tool) {
 }
 
 function closeMapToolMenus(except = null) {
-    ['pencilPalette', 'markerPicker', 'coordinateSearchPopover', 'mapLegendPopover'].forEach(
+    ['pencilPalette', 'markerPicker', 'coordinateSearchPopover', 'mapLayersPopover'].forEach(
         id => {
             if (id === except) {
                 return;
@@ -287,10 +393,10 @@ function updateMapToolsUI() {
                     );
             }
 
-            if (tool === 'legend') {
+            if (tool === 'layers') {
                 active =
                     isMapToolMenuOpen(
-                        'mapLegendPopover'
+                        'mapLayersPopover'
                     );
             }
 
@@ -323,12 +429,17 @@ function updateMapToolsUI() {
     if (c) {
         c.classList.toggle(
             'map-tool-active',
-            ['ruler', 'pencil', 'marker'].includes(MAP_TOOL_STATE.tool)
+            ['ruler', 'pencil', 'eraser', 'marker'].includes(MAP_TOOL_STATE.tool)
         );
 
         c.classList.toggle(
             'map-tool-pencil-active',
             MAP_TOOL_STATE.tool === 'pencil'
+        );
+
+        c.classList.toggle(
+            'map-tool-eraser-active',
+            MAP_TOOL_STATE.tool === 'eraser'
         );
     }
 }
@@ -396,7 +507,11 @@ function buildMarkerPicker() {
     container.innerHTML = '';
 
     const assets =
-        Object.values(MAP_ASSETS);
+        Object.values(MAP_ASSETS)
+            .filter(
+                asset =>
+                    asset.placeable
+            );
 
     if (!assets.length) {
         const empty =
@@ -517,32 +632,45 @@ function setMapLayerVisible(layer, visible) {
 
     MAP_TOOL_STATE.layers[layer] = Boolean(visible);
     saveMapToolState();
+
+    if (
+        layer === 'cursorCoords' &&
+        !MAP_TOOL_STATE.layers.cursorCoords
+    ) {
+        const cursor = $('cursorCoords');
+
+        if (cursor) {
+            cursor.style.display = 'none';
+        }
+    }
+
     draw();
 }
 
-function buildMapLegend() {
-    const container = $('mapLegendPopover');
+function buildMapLayers() {
+    const container = $('mapLayersPopover');
 
     if (!container) {
         return;
     }
 
     const layers = [
-        ['tiles', 'mapLegendMap'],
-        ['grid', 'mapLegendGrid'],
-        ['zones', 'mapLegendZones'],
-        ['polygons', 'mapLegendPolygons'],
-        ['presetMarkers', 'mapLegendPresetMarkers'],
-        ['drawings', 'mapLegendDrawings'],
-        ['userMarkers', 'mapLegendUserMarkers'],
-        ['artillery', 'mapLegendArtillery']
+        ['tiles', 'mapLayerMap'],
+        ['grid', 'mapLayerGrid'],
+        ['zones', 'mapLayerZones'],
+        ['polygons', 'mapLayerPolygons'],
+        ['presetMarkers', 'mapLayerPresetMarkers'],
+        ['drawings', 'mapLayerDrawings'],
+        ['userMarkers', 'mapLayerUserMarkers'],
+        ['artillery', 'mapLayerArtillery'],
+        ['cursorCoords', 'mapLayerCursorCoordinates']
     ];
 
     container.innerHTML = '';
 
     const title = document.createElement('div');
     title.className = 'map-tool-popover-title';
-    title.textContent = tr('mapToolLegend');
+    title.textContent = tr('mapToolLayers');
     container.appendChild(title);
 
     const shortcutHint = document.createElement('div');
@@ -552,6 +680,51 @@ function buildMapLegend() {
         .replace('{redo}', formatShortcut('redo'));
     shortcutHint.title = `${tr('mapToolUndo')} / ${tr('mapToolRedo')}`;
     container.appendChild(shortcutHint);
+
+    const historyActions =
+        document.createElement('div');
+
+    historyActions.className =
+        'map-tool-history-actions';
+
+    const undoButton =
+        document.createElement('button');
+
+    undoButton.type = 'button';
+    undoButton.id = 'mapToolUndoButton';
+    undoButton.textContent = tr('mapToolUndo');
+    undoButton.title = `${tr('mapToolUndo')} (${formatShortcut('undo')})`;
+    undoButton.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+            undoMapToolAction();
+        }
+    );
+
+    const redoButton =
+        document.createElement('button');
+
+    redoButton.type = 'button';
+    redoButton.id = 'mapToolRedoButton';
+    redoButton.textContent = tr('mapToolRedo');
+    redoButton.title = `${tr('mapToolRedo')} (${formatShortcut('redo')})`;
+    redoButton.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+            redoMapToolAction();
+        }
+    );
+
+    historyActions.append(
+        undoButton,
+        redoButton
+    );
+
+    container.appendChild(
+        historyActions
+    );
 
     layers.forEach(([id, key]) => {
         const label = document.createElement('label');
@@ -571,6 +744,8 @@ function buildMapLegend() {
         label.appendChild(text);
         container.appendChild(label);
     });
+
+    updateMapToolHistoryUI();
 }
 
 function centerMapOnWorldPoint(point) {
@@ -684,9 +859,10 @@ function handleMapToolShortcut(event) {
     const shortcuts = {
         ruler: getMapToolShortcut('ruler'),
         pencil: getMapToolShortcut('pencil'),
+        eraser: getMapToolShortcut('eraser'),
         marker: getMapToolShortcut('marker'),
         coordinateSearch: getMapToolShortcut('coordinateSearch'),
-        legend: getMapToolShortcut('legend'),
+        layers: getMapToolShortcut('layers'),
         clearTool: getMapToolShortcut('clearTool')
     };
 
@@ -712,6 +888,12 @@ function handleMapToolShortcut(event) {
         return true;
     }
 
+    if (key === shortcuts.eraser) {
+        closeMapToolMenus();
+        setMapTool('eraser');
+        return true;
+    }
+
     if (key === shortcuts.marker) {
         MAP_TOOL_STATE.tool = 'marker';
         updateMapToolsUI();
@@ -728,11 +910,11 @@ function handleMapToolShortcut(event) {
         return true;
     }
 
-    if (key === shortcuts.legend) {
-        MAP_TOOL_STATE.tool = 'legend';
+    if (key === shortcuts.layers) {
+        MAP_TOOL_STATE.tool = 'layers';
         updateMapToolsUI();
-        buildMapLegend();
-        toggleMapToolMenu('mapLegendPopover');
+        buildMapLayers();
+        toggleMapToolMenu('mapLayersPopover');
         return true;
     }
 
@@ -857,16 +1039,18 @@ async function toggleMapFullscreen() {
 function updateMapToolsLocalization() {
     const rulerButton = $('mapToolRuler');
     const pencilButton = $('mapToolPencil');
+    const eraserButton = $('mapToolEraser');
     const markerButton = $('mapToolMarker');
     const searchButton = $('mapToolCoordinateSearch');
-    const legendButton = $('mapToolLegend');
+    const layersButton = $('mapToolLayers');
     const fullscreenButton = $('mapToolFullscreen');
 
     setToolButtonLabel(rulerButton, 'mapToolRuler', 'ruler');
     setToolButtonLabel(pencilButton, 'mapToolPencil', 'pencil');
+    setToolButtonLabel(eraserButton, 'mapToolEraser', 'eraser');
     setToolButtonLabel(markerButton, 'mapToolMarkers', 'marker');
     setToolButtonLabel(searchButton, 'mapToolCoordinateSearch', 'coordinateSearch');
-    setToolButtonLabel(legendButton, 'mapToolLegend', 'legend');
+    setToolButtonLabel(layersButton, 'mapToolLayers', 'layers');
 
     if (fullscreenButton) {
         updateMapFullscreenButton();
@@ -874,7 +1058,7 @@ function updateMapToolsLocalization() {
 
     buildPencilPalette();
     buildMarkerPicker();
-    buildMapLegend();
+    buildMapLayers();
 
     const goButton = $('coordinateSearchGo');
     if (goButton) goButton.textContent = tr('mapToolSearchGo');
@@ -892,12 +1076,14 @@ function initMapTools() {
         $('mapToolRuler');
     const pencilButton =
         $('mapToolPencil');
+    const eraserButton =
+        $('mapToolEraser');
     const markerButton =
         $('mapToolMarker');
     const searchButton =
         $('mapToolCoordinateSearch');
-    const legendButton =
-        $('mapToolLegend');
+    const layersButton =
+        $('mapToolLayers');
     const fullscreenButton =
         $('mapToolFullscreen');
 
@@ -927,6 +1113,15 @@ function initMapTools() {
             toggleMapToolMenu(
                 'pencilPalette'
             );
+        }
+    );
+
+    eraserButton?.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+            closeMapToolMenus();
+            setMapTool('eraser');
         }
     );
 
@@ -962,14 +1157,14 @@ function initMapTools() {
         }
     );
 
-    legendButton?.addEventListener(
+    layersButton?.addEventListener(
         'click',
         event => {
             event.stopPropagation();
-            MAP_TOOL_STATE.tool = 'legend';
+            MAP_TOOL_STATE.tool = 'layers';
             updateMapToolsUI();
-            buildMapLegend();
-            toggleMapToolMenu('mapLegendPopover');
+            buildMapLayers();
+            toggleMapToolMenu('mapLayersPopover');
         }
     );
 
@@ -1095,12 +1290,20 @@ function addPencilPoint(point) {
 }
 
 function placeMapToolMarker(point) {
+    const asset =
+        getMarkerAsset(
+            MAP_TOOL_STATE.selectedMarkerIcon
+        );
+
     if (
-        !MAP_TOOL_STATE.selectedMarkerIcon
+        !asset ||
+        !asset.placeable
     ) {
+        MAP_TOOL_STATE.selectedMarkerIcon = null;
         toggleMapToolMenu(
             'markerPicker'
         );
+        updateMapToolsUI();
         return;
     }
 
@@ -1129,6 +1332,113 @@ function placeMapToolMarker(point) {
     }
 
     draw();
+}
+
+function findPencilPathAtCanvasPoint(
+    canvasX,
+    canvasY
+) {
+    let best = null;
+
+    MAP_TOOL_STATE.drawings
+        .filter(
+            path =>
+                path.mapId ===
+                currentMapToolMapId()
+        )
+        .forEach(path => {
+            for (
+                let i = 1;
+                i < path.points.length;
+                i++
+            ) {
+                const aWorld =
+                    path.points[i - 1];
+
+                const bWorld =
+                    path.points[i];
+
+                const a =
+                    toScreen(
+                        aWorld.x,
+                        aWorld.y
+                    );
+
+                const b =
+                    toScreen(
+                        bWorld.x,
+                        bWorld.y
+                    );
+
+                const hit =
+                    pointToSegmentDistance(
+                        canvasX,
+                        canvasY,
+                        a.x,
+                        a.y,
+                        b.x,
+                        b.y
+                    );
+
+                if (
+                    hit.distance <= 12 &&
+                    (
+                        !best ||
+                        hit.distance <
+                        best.distance
+                    )
+                ) {
+                    best = {
+                        id: path.id,
+                        distance: hit.distance,
+                        point: {
+                            x:
+                                aWorld.x +
+                                (
+                                    bWorld.x -
+                                    aWorld.x
+                                ) * hit.t,
+                            y:
+                                aWorld.y +
+                                (
+                                    bWorld.y -
+                                    aWorld.y
+                                ) * hit.t
+                        }
+                    };
+                }
+            }
+        });
+
+    return best;
+}
+
+function setPencilPathHover(hit) {
+    MAP_TOOL_STATE.hoverPathId =
+        hit?.id || null;
+
+    MAP_TOOL_STATE.hoverDeletePoint =
+        hit?.point || null;
+}
+
+function erasePencilPathAtCanvasPoint(
+    canvasX,
+    canvasY
+) {
+    const hit =
+        findPencilPathAtCanvasPoint(
+            canvasX,
+            canvasY
+        );
+
+    setPencilPathHover(hit);
+
+    if (!hit) {
+        draw();
+        return false;
+    }
+
+    return deleteHoveredPencilPath();
 }
 
 function deleteHoveredPencilPath() {
@@ -1323,33 +1633,17 @@ function handleMapToolMouseDown(
     }
 
     if (
-        MAP_TOOL_STATE.tool === 'pencil' &&
-        MAP_TOOL_STATE.hoverPathId &&
-        MAP_TOOL_STATE.hoverDeletePoint
+        MAP_TOOL_STATE.tool === 'eraser'
     ) {
         const rect =
             c.getBoundingClientRect();
 
-        const mouse = {
-            x: event.clientX - rect.left,
-            y: event.clientY - rect.top
-        };
+        erasePencilPathAtCanvasPoint(
+            event.clientX - rect.left,
+            event.clientY - rect.top
+        );
 
-        const del =
-            toScreen(
-                MAP_TOOL_STATE.hoverDeletePoint.x,
-                MAP_TOOL_STATE.hoverDeletePoint.y
-            );
-
-        if (
-            Math.hypot(
-                mouse.x - del.x,
-                mouse.y - del.y
-            ) <= 12
-        ) {
-            deleteHoveredPencilPath();
-            return true;
-        }
+        return true;
     }
 
     if (
@@ -1472,6 +1766,12 @@ function handleMapToolMouseMove(
             return true;
         }
 
+        return false;
+    }
+
+    if (
+        MAP_TOOL_STATE.tool === 'eraser'
+    ) {
         updatePencilHover(event);
         return false;
     }
@@ -1627,86 +1927,13 @@ function updatePencilHover(event) {
     const rect =
         c.getBoundingClientRect();
 
-    const mouseX =
-        event.clientX - rect.left;
-    const mouseY =
-        event.clientY - rect.top;
+    const hit =
+        findPencilPathAtCanvasPoint(
+            event.clientX - rect.left,
+            event.clientY - rect.top
+        );
 
-    let best = null;
-
-    MAP_TOOL_STATE.drawings
-        .filter(
-            path =>
-                path.mapId ===
-                currentMapToolMapId()
-        )
-        .forEach(path => {
-            for (
-                let i = 1;
-                i < path.points.length;
-                i++
-            ) {
-                const aWorld =
-                    path.points[i - 1];
-                const bWorld =
-                    path.points[i];
-
-                const a =
-                    toScreen(
-                        aWorld.x,
-                        aWorld.y
-                    );
-                const b =
-                    toScreen(
-                        bWorld.x,
-                        bWorld.y
-                    );
-
-                const hit =
-                    pointToSegmentDistance(
-                        mouseX,
-                        mouseY,
-                        a.x,
-                        a.y,
-                        b.x,
-                        b.y
-                    );
-
-                if (
-                    hit.distance <= 8 &&
-                    (
-                        !best ||
-                        hit.distance <
-                        best.distance
-                    )
-                ) {
-                    best = {
-                        id: path.id,
-                        distance: hit.distance,
-                        point: {
-                            x:
-                                aWorld.x +
-                                (
-                                    bWorld.x -
-                                    aWorld.x
-                                ) * hit.t,
-                            y:
-                                aWorld.y +
-                                (
-                                    bWorld.y -
-                                    aWorld.y
-                                ) * hit.t
-                        }
-                    };
-                }
-            }
-        });
-
-    MAP_TOOL_STATE.hoverPathId =
-        best?.id || null;
-    MAP_TOOL_STATE.hoverDeletePoint =
-        best?.point || null;
-
+    setPencilPathHover(hit);
     draw();
 }
 
@@ -1970,9 +2197,9 @@ function drawRulerOverlay() {
     ctx.restore();
 }
 
-function drawPencilDeleteAffordance() {
+function drawEraserAffordance() {
     if (
-        MAP_TOOL_STATE.tool !== 'pencil' ||
+        MAP_TOOL_STATE.tool !== 'eraser' ||
         !MAP_TOOL_STATE.hoverPathId ||
         !MAP_TOOL_STATE.hoverDeletePoint ||
         MAP_TOOL_STATE.pencilDragging
@@ -2128,6 +2355,6 @@ function drawCoordinateSearchPoint() {
 function drawMapToolTransient() {
     drawCoordinateSearchPoint();
     drawRulerOverlay();
-    drawPencilDeleteAffordance();
+    drawEraserAffordance();
     drawMarkerDeleteAffordance();
 }

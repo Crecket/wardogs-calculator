@@ -853,6 +853,7 @@ function updatePresetMarkerHover(
         [
             'ruler',
             'pencil',
+            'eraser',
             'marker'
         ].includes(
             MAP_TOOL_STATE.tool
@@ -943,6 +944,8 @@ function selectPresetMarkerAsTarget(
     PRESET_TARGET_SELECTED_AT =
         performance.now();
 
+    pushMapToolHistory();
+
     S.target = {
         x:
             storedMetersToWorldCoordinate(item.x),
@@ -1010,6 +1013,7 @@ function handlePresetMarkerTargetMouseDown(
         [
             'ruler',
             'pencil',
+            'eraser',
             'marker'
         ].includes(
             MAP_TOOL_STATE.tool

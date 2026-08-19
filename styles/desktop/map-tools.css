@@ -129,7 +129,11 @@
 
 .map-tool-color {
     width: 28px;
+    min-width: 28px;
     height: 28px;
+    min-height: 28px;
+    aspect-ratio: 1 / 1;
+    flex: 0 0 28px;
 
     padding: 4px;
 
@@ -241,9 +245,13 @@ canvas.map-tool-pencil-active {
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M4 20l4.5-1 10-10-3.5-3.5-10 10z' fill='%23d7a452' stroke='%23101316' stroke-width='1.5'/%3E%3C/svg%3E") 3 21, crosshair;
 }
 
+canvas.map-tool-eraser-active {
+    cursor: cell;
+}
+
 
 /* =========================
-   MAP TOOLS — SEARCH / LEGEND
+   MAP TOOLS — SEARCH / LAYERS
    ========================= */
 
 .map-tool-coordinate-search {
@@ -290,16 +298,31 @@ canvas.map-tool-pencil-active {
     font-size: 10px;
 }
 
-.map-tool-legend {
+.map-tool-layers {
     width: 220px;
     gap: 4px;
     padding: 10px;
 }
 
-.map-tool-legend .map-tool-popover-title {
+.map-tool-layers .map-tool-popover-title {
     margin: 0 0 4px;
     padding: 0 2px 7px;
     border-bottom: 1px solid var(--border-light);
+}
+
+.map-tool-history-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+
+    margin: 0 0 5px;
+}
+
+.map-tool-history-actions button {
+    min-height: 30px;
+    padding: 6px 8px;
+
+    font-size: 10px;
 }
 
 .map-layer-toggle {

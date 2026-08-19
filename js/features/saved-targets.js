@@ -274,6 +274,8 @@ function restoreTarget(target) {
         return;
     }
 
+    pushMapToolHistory();
+
     S.target = {
         x: Number(target.x),
         y: Number(target.y)

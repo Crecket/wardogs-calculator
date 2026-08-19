@@ -112,3 +112,8 @@ dist/mobile/de/index.html
 ```
 
 All generated mobile pages reference the shared root-level assets, JavaScript, locales, map configuration, and map tiles instead of creating duplicate copies.
+
+
+## Map Tools localization
+
+Map Tools use the shared locale JSON just like the rest of the application. Current localized tool labels include **Pencil**, **Eraser**, **Markers**, **Coordinate search**, and **Layers**, plus the cursor-coordinate layer toggle. Any new Map Tool UI string should be added to every file under `locales/` so desktop and mobile stay in sync.

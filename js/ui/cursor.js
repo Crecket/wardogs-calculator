@@ -4,6 +4,20 @@
 
 function updateCursor(e) {
 
+    const cursor =
+        $('cursorCoords');
+
+    if (
+        typeof isMapLayerVisible === 'function' &&
+        !isMapLayerVisible('cursorCoords')
+    ) {
+        if (cursor) {
+            cursor.style.display = 'none';
+        }
+
+        return;
+    }
+
     const rect =
         c.getBoundingClientRect();
 
@@ -42,8 +56,9 @@ function updateCursor(e) {
         return;
     }
 
-    const cursor =
-        $('cursorCoords');
+    if (!cursor) {
+        return;
+    }
 
     cursor.style.display =
         'block';

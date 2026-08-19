@@ -31,12 +31,41 @@
 
 .mobile-app .map-tool-popover {
     max-width: calc(100vw - 72px);
-    max-height: min(56vh, 420px);
+    max-height: min(56dvh, 420px);
     overflow-y: auto;
+
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.mobile-app .map-tool-layers {
+    /*
+     * Keep the Layers popover inside the usable map area so the
+     * bottom sheet never covers the last toggles. The explicit
+     * height constraint also gives touch devices a proper scroll
+     * container instead of letting the grid grow behind the sheet.
+     */
+    max-height: min(68dvh, calc(100dvh - 150px));
+    overflow-y: auto;
+
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+
+    scrollbar-gutter: stable;
 }
 
 .mobile-app .map-tool-coordinate-search {
     width: min(250px, calc(100vw - 72px));
+}
+
+/*
+ * iOS Safari automatically zooms focused form controls below 16px.
+ * Keep the coordinate search at 16px instead of disabling page zoom,
+ * preserving normal pinch/accessibility behavior elsewhere.
+ */
+.mobile-app .map-tool-coordinate-search input {
+    font-size: 16px;
 }
 
 .mobile-app .map-tool-marker-picker {
@@ -54,3 +83,31 @@
     pointer-events: none;
 }
 
+
+.mobile-app .map-tool-color {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    aspect-ratio: 1 / 1;
+    flex: 0 0 32px;
+    padding: 4px;
+}
+
+.mobile-app .map-tool-palette {
+    grid-template-columns: repeat(5, 32px);
+}
+
+.mobile-app .map-tool-history-actions button {
+    min-height: 38px;
+}
+
+/* Touch users get explicit Undo / Redo buttons instead of keyboard hints. */
+.mobile-app .map-tool-shortcuts-hint {
+    display: none;
+}
+
+/* Fullscreen is intentionally desktop-only. */
+.mobile-app .map-tool-fullscreen-button {
+    display: none !important;
+}

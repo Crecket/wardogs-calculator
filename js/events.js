@@ -63,6 +63,7 @@ function bindEvents() {
             S.panY =
                 0;
 
+            resetMapToolHistory();
             updatePresetLock();
 
             if (
@@ -165,6 +166,7 @@ function bindEvents() {
             S.panY =
                 0;
 
+            resetMapToolHistory();
             updatePresetLock();
 
             if (
@@ -298,6 +300,8 @@ function bindEvents() {
         'click',
         () => {
 
+            pushMapToolHistory();
+
             const oldOrigin =
                 S.origin;
 
@@ -314,6 +318,8 @@ function bindEvents() {
     $('clear').addEventListener(
         'click',
         () => {
+
+            pushMapToolHistory();
 
             const bounds =
                 getViewBounds();
@@ -466,6 +472,8 @@ function bindEvents() {
                             : 'target'
                     )
                     : S.mode;
+
+            pushMapToolHistory();
 
             S[drag] = {
                 x:
