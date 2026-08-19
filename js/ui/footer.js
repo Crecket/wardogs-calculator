@@ -2,6 +2,84 @@
    FOOTER
    ========================= */
 
+const FOOTER_PARTNERS = [
+    {
+        id: 'wardogs-hub',
+        label: 'Community partner',
+        name: 'WARDOGSHUB',
+        url: 'https://wardogshub.net/?utm_source=wardogs-artillery&utm_medium=partner&utm_campaign=footer'
+    }
+];
+
+function createFooterPartner(partner) {
+    const item =
+        document.createElement(
+            'span'
+        );
+
+    item.className =
+        'footer-partner';
+
+    const label =
+        document.createElement(
+            'span'
+        );
+
+    label.className =
+        'footer-partner-label';
+
+    label.textContent =
+        `${partner.label}:`;
+
+    const link =
+        document.createElement(
+            'a'
+        );
+
+    link.className =
+        'footer-partner-link';
+
+    link.href =
+        partner.url;
+
+    link.target =
+        '_blank';
+
+    link.rel =
+        'noopener noreferrer';
+
+    link.textContent =
+        partner.name;
+
+    link.addEventListener(
+        'click',
+        () => {
+            if (
+                typeof trackAnalytics ===
+                'function'
+            ) {
+                trackAnalytics(
+                    'partner-click',
+                    {
+                        partner:
+                            partner.id,
+
+                        placement:
+                            'footer'
+                    }
+                );
+            }
+        }
+    );
+
+    item.append(
+        label,
+        link
+    );
+
+    return item;
+}
+
 function renderFooter() {
     const footer =
         $('siteFooter') ||
@@ -28,6 +106,38 @@ function renderFooter() {
 
     disclaimer.textContent =
         config.disclaimer || '';
+
+    const meta =
+        document.createElement(
+            'span'
+        );
+
+    meta.className =
+        'footer-meta';
+
+    if (FOOTER_PARTNERS.length) {
+        const partners =
+            document.createElement(
+                'span'
+            );
+
+        partners.className =
+            'footer-partners';
+
+        FOOTER_PARTNERS.forEach(
+            partner => {
+                partners.appendChild(
+                    createFooterPartner(
+                        partner
+                    )
+                );
+            }
+        );
+
+        meta.appendChild(
+            partners
+        );
+    }
 
     const author =
         document.createElement(
@@ -103,6 +213,10 @@ function renderFooter() {
         );
     }
 
+    meta.appendChild(
+        author
+    );
+
     if (disclaimer.textContent) {
         footer.appendChild(
             disclaimer
@@ -110,6 +224,6 @@ function renderFooter() {
     }
 
     footer.appendChild(
-        author
+        meta
     );
 }

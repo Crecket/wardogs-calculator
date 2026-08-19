@@ -22,6 +22,7 @@ The current event set intentionally focuses on meaningful user actions rather th
 | `ruler-used` | A non-zero ruler measurement is completed | `map` |
 | `drawing-created` | A pencil path is completed | `map` |
 | `user-marker-placed` | A user Map Tools marker is placed | `map` |
+| `partner-click` | User opens a community partner link | `partner`, `placement` |
 | `desktop-version` | Mobile user chooses the desktop interface | none |
 
 ## Calculation event behavior
