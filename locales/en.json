@@ -87,5 +87,6 @@
   "mapToolExportChanges": "Export changes",
   "mapToolImportChanges": "Import changes",
   "mapToolImportSuccess": "Map changes imported.",
-  "mapToolImportInvalid": "Could not import this file."
+  "mapToolImportInvalid": "Could not import this file.",
+  "mapToolsToggle": "Map tools"
 }

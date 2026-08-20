@@ -91,5 +91,6 @@
   "mapToolExportChanges": "Eksportuj zmiany",
   "mapToolImportChanges": "Importuj zmiany",
   "mapToolImportSuccess": "Zmiany mapy zostały zaimportowane.",
-  "mapToolImportInvalid": "Nie udało się zaimportować tego pliku."
+  "mapToolImportInvalid": "Nie udało się zaimportować tego pliku.",
+  "mapToolsToggle": "Narzędzia mapy"
 }

@@ -91,5 +91,6 @@
   "mapToolExportChanges": "Експорт змін",
   "mapToolImportChanges": "Імпорт змін",
   "mapToolImportSuccess": "Зміни карти імпортовано.",
-  "mapToolImportInvalid": "Не вдалося імпортувати цей файл."
+  "mapToolImportInvalid": "Не вдалося імпортувати цей файл.",
+  "mapToolsToggle": "Інструменти карти"
 }

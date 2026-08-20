@@ -51,7 +51,7 @@ The dedicated `/mobile/` UI is designed around touch input rather than being a s
 - Two-finger pinch zoom around the gesture midpoint
 - Tap-to-place Artillery/Target
 - Drag-to-move Artillery/Target
-- Touch Map Tools, including Pencil, Eraser, Markers, and Layers
+- Touch Map Tools, including Pencil, Eraser, Markers, Layers, and Import / Export; the mobile toolbar is collapsed behind a single button by default
 - Touch-accessible Undo / Redo buttons inside Layers
 - Tap preset marker to select it as Target
 - Swipeable bottom sheet for calculator, map settings, and saved targets

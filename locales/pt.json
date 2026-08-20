@@ -91,5 +91,6 @@
   "mapToolExportChanges": "Exportar alterações",
   "mapToolImportChanges": "Importar alterações",
   "mapToolImportSuccess": "Alterações do mapa importadas.",
-  "mapToolImportInvalid": "Não foi possível importar este ficheiro."
+  "mapToolImportInvalid": "Não foi possível importar este ficheiro.",
+  "mapToolsToggle": "Ferramentas do mapa"
 }

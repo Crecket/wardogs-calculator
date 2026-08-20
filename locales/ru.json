@@ -87,5 +87,6 @@
   "mapToolExportChanges": "Экспорт изменений",
   "mapToolImportChanges": "Импорт изменений",
   "mapToolImportSuccess": "Изменения карты импортированы.",
-  "mapToolImportInvalid": "Не удалось импортировать этот файл."
+  "mapToolImportInvalid": "Не удалось импортировать этот файл.",
+  "mapToolsToggle": "Инструменты карты"
 }

@@ -587,6 +587,50 @@ function isMapToolMenuOpen(id) {
     );
 }
 
+function setMobileMapToolsOpen(open) {
+    const tools = $('mapTools');
+    const toggle = $('mobileMapToolsToggle');
+
+    if (!tools || !toggle) {
+        return;
+    }
+
+    const expanded = Boolean(open);
+
+    tools.classList.toggle(
+        'mobile-map-tools-open',
+        expanded
+    );
+
+    toggle.classList.toggle(
+        'active',
+        expanded
+    );
+
+    toggle.setAttribute(
+        'aria-expanded',
+        expanded ? 'true' : 'false'
+    );
+
+    if (!expanded) {
+        closeMapToolMenus();
+    }
+}
+
+function toggleMobileMapTools() {
+    const tools = $('mapTools');
+
+    if (!tools) {
+        return;
+    }
+
+    setMobileMapToolsOpen(
+        !tools.classList.contains(
+            'mobile-map-tools-open'
+        )
+    );
+}
+
 function updateMapToolsUI() {
     document
         .querySelectorAll('.map-tool-button[data-tool]')
@@ -1327,6 +1371,7 @@ function updateMapToolsLocalization() {
     const layersButton = $('mapToolLayers');
     const dataTransferButton = $('mapToolDataTransfer');
     const fullscreenButton = $('mapToolFullscreen');
+    const mobileToolsToggle = $('mobileMapToolsToggle');
 
     setToolButtonLabel(rulerButton, 'mapToolRuler', 'ruler');
     setToolButtonLabel(pencilButton, 'mapToolPencil', 'pencil');
@@ -1335,6 +1380,7 @@ function updateMapToolsLocalization() {
     setToolButtonLabel(searchButton, 'mapToolCoordinateSearch', 'coordinateSearch');
     setToolButtonLabel(layersButton, 'mapToolLayers', 'layers');
     setToolButtonLabel(dataTransferButton, 'mapToolDataTransfer');
+    setToolButtonLabel(mobileToolsToggle, 'mapToolsToggle');
 
     if (fullscreenButton) {
         updateMapFullscreenButton();
@@ -1373,6 +1419,16 @@ function initMapTools() {
         $('mapToolDataTransfer');
     const fullscreenButton =
         $('mapToolFullscreen');
+    const mobileToolsToggle =
+        $('mobileMapToolsToggle');
+
+    mobileToolsToggle?.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+            toggleMobileMapTools();
+        }
+    );
 
     rulerButton?.addEventListener(
         'click',

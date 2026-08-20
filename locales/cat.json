@@ -97,5 +97,6 @@
   "mapToolExportChanges": "EXPORT SCRATCHES",
   "mapToolImportChanges": "IMPORT SCRATCHES",
   "mapToolImportSuccess": "MEOWP CHANGES IMPORTED.",
-  "mapToolImportInvalid": "BAD FILE. CAT REFUSES."
+  "mapToolImportInvalid": "BAD FILE. CAT REFUSES.",
+  "mapToolsToggle": "MEOWP TOOLS"
 }
