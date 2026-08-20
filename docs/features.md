@@ -11,6 +11,7 @@
 - Automatic recalculation when positions change
 - Saved target positions
 - Optional artillery-position saving with targets
+- Export/import individual saved targets or the complete saved-target list as JSON
 - JSON-based weapon definitions
 
 ### Tactical Map

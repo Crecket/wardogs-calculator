@@ -92,5 +92,10 @@
   "mapToolImportChanges": "Імпорт змін",
   "mapToolImportSuccess": "Зміни карти імпортовано.",
   "mapToolImportInvalid": "Не вдалося імпортувати цей файл.",
-  "mapToolsToggle": "Інструменти карти"
+  "mapToolsToggle": "Інструменти карти",
+  "exportTarget": "Експорт цілі",
+  "exportAllTargets": "Експортувати все",
+  "importTargets": "Імпортувати",
+  "savedTargetsImportSuccess": "Імпортовано цілей: {count}",
+  "savedTargetsImportInvalid": "Не вдалося імпортувати цілі з цього файлу."
 }

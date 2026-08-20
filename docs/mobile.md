@@ -155,6 +155,10 @@ The only Pages custom domain remains:
 wardogs-artillery.com
 ```
 
+## Saved target transfer
+
+The mobile Saved Targets panel supports exporting a single target, exporting the full target list, and importing either format. Imported targets are merged into the existing list and receive new internal IDs to avoid collisions.
+
 ## Compact Map Tools menu
 
 On mobile, Map Tools are collapsed behind a single floating button by default. Tapping it expands the vertical tool list; tapping it again collapses the list and closes any open Map Tool popover. This keeps the map clear on small phone screens while preserving the full touch toolset.

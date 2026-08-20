@@ -300,3 +300,16 @@
     min-height: 44px;
 }
 
+
+.mobile-app .saved-target-actions-inline {
+    min-width: 118px;
+}
+
+.mobile-app .saved-target-transfer-actions button {
+    min-height: 42px;
+    font-size: 12px;
+}
+
+.mobile-app .saved-target-transfer-status {
+    font-size: 11px;
+}

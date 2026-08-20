@@ -88,5 +88,10 @@
   "mapToolImportChanges": "Импорт изменений",
   "mapToolImportSuccess": "Изменения карты импортированы.",
   "mapToolImportInvalid": "Не удалось импортировать этот файл.",
-  "mapToolsToggle": "Инструменты карты"
+  "mapToolsToggle": "Инструменты карты",
+  "exportTarget": "Экспорт цели",
+  "exportAllTargets": "Экспортировать все",
+  "importTargets": "Импортировать",
+  "savedTargetsImportSuccess": "Импортировано целей: {count}",
+  "savedTargetsImportInvalid": "Не удалось импортировать цели из этого файла."
 }

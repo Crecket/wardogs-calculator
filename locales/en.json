@@ -88,5 +88,10 @@
   "mapToolImportChanges": "Import changes",
   "mapToolImportSuccess": "Map changes imported.",
   "mapToolImportInvalid": "Could not import this file.",
-  "mapToolsToggle": "Map tools"
+  "mapToolsToggle": "Map tools",
+  "exportTarget": "Export target",
+  "exportAllTargets": "Export all",
+  "importTargets": "Import",
+  "savedTargetsImportSuccess": "Imported targets: {count}",
+  "savedTargetsImportInvalid": "Could not import targets from this file."
 }

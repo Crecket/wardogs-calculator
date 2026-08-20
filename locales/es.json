@@ -92,5 +92,10 @@
   "mapToolImportChanges": "Importar cambios",
   "mapToolImportSuccess": "Cambios del mapa importados.",
   "mapToolImportInvalid": "No se pudo importar este archivo.",
-  "mapToolsToggle": "Herramientas del mapa"
+  "mapToolsToggle": "Herramientas del mapa",
+  "exportTarget": "Exportar objetivo",
+  "exportAllTargets": "Exportar todo",
+  "importTargets": "Importar",
+  "savedTargetsImportSuccess": "Objetivos importados: {count}",
+  "savedTargetsImportInvalid": "No se pudieron importar objetivos desde este archivo."
 }

@@ -17,6 +17,9 @@ The current event set intentionally focuses on meaningful user actions rather th
 | `weapon-changed` | User selects a different weapon | `weapon` |
 | `target-saved` | User saves the current target | `withArtillery` |
 | `target-restored` | User restores a saved target | `withArtillery` |
+| `target-exported` | User exports one saved target | `withArtillery` |
+| `targets-exported` | User exports the complete saved-target list | `count` |
+| `targets-imported` | A valid single-target or target-list JSON file is imported | `count`, `format` |
 | `preset-marker-selected` | A preset map marker is selected as the target | `map` |
 | `coordinate-search` | A valid coordinate search is completed | `map` |
 | `ruler-used` | A non-zero ruler measurement is completed | `map` |
@@ -39,12 +42,15 @@ Custom analytics data does **not** include:
 
 - exact artillery or target coordinates;
 - saved target names;
+- saved-target JSON contents or file names;
 - drawing geometry;
 - user marker coordinates;
 - coordinate-search values;
 - any localStorage contents.
 - exported/imported JSON contents or file names.
 
+
+Saved-target transfer events report only counts, import format (`single` or `list`), and whether a single exported target includes an artillery position. Names and coordinates are never sent.
 
 Map data transfer events contain only aggregate item counts and whether layer settings were included. Coordinates, drawing geometry, marker positions, and imported file contents are not sent to Umami.
 

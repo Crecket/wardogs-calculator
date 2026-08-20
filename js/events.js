@@ -365,6 +365,18 @@ function bindEvents() {
             saveArtilleryPreference
         );
 
+    $('exportSavedTargets')
+        ?.addEventListener(
+            'click',
+            exportAllSavedTargets
+        );
+
+    $('importSavedTargets')
+        ?.addEventListener(
+            'click',
+            importSavedTargets
+        );
+
 
     /* =========================
        CANVAS

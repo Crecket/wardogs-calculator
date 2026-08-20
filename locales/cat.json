@@ -98,5 +98,10 @@
   "mapToolImportChanges": "IMPORT SCRATCHES",
   "mapToolImportSuccess": "MEOWP CHANGES IMPORTED.",
   "mapToolImportInvalid": "BAD FILE. CAT REFUSES.",
-  "mapToolsToggle": "MEOWP TOOLS"
+  "mapToolsToggle": "MEOWP TOOLS",
+  "exportTarget": "EXPORT MEOWGET",
+  "exportAllTargets": "EXPORT ALL MEOWGETS",
+  "importTargets": "IMPORT MEOWGETS",
+  "savedTargetsImportSuccess": "IMPORTED MEOWGETS: {count}",
+  "savedTargetsImportInvalid": "CAT COULD NOT IMPORT THESE MEOWGETS."
 }

@@ -398,3 +398,64 @@
 }
 
 
+
+/* =========================
+   SAVED TARGET TRANSFER
+   ========================= */
+
+.saved-target-actions-inline {
+    min-width: 92px;
+}
+
+.saved-target-actions-inline .saved-target-export {
+    color: var(--accent);
+}
+
+.saved-target-transfer-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+}
+
+.saved-target-transfer-actions button {
+    width: 100%;
+    min-width: 0;
+    min-height: 34px;
+    padding: 7px 8px;
+
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+
+    background: var(--input-bg);
+    color: var(--text);
+
+    font: inherit;
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+.saved-target-transfer-actions button:hover:not(:disabled) {
+    border-color: var(--accent-border);
+    background: var(--input-hover-bg);
+    color: var(--accent);
+}
+
+.saved-target-transfer-actions button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.saved-target-transfer-status {
+    min-height: 14px;
+    color: var(--accent);
+    font-size: 10px;
+    line-height: 1.35;
+}
+
+.saved-target-transfer-status:empty {
+    min-height: 0;
+}
+
+.saved-target-transfer-status.error {
+    color: #d86b6b;
+}
