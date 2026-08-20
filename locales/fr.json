@@ -85,5 +85,11 @@
   "desktopVersion": "Version bureau",
   "mapToolEraser": "Gomme",
   "mapToolLayers": "Calques",
-  "mapLayerCursorCoordinates": "Coordonnées du curseur"
+  "mapLayerCursorCoordinates": "Coordonnées du curseur",
+  "mapToolDataTransfer": "Import / Export",
+  "mapToolDataTransferHint": "Sauvegardez ou partagez les dessins, marqueurs utilisateur et réglages des calques.",
+  "mapToolExportChanges": "Exporter les modifications",
+  "mapToolImportChanges": "Importer les modifications",
+  "mapToolImportSuccess": "Modifications de la carte importées.",
+  "mapToolImportInvalid": "Impossible d’importer ce fichier."
 }

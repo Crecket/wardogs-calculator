@@ -81,5 +81,11 @@
   "desktopVersion": "Desktop version",
   "mapToolEraser": "Eraser",
   "mapToolLayers": "Layers",
-  "mapLayerCursorCoordinates": "Cursor coordinates"
+  "mapLayerCursorCoordinates": "Cursor coordinates",
+  "mapToolDataTransfer": "Import / Export",
+  "mapToolDataTransferHint": "Back up or share drawings, user markers, and layer settings.",
+  "mapToolExportChanges": "Export changes",
+  "mapToolImportChanges": "Import changes",
+  "mapToolImportSuccess": "Map changes imported.",
+  "mapToolImportInvalid": "Could not import this file."
 }

@@ -85,5 +85,11 @@
   "desktopVersion": "Версія для ПК",
   "mapToolEraser": "Гумка",
   "mapToolLayers": "Шари",
-  "mapLayerCursorCoordinates": "Координати курсора"
+  "mapLayerCursorCoordinates": "Координати курсора",
+  "mapToolDataTransfer": "Імпорт / експорт",
+  "mapToolDataTransferHint": "Збережіть резервну копію або поділіться малюнками, користувацькими маркерами та налаштуваннями шарів.",
+  "mapToolExportChanges": "Експорт змін",
+  "mapToolImportChanges": "Імпорт змін",
+  "mapToolImportSuccess": "Зміни карти імпортовано.",
+  "mapToolImportInvalid": "Не вдалося імпортувати цей файл."
 }

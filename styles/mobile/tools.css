@@ -114,3 +114,12 @@
 .mobile-app .map-tool-fullscreen-button {
     display: none !important;
 }
+
+.mobile-app .map-tool-data-transfer {
+    width: min(280px, calc(100vw - 72px));
+}
+
+.mobile-app .map-tool-data-transfer-actions button {
+    min-height: 42px;
+    font-size: 12px;
+}

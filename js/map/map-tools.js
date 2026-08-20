@@ -5,6 +5,17 @@
 const MAP_TOOLS_STORAGE_KEY =
     'wardogs-map-tools';
 
+const MAP_TOOLS_EXPORT_TYPE =
+    'wardogs-map-changes';
+
+const MAP_TOOLS_EXPORT_VERSION = 1;
+
+const MAP_TOOLS_IMPORT_LIMITS = {
+    drawings: 2000,
+    markers: 5000,
+    pointsPerDrawing: 10000
+};
+
 const MAP_TOOL_COLORS = [
     { id: 'danger', color: '#d86666', titleKey: 'mapToolColorDanger' },
     { id: 'warning', color: '#d98b5f', titleKey: 'mapToolColorWarning' },
@@ -279,6 +290,225 @@ function loadMapToolState() {
     }
 }
 
+function setMapDataTransferStatus(
+    key = null,
+    isError = false
+) {
+    const status = $('mapDataTransferStatus');
+
+    if (!status) {
+        return;
+    }
+
+    status.textContent = key ? tr(key) : '';
+    status.classList.toggle('error', Boolean(isError));
+}
+
+function createMapToolExportPayload() {
+    return {
+        type: MAP_TOOLS_EXPORT_TYPE,
+        version: MAP_TOOLS_EXPORT_VERSION,
+        exportedAt: new Date().toISOString(),
+        data: {
+            drawings: structuredClone(MAP_TOOL_STATE.drawings),
+            markers: structuredClone(MAP_TOOL_STATE.markers),
+            layers: structuredClone(MAP_TOOL_STATE.layers)
+        }
+    };
+}
+
+function exportMapToolChanges() {
+    downloadWardogsJson(
+        `wardogs-map-changes-${wardogsExportTimestamp()}.json`,
+        createMapToolExportPayload()
+    );
+
+    setMapDataTransferStatus();
+
+    if (typeof trackAnalytics === 'function') {
+        trackAnalytics('map-changes-exported', {
+            drawings: MAP_TOOL_STATE.drawings.length,
+            markers: MAP_TOOL_STATE.markers.length
+        });
+    }
+}
+
+function importedMapId(value) {
+    if (typeof value !== 'string' || !value.trim()) {
+        return currentMapToolMapId();
+    }
+
+    return value.trim().slice(0, 64);
+}
+
+function normalizeImportedMapToolDrawing(drawing) {
+    if (!drawing || typeof drawing !== 'object' || !Array.isArray(drawing.points)) {
+        return null;
+    }
+
+    const points = drawing.points
+        .slice(0, MAP_TOOLS_IMPORT_LIMITS.pointsPerDrawing)
+        .filter(point =>
+            point &&
+            Number.isFinite(Number(point.x)) &&
+            Number.isFinite(Number(point.y))
+        )
+        .map(point => ({
+            x: Number(point.x),
+            y: Number(point.y)
+        }));
+
+    if (points.length < 2) {
+        return null;
+    }
+
+    const color =
+        typeof drawing.color === 'string' &&
+        /^#[0-9a-f]{6}$/i.test(drawing.color)
+            ? drawing.color
+            : '#d7a452';
+
+    return {
+        id: mapToolId(),
+        mapId: importedMapId(drawing.mapId),
+        color,
+        points
+    };
+}
+
+function normalizeImportedMapToolMarker(marker) {
+    if (
+        !marker ||
+        typeof marker !== 'object' ||
+        typeof marker.icon !== 'string' ||
+        !Number.isFinite(Number(marker.x)) ||
+        !Number.isFinite(Number(marker.y))
+    ) {
+        return null;
+    }
+
+    const asset = getMarkerAsset(marker.icon);
+
+    if (!asset || !asset.placeable) {
+        return null;
+    }
+
+    return {
+        id: mapToolId(),
+        mapId: importedMapId(marker.mapId),
+        icon: marker.icon,
+        x: Number(marker.x),
+        y: Number(marker.y)
+    };
+}
+
+function normalizeImportedMapLayers(layers) {
+    if (!layers || typeof layers !== 'object') {
+        return null;
+    }
+
+    const normalized = {};
+
+    Object.keys(MAP_TOOL_STATE.layers).forEach(key => {
+        if (typeof layers[key] === 'boolean') {
+            normalized[key] = layers[key];
+        }
+    });
+
+    return Object.keys(normalized).length ? normalized : null;
+}
+
+function normalizeImportedMapToolPayload(payload) {
+    if (!payload || typeof payload !== 'object') {
+        throw new Error('Invalid map changes payload');
+    }
+
+    const source =
+        payload.type === MAP_TOOLS_EXPORT_TYPE
+            ? payload.data
+            : payload.data && typeof payload.data === 'object'
+                ? payload.data
+                : payload;
+
+    if (!source || typeof source !== 'object') {
+        throw new Error('Invalid map changes payload');
+    }
+
+    const drawings = Array.isArray(source.drawings)
+        ? source.drawings
+            .slice(0, MAP_TOOLS_IMPORT_LIMITS.drawings)
+            .map(normalizeImportedMapToolDrawing)
+            .filter(Boolean)
+        : [];
+
+    const markers = Array.isArray(source.markers)
+        ? source.markers
+            .slice(0, MAP_TOOLS_IMPORT_LIMITS.markers)
+            .map(normalizeImportedMapToolMarker)
+            .filter(Boolean)
+        : [];
+
+    const layers = normalizeImportedMapLayers(source.layers);
+
+    if (!drawings.length && !markers.length && !layers) {
+        throw new Error('No supported map changes found');
+    }
+
+    return { drawings, markers, layers };
+}
+
+function applyImportedMapToolChanges(imported) {
+    if (imported.drawings.length || imported.markers.length) {
+        pushMapToolHistory();
+    }
+
+    MAP_TOOL_STATE.drawings.push(...imported.drawings);
+    MAP_TOOL_STATE.markers.push(...imported.markers);
+
+    if (imported.layers) {
+        MAP_TOOL_STATE.layers = {
+            ...MAP_TOOL_STATE.layers,
+            ...imported.layers
+        };
+    }
+
+    MAP_TOOL_STATE.hoverPathId = null;
+    MAP_TOOL_STATE.hoverDeletePoint = null;
+    MAP_TOOL_STATE.hoverMarkerId = null;
+
+    saveMapToolState();
+    buildMapLayers();
+    updateMapToolsUI();
+    draw();
+}
+
+async function importMapToolChanges() {
+    try {
+        const file = await selectWardogsJsonFile();
+
+        if (!file) {
+            return;
+        }
+
+        const payload = await readWardogsJsonFile(file);
+        const imported = normalizeImportedMapToolPayload(payload);
+
+        applyImportedMapToolChanges(imported);
+        setMapDataTransferStatus('mapToolImportSuccess');
+
+        if (typeof trackAnalytics === 'function') {
+            trackAnalytics('map-changes-imported', {
+                drawings: imported.drawings.length,
+                markers: imported.markers.length,
+                layers: Boolean(imported.layers)
+            });
+        }
+    } catch (error) {
+        console.warn('Failed to import map changes:', error);
+        setMapDataTransferStatus('mapToolImportInvalid', true);
+    }
+}
+
 function setMapTool(tool) {
     MAP_TOOL_STATE.tool =
         MAP_TOOL_STATE.tool === tool
@@ -299,7 +529,7 @@ function setMapTool(tool) {
 }
 
 function closeMapToolMenus(except = null) {
-    ['pencilPalette', 'markerPicker', 'coordinateSearchPopover', 'mapLayersPopover'].forEach(
+    ['pencilPalette', 'markerPicker', 'coordinateSearchPopover', 'mapLayersPopover', 'mapDataTransferPopover'].forEach(
         id => {
             if (id === except) {
                 return;
@@ -397,6 +627,13 @@ function updateMapToolsUI() {
                 active =
                     isMapToolMenuOpen(
                         'mapLayersPopover'
+                    );
+            }
+
+            if (tool === 'dataTransfer') {
+                active =
+                    isMapToolMenuOpen(
+                        'mapDataTransferPopover'
                     );
             }
 
@@ -748,6 +985,51 @@ function buildMapLayers() {
     updateMapToolHistoryUI();
 }
 
+function buildMapDataTransfer() {
+    const container = $('mapDataTransferPopover');
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = '';
+
+    const title = document.createElement('div');
+    title.className = 'map-tool-popover-title';
+    title.textContent = tr('mapToolDataTransfer');
+
+    const hint = document.createElement('div');
+    hint.className = 'map-tool-data-transfer-hint';
+    hint.textContent = tr('mapToolDataTransferHint');
+
+    const actions = document.createElement('div');
+    actions.className = 'map-tool-data-transfer-actions';
+
+    const exportButton = document.createElement('button');
+    exportButton.type = 'button';
+    exportButton.textContent = tr('mapToolExportChanges');
+    exportButton.addEventListener('click', event => {
+        event.stopPropagation();
+        exportMapToolChanges();
+    });
+
+    const importButton = document.createElement('button');
+    importButton.type = 'button';
+    importButton.textContent = tr('mapToolImportChanges');
+    importButton.addEventListener('click', async event => {
+        event.stopPropagation();
+        await importMapToolChanges();
+    });
+
+    actions.append(exportButton, importButton);
+
+    const status = document.createElement('div');
+    status.id = 'mapDataTransferStatus';
+    status.className = 'map-tool-data-transfer-status';
+
+    container.append(title, hint, actions, status);
+}
+
 function centerMapOnWorldPoint(point) {
     if (!isWorldPointInsideMap(point)) {
         return false;
@@ -1043,6 +1325,7 @@ function updateMapToolsLocalization() {
     const markerButton = $('mapToolMarker');
     const searchButton = $('mapToolCoordinateSearch');
     const layersButton = $('mapToolLayers');
+    const dataTransferButton = $('mapToolDataTransfer');
     const fullscreenButton = $('mapToolFullscreen');
 
     setToolButtonLabel(rulerButton, 'mapToolRuler', 'ruler');
@@ -1051,6 +1334,7 @@ function updateMapToolsLocalization() {
     setToolButtonLabel(markerButton, 'mapToolMarkers', 'marker');
     setToolButtonLabel(searchButton, 'mapToolCoordinateSearch', 'coordinateSearch');
     setToolButtonLabel(layersButton, 'mapToolLayers', 'layers');
+    setToolButtonLabel(dataTransferButton, 'mapToolDataTransfer');
 
     if (fullscreenButton) {
         updateMapFullscreenButton();
@@ -1059,6 +1343,7 @@ function updateMapToolsLocalization() {
     buildPencilPalette();
     buildMarkerPicker();
     buildMapLayers();
+    buildMapDataTransfer();
 
     const goButton = $('coordinateSearchGo');
     if (goButton) goButton.textContent = tr('mapToolSearchGo');
@@ -1084,6 +1369,8 @@ function initMapTools() {
         $('mapToolCoordinateSearch');
     const layersButton =
         $('mapToolLayers');
+    const dataTransferButton =
+        $('mapToolDataTransfer');
     const fullscreenButton =
         $('mapToolFullscreen');
 
@@ -1165,6 +1452,17 @@ function initMapTools() {
             updateMapToolsUI();
             buildMapLayers();
             toggleMapToolMenu('mapLayersPopover');
+        }
+    );
+
+    dataTransferButton?.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+            MAP_TOOL_STATE.tool = 'dataTransfer';
+            updateMapToolsUI();
+            buildMapDataTransfer();
+            toggleMapToolMenu('mapDataTransferPopover');
         }
     );
 

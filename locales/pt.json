@@ -85,5 +85,11 @@
   "desktopVersion": "Versão para computador",
   "mapToolEraser": "Borracha",
   "mapToolLayers": "Camadas",
-  "mapLayerCursorCoordinates": "Coordenadas do cursor"
+  "mapLayerCursorCoordinates": "Coordenadas do cursor",
+  "mapToolDataTransfer": "Importar / Exportar",
+  "mapToolDataTransferHint": "Faça backup ou compartilhe desenhos, marcadores do utilizador e definições de camadas.",
+  "mapToolExportChanges": "Exportar alterações",
+  "mapToolImportChanges": "Importar alterações",
+  "mapToolImportSuccess": "Alterações do mapa importadas.",
+  "mapToolImportInvalid": "Não foi possível importar este ficheiro."
 }

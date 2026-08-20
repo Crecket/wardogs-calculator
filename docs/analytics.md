@@ -22,6 +22,8 @@ The current event set intentionally focuses on meaningful user actions rather th
 | `ruler-used` | A non-zero ruler measurement is completed | `map` |
 | `drawing-created` | A pencil path is completed | `map` |
 | `user-marker-placed` | A user Map Tools marker is placed | `map` |
+| `map-changes-exported` | User exports persistent Map Tools data | `drawings`, `markers` |
+| `map-changes-imported` | A valid Map Tools JSON file is imported | `drawings`, `markers`, `layers` |
 | `partner-click` | User opens a community partner link | `partner`, `placement` |
 | `desktop-version` | Mobile user chooses the desktop interface | none |
 
@@ -41,6 +43,10 @@ Custom analytics data does **not** include:
 - user marker coordinates;
 - coordinate-search values;
 - any localStorage contents.
+- exported/imported JSON contents or file names.
+
+
+Map data transfer events contain only aggregate item counts and whether layer settings were included. Coordinates, drawing geometry, marker positions, and imported file contents are not sent to Umami.
 
 This keeps event payloads small and avoids generating excessive event-data usage. High-frequency actions such as map panning, cursor movement, mouse movement, and pinch/wheel zoom are deliberately not tracked.
 

@@ -85,5 +85,11 @@
   "desktopVersion": "Desktop-Version",
   "mapToolEraser": "Radiergummi",
   "mapToolLayers": "Ebenen",
-  "mapLayerCursorCoordinates": "Cursor-Koordinaten"
+  "mapLayerCursorCoordinates": "Cursor-Koordinaten",
+  "mapToolDataTransfer": "Import / Export",
+  "mapToolDataTransferHint": "Sichere oder teile Zeichnungen, eigene Marker und Ebeneneinstellungen.",
+  "mapToolExportChanges": "Änderungen exportieren",
+  "mapToolImportChanges": "Änderungen importieren",
+  "mapToolImportSuccess": "Kartenänderungen importiert.",
+  "mapToolImportInvalid": "Diese Datei konnte nicht importiert werden."
 }

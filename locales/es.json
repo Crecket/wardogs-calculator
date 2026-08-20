@@ -85,5 +85,11 @@
   "desktopVersion": "Versión de escritorio",
   "mapToolEraser": "Borrador",
   "mapToolLayers": "Capas",
-  "mapLayerCursorCoordinates": "Coordenadas del cursor"
+  "mapLayerCursorCoordinates": "Coordenadas del cursor",
+  "mapToolDataTransfer": "Importar / Exportar",
+  "mapToolDataTransferHint": "Guarda una copia o comparte dibujos, marcadores de usuario y ajustes de capas.",
+  "mapToolExportChanges": "Exportar cambios",
+  "mapToolImportChanges": "Importar cambios",
+  "mapToolImportSuccess": "Cambios del mapa importados.",
+  "mapToolImportInvalid": "No se pudo importar este archivo."
 }

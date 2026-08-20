@@ -91,5 +91,11 @@
   "desktopVersion": "DESKTOP MEOWDE",
   "mapToolEraser": "PURRASER",
   "mapToolLayers": "MEOWYERS",
-  "mapLayerCursorCoordinates": "CURSOR PAW-RDINATES"
+  "mapLayerCursorCoordinates": "CURSOR PAW-RDINATES",
+  "mapToolDataTransfer": "IMPORT / EXPORT MEOWP",
+  "mapToolDataTransferHint": "BACK UP OR SHARE YOUR SCRATCHES, HUMAN MARKERS AND LAYER MEOWGIC.",
+  "mapToolExportChanges": "EXPORT SCRATCHES",
+  "mapToolImportChanges": "IMPORT SCRATCHES",
+  "mapToolImportSuccess": "MEOWP CHANGES IMPORTED.",
+  "mapToolImportInvalid": "BAD FILE. CAT REFUSES."
 }

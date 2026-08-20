@@ -81,5 +81,11 @@
   "desktopVersion": "Версия для ПК",
   "mapToolEraser": "Ластик",
   "mapToolLayers": "Слои",
-  "mapLayerCursorCoordinates": "Координаты курсора"
+  "mapLayerCursorCoordinates": "Координаты курсора",
+  "mapToolDataTransfer": "Импорт / экспорт",
+  "mapToolDataTransferHint": "Сохраните резервную копию или поделитесь рисунками, пользовательскими маркерами и настройками слоёв.",
+  "mapToolExportChanges": "Экспорт изменений",
+  "mapToolImportChanges": "Импорт изменений",
+  "mapToolImportSuccess": "Изменения карты импортированы.",
+  "mapToolImportInvalid": "Не удалось импортировать этот файл."
 }

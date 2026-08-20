@@ -38,9 +38,10 @@ The floating Map Tools toolbar provides:
 - **Markers** — place tactical markers
 - **Coordinate Search** — jump to specific coordinates
 - **Layers** — toggle map tiles, overlays, drawings, markers, and cursor coordinates
+- **Import / Export** — back up or share drawings, user markers, and layer visibility settings as JSON
 - **Undo / Redo** — drawings, erased strokes, user markers, and Artillery/Target position changes
 
-Drawings and user markers are stored locally per map and are shared between desktop and mobile because both interfaces use the same site origin.
+Drawings and user markers are stored locally per map and are shared between desktop and mobile because both interfaces use the same site origin. The Import / Export Map Tool exports the complete persistent Map Tools state across maps (drawings, user markers, and layer visibility settings). Imports are merged with existing user content and imported drawing/marker IDs are regenerated to avoid collisions.
 
 ### Mobile Interface
 

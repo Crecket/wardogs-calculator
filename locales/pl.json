@@ -85,5 +85,11 @@
   "desktopVersion": "Wersja komputerowa",
   "mapToolEraser": "Gumka",
   "mapToolLayers": "Warstwy",
-  "mapLayerCursorCoordinates": "Współrzędne kursora"
+  "mapLayerCursorCoordinates": "Współrzędne kursora",
+  "mapToolDataTransfer": "Import / Eksport",
+  "mapToolDataTransferHint": "Utwórz kopię lub udostępnij rysunki, własne znaczniki i ustawienia warstw.",
+  "mapToolExportChanges": "Eksportuj zmiany",
+  "mapToolImportChanges": "Importuj zmiany",
+  "mapToolImportSuccess": "Zmiany mapy zostały zaimportowane.",
+  "mapToolImportInvalid": "Nie udało się zaimportować tego pliku."
 }
