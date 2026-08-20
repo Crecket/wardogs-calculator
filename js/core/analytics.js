@@ -27,8 +27,16 @@ let analyticsCalculationTimer = null;
 let analyticsCalculationInitialized = false;
 let analyticsLastCalculationFingerprint = null;
 
+function isAnalyticsDisabled() {
+    return (
+        window.__WARDOGS_ANALYTICS_DISABLED__ ===
+        true
+    );
+}
+
 function isAnalyticsAvailable() {
     return Boolean(
+        !isAnalyticsDisabled() &&
         window.umami &&
         typeof window.umami.track === 'function'
     );
@@ -91,6 +99,19 @@ function sendAnalyticsEvent(name, data) {
 }
 
 function flushAnalyticsQueue() {
+    if (isAnalyticsDisabled()) {
+        ANALYTICS_QUEUE.length = 0;
+
+        if (analyticsFlushTimer) {
+            window.clearInterval(
+                analyticsFlushTimer
+            );
+            analyticsFlushTimer = null;
+        }
+
+        return;
+    }
+
     if (isAnalyticsAvailable()) {
         while (ANALYTICS_QUEUE.length) {
             const event = ANALYTICS_QUEUE.shift();
@@ -148,6 +169,10 @@ function scheduleAnalyticsFlush() {
 }
 
 function trackAnalytics(name, data = undefined) {
+    if (isAnalyticsDisabled()) {
+        return;
+    }
+
     if (
         typeof name !== 'string' ||
         !name.trim()

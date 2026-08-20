@@ -11,7 +11,7 @@ The current event set intentionally focuses on meaningful user actions rather th
 | Event | When it is sent | Event data |
 |---|---|---|
 | `calculation` | Artillery/target/map/weapon state changes and settles for 700 ms | `map`, `weapon`, `inRange` |
-| `artillery-placed` | Artillery point is placed or dragged on the map | `map` |
+| `origin-placed` | Artillery/origin point is placed or dragged on the map | `map` |
 | `target-placed` | Target point is placed or dragged on the map | `map` |
 | `map-changed` | User changes the map preset or applies a custom map | `map` |
 | `weapon-changed` | User selects a different weapon | `weapon` |
@@ -74,3 +74,29 @@ Do not call `window.umami.track()` directly from feature modules.
 Prefer events that represent a completed user action. Avoid events inside animation frames, pointer-move handlers, render loops, or other high-frequency paths.
 
 If Umami has not finished loading yet, the wrapper temporarily queues a small number of events and flushes them when the tracker becomes available. If the tracker is blocked or unavailable, application functionality is unaffected.
+
+## Development analytics switch
+
+`npm run dev` disables production Umami analytics by default. This prevents local pageviews and custom events from contaminating production usage data.
+
+The development server reads `WARDOGS_DISABLE_ANALYTICS`:
+
+```bash
+WARDOGS_DISABLE_ANALYTICS=true npm run dev
+```
+
+To deliberately test analytics locally:
+
+```bash
+WARDOGS_DISABLE_ANALYTICS=false npm run dev
+```
+
+PowerShell equivalent:
+
+```powershell
+$env:WARDOGS_DISABLE_ANALYTICS = "false"
+npm run dev
+```
+
+When disabled, the dev server removes the Umami script from served HTML and sets `window.__WARDOGS_ANALYTICS_DISABLED__ = true`. The shared analytics wrapper checks this flag before sending or queueing events. Production builds do not inject this flag and are not affected by the development setting.
+

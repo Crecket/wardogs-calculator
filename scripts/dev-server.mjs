@@ -37,6 +37,50 @@ const DEFAULT_HOST =
 const DEFAULT_PORT =
     8000;
 
+function parseBooleanEnvironment(
+    value,
+    fallback
+) {
+    if (
+        value === undefined ||
+        value === null ||
+        String(value).trim() === ''
+    ) {
+        return fallback;
+    }
+
+    const normalized =
+        String(value)
+            .trim()
+            .toLowerCase();
+
+    if (
+        ['1', 'true', 'yes', 'on'].includes(
+            normalized
+        )
+    ) {
+        return true;
+    }
+
+    if (
+        ['0', 'false', 'no', 'off'].includes(
+            normalized
+        )
+    ) {
+        return false;
+    }
+
+    throw new Error(
+        `Invalid boolean environment value: ${value}`
+    );
+}
+
+const DISABLE_DEV_ANALYTICS =
+    parseBooleanEnvironment(
+        process.env.WARDOGS_DISABLE_ANALYTICS,
+        true
+    );
+
 const MIME_TYPES = {
     '.css': 'text/css; charset=utf-8',
     '.gif': 'image/gif',
@@ -221,29 +265,33 @@ async function getLanguages() {
 }
 
 function prepareDevHTML(html) {
-    /*
-     * Local development must not pollute production analytics.
-     * Removing the Umami loader makes the analytics wrapper a no-op.
-     */
-    const withoutAnalytics =
-        html.replace(
+    let prepared = html;
+
+    if (DISABLE_DEV_ANALYTICS) {
+        /*
+         * Keep local development out of production analytics and tell
+         * the application wrapper not to queue events while disabled.
+         */
+        prepared = prepared.replace(
             /\s*<script[^>]*src=["']https:\/\/cloud\.umami\.is\/script\.js["'][^>]*><\/script>/gi,
             ''
         );
 
-    if (
-        withoutAnalytics.includes(
-            '</body>'
-        )
-    ) {
-        return withoutAnalytics.replace(
+        prepared = prepared.replace(
+            '<head>',
+            '<head>\n<script>window.__WARDOGS_ANALYTICS_DISABLED__ = true;</script>'
+        );
+    }
+
+    if (prepared.includes('</body>')) {
+        return prepared.replace(
             '</body>',
             `${LIVE_RELOAD_CLIENT}\n</body>`
         );
     }
 
     return (
-        `${withoutAnalytics}\n` +
+        `${prepared}\n` +
         LIVE_RELOAD_CLIENT
     );
 }
@@ -792,7 +840,9 @@ server.listen(
         );
         console.log('');
         console.log(
-            'Live reload enabled. Production Umami analytics disabled.'
+            DISABLE_DEV_ANALYTICS
+                ? 'Live reload enabled. Production Umami analytics disabled.'
+                : 'Live reload enabled. Production Umami analytics ENABLED for this dev session.'
         );
         console.log(
             'Map tiles are served directly and are not watched for changes.'

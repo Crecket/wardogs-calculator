@@ -139,7 +139,35 @@ The dev server includes live reload for JavaScript, modular CSS, page sources, l
 
 The Bakurani tile pyramid is intentionally not watched because of its size. Tiles are served directly from disk, so after replacing a tile a manual browser refresh is enough to see the new file.
 
-Production Umami analytics are disabled automatically on the development server so local testing does not pollute analytics data.
+Production Umami analytics are disabled by default on the development server so local testing does not pollute analytics data. The behavior is controlled by the `WARDOGS_DISABLE_ANALYTICS` environment variable.
+
+To explicitly keep analytics disabled:
+
+```bash
+WARDOGS_DISABLE_ANALYTICS=true npm run dev
+```
+
+On PowerShell:
+
+```powershell
+$env:WARDOGS_DISABLE_ANALYTICS = "true"
+npm run dev
+```
+
+To test the production Umami integration locally, explicitly enable it for that dev session:
+
+```bash
+WARDOGS_DISABLE_ANALYTICS=false npm run dev
+```
+
+On PowerShell:
+
+```powershell
+$env:WARDOGS_DISABLE_ANALYTICS = "false"
+npm run dev
+```
+
+Accepted boolean values are `1` / `0`, `true` / `false`, `yes` / `no`, and `on` / `off`. When analytics are disabled, the dev server removes the Umami loader and injects a runtime flag so the application analytics wrapper does not queue custom events either. This setting affects only `npm run dev`; production builds are unchanged.
 
 Browser caching is also disabled for local responses.
 
