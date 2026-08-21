@@ -10,9 +10,9 @@ The current event set intentionally focuses on meaningful user actions rather th
 
 | Event | When it is sent | Event data |
 |---|---|---|
-| `calculation` | Artillery/target/map/weapon state changes and settles for 700 ms | `map`, `weapon`, `inRange` |
-| `origin-placed` | Artillery/origin point is placed or dragged on the map | `map` |
-| `target-placed` | Target point is placed or dragged on the map | `map` |
+| `calculation` | First stable calculation for each map + weapon context in the current browser-tab session | `map`, `weapon`, `inRange` |
+| `origin-placed` | First artillery/origin placement for each map in the current browser-tab session | `map` |
+| `target-placed` | First target placement for each map in the current browser-tab session | `map` |
 | `map-changed` | User changes the map preset or applies a custom map | `map` |
 | `weapon-changed` | User selects a different weapon | `weapon` |
 | `target-saved` | User saves the current target | `withArtillery` |
@@ -20,7 +20,7 @@ The current event set intentionally focuses on meaningful user actions rather th
 | `target-exported` | User exports one saved target | `withArtillery` |
 | `targets-exported` | User exports the complete saved-target list | `count` |
 | `targets-imported` | A valid single-target or target-list JSON file is imported | `count`, `format` |
-| `preset-marker-selected` | A preset map marker is selected as the target | `map` |
+| `preset-marker-selected` | First preset-marker target selection for each map in the current browser-tab session | `map` |
 | `coordinate-search` | A valid coordinate search is completed | `map` |
 | `ruler-used` | A non-zero ruler measurement is completed | `map` |
 | `drawing-created` | A pencil path is completed | `map` |
@@ -30,11 +30,24 @@ The current event set intentionally focuses on meaningful user actions rather th
 | `partner-click` | User opens a community partner link | `partner`, `placement` |
 | `desktop-version` | Mobile user chooses the desktop interface | none |
 
+## High-volume event budget
+
+The analytics wrapper applies session-level deduplication to the highest-volume interaction events:
+
+- `calculation` is emitted at most once for each map + weapon combination in the current browser-tab session;
+- `origin-placed` is emitted at most once per map in the current browser-tab session;
+- `target-placed` is emitted at most once per map in the current browser-tab session;
+- `preset-marker-selected` is emitted at most once per map in the current browser-tab session.
+
+The deduplication keys are stored in `sessionStorage`, so a page reload in the same tab does not immediately generate the same high-volume events again. A new tab starts a new analytics session budget. If `sessionStorage` is unavailable, the same policy still works in memory for the current page lifetime.
+
+This intentionally changes these events from action counters into **feature-usage signals**. They are suitable for measuring how many sessions use a feature and for preserving the Origin → Target → Calculation funnel without spending analytics quota on every repeated drag or recalculation.
+
 ## Calculation event behavior
 
-`calculation` is debounced. Dragging a target or artillery marker therefore does not emit an event on every pointer move.
+`calculation` is still debounced. Dragging a target or artillery marker therefore does not emit an event on every pointer move.
 
-The initial solution rendered on application startup is treated as a baseline and is not counted as a user calculation. An event is sent only after the calculation state changes and remains stable for 700 ms.
+The initial solution rendered on application startup is treated as a baseline and is not counted as a user calculation. A changed solution must remain stable for 900 ms before analytics considers it, and the session-level budget then decides whether that map + weapon context has already been recorded.
 
 ## Privacy and event volume
 
@@ -55,6 +68,8 @@ Saved-target transfer events report only counts, import format (`single` or `lis
 Map data transfer events contain only aggregate item counts and whether layer settings were included. Coordinates, drawing geometry, marker positions, and imported file contents are not sent to Umami.
 
 This keeps event payloads small and avoids generating excessive event-data usage. High-frequency actions such as map panning, cursor movement, mouse movement, and pinch/wheel zoom are deliberately not tracked.
+
+Repeated high-volume calculator interactions are also deduplicated before they are queued or sent to Umami. Rare actions such as saved-target transfer, drawings, ruler use, map changes, and partner clicks continue to be recorded per completed action because their event volume is comparatively small and their action counts remain useful.
 
 ## Adding an event
 

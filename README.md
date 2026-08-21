@@ -1,80 +1,30 @@
-# WARDOGS Artillery Calculator
+# WARDOGS Analytics Quota Optimization Patch
 
-[![Live App](https://img.shields.io/badge/Live-wardogs--artillery.com-d7a452?style=flat-square)](https://wardogs-artillery.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![Vanilla JS](https://img.shields.io/badge/JavaScript-Vanilla-F7DF1E?style=flat-square&logo=javascript&logoColor=000)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![GitHub Pages](https://img.shields.io/badge/Hosted_on-GitHub_Pages-222?style=flat-square&logo=github)](https://pages.github.com/)
+Apply this patch on top of the current v1.5 source tree.
 
-A lightweight, open-source artillery calculator and tactical map tool for **WARDOGS**.
+## What changed
 
-**Live app:** https://wardogs-artillery.com/  
-**Mobile UI:** https://wardogs-artillery.com/mobile/
+The highest-volume analytics events are now treated as session-level feature-usage signals instead of raw action counters:
 
-<table>
-  <tr>
-    <th width="72%">Desktop</th>
-    <th width="28%">Mobile</th>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="assets/preview.png" alt="WARDOGS Artillery Calculator — Desktop">
-    </td>
-    <td align="center">
-      <img src="assets/preview_mobile.png" alt="WARDOGS Artillery Calculator — Mobile">
-    </td>
-  </tr>
-</table>
+- `calculation`: at most once per `map + weapon` context per browser-tab session.
+- `origin-placed`: at most once per map per browser-tab session.
+- `target-placed`: at most once per map per browser-tab session.
+- `preset-marker-selected`: at most once per map per browser-tab session.
 
----
+Deduplication keys are persisted in `sessionStorage`, so refreshing the same tab does not immediately resend the same high-volume events. A new tab starts a fresh budget. If `sessionStorage` is unavailable, in-memory deduplication still works for the lifetime of the page.
 
-## Interfaces
+The calculation debounce was increased from 700 ms to 900 ms so transient drag states are less likely to become the first tracked calculation for a map/weapon context.
 
-The project ships two interfaces from the same repository and GitHub Pages deployment:
+Rare, analytically useful events remain per-action and are not deduplicated.
 
-- **Desktop** — `/`
-- **Mobile** — `/mobile/`
+## Expected effect
 
-Phones are automatically routed from the desktop entry pages to the matching mobile route. The mobile UI is a separate map-first interface with touch panning, pinch zoom, touch-friendly point placement, Map Tools, and a bottom-sheet calculator.
+Using the recent Umami export as a replay sample, this policy would have reduced the four high-volume custom events from roughly 18.2k records to about 2.4k emitted events while preserving session-level feature adoption and the Origin -> Target -> Calculation funnel.
 
-Both interfaces reuse the same calculator logic, maps, tile pyramid, configuration, translations, saved targets, drawings, and browser storage.
+Because Umami event-data properties also consume usage records, the practical quota reduction is larger than the raw event-count reduction.
 
-## Documentation
+## Validation
 
-Detailed documentation is split into focused files to keep this README concise.
-
-- [Features & weapons](docs/features.md) — calculator features, Map Tools, weapons, touch controls, and coordinate system
-- [Maps](docs/maps.md) — map configuration, tile structure, bounds, marker zoom visibility, and adding new maps
-- [Mobile interface](docs/mobile.md) — mobile routes, automatic routing, touch controls, and deployment architecture
-- [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, and localized URLs
-- [Development](docs/development.md) — project structure, local development, unified build process, and GitHub Pages deployment
-- [Analytics](docs/analytics.md) — Umami custom events, event payloads, debouncing, and privacy considerations
-- [Message of the Day](docs/motd.md) — MOTD configuration and behavior
-- [Contributing](docs/contributing.md) — contribution guidelines
-- [License & Disclaimer](docs/legal.md) — MIT scope, third-party assets, and project disclaimer
-
-## Quick Start
-
-```bash
-npm run build
-cd dist
-python -m http.server 8000
-```
-
-Then open:
-
-```text
-Desktop: http://localhost:8000/
-Mobile:  http://localhost:8000/mobile/
-```
-
-## Contributing
-
-Corrections, map data improvements, localization updates, bug fixes, and QoL improvements are welcome.
-
-See [Contributing](docs/contributing.md) for details.
-
-## License
-
-Original project source code is licensed under the [MIT License](LICENSE).
-
-WARDOGS assets and other third-party materials are not covered by the MIT License. See [License & Disclaimer](docs/legal.md) for details.
+- `node --check js/core/analytics.js` passes.
+- `npm run build` passes.
+- Desktop and mobile builds use the same analytics wrapper, so no page-specific changes are required.

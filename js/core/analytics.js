@@ -19,13 +19,136 @@ const ANALYTICS_QUEUE = [];
 const ANALYTICS_MAX_QUEUE = 32;
 const ANALYTICS_FLUSH_INTERVAL = 500;
 const ANALYTICS_FLUSH_ATTEMPTS = 30;
-const ANALYTICS_CALCULATION_DELAY = 700;
+const ANALYTICS_CALCULATION_DELAY = 900;
+const ANALYTICS_SESSION_DEDUPE_KEY =
+    'wardogs-analytics-session-v1';
+
+const ANALYTICS_CONTEXT_DEDUPED_EVENTS =
+    new Set([
+        'calculation',
+        'origin-placed',
+        'target-placed',
+        'preset-marker-selected'
+    ]);
 
 let analyticsFlushTimer = null;
 let analyticsFlushAttempts = 0;
 let analyticsCalculationTimer = null;
 let analyticsCalculationInitialized = false;
 let analyticsLastCalculationFingerprint = null;
+let analyticsSessionKeys =
+    loadAnalyticsSessionKeys();
+
+
+function loadAnalyticsSessionKeys() {
+    try {
+        const raw = window.sessionStorage.getItem(
+            ANALYTICS_SESSION_DEDUPE_KEY
+        );
+
+        if (!raw) {
+            return new Set();
+        }
+
+        const parsed = JSON.parse(raw);
+
+        if (!Array.isArray(parsed)) {
+            return new Set();
+        }
+
+        return new Set(
+            parsed.filter(
+                value =>
+                    typeof value === 'string'
+            )
+        );
+
+    } catch (_) {
+        return new Set();
+    }
+}
+
+function persistAnalyticsSessionKeys() {
+    try {
+        window.sessionStorage.setItem(
+            ANALYTICS_SESSION_DEDUPE_KEY,
+            JSON.stringify(
+                Array.from(
+                    analyticsSessionKeys
+                )
+            )
+        );
+    } catch (_) {
+        // sessionStorage is optional.
+    }
+}
+
+function getAnalyticsContextKey(
+    name,
+    data
+) {
+    if (
+        !ANALYTICS_CONTEXT_DEDUPED_EVENTS.has(
+            name
+        )
+    ) {
+        return null;
+    }
+
+    const map =
+        typeof data?.map === 'string'
+            ? data.map
+            : '';
+
+    if (name === 'calculation') {
+        const weapon =
+            typeof data?.weapon === 'string'
+                ? data.weapon
+                : '';
+
+        return [
+            name,
+            map,
+            weapon
+        ].join('|');
+    }
+
+    return [
+        name,
+        map
+    ].join('|');
+}
+
+function shouldSuppressAnalyticsEvent(
+    name,
+    data
+) {
+    const key =
+        getAnalyticsContextKey(
+            name,
+            data
+        );
+
+    if (!key) {
+        return false;
+    }
+
+    if (
+        analyticsSessionKeys.has(
+            key
+        )
+    ) {
+        return true;
+    }
+
+    analyticsSessionKeys.add(
+        key
+    );
+
+    persistAnalyticsSessionKeys();
+
+    return false;
+}
 
 function isAnalyticsDisabled() {
     return (
@@ -185,6 +308,15 @@ function trackAnalytics(name, data = undefined) {
 
     const normalizedData =
         normalizeAnalyticsData(data);
+
+    if (
+        shouldSuppressAnalyticsEvent(
+            normalizedName,
+            normalizedData
+        )
+    ) {
+        return;
+    }
 
     if (
         sendAnalyticsEvent(
