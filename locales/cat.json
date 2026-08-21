@@ -103,5 +103,9 @@
   "exportAllTargets": "EXPORT ALL MEOWGETS",
   "importTargets": "IMPORT MEOWGETS",
   "savedTargetsImportSuccess": "IMPORTED MEOWGETS: {count}",
-  "savedTargetsImportInvalid": "CAT COULD NOT IMPORT THESE MEOWGETS."
+  "savedTargetsImportInvalid": "CAT COULD NOT IMPORT THESE MEOWGETS.",
+  "elevation": "MEOWLEVATION",
+  "lowArc": "LOW ARC",
+  "highArc": "HIGH ARC",
+  "noFiringSolution": "NO FIRING SOLUTION, MEOW"
 }

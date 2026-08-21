@@ -90,7 +90,7 @@
     left: 10px;
     z-index: 10;
 
-    width: 154px;
+    width: min(238px, calc(100vw - 20px));
     padding: 10px;
 
     border: 1px solid var(--border-light);
@@ -209,3 +209,36 @@
     pointer-events: none;
 }
 
+
+
+.mobile-mil-block {
+    min-width: 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    padding-bottom: 1px;
+}
+
+.mobile-mil-block > span {
+    color: var(--muted);
+    font-size: 8px;
+    line-height: 1;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.mobile-mil-block b {
+    color: var(--accent);
+    font-size: 12px;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.mobile-mil-block small {
+    max-width: 92px;
+    color: var(--muted);
+    font-size: 7px;
+    line-height: 1.1;
+    text-align: right;
+}

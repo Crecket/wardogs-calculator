@@ -4,6 +4,50 @@
 
 let DEFAULT_WEAPON = null;
 
+function normalizeBallisticTable(table) {
+    if (!Array.isArray(table)) {
+        return [];
+    }
+
+    return table
+        .map(entry => {
+            if (!Array.isArray(entry) || entry.length < 2) {
+                return null;
+            }
+
+            const distance = Number(entry[0]);
+            const mil = Number(entry[1]);
+
+            return (
+                Number.isFinite(distance) &&
+                Number.isFinite(mil)
+            )
+                ? [distance, mil]
+                : null;
+        })
+        .filter(Boolean);
+}
+
+function normalizeBallistics(ballistics) {
+    if (!ballistics || typeof ballistics !== 'object') {
+        return null;
+    }
+
+    const normalized = {
+        single: normalizeBallisticTable(ballistics.single),
+        low: normalizeBallisticTable(ballistics.low),
+        high: normalizeBallisticTable(ballistics.high)
+    };
+
+    return (
+        normalized.single.length ||
+        normalized.low.length ||
+        normalized.high.length
+    )
+        ? normalized
+        : null;
+}
+
 function normalizeWeapon(item) {
     if (!item || typeof item.id !== 'string' || !item.id.trim()) {
         return null;
@@ -46,7 +90,157 @@ function normalizeWeapon(item) {
             : null,
         maxElevationMil: Number.isFinite(Number(item.maxElevationMil))
             ? Number(item.maxElevationMil)
-            : null
+            : null,
+        ballistics: normalizeBallistics(item.ballistics)
+    };
+}
+
+function groupBallisticTable(table) {
+    const grouped = [];
+
+    [...table]
+        .sort((a, b) => (
+            a[0] - b[0] ||
+            a[1] - b[1]
+        ))
+        .forEach(([distance, mil]) => {
+            const previous = grouped[grouped.length - 1];
+
+            if (previous && previous.distance === distance) {
+                previous.mils.push(mil);
+                return;
+            }
+
+            grouped.push({
+                distance,
+                mils: [mil]
+            });
+        });
+
+    return grouped;
+}
+
+function closestMil(values, target) {
+    return values.reduce(
+        (best, value) => (
+            Math.abs(value - target) <
+            Math.abs(best - target)
+                ? value
+                : best
+        ),
+        values[0]
+    );
+}
+
+function interpolateBallisticTable(table, distanceMeters) {
+    if (
+        !Array.isArray(table) ||
+        !table.length ||
+        !Number.isFinite(distanceMeters)
+    ) {
+        return null;
+    }
+
+    const groups = groupBallisticTable(table);
+    const epsilon = 1e-6;
+
+    const exact = groups.find(
+        group =>
+            Math.abs(group.distance - distanceMeters) <= epsilon
+    );
+
+    if (exact) {
+        const minMil = Math.min(...exact.mils);
+        const maxMil = Math.max(...exact.mils);
+
+        return {
+            mil: exact.mils.length === 1
+                ? exact.mils[0]
+                : null,
+            minMil,
+            maxMil
+        };
+    }
+
+    let left = null;
+    let right = null;
+
+    for (let i = 0; i < groups.length - 1; i++) {
+        if (
+            distanceMeters > groups[i].distance &&
+            distanceMeters < groups[i + 1].distance
+        ) {
+            left = groups[i];
+            right = groups[i + 1];
+            break;
+        }
+    }
+
+    if (!left || !right) {
+        return null;
+    }
+
+    const rightAverage =
+        right.mils.reduce((sum, value) => sum + value, 0) /
+        right.mils.length;
+
+    const leftMil = closestMil(left.mils, rightAverage);
+    const rightMil = closestMil(right.mils, leftMil);
+
+    const factor =
+        (distanceMeters - left.distance) /
+        (right.distance - left.distance);
+
+    const mil = leftMil + factor * (rightMil - leftMil);
+
+    return {
+        mil,
+        minMil: mil,
+        maxMil: mil
+    };
+}
+
+function getWeaponElevationSolutions(weapon, distanceMeters) {
+    if (!weapon || !Number.isFinite(distanceMeters)) {
+        return {
+            inRange: false,
+            single: null,
+            low: null,
+            high: null
+        };
+    }
+
+    const minMeters = (weapon.minRange ?? 0) * 1000;
+    const maxMeters =
+        (weapon.maxRange ?? weapon.range ?? 0) * 1000;
+
+    const inRange =
+        distanceMeters + 1e-6 >= minMeters &&
+        distanceMeters <= maxMeters + 1e-6;
+
+    if (!inRange || !weapon.ballistics) {
+        return {
+            inRange,
+            single: null,
+            low: null,
+            high: null
+        };
+    }
+
+    return {
+        inRange,
+        single: interpolateBallisticTable(
+            weapon.ballistics.single,
+            distanceMeters
+        ),
+        low: interpolateBallisticTable(
+            weapon.ballistics.low,
+            distanceMeters
+        ),
+        high: interpolateBallisticTable(
+            weapon.ballistics.high,
+            distanceMeters
+        )
     };
 }
 

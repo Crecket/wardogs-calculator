@@ -97,5 +97,9 @@
   "exportAllTargets": "Eksportuj wszystko",
   "importTargets": "Importuj",
   "savedTargetsImportSuccess": "Zaimportowane cele: {count}",
-  "savedTargetsImportInvalid": "Nie udało się zaimportować celów z tego pliku."
+  "savedTargetsImportInvalid": "Nie udało się zaimportować celów z tego pliku.",
+  "elevation": "Elewacja",
+  "lowArc": "Niski tor",
+  "highArc": "Wysoki tor",
+  "noFiringSolution": "Brak rozwiązania ogniowego"
 }

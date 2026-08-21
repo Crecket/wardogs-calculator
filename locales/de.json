@@ -97,5 +97,9 @@
   "exportAllTargets": "Alle exportieren",
   "importTargets": "Importieren",
   "savedTargetsImportSuccess": "Importierte Ziele: {count}",
-  "savedTargetsImportInvalid": "Ziele konnten nicht aus dieser Datei importiert werden."
+  "savedTargetsImportInvalid": "Ziele konnten nicht aus dieser Datei importiert werden.",
+  "elevation": "Elevation",
+  "lowArc": "Flache Flugbahn",
+  "highArc": "Steile Flugbahn",
+  "noFiringSolution": "Keine Feuerlösung"
 }

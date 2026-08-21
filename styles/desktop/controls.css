@@ -221,3 +221,20 @@ button:disabled {
 }
 
 
+
+
+/* =========================
+   BALLISTIC SOLUTION
+   ========================= */
+
+.result-mil-row b {
+    color: var(--accent);
+}
+
+.mil-alt {
+    margin: -2px 0 7px;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.3;
+    text-align: right;
+}

@@ -2,6 +2,63 @@
    RESULT
    ========================= */
 
+function formatMilSolution(solution) {
+    if (!solution) {
+        return null;
+    }
+
+    const minMil = Math.round(solution.minMil);
+    const maxMil = Math.round(solution.maxMil);
+
+    if (minMil !== maxMil) {
+        return `${minMil}–${maxMil} MIL`;
+    }
+
+    return `${Math.round(solution.mil ?? minMil)} MIL`;
+}
+
+function renderElevationResult(weapon, distanceMeters) {
+    const value = $('mil');
+    const detail = $('milAlt');
+
+    if (!value) {
+        return;
+    }
+
+    const solutions =
+        getWeaponElevationSolutions(
+            weapon,
+            distanceMeters
+        );
+
+    let primary = '—';
+    let secondary = '';
+
+    if (solutions.single) {
+        primary = formatMilSolution(solutions.single);
+    } else if (solutions.low && solutions.high) {
+        primary =
+            `${formatMilSolution(solutions.low)} / ` +
+            `${formatMilSolution(solutions.high)}`;
+        secondary = `${tr('lowArc')} / ${tr('highArc')}`;
+    } else if (solutions.low) {
+        primary = formatMilSolution(solutions.low);
+        secondary = tr('lowArc');
+    } else if (solutions.high) {
+        primary = formatMilSolution(solutions.high);
+        secondary = tr('highArc');
+    } else if (solutions.inRange) {
+        secondary = tr('noFiringSolution');
+    }
+
+    value.textContent = primary;
+
+    if (detail) {
+        detail.textContent = secondary;
+        detail.hidden = !secondary;
+    }
+}
+
 function result() {
 
     const weapon = WEAPONS[S.weapon];
@@ -92,6 +149,11 @@ function result() {
             )
         ) +
         ' m';
+
+    renderElevationResult(
+        weapon,
+        dMeters
+    );
 
     const minRange =
         weapon.minRange ??

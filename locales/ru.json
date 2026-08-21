@@ -93,5 +93,9 @@
   "exportAllTargets": "Экспортировать все",
   "importTargets": "Импортировать",
   "savedTargetsImportSuccess": "Импортировано целей: {count}",
-  "savedTargetsImportInvalid": "Не удалось импортировать цели из этого файла."
+  "savedTargetsImportInvalid": "Не удалось импортировать цели из этого файла.",
+  "elevation": "Угол возвышения",
+  "lowArc": "Низкая траектория",
+  "highArc": "Высокая траектория",
+  "noFiringSolution": "Нет решения для стрельбы"
 }

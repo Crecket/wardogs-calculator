@@ -93,5 +93,9 @@
   "exportAllTargets": "Export all",
   "importTargets": "Import",
   "savedTargetsImportSuccess": "Imported targets: {count}",
-  "savedTargetsImportInvalid": "Could not import targets from this file."
+  "savedTargetsImportInvalid": "Could not import targets from this file.",
+  "elevation": "Elevation",
+  "lowArc": "Low arc",
+  "highArc": "High arc",
+  "noFiringSolution": "No firing solution"
 }

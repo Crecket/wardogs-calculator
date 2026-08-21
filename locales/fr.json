@@ -97,5 +97,9 @@
   "exportAllTargets": "Tout exporter",
   "importTargets": "Importer",
   "savedTargetsImportSuccess": "Cibles importées : {count}",
-  "savedTargetsImportInvalid": "Impossible d’importer les cibles depuis ce fichier."
+  "savedTargetsImportInvalid": "Impossible d’importer les cibles depuis ce fichier.",
+  "elevation": "Élévation",
+  "lowArc": "Trajectoire basse",
+  "highArc": "Trajectoire haute",
+  "noFiringSolution": "Aucune solution de tir"
 }

@@ -97,5 +97,9 @@
   "exportAllTargets": "Exportar tudo",
   "importTargets": "Importar",
   "savedTargetsImportSuccess": "Alvos importados: {count}",
-  "savedTargetsImportInvalid": "Não foi possível importar alvos deste ficheiro."
+  "savedTargetsImportInvalid": "Não foi possível importar alvos deste ficheiro.",
+  "elevation": "Elevação",
+  "lowArc": "Trajetória baixa",
+  "highArc": "Trajetória alta",
+  "noFiringSolution": "Sem solução de tiro"
 }
