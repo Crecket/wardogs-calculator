@@ -10,8 +10,13 @@
     z-index: 1200;
 
     width: min(360px, calc(100vw - 36px));
+    max-height: calc(100dvh - 96px);
 
     padding: 12px;
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 
     border: 1px solid var(--border-light);
     border-left: 3px solid var(--accent);
@@ -53,6 +58,8 @@
 }
 
 .motd-header {
+    flex: 0 0 auto;
+
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
@@ -101,11 +108,22 @@
 }
 
 .motd-message {
+    flex: 1 1 auto;
+    min-height: 0;
+
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+
+    padding-right: 4px;
+
     white-space: pre-wrap;
     line-height: 1.6;
 }
 
 .motd-footer {
+    flex: 0 0 auto;
     margin-top: 10px;
     padding-top: 9px;
 

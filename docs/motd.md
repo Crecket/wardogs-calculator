@@ -18,3 +18,7 @@ MOTD supports:
 A new announcement can therefore be published without modifying the application logic.
 
 ---
+
+## Small-screen behavior
+
+MOTD cards are height-limited to the available viewport. When a message is taller than the available space, only the message body scrolls while the title, close button, and **Don't show again** control remain accessible. Mobile sizing also accounts for the app header and safe-area insets.
