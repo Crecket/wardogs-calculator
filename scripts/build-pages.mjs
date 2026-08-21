@@ -177,11 +177,34 @@ function refreshSeoMetadata(html, appConfig) {
     return output;
 }
 
-async function writeDesktopPage(source, target, appConfig) {
+function mobileUrlForLanguage(language) {
+    return language === 'en'
+        ? 'https://wardogs-artillery.com/mobile/'
+        : `https://wardogs-artillery.com/mobile/${language}/`;
+}
+
+function addMobileAlternate(html, language) {
+    const mobileUrl = mobileUrlForLanguage(language);
+    const mobileAlternate = `<link href="${mobileUrl}" media="only screen and (max-width: 900px)" rel="alternate"/>`;
+
+    if (html.includes(mobileAlternate)) {
+        return html;
+    }
+
+    return html.replace(
+        /(<link\b[^>]*\brel="canonical"[^>]*\/?>)/i,
+        `$1\n${mobileAlternate}`
+    );
+}
+
+async function writeDesktopPage(source, target, appConfig, language) {
     const html = await readFile(source, 'utf8');
-    const prepared = refreshSeoMetadata(
-        normalizeDesktopRuntimePlaceholders(html),
-        appConfig
+    const prepared = addMobileAlternate(
+        refreshSeoMetadata(
+            normalizeDesktopRuntimePlaceholders(html),
+            appConfig
+        ),
+        language
     );
 
     await writeFile(target, prepared, 'utf8');
@@ -193,7 +216,8 @@ async function buildDesktopPages() {
     await writeDesktopPage(
         join(root, 'src', 'pages', 'index.html'),
         join(dist, 'index.html'),
-        appConfig
+        appConfig,
+        'en'
     );
 
     const localizedDir = join(
@@ -219,7 +243,8 @@ async function buildDesktopPages() {
         await writeDesktopPage(
             join(localizedDir, file),
             join(targetDir, 'index.html'),
-            appConfig
+            appConfig,
+            lang
         );
     }
 }
@@ -318,7 +343,12 @@ function renderMobileLocale(template, language) {
         ? '../'
         : '../../';
 
-    return template
+    const indexableTemplate = template.replace(
+        '<meta content="noindex, follow" name="robots"/>',
+        '<meta content="index, follow, max-image-preview:large" name="robots"/>'
+    );
+
+    return indexableTemplate
         .replace(
             '<html data-page-language="en" lang="en">',
             `<html data-page-language="${language}" lang="${language}">`
