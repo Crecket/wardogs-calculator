@@ -11,10 +11,10 @@ function formatMilSolution(solution) {
     const maxMil = Math.round(solution.maxMil);
 
     if (minMil !== maxMil) {
-        return `${minMil}–${maxMil} MIL`;
+        return `${minMil}–${maxMil}`;
     }
 
-    return `${Math.round(solution.mil ?? minMil)} MIL`;
+    return `${Math.round(solution.mil ?? minMil)}`;
 }
 
 function renderElevationResult(weapon, distanceMeters) {

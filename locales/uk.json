@@ -112,5 +112,6 @@
   "lockPosition": "Закріпити",
   "unlockPosition": "Відкріпити",
   "lockPositionHint": "Заборонити зміну цієї позиції кліками та перетягуванням на карті",
-  "unlockPositionHint": "Дозволити зміну цієї позиції на карті"
+  "unlockPositionHint": "Дозволити зміну цієї позиції на карті",
+  "mil": "MIL"
 }

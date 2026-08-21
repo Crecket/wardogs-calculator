@@ -56,7 +56,15 @@
     }
 
     .mobile-solution-hud {
-        width: 146px;
+        width: calc(100vw - 20px);
+    }
+
+    .mobile-solution-metric > b {
+        font-size: 16px;
+    }
+
+    .mobile-solution-metric-highlight > b {
+        font-size: 14px;
     }
 
     .mobile-app .map-tool-button {

@@ -112,5 +112,6 @@
   "lockPosition": "Verrouiller",
   "unlockPosition": "Déverrouiller",
   "lockPositionHint": "Verrouiller cette position contre les clics et déplacements sur la carte",
-  "unlockPositionHint": "Autoriser à nouveau la modification de cette position sur la carte"
+  "unlockPositionHint": "Autoriser à nouveau la modification de cette position sur la carte",
+  "mil": "MIL"
 }

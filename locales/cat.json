@@ -118,5 +118,6 @@
   "lockPosition": "LOCK IT",
   "unlockPosition": "UNLOCK IT",
   "lockPositionHint": "CAT-PROOF THIS POSITION AGAINST MAP ACCIDENTS",
-  "unlockPositionHint": "LET THE HUMANS MOVE THIS POSITION AGAIN"
+  "unlockPositionHint": "LET THE HUMANS MOVE THIS POSITION AGAIN",
+  "mil": "MIL"
 }

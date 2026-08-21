@@ -108,5 +108,6 @@
   "lockPosition": "Lock",
   "unlockPosition": "Unlock",
   "lockPositionHint": "Lock this position against map clicks and dragging",
-  "unlockPositionHint": "Allow this position to be changed on the map"
+  "unlockPositionHint": "Allow this position to be changed on the map",
+  "mil": "MIL"
 }

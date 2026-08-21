@@ -39,19 +39,21 @@
             <div class="mobile-status" id="status"></div>
 
             <div class="mobile-solution-hud">
-                <div class="mobile-solution-main">
-                    <div>
-                        <div class="unit" data-i18n="azimuth">AZIMUTH</div>
-                        <div class="angle" id="angle">0.0°</div>
-                    </div>
-                    <div class="mobile-distance-block">
+                <div class="mobile-solution-grid">
+                    <div class="mobile-solution-metric">
+                        <span data-i18n="distance">Distance</span>
                         <b id="distm">0 m</b>
-                        <span id="dist">0.00 km</span>
+                        <small id="dist">0.00 km</small>
                     </div>
-                    <div class="mobile-mil-block">
-                        <span data-i18n="elevation">Elevation</span>
+                    <div class="mobile-solution-metric mobile-solution-metric-highlight">
+                        <span data-i18n="mil">MIL</span>
                         <b id="mil">—</b>
                         <small id="milAlt" hidden></small>
+                    </div>
+                    <div class="mobile-solution-metric">
+                        <span data-i18n="azimuth">AZIMUTH</span>
+                        <b id="angle">0.0°</b>
+                        <small aria-hidden="true">&nbsp;</small>
                     </div>
                 </div>
                 <div class="mobile-range-status" id="rangeStatus">In range</div>

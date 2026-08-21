@@ -112,5 +112,6 @@
   "lockPosition": "Sperren",
   "unlockPosition": "Entsperren",
   "lockPositionHint": "Diese Position gegen Kartenklicks und Ziehen sperren",
-  "unlockPositionHint": "Diese Position wieder auf der Karte änderbar machen"
+  "unlockPositionHint": "Diese Position wieder auf der Karte änderbar machen",
+  "mil": "MIL"
 }

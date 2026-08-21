@@ -112,5 +112,6 @@
   "lockPosition": "Zablokuj",
   "unlockPosition": "Odblokuj",
   "lockPositionHint": "Zablokuj zmianę tej pozycji kliknięciem lub przeciąganiem na mapie",
-  "unlockPositionHint": "Ponownie zezwól na zmianę tej pozycji na mapie"
+  "unlockPositionHint": "Ponownie zezwól na zmianę tej pozycji na mapie",
+  "mil": "MIL"
 }

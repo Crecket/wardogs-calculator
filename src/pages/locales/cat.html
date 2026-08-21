@@ -116,43 +116,27 @@
 <!-- RESULT -->
 <div class="section">
 <h2 data-i18n="result">MEOW-SULT :P</h2>
-<div class="result">
-<div class="unit" data-i18n="azimuth">MEOWZIMUTH</div>
-<div class="angle" id="angle">
-          45.0°
-        </div>
-<div class="row">
-<span data-i18n="distance">MEOWTANCE</span>
-<b id="dist">
-            0.71 km
-          </b>
+<div class="result solution-result">
+<div class="solution-primary-grid">
+<div class="solution-metric">
+<span class="solution-metric-label" data-i18n="distance">MEOWTANCE</span>
+<strong class="solution-metric-value" id="distm">707 m</strong>
+<span class="solution-metric-sub" id="dist">0.71 km</span>
 </div>
-<div class="row">
-<span data-i18n="meters">MEOWTERS</span>
-<b id="distm">
-            707 m
-          </b>
+<div class="solution-metric solution-metric-highlight">
+<span class="solution-metric-label" data-i18n="mil">MIL</span>
+<strong class="solution-metric-value" id="mil">—</strong>
+<span class="solution-metric-sub" id="milAlt" hidden></span>
 </div>
-<div class="row result-mil-row">
-<span data-i18n="elevation">Elevation</span>
-<b id="mil">—</b>
+<div class="solution-metric">
+<span class="solution-metric-label" data-i18n="azimuth">MEOWZIMUTH</span>
+<strong class="solution-metric-value" id="angle">45.0°</strong>
+<span class="solution-metric-sub solution-metric-spacer" aria-hidden="true">&nbsp;</span>
 </div>
-<div class="mil-alt" id="milAlt" hidden></div>
-<div class="row">
-<span>
-            ΔX
-          </span>
-<b id="dx">
-            +500 m
-          </b>
 </div>
-<div class="row">
-<span>
-            ΔY
-          </span>
-<b id="dy">
-            +500 m
-          </b>
+<div class="solution-secondary-grid">
+<div class="solution-secondary-item"><span>ΔX</span><b id="dx">+500 m</b></div>
+<div class="solution-secondary-item"><span>ΔY</span><b id="dy">+500 m</b></div>
 </div>
 </div>
 <p class="hint" data-i18n="azimuthHint">0° MEOWTH, 90° MEOWST, 180° MEOWTH, 270° MEOWEST. PURR PURR.</p>

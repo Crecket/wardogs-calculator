@@ -172,3 +172,8 @@ The mobile point controls include compact Copy and Paste actions for both Artill
 ### Artillery / Target locks
 
 Each point has a compact Lock action. Locking a point prevents touch taps and dragging from changing it on the map; the corresponding map mode shows a lock indicator. Manual X/Y entry and coordinate Paste still work while locked.
+
+
+### Firing-solution HUD
+
+The map HUD now prioritizes Distance, MIL, and Azimuth equally in a compact three-column solution panel. Range status remains visible below the primary values, while ΔX/ΔY stay in the expanded Result sheet as secondary details.
