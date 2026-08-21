@@ -97,7 +97,7 @@ async function copySharedStatic() {
         );
     }
 
-    for (const file of ['sitemap.xml', 'CNAME']) {
+    for (const file of ['CNAME']) {
         await copyIfExists(
             join(root, file),
             join(dist, file)
@@ -105,10 +105,95 @@ async function copySharedStatic() {
     }
 }
 
+function replaceElementTextById(html, id, value) {
+    const escapedId = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(
+        `(<([a-z0-9]+)\\b[^>]*\\bid="${escapedId}"[^>]*>)[\\s\\S]*?(</\\2>)`,
+        'i'
+    );
+
+    return html.replace(pattern, `$1${value}$3`);
+}
+
+function normalizeDesktopRuntimePlaceholders(html) {
+    const runtimeValueIds = [
+        'range',
+        'rangeStatus',
+        'distm',
+        'dist',
+        'angle',
+        'dx',
+        'dy'
+    ];
+
+    let output = html;
+
+    for (const id of runtimeValueIds) {
+        output = replaceElementTextById(
+            output,
+            id,
+            '—'
+        );
+    }
+
+    return output;
+}
+
+function refreshSeoMetadata(html, appConfig) {
+    const version = appConfig?.site?.footer?.version;
+
+    let output = html.replace(
+        /<head>[\s\S]*?<\/head>/i,
+        head => head
+            .replace(/\bSPG\b/g, 'SPH-2')
+            .replace(/mortar and SPH-2 solutions/gi, 'Mortar and SPH-2 firing solutions')
+    );
+
+    output = output.replace(
+        /<script type="application\/ld\+json">([\s\S]*?)<\/script>/i,
+        (match, jsonText) => {
+            try {
+                const data = JSON.parse(jsonText.trim());
+
+                data.alternateName = 'WARDOGS Artillery Calculator & Tactical Map';
+
+                if (version) {
+                    data.softwareVersion = version;
+                }
+
+                if (typeof data.description === 'string') {
+                    data.description = data.description
+                        .replace(/\bSPG\b/g, 'SPH-2')
+                        .replace(/mortar and SPH-2 solutions/gi, 'Mortar and SPH-2 firing solutions');
+                }
+
+                return `<script type="application/ld+json">${JSON.stringify(data, null, 2)}</script>`;
+            } catch {
+                return match;
+            }
+        }
+    );
+
+    return output;
+}
+
+async function writeDesktopPage(source, target, appConfig) {
+    const html = await readFile(source, 'utf8');
+    const prepared = refreshSeoMetadata(
+        normalizeDesktopRuntimePlaceholders(html),
+        appConfig
+    );
+
+    await writeFile(target, prepared, 'utf8');
+}
+
 async function buildDesktopPages() {
-    await copyIfExists(
+    const appConfig = await readAppConfig();
+
+    await writeDesktopPage(
         join(root, 'src', 'pages', 'index.html'),
-        join(dist, 'index.html')
+        join(dist, 'index.html'),
+        appConfig
     );
 
     const localizedDir = join(
@@ -131,11 +216,95 @@ async function buildDesktopPages() {
         const targetDir = join(dist, lang);
 
         await mkdir(targetDir, { recursive: true });
-        await cp(
+        await writeDesktopPage(
             join(localizedDir, file),
-            join(targetDir, 'index.html')
+            join(targetDir, 'index.html'),
+            appConfig
         );
     }
+}
+
+async function readAppConfig() {
+    const path = join(root, 'config', 'app.json');
+    return JSON.parse(await readFile(path, 'utf8'));
+}
+
+async function getDesktopLanguages() {
+    const localizedDir = join(
+        root,
+        'src',
+        'pages',
+        'locales'
+    );
+
+    if (!(await exists(localizedDir))) {
+        return ['en'];
+    }
+
+    const files = await readdir(localizedDir);
+    const localized = files
+        .filter(file => file.endsWith('.html'))
+        .map(file => file.slice(0, -5))
+        .filter(Boolean)
+        .sort();
+
+    return ['en', ...localized];
+}
+
+function escapeXml(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&apos;');
+}
+
+function desktopUrlForLanguage(language) {
+    return language === 'en'
+        ? 'https://wardogs-artillery.com/'
+        : `https://wardogs-artillery.com/${language}/`;
+}
+
+async function buildSitemap() {
+    const appConfig = await readAppConfig();
+    const languages = await getDesktopLanguages();
+    const lastModified = appConfig?.site?.lastModified
+        || new Date().toISOString().slice(0, 10);
+
+    const alternateLinks = languages
+        .map(language => (
+            `    <xhtml:link rel="alternate" hreflang="${escapeXml(language)}" href="${escapeXml(desktopUrlForLanguage(language))}" />`
+        ))
+        .concat(
+            '    <xhtml:link rel="alternate" hreflang="x-default" href="https://wardogs-artillery.com/" />'
+        )
+        .join('\n');
+
+    const urls = languages
+        .map(language => [
+            '  <url>',
+            `    <loc>${escapeXml(desktopUrlForLanguage(language))}</loc>`,
+            alternateLinks,
+            '    <changefreq>weekly</changefreq>',
+            `    <lastmod>${escapeXml(lastModified)}</lastmod>`,
+            '  </url>'
+        ].join('\n'))
+        .join('\n');
+
+    const sitemap = [
+        '<?xml version="1.0" encoding="utf-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+        urls,
+        '</urlset>',
+        ''
+    ].join('\n');
+
+    await writeFile(
+        join(dist, 'sitemap.xml'),
+        sitemap,
+        'utf8'
+    );
 }
 
 function renderMobileLocale(template, language) {
@@ -278,6 +447,7 @@ await mkdir(
 await copySharedStatic();
 await bundleStyles();
 await buildDesktopPages();
+await buildSitemap();
 await buildMobilePages();
 
 console.log(`Built desktop + mobile site into ${dist}`);
