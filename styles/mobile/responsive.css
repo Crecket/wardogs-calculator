@@ -33,13 +33,6 @@
     bottom: auto;
     left: 10px;
     width: auto;
-    max-height: calc(
-        100dvh
-        - var(--mobile-header-height)
-        - env(safe-area-inset-top)
-        - env(safe-area-inset-bottom)
-        - 20px
-    );
     z-index: 200;
 }
 
@@ -63,15 +56,12 @@
     }
 
     .mobile-solution-hud {
-        width: calc(100vw - 20px);
+        width: calc(100vw - 72px);
     }
 
-    .mobile-solution-metric > b {
-        font-size: 16px;
-    }
-
+    .mobile-solution-metric > b,
     .mobile-solution-metric-highlight > b {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .mobile-app .map-tool-button {
@@ -82,26 +72,6 @@
 }
 
 @media (max-height: 650px) {
-    .mobile-app .motd {
-        top: calc(var(--mobile-header-height) + env(safe-area-inset-top) + 6px);
-        max-height: calc(
-            100dvh
-            - var(--mobile-header-height)
-            - env(safe-area-inset-top)
-            - env(safe-area-inset-bottom)
-            - 12px
-        );
-    }
-
-    .mobile-app .motd-title {
-        font-size: 11px;
-    }
-
-    .mobile-app .motd-message {
-        font-size: 12px;
-        line-height: 1.42;
-    }
-
     .mobile-sheet {
         height: 74vh;
     }

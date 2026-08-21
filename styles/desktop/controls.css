@@ -198,37 +198,43 @@ button:disabled {
     align-items: center;
     justify-content: center;
 
-    border: 1px solid var(--border);
+    border: 1px solid
+        color-mix(
+            in srgb,
+            var(--accent-border) 72%,
+            var(--border)
+        );
     border-radius: 7px;
     background:
         color-mix(
             in srgb,
-            var(--input-bg) 62%,
-            transparent
-        );
-
-    text-align: center;
-}
-
-.solution-metric-highlight {
-    border-color:
-        color-mix(
-            in srgb,
-            var(--accent-border) 74%,
-            var(--border)
-        );
-    background:
-        color-mix(
-            in srgb,
-            var(--active-bg) 72%,
+            var(--active-bg) 62%,
             var(--panel-bg)
         );
     box-shadow:
         inset 0 0 0 1px
         color-mix(
             in srgb,
-            var(--accent) 8%,
+            var(--accent) 5%,
             transparent
+        );
+
+    text-align: center;
+}
+
+/* Distance, MIL and azimuth are equally important firing-solution values. */
+.solution-metric-highlight {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--accent-border) 72%,
+            var(--border)
+        );
+    background:
+        color-mix(
+            in srgb,
+            var(--active-bg) 62%,
+            var(--panel-bg)
         );
 }
 
@@ -245,7 +251,7 @@ button:disabled {
     max-width: 100%;
     margin-top: 5px;
 
-    color: var(--text);
+    color: var(--accent);
     font-size: 18px;
     font-weight: 800;
     line-height: 1.05;
@@ -255,7 +261,7 @@ button:disabled {
 
 .solution-metric-highlight .solution-metric-value {
     color: var(--accent);
-    font-size: 16px;
+    font-size: 18px;
 }
 
 .solution-metric-sub {
