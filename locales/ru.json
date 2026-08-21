@@ -97,5 +97,12 @@
   "elevation": "Угол возвышения",
   "lowArc": "Низкая траектория",
   "highArc": "Высокая траектория",
-  "noFiringSolution": "Нет решения для стрельбы"
+  "noFiringSolution": "Нет решения для стрельбы",
+  "copyCoordinates": "Копировать",
+  "pasteCoordinates": "Вставить",
+  "coordinatesCopied": "Скопировано",
+  "coordinatesPasted": "Вставлено",
+  "invalidCoordinates": "Неверные координаты",
+  "copyCoordinatesPrompt": "Скопируйте координаты:",
+  "pasteCoordinatesPrompt": "Вставьте координаты (например: x100.05, y109.14):"
 }

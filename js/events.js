@@ -249,6 +249,30 @@ function bindEvents() {
         }
     );
 
+    $('coordinateOriginCopy')
+        ?.addEventListener(
+            'click',
+            () => copyPointCoordinates('origin')
+        );
+
+    $('coordinateOriginPaste')
+        ?.addEventListener(
+            'click',
+            () => pastePointCoordinates('origin')
+        );
+
+    $('coordinateTargetCopy')
+        ?.addEventListener(
+            'click',
+            () => copyPointCoordinates('target')
+        );
+
+    $('coordinateTargetPaste')
+        ?.addEventListener(
+            'click',
+            () => pastePointCoordinates('target')
+        );
+
     $('zoomIn').addEventListener(
         'click',
         () => {

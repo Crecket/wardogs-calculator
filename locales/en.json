@@ -97,5 +97,12 @@
   "elevation": "Elevation",
   "lowArc": "Low arc",
   "highArc": "High arc",
-  "noFiringSolution": "No firing solution"
+  "noFiringSolution": "No firing solution",
+  "copyCoordinates": "Copy",
+  "pasteCoordinates": "Paste",
+  "coordinatesCopied": "Copied",
+  "coordinatesPasted": "Pasted",
+  "invalidCoordinates": "Invalid coordinates",
+  "copyCoordinatesPrompt": "Copy coordinates:",
+  "pasteCoordinatesPrompt": "Paste coordinates (for example: x100.05, y109.14):"
 }

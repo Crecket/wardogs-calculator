@@ -141,11 +141,19 @@
                         <input id="ox" inputmode="decimal" step="0.01" type="number"/>
                         <input id="oy" inputmode="decimal" step="0.01" type="number"/>
                     </div>
+<div class="point-coordinate-actions">
+<button data-i18n="copyCoordinates" id="coordinateOriginCopy" type="button">Copy</button>
+<button data-i18n="pasteCoordinates" id="coordinateOriginPaste" type="button">Paste</button>
+</div>
                     <label data-i18n="targetXY">Target X / Y</label>
                     <div class="grid2">
                         <input id="tx" inputmode="decimal" step="0.01" type="number"/>
                         <input id="ty" inputmode="decimal" step="0.01" type="number"/>
                     </div>
+<div class="point-coordinate-actions">
+<button data-i18n="copyCoordinates" id="coordinateTargetCopy" type="button">Copy</button>
+<button data-i18n="pasteCoordinates" id="coordinateTargetPaste" type="button">Paste</button>
+</div>
                 </div>
 
                 <div class="mobile-card mobile-result-details">
@@ -253,6 +261,7 @@
 <script src="js/map/map-tools.js"></script>
 <script src="js/map/grid.js"></script>
 <script src="js/map/renderer.js"></script>
+<script src="js/features/coordinates.js"></script>
 <script src="js/features/results.js"></script>
 <script src="js/ui/inputs.js"></script>
 <script src="js/ui/cursor.js"></script>

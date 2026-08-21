@@ -101,5 +101,12 @@
   "elevation": "Elewacja",
   "lowArc": "Niski tor",
   "highArc": "Wysoki tor",
-  "noFiringSolution": "Brak rozwiązania ogniowego"
+  "noFiringSolution": "Brak rozwiązania ogniowego",
+  "copyCoordinates": "Kopiuj",
+  "pasteCoordinates": "Wklej",
+  "coordinatesCopied": "Skopiowano",
+  "coordinatesPasted": "Wklejono",
+  "invalidCoordinates": "Nieprawidłowe współrzędne",
+  "copyCoordinatesPrompt": "Skopiuj współrzędne:",
+  "pasteCoordinatesPrompt": "Wklej współrzędne (np. x100.05, y109.14):"
 }

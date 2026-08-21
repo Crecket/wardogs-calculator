@@ -97,10 +97,18 @@
 <input id="ox" step="0.01" type="number" value="2000"/>
 <input id="oy" step="0.01" type="number" value="2000"/>
 </div>
+<div class="point-coordinate-actions">
+<button data-i18n="copyCoordinates" id="coordinateOriginCopy" type="button">Copy</button>
+<button data-i18n="pasteCoordinates" id="coordinateOriginPaste" type="button">Paste</button>
+</div>
 <label data-i18n="targetXY">MEOWGET X / Y</label>
 <div class="grid2">
 <input id="tx" step="0.01" type="number" value="2500"/>
 <input id="ty" step="0.01" type="number" value="2500"/>
+</div>
+<div class="point-coordinate-actions">
+<button data-i18n="copyCoordinates" id="coordinateTargetCopy" type="button">Copy</button>
+<button data-i18n="pasteCoordinates" id="coordinateTargetPaste" type="button">Paste</button>
 </div>
 </div>
 <!-- RESULT -->
@@ -292,6 +300,7 @@
 <script src="js/map/map-tools.js"></script>
 <script src="js/map/grid.js"></script>
 <script src="js/map/renderer.js"></script>
+<script src="js/features/coordinates.js"></script>
 <script src="js/features/results.js"></script>
 <script src="js/ui/inputs.js"></script>
 <script src="js/ui/cursor.js"></script>

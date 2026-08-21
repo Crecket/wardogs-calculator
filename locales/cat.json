@@ -107,5 +107,12 @@
   "elevation": "MEOWLEVATION",
   "lowArc": "LOW ARC",
   "highArc": "HIGH ARC",
-  "noFiringSolution": "NO FIRING SOLUTION, MEOW"
+  "noFiringSolution": "NO FIRING SOLUTION, MEOW",
+  "copyCoordinates": "COPY COORDS",
+  "pasteCoordinates": "PASTE COORDS",
+  "coordinatesCopied": "COPIED, MEOW",
+  "coordinatesPasted": "PASTED, MEOW",
+  "invalidCoordinates": "BAD COORDS, HUMAN",
+  "copyCoordinatesPrompt": "COPY THESE CAT COORDS:",
+  "pasteCoordinatesPrompt": "PASTE COORDS LIKE x100.05, y109.14:"
 }

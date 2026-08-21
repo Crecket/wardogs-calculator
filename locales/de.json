@@ -101,5 +101,12 @@
   "elevation": "Elevation",
   "lowArc": "Flache Flugbahn",
   "highArc": "Steile Flugbahn",
-  "noFiringSolution": "Keine Feuerlösung"
+  "noFiringSolution": "Keine Feuerlösung",
+  "copyCoordinates": "Kopieren",
+  "pasteCoordinates": "Einfügen",
+  "coordinatesCopied": "Kopiert",
+  "coordinatesPasted": "Eingefügt",
+  "invalidCoordinates": "Ungültige Koordinaten",
+  "copyCoordinatesPrompt": "Koordinaten kopieren:",
+  "pasteCoordinatesPrompt": "Koordinaten einfügen (z. B. x100.05, y109.14):"
 }

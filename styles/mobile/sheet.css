@@ -313,3 +313,19 @@
 .mobile-app .saved-target-transfer-status {
     font-size: 11px;
 }
+
+
+.mobile-app .point-coordinate-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin: 6px 0 2px;
+}
+
+.mobile-app .point-coordinate-actions button {
+    width: auto;
+    min-height: 34px;
+    padding: 5px 10px;
+    color: var(--muted);
+    font-size: 11px;
+}

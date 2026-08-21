@@ -101,5 +101,12 @@
   "elevation": "Elevação",
   "lowArc": "Trajetória baixa",
   "highArc": "Trajetória alta",
-  "noFiringSolution": "Sem solução de tiro"
+  "noFiringSolution": "Sem solução de tiro",
+  "copyCoordinates": "Copiar",
+  "pasteCoordinates": "Colar",
+  "coordinatesCopied": "Copiado",
+  "coordinatesPasted": "Colado",
+  "invalidCoordinates": "Coordenadas inválidas",
+  "copyCoordinatesPrompt": "Copiar coordenadas:",
+  "pasteCoordinatesPrompt": "Cola as coordenadas (por exemplo: x100.05, y109.14):"
 }

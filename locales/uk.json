@@ -101,5 +101,12 @@
   "elevation": "Кут підвищення",
   "lowArc": "Низька траєкторія",
   "highArc": "Висока траєкторія",
-  "noFiringSolution": "Немає рішення для стрільби"
+  "noFiringSolution": "Немає рішення для стрільби",
+  "copyCoordinates": "Копіювати",
+  "pasteCoordinates": "Вставити",
+  "coordinatesCopied": "Скопійовано",
+  "coordinatesPasted": "Вставлено",
+  "invalidCoordinates": "Невірні координати",
+  "copyCoordinatesPrompt": "Скопіюйте координати:",
+  "pasteCoordinatesPrompt": "Вставте координати (наприклад: x100.05, y109.14):"
 }

@@ -162,3 +162,8 @@ The mobile Saved Targets panel supports exporting a single target, exporting the
 ## Compact Map Tools menu
 
 On mobile, Map Tools are collapsed behind a single floating button by default. Tapping it expands the vertical tool list; tapping it again collapses the list and closes any open Map Tool popover. This keeps the map clear on small phone screens while preserving the full touch toolset.
+
+
+### Coordinate sharing
+
+The mobile point controls include compact Copy and Paste actions for both Artillery and Target. Paste accepts the same shareable coordinate format as desktop and falls back to a manual paste prompt when the mobile browser does not expose clipboard read access.
