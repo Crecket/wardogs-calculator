@@ -1,28 +1,36 @@
 {
-  "id": "known-issue-sph-2-accuracy",
+  "id": "update-v1-5-1",
   "enabled": true,
   "startsAt": null,
   "endsAt": null,
   "title": {
-    "en": "KNOWN ISSUE — SPH-2",
-    "ru": "ИЗВЕСТНАЯ ПРОБЛЕМА — SPH-2",
-    "uk": "ВІДОМА ПРОБЛЕМА — SPH-2",
-    "de": "BEKANNTES PROBLEM — SPH-2",
-    "fr": "PROBLÈME CONNU — SPH-2",
-    "es": "PROBLEMA CONOCIDO — SPH-2",
-    "pl": "ZNANY PROBLEM — SPH-2",
-    "pt": "PROBLEMA CONHECIDO — SPH-2",
-    "cat": "KNOWN SPH-2 MEOWBLEM"
+    "en": "UPDATE — v1.5.1",
+    "ru": "ОБНОВЛЕНИЕ — v1.5.1",
+    "uk": "ОНОВЛЕННЯ — v1.5.1",
+    "de": "UPDATE — v1.5.1",
+    "fr": "MISE À JOUR — v1.5.1",
+    "es": "ACTUALIZACIÓN — v1.5.1",
+    "pl": "AKTUALIZACJA — v1.5.1",
+    "pt": "ATUALIZAÇÃO — v1.5.1",
+    "cat": "MEOWPDATE — v1.5.1"
   },
   "message": {
-    "en": "Some SPH-2 firing solutions may currently be inaccurate. I'm aware of the issue and actively working on improving the calculations.",
-    "ru": "Некоторые расчёты для SPH-2 сейчас могут быть неточными. Я знаю о проблеме и активно работаю над улучшением расчётов.",
-    "uk": "Деякі розрахунки для SPH-2 зараз можуть бути неточними. Я знаю про проблему й активно працюю над покращенням розрахунків.",
-    "de": "Einige SPH-2-Feuerlösungen können derzeit ungenau sein. Das Problem ist bekannt und ich arbeite aktiv an besseren Berechnungen.",
-    "fr": "Certaines solutions de tir du SPH-2 peuvent actuellement être imprécises. Le problème est connu et je travaille activement à améliorer les calculs.",
-    "es": "Algunas soluciones de tiro del SPH-2 pueden ser imprecisas actualmente. Conozco el problema y estoy trabajando activamente para mejorar los cálculos.",
-    "pl": "Niektóre rozwiązania ogniowe SPH-2 mogą być obecnie niedokładne. Znam problem i aktywnie pracuję nad poprawą obliczeń.",
-    "pt": "Algumas soluções de tiro do SPH-2 podem estar imprecisas neste momento. Estou ciente do problema e a trabalhar ativamente para melhorar os cálculos.",
-    "cat": "SOME SPH-2 SHOTS MAY CURRENTLY MISS THE TREAT. HUMAN IS AWARE AND WORKING ON BETTER MATH. MEOW."
+    "en": "QoL update focused on artillery calculations, coordinate handling and mobile usability.\\n\\n• Added MIL calculation for Mortar and Artillery\\n• Added Low Arc and High Arc solutions for Artillery\\n• Added Copy / Paste for Artillery and Target coordinates\\n• Added independent position locks for Artillery and Target\\n• Locks prevent accidental map movement without blocking manual coordinate input\\n• Redesigned results around Distance, MIL and Azimuth\\n• All three primary results are now equally highlighted\\n• Made the mobile result HUD significantly more compact\\n• Fixed MOTD layout on small displays\\n\\nThanks for all the reports and feedback.",
+
+    "ru": "QoL-обновление, посвящённое артиллерийским расчётам, работе с координатами и удобству мобильной версии.\\n\\n• Добавлен расчёт MIL для миномёта и артиллерии\\n• Добавлены Low Arc и High Arc решения для артиллерии\\n• Добавлено копирование и вставка координат Artillery и Target\\n• Добавлены независимые блокировки позиции Artillery и Target\\n• Блокировки защищают от случайного перемещения на карте, но не мешают ручному вводу координат\\n• Интерфейс результатов переработан вокруг Distance, MIL и Azimuth\\n• Все три основных результата теперь выделены одинаково\\n• Мобильный HUD результатов стал значительно компактнее\\n• Исправлено отображение MOTD на маленьких экранах\\n\\nСпасибо за все сообщения об ошибках и отзывы.",
+
+    "uk": "QoL-оновлення, присвячене артилерійським розрахункам, роботі з координатами та зручності мобільної версії.\\n\\n• Додано розрахунок MIL для міномета та артилерії\\n• Додано Low Arc і High Arc рішення для артилерії\\n• Додано копіювання та вставлення координат Artillery і Target\\n• Додано незалежне блокування позицій Artillery і Target\\n• Блокування захищає від випадкового переміщення на карті, але не заважає ручному введенню координат\\n• Інтерфейс результатів перебудовано навколо Distance, MIL і Azimuth\\n• Усі три основні результати тепер виділено однаково\\n• Мобільний HUD результатів став значно компактнішим\\n• Виправлено відображення MOTD на маленьких екранах\\n\\nДякую за всі повідомлення про помилки та відгуки.",
+
+    "de": "QoL-Update mit Fokus auf Artillerieberechnungen, Koordinaten und mobile Benutzerfreundlichkeit.\\n\\n• MIL-Berechnung für Mörser und Artillerie hinzugefügt\\n• Low-Arc- und High-Arc-Lösungen für Artillerie hinzugefügt\\n• Copy / Paste für Artillery- und Target-Koordinaten hinzugefügt\\n• Unabhängige Positionssperren für Artillery und Target hinzugefügt\\n• Sperren verhindern versehentliche Kartenbewegungen, blockieren aber nicht die manuelle Koordinateneingabe\\n• Ergebnisanzeige rund um Distance, MIL und Azimuth überarbeitet\\n• Alle drei Hauptwerte werden jetzt gleich hervorgehoben\\n• Mobiles Ergebnis-HUD deutlich kompakter gestaltet\\n• MOTD-Darstellung auf kleinen Bildschirmen korrigiert\\n\\nDanke für alle Meldungen und das Feedback.",
+
+    "fr": "Mise à jour QoL axée sur les calculs d'artillerie, les coordonnées et l'utilisation sur mobile.\\n\\n• Ajout du calcul MIL pour le mortier et l'artillerie\\n• Ajout des solutions Low Arc et High Arc pour l'artillerie\\n• Ajout du Copy / Paste des coordonnées Artillery et Target\\n• Ajout de verrous de position indépendants pour Artillery et Target\\n• Les verrous empêchent les déplacements accidentels sur la carte sans bloquer la saisie manuelle des coordonnées\\n• Refonte de l'affichage des résultats autour de Distance, MIL et Azimuth\\n• Les trois valeurs principales sont désormais mises en évidence de la même manière\\n• HUD des résultats beaucoup plus compact sur mobile\\n• Correction de l'affichage du MOTD sur les petits écrans\\n\\nMerci pour tous les signalements et retours.",
+
+    "es": "Actualización QoL centrada en los cálculos de artillería, las coordenadas y la experiencia móvil.\\n\\n• Añadido cálculo de MIL para Mortar y Artillery\\n• Añadidas soluciones Low Arc y High Arc para Artillery\\n• Añadido Copy / Paste para las coordenadas de Artillery y Target\\n• Añadidos bloqueos de posición independientes para Artillery y Target\\n• Los bloqueos evitan movimientos accidentales en el mapa sin impedir la entrada manual de coordenadas\\n• Rediseñada la interfaz de resultados alrededor de Distance, MIL y Azimuth\\n• Los tres resultados principales ahora tienen el mismo nivel de énfasis\\n• HUD de resultados mucho más compacto en móvil\\n• Corregido el MOTD en pantallas pequeñas\\n\\nGracias por todos los reportes y comentarios.",
+
+    "pl": "Aktualizacja QoL skupiona na obliczeniach artyleryjskich, współrzędnych i obsłudze mobilnej.\\n\\n• Dodano obliczanie MIL dla moździerza i artylerii\\n• Dodano rozwiązania Low Arc i High Arc dla artylerii\\n• Dodano Copy / Paste współrzędnych Artillery i Target\\n• Dodano niezależne blokady pozycji Artillery i Target\\n• Blokady zapobiegają przypadkowemu przesuwaniu punktów na mapie bez blokowania ręcznego wpisywania współrzędnych\\n• Przebudowano wyniki wokół Distance, MIL i Azimuth\\n• Wszystkie trzy główne wartości są teraz jednakowo wyróżnione\\n• Mobilny HUD wyników jest znacznie bardziej kompaktowy\\n• Naprawiono MOTD na małych ekranach\\n\\nDzięki za wszystkie zgłoszenia i opinie.",
+
+    "pt": "Atualização QoL focada nos cálculos de artilharia, coordenadas e utilização no mobile.\\n\\n• Adicionado cálculo de MIL para Mortar e Artillery\\n• Adicionadas soluções Low Arc e High Arc para Artillery\\n• Adicionado Copy / Paste das coordenadas de Artillery e Target\\n• Adicionados bloqueios independentes para as posições de Artillery e Target\\n• Os bloqueios evitam movimentos acidentais no mapa sem impedir a introdução manual de coordenadas\\n• Interface de resultados redesenhada em torno de Distance, MIL e Azimuth\\n• Os três resultados principais têm agora o mesmo destaque\\n• HUD de resultados muito mais compacto no mobile\\n• Corrigido o MOTD em ecrãs pequenos\\n\\nObrigado por todos os reports e feedback.",
+
+    "cat": "MORE ARTILLERY MATH AND LESS ACCIDENTAL CAT PAW DAMAGE!\\n\\n• MIL CALCULATION ADDED FOR MORTAR AND ARTILLERY\\n• LOW ARC AND HIGH ARC SOLUTIONS ADDED\\n• ARTILLERY AND TARGET COORDINATES CAN NOW BE COPIED AND PASTED\\n• ARTILLERY AND TARGET CAN NOW BE LOCKED IN PLACE\\n• LOCKS STOP ACCIDENTAL MAP PAWS BUT MANUAL COORDINATES STILL WORK\\n• DISTANCE, MIL AND AZIMUTH ARE NOW THE THREE BIG IMPORTANT NUMBERS\\n• ALL THREE RESULTS NOW RECEIVE EQUAL SHINY TREATMENT\\n• MOBILE RESULT HUD IS MUCH SMALLER\\n• THE MOTD NO LONGER EATS ITS OWN BUTTONS ON SMALL SCREENS\\n\\nTHANKS FOR ALL THE REPORTS, HUMAN TESTERS. MEOW."
   }
 }
