@@ -108,5 +108,9 @@
   "coordinatesPasted": "Pegado",
   "invalidCoordinates": "Coordenadas no válidas",
   "copyCoordinatesPrompt": "Copiar coordenadas:",
-  "pasteCoordinatesPrompt": "Pega las coordenadas (por ejemplo: x100.05, y109.14):"
+  "pasteCoordinatesPrompt": "Pega las coordenadas (por ejemplo: x100.05, y109.14):",
+  "lockPosition": "Bloquear",
+  "unlockPosition": "Desbloquear",
+  "lockPositionHint": "Bloquear esta posición frente a clics y arrastres en el mapa",
+  "unlockPositionHint": "Permitir volver a cambiar esta posición en el mapa"
 }

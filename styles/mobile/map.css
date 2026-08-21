@@ -242,3 +242,9 @@
     line-height: 1.1;
     text-align: right;
 }
+
+
+.mobile-app .mobile-mode-switch .point-map-locked::after {
+    content: "  🔒";
+    font-size: 10px;
+}

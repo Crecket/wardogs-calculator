@@ -108,5 +108,9 @@
   "coordinatesPasted": "Eingefügt",
   "invalidCoordinates": "Ungültige Koordinaten",
   "copyCoordinatesPrompt": "Koordinaten kopieren:",
-  "pasteCoordinatesPrompt": "Koordinaten einfügen (z. B. x100.05, y109.14):"
+  "pasteCoordinatesPrompt": "Koordinaten einfügen (z. B. x100.05, y109.14):",
+  "lockPosition": "Sperren",
+  "unlockPosition": "Entsperren",
+  "lockPositionHint": "Diese Position gegen Kartenklicks und Ziehen sperren",
+  "unlockPositionHint": "Diese Position wieder auf der Karte änderbar machen"
 }

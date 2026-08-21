@@ -104,5 +104,9 @@
   "coordinatesPasted": "Pasted",
   "invalidCoordinates": "Invalid coordinates",
   "copyCoordinatesPrompt": "Copy coordinates:",
-  "pasteCoordinatesPrompt": "Paste coordinates (for example: x100.05, y109.14):"
+  "pasteCoordinatesPrompt": "Paste coordinates (for example: x100.05, y109.14):",
+  "lockPosition": "Lock",
+  "unlockPosition": "Unlock",
+  "lockPositionHint": "Lock this position against map clicks and dragging",
+  "unlockPositionHint": "Allow this position to be changed on the map"
 }

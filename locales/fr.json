@@ -108,5 +108,9 @@
   "coordinatesPasted": "Collé",
   "invalidCoordinates": "Coordonnées invalides",
   "copyCoordinatesPrompt": "Copier les coordonnées :",
-  "pasteCoordinatesPrompt": "Collez les coordonnées (ex. x100.05, y109.14) :"
+  "pasteCoordinatesPrompt": "Collez les coordonnées (ex. x100.05, y109.14) :",
+  "lockPosition": "Verrouiller",
+  "unlockPosition": "Déverrouiller",
+  "lockPositionHint": "Verrouiller cette position contre les clics et déplacements sur la carte",
+  "unlockPositionHint": "Autoriser à nouveau la modification de cette position sur la carte"
 }

@@ -108,5 +108,9 @@
   "coordinatesPasted": "Wklejono",
   "invalidCoordinates": "Nieprawidłowe współrzędne",
   "copyCoordinatesPrompt": "Skopiuj współrzędne:",
-  "pasteCoordinatesPrompt": "Wklej współrzędne (np. x100.05, y109.14):"
+  "pasteCoordinatesPrompt": "Wklej współrzędne (np. x100.05, y109.14):",
+  "lockPosition": "Zablokuj",
+  "unlockPosition": "Odblokuj",
+  "lockPositionHint": "Zablokuj zmianę tej pozycji kliknięciem lub przeciąganiem na mapie",
+  "unlockPositionHint": "Ponownie zezwól na zmianę tej pozycji na mapie"
 }

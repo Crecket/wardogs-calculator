@@ -1037,6 +1037,12 @@ function handlePresetMarkerTargetMouseDown(
         return false;
     }
 
+    if (
+        isPointMapLocked('target')
+    ) {
+        return true;
+    }
+
     return selectPresetMarkerAsTarget(
         markerInfo.item,
         markerInfo.index

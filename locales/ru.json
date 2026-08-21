@@ -104,5 +104,9 @@
   "coordinatesPasted": "Вставлено",
   "invalidCoordinates": "Неверные координаты",
   "copyCoordinatesPrompt": "Скопируйте координаты:",
-  "pasteCoordinatesPrompt": "Вставьте координаты (например: x100.05, y109.14):"
+  "pasteCoordinatesPrompt": "Вставьте координаты (например: x100.05, y109.14):",
+  "lockPosition": "Закрепить",
+  "unlockPosition": "Открепить",
+  "lockPositionHint": "Запретить изменение этой позиции кликами и перетаскиванием по карте",
+  "unlockPositionHint": "Разрешить изменение этой позиции на карте"
 }

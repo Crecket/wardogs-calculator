@@ -273,6 +273,18 @@ function bindEvents() {
             () => pastePointCoordinates('target')
         );
 
+    $('coordinateOriginLock')
+        ?.addEventListener(
+            'click',
+            () => togglePointMapLock('origin')
+        );
+
+    $('coordinateTargetLock')
+        ?.addEventListener(
+            'click',
+            () => togglePointMapLock('target')
+        );
+
     $('zoomIn').addEventListener(
         'click',
         () => {
@@ -496,18 +508,43 @@ function bindEvents() {
                     S.target.y
                 );
 
-            drag =
-                Math.min(
-                    d1,
-                    d2
-                ) < metersToWorldDistance(300)
-                    ? (
-                        d1 <
-                        d2
-                            ? 'origin'
-                            : 'target'
+            const pointHitThreshold =
+                metersToWorldDistance(300);
+
+            if (
+                Math.min(d1, d2) <
+                pointHitThreshold
+            ) {
+                const nearestPoint =
+                    d1 < d2
+                        ? 'origin'
+                        : 'target';
+
+                if (
+                    isPointMapLocked(
+                        nearestPoint
                     )
-                    : S.mode;
+                ) {
+                    drag = null;
+                    updateCursor(e);
+                    return;
+                }
+
+                drag = nearestPoint;
+
+            } else {
+                if (
+                    isPointMapLocked(
+                        S.mode
+                    )
+                ) {
+                    drag = null;
+                    updateCursor(e);
+                    return;
+                }
+
+                drag = S.mode;
+            }
 
             pushMapToolHistory();
 

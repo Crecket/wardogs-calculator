@@ -258,3 +258,15 @@ button:disabled {
     color: var(--muted);
     font-size: 10px;
 }
+
+
+.point-coordinate-actions .point-lock-button.active {
+    border-color: var(--accent-border);
+    background: var(--active-bg);
+    color: var(--accent);
+}
+
+.mode .point-map-locked::after {
+    content: "  🔒";
+    font-size: 10px;
+}

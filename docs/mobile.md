@@ -167,3 +167,8 @@ On mobile, Map Tools are collapsed behind a single floating button by default. T
 ### Coordinate sharing
 
 The mobile point controls include compact Copy and Paste actions for both Artillery and Target. Paste accepts the same shareable coordinate format as desktop and falls back to a manual paste prompt when the mobile browser does not expose clipboard read access.
+
+
+### Artillery / Target locks
+
+Each point has a compact Lock action. Locking a point prevents touch taps and dragging from changing it on the map; the corresponding map mode shows a lock indicator. Manual X/Y entry and coordinate Paste still work while locked.

@@ -753,6 +753,13 @@ function applyLanguage() {
     }
 
     if (
+        typeof updatePointLocksUI ===
+        'function'
+    ) {
+        updatePointLocksUI();
+    }
+
+    if (
         typeof updateLayoutLocalization ===
         'function'
     ) {

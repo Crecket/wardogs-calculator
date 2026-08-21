@@ -114,5 +114,9 @@
   "coordinatesPasted": "PASTED, MEOW",
   "invalidCoordinates": "BAD COORDS, HUMAN",
   "copyCoordinatesPrompt": "COPY THESE CAT COORDS:",
-  "pasteCoordinatesPrompt": "PASTE COORDS LIKE x100.05, y109.14:"
+  "pasteCoordinatesPrompt": "PASTE COORDS LIKE x100.05, y109.14:",
+  "lockPosition": "LOCK IT",
+  "unlockPosition": "UNLOCK IT",
+  "lockPositionHint": "CAT-PROOF THIS POSITION AGAINST MAP ACCIDENTS",
+  "unlockPositionHint": "LET THE HUMANS MOVE THIS POSITION AGAIN"
 }

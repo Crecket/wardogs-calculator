@@ -249,6 +249,21 @@ function handleMobilePointerDown(event) {
     );
 
     if (markerType) {
+        if (
+            isPointMapLocked(
+                markerType
+            )
+        ) {
+            MOBILE_TOUCH.gesture = {
+                type: 'locked-point',
+                pointerId: event.pointerId,
+                startX: point.x,
+                startY: point.y,
+                moved: false
+            };
+            return;
+        }
+
         pushMapToolHistory();
 
         MOBILE_TOUCH.gesture = {
@@ -402,6 +417,14 @@ function finishMobileTap(event, gesture) {
             );
 
         if (markerInfo) {
+            if (
+                isPointMapLocked(
+                    'target'
+                )
+            ) {
+                return;
+            }
+
             selectPresetMarkerAsTarget(
                 markerInfo.item,
                 markerInfo.index
@@ -421,6 +444,14 @@ function finishMobileTap(event, gesture) {
 
     const pointType =
         S.mode;
+
+    if (
+        isPointMapLocked(
+            pointType
+        )
+    ) {
+        return;
+    }
 
     pushMapToolHistory();
 

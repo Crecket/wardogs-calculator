@@ -108,5 +108,9 @@
   "coordinatesPasted": "Вставлено",
   "invalidCoordinates": "Невірні координати",
   "copyCoordinatesPrompt": "Скопіюйте координати:",
-  "pasteCoordinatesPrompt": "Вставте координати (наприклад: x100.05, y109.14):"
+  "pasteCoordinatesPrompt": "Вставте координати (наприклад: x100.05, y109.14):",
+  "lockPosition": "Закріпити",
+  "unlockPosition": "Відкріпити",
+  "lockPositionHint": "Заборонити зміну цієї позиції кліками та перетягуванням на карті",
+  "unlockPositionHint": "Дозволити зміну цієї позиції на карті"
 }

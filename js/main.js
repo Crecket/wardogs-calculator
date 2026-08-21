@@ -62,6 +62,7 @@ async function init() {
         loadSaveArtilleryPreference();
 
         updatePresetLock();
+        updatePointLocksUI();
 
         applyLanguage();
 
