@@ -99,24 +99,24 @@
     },
     {
       "icon": "weapons_vendor",
-      "x": 4033,
-      "y": 7771,
+      "x": 3977,
+      "y": 7765,
       "label": "Weapons Vendor",
       "minZoom": 10,
       "maxZoom": 100
     },
     {
       "icon": "garage_vendor",
-      "x": 4012,
-      "y": 7728,
+      "x": 4010,
+      "y": 7731,
       "label": "Garage Vendor",
       "minZoom": 10,
       "maxZoom": 100
     },
     {
       "icon": "spawn_board",
-      "x": 4031,
-      "y": 7745,
+      "x": 3968,
+      "y": 7748,
       "label": "Spawn Board",
       "minZoom": 10,
       "maxZoom": 100
@@ -131,24 +131,24 @@
     },
     {
       "icon": "weapons_vendor",
-      "x": 8722,
-      "y": 3269,
+      "x": 8720,
+      "y": 3268,
       "label": "Weapons Vendor",
       "minZoom": 10,
       "maxZoom": 100
     },
     {
       "icon": "garage_vendor",
-      "x": 8687,
-      "y": 3266,
+      "x": 8684,
+      "y": 3264,
       "label": "Garage Vendor",
       "minZoom": 10,
       "maxZoom": 100
     },
     {
       "icon": "spawn_board",
-      "x": 8723,
-      "y": 3250,
+      "x": 8706,
+      "y": 3272,
       "label": "Spawn Board",
       "minZoom": 10,
       "maxZoom": 100
@@ -164,20 +164,20 @@
       "label": "VALKYRA Spawn",
       "points": [
         {
-          "x": 11754,
-          "y": 6887
+          "x": 11750,
+          "y": 7376
         },
         {
-          "x": 11567,
-          "y": 7291
+          "x": 12122,
+          "y": 7071
         },
         {
-          "x": 11835,
-          "y": 7422
+          "x": 11818,
+          "y": 6699
         },
         {
-          "x": 12069,
-          "y": 7016
+          "x": 11445,
+          "y": 7004
         }
       ]
     },
@@ -189,20 +189,21 @@
       "label": "MANTICORE Spawn",
       "points": [
         {
-          "x": 4233,
-          "y": 7765
+          "x": 3868,
+          "y": 7988
         },
         {
-          "x": 4040,
-          "y": 7506
+          "x": 4339,
+          "y": 7885
+        },
+
+        {
+          "x": 4235,
+          "y": 7415
         },
         {
-          "x": 3795,
-          "y": 7676
-        },
-        {
-          "x": 4009,
-          "y": 7933
+          "x": 3765,
+          "y": 7518
         }
       ]
     },
@@ -214,29 +215,29 @@
       "label": "LONESTAR Spawn",
       "points": [
         {
-          "x": 8641,
-          "y": 3601
+          "x": 8308,
+          "y": 3527
         },
         {
-          "x": 8350,
-          "y": 3390
+          "x": 8772,
+          "y": 3651
         },
         {
-          "x": 8591,
-          "y": 3113
+          "x": 8897,
+          "y": 3186
         },
         {
-          "x": 8908,
-          "y": 3324
+          "x": 8432,
+          "y": 3062
         }
       ]
     }
   ],
   "coordinateMetersPerUnit": 100,
   "tileBounds": {
-    "minX": -0.05,
-    "maxX": 163.79,
-    "minY": 0.03,
-    "maxY": 163.87
+    "minX": -0.03,
+    "maxX": 163.81,
+    "minY": -0.01,
+    "maxY": 163.83
   }
 }
