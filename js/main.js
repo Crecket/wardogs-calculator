@@ -2,6 +2,71 @@
    INIT
    ========================= */
 
+async function loadTerrainBallisticsRuntime() {
+    try {
+        await new Promise((resolve, reject) => {
+            const existing = document.querySelector(
+                'script[data-terrain-ballistics]'
+            );
+
+            if (existing) {
+                if (
+                    typeof initTerrainBallistics ===
+                    'function'
+                ) {
+                    resolve();
+                    return;
+                }
+
+                existing.addEventListener(
+                    'load',
+                    resolve,
+                    { once: true }
+                );
+                existing.addEventListener(
+                    'error',
+                    () => reject(
+                        new Error(
+                            'Failed to load terrain ballistics runtime'
+                        )
+                    ),
+                    { once: true }
+                );
+                return;
+            }
+
+            const script =
+                document.createElement('script');
+
+            script.src =
+                'js/features/terrain-ballistics.js';
+
+            script.async = false;
+            script.dataset.terrainBallistics = '1';
+            script.onload = resolve;
+            script.onerror = () => reject(
+                new Error(
+                    'Failed to load terrain ballistics runtime'
+                )
+            );
+
+            document.head.appendChild(script);
+        });
+
+        if (
+            typeof initTerrainBallistics ===
+            'function'
+        ) {
+            await initTerrainBallistics();
+        }
+    } catch (error) {
+        console.warn(
+            '[terrain-ballistics] Runtime unavailable; flat-table fallback remains active.',
+            error
+        );
+    }
+}
+
 async function init() {
 
     try {
@@ -25,6 +90,8 @@ async function init() {
         await loadMapAssets();
 
         await loadMaps();
+
+        await loadTerrainBallisticsRuntime();
 
         initMapTools();
 

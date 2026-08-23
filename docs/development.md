@@ -14,10 +14,16 @@ wardogs-calculator/
 │
 ├── config/
 ├── data/
+│   ├── ballistics/
+│   └── terrain/
+│       └── bakurani/
+│           ├── manifest.json
+│           └── chunks/
 ├── js/
 │   ├── core/
 │   │   └── mobile-redirect.js
 │   ├── features/
+│   │   └── terrain-ballistics.js
 │   ├── map/
 │   ├── mobile/
 │   │   └── mobile.js
@@ -46,7 +52,9 @@ wardogs-calculator/
 │
 ├── scripts/
 │   ├── build-pages.mjs
-│   └── dev-server.mjs
+│   ├── dev-server.mjs
+│   ├── install-terrain-release.ps1
+│   └── verify-terrain-release.ps1
 │
 ├── src/
 │   └── pages/
@@ -105,7 +113,7 @@ Node.js is only used for the build/deployment process.
 
 ## Running Locally
 
-The project should be served over HTTP because maps, configuration files, localization files, and other resources are loaded using `fetch()`.
+The project should be served over HTTP because maps, configuration files, localization files, terrain data, and other resources are loaded using `fetch()`.
 
 ### Requirements
 
@@ -228,7 +236,33 @@ dist/
 └── data/
 ```
 
-Large shared resources such as the Bakurani tile pyramid exist only once under `dist/maps/` and are reused by both interfaces.
+Large shared resources such as the Bakurani tile pyramid and Terrain3D data exist only once in the unified `dist/` artifact and are reused by both interfaces.
+
+### Terrain3D verification
+
+Bakurani terrain data is a release resource and should be verified before deployment:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-terrain-release.ps1
+```
+
+The verifier checks that the terrain manifest exists, all expected terrain chunks are present, recorded SHA-256 values match, release metadata is correct, and automatic MIL correction remains disabled.
+
+The runtime terrain feature is implemented in:
+
+```text
+js/features/terrain-ballistics.js
+```
+
+Its v1.6.0 release contract is intentionally conservative:
+
+```text
+Terrain3D available  -> show ΔZ context
+Terrain3D unavailable -> keep normal firing solution
+MIL                   -> always comes from existing firing tables
+```
+
+See [Terrain Elevation & SPH-2 Setup](terrain.md) for the public behavior and data layout.
 
 ### Development Workflow
 
@@ -239,11 +273,12 @@ Edit source
     ↓
 Browser reloads automatically
     ↓
+verify Terrain3D when terrain/release data changes
+    ↓
 npm run build before deploy
 ```
 
 ---
-
 
 ### Map Tools state and history
 
@@ -260,7 +295,7 @@ The mobile UI exposes Undo / Redo buttons inside **Layers** because hardware key
 `scripts/build-pages.mjs` now creates both interfaces in a single pass:
 
 1. Clears `dist/`
-2. Copies shared assets, JavaScript, locales, map data, map tiles, and config
+2. Copies shared assets, JavaScript, locales, map data, map tiles, config, and data resources including Terrain3D
 3. Bundles modular desktop/mobile CSS into `dist/style.css` and `dist/mobile.css`
 4. Generates desktop language pages
 5. Generates `/mobile/` and its language routes from the mobile template

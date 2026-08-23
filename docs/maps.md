@@ -76,9 +76,35 @@ Map calibration is based on available in-game reference data and may be refined 
 
 ---
 
+## Terrain elevation data
+
+Map imagery and terrain elevation are separate data sources. Bakurani Terrain3D data is stored under:
+
+```text
+data/terrain/bakurani/
+├── manifest.json
+└── chunks/
+    └── *.bin
+```
+
+The manifest describes how map coordinates resolve into terrain chunks and how stored height values are converted to elevation. The runtime loads only the chunks needed for the current Artillery and Target positions and caches them for later samples.
+
+Terrain sampling is used to provide elevation context for SPH-2:
+
+```text
+artillery coordinate -> artillery elevation
+ target coordinate    -> target elevation
+                          ↓
+              ΔZ = target - artillery
+```
+
+Terrain data is deliberately independent from the tile pyramid. Replacing or recalibrating map imagery does not change terrain samples unless the terrain coordinate mapping itself is changed.
+
+In v1.6.0, Terrain3D does **not** automatically modify the firing-table MIL value. If a manifest, chunk, or terrain sample is unavailable, the calculator keeps the normal firing solution instead of treating terrain as a hard dependency.
+
+See [Terrain Elevation & SPH-2 Setup](terrain.md) for runtime and validation details.
+
 ---
-
-
 
 ## Marker assets and user placement
 
@@ -155,5 +181,7 @@ maps/tiles/my-map/
 4. Configure the coordinate bounds.
 
 The map renderer is designed to be map-independent, so additional maps can be added without modifying the core rendering logic.
+
+Terrain elevation is optional. A map without terrain data continues to use the normal coordinate, map, and firing-table behavior.
 
 ---

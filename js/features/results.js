@@ -17,6 +17,64 @@ function formatMilSolution(solution) {
     return `${Math.round(solution.mil ?? minMil)}`;
 }
 
+function resolveElevationSolutions(
+    weapon,
+    distanceMeters,
+    solutions
+) {
+    if (
+        typeof getTerrainBallisticSolutions !==
+        'function'
+    ) {
+        return {
+            solutions,
+            terrainMeta: null
+        };
+    }
+
+    try {
+        const resolved =
+            getTerrainBallisticSolutions({
+                weapon,
+                distanceMeters,
+                solutions,
+                mapId: S.map,
+                origin: S.origin,
+                target: S.target
+            });
+
+        return {
+            solutions:
+                resolved?.solutions ??
+                solutions,
+            terrainMeta:
+                resolved?.meta ??
+                null
+        };
+    } catch (error) {
+        console.warn(
+            '[terrain-ballistics] Failed to resolve terrain firing solution; using flat-table fallback.',
+            error
+        );
+
+        return {
+            solutions,
+            terrainMeta: null
+        };
+    }
+}
+
+function formatTerrainBallisticDetail(meta) {
+    if (
+        typeof formatTerrainBallisticsStatus !==
+        'function'
+    ) {
+        return '';
+    }
+
+    return formatTerrainBallisticsStatus(meta);
+}
+
 function renderElevationResult(weapon, distanceMeters) {
     const value = $('mil');
     const detail = $('milAlt');
@@ -25,10 +83,25 @@ function renderElevationResult(weapon, distanceMeters) {
         return;
     }
 
-    const solutions =
+    const flatSolutions =
         getWeaponElevationSolutions(
             weapon,
             distanceMeters
+        );
+
+    const resolved =
+        resolveElevationSolutions(
+            weapon,
+            distanceMeters,
+            flatSolutions
+        );
+
+    const solutions =
+        resolved.solutions;
+
+    const terrainDetail =
+        formatTerrainBallisticDetail(
+            resolved.terrainMeta
         );
 
     let primary = '—';
@@ -49,6 +122,12 @@ function renderElevationResult(weapon, distanceMeters) {
         secondary = tr('highArc');
     } else if (solutions.inRange) {
         secondary = tr('noFiringSolution');
+    }
+
+    if (terrainDetail) {
+        secondary = secondary
+            ? `${secondary} · ${terrainDetail}`
+            : terrainDetail;
     }
 
     value.textContent = primary;
@@ -154,6 +233,13 @@ function result() {
         weapon,
         dMeters
     );
+
+    if (
+        typeof syncSphLevelWarning ===
+        'function'
+    ) {
+        syncSphLevelWarning();
+    }
 
     const minRange =
         weapon.minRange ??

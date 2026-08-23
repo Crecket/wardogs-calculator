@@ -13,6 +13,9 @@
 - Optional artillery-position saving with targets
 - Export/import individual saved targets or the complete saved-target list as JSON
 - JSON-based weapon definitions
+- Bakurani Terrain3D elevation lookup for SPH-2 result context
+- ΔZ display between the artillery position and target when terrain data is available
+- Prominent SPH-2 leveling guidance under the firing solution
 
 ### Tactical Map
 
@@ -139,6 +142,23 @@ Azimuth follows standard compass bearings:
 ## MIL firing solutions
 
 The result panel calculates elevation in MIL from the configured ballistic tables. Mortar uses a single firing solution. SPH-2 exposes low-angle and high-angle solutions when both trajectories are available for the current distance. Weapon range limits remain separate from ballistic-table coverage, so samples outside the configured playable range are not treated as valid shots.
+
+
+## Terrain elevation and SPH-2 setup
+
+Bakurani can provide terrain height at the Artillery and Target coordinates. When both samples are available, the SPH-2 result context shows:
+
+```text
+ΔZ = target elevation - artillery elevation
+```
+
+A positive value means the target is above the artillery position. A negative value means the target is below it.
+
+Terrain elevation is currently **informational**. The v1.6.0 release does not automatically change MIL from Terrain3D or vehicle attitude. Existing firing tables remain authoritative.
+
+SPH-2 accuracy is also affected by vehicle attitude. A visible warning is shown under the result when SPH-2 is selected. In the gunner HUD, the two small side markers around the vehicle silhouette below `STABILIZED / ASL` indicate lateral tilt. For best accuracy, reposition the vehicle until those markers are as centered and aligned as possible and avoid parking on an obvious uphill/downhill slope.
+
+See [Terrain Elevation & SPH-2 Setup](terrain.md) for data layout, runtime behavior, fallback rules, and validation details.
 
 
 ## Coordinate copy / paste
