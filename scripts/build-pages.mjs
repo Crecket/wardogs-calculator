@@ -1,6 +1,7 @@
 import { cp, mkdir, readFile, rm, writeFile, readdir, stat } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SEO_ALTERNATE_NAMES, SEO_PAGE_CONTENT } from './seo-content.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
@@ -28,7 +29,8 @@ const desktopStyleFiles = [
     'styles/desktop/saved-targets.css',
     'styles/desktop/chrome.css',
     'styles/desktop/map-tools.css',
-    'styles/desktop/motd.css'
+    'styles/desktop/motd.css',
+    'styles/desktop/seo.css'
 ];
 
 const mobileStyleFiles = [
@@ -177,6 +179,170 @@ function refreshSeoMetadata(html, appConfig) {
     return output;
 }
 
+function escapeSeoHtml(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function escapeSeoRegExp(value) {
+    return String(value)
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function replaceSeoMetaContent(
+    html,
+    attribute,
+    key,
+    value
+) {
+    const pattern = new RegExp(
+        `<meta\\b[^>]*\\b${escapeSeoRegExp(attribute)}="${escapeSeoRegExp(key)}"[^>]*>`,
+        'i'
+    );
+
+    return html.replace(
+        pattern,
+        tag => {
+            const content =
+                escapeSeoHtml(value);
+
+            if (/\bcontent="[^"]*"/i.test(tag)) {
+                return tag.replace(
+                    /\bcontent="[^"]*"/i,
+                    `content="${content}"`
+                );
+            }
+
+            return tag.replace(
+                />$/,
+                ` content="${content}">`
+            );
+        }
+    );
+}
+
+function refreshSeoV2StructuredData(
+    html,
+    appConfig,
+    copy
+) {
+    const version =
+        appConfig?.site?.footer?.version;
+
+    return html.replace(
+        /<script type="application\/ld\+json">([\s\S]*?)<\/script>/i,
+        (match, jsonText) => {
+            try {
+                const data =
+                    JSON.parse(
+                        jsonText.trim()
+                    );
+
+                data.description =
+                    copy.description;
+
+                data.alternateName =
+                    [...SEO_ALTERNATE_NAMES];
+
+                data.featureList =
+                    [...copy.features];
+
+                if (version) {
+                    data.softwareVersion =
+                        version;
+                }
+
+                return `<script type="application/ld+json">${JSON.stringify(data, null, 2)}</script>`;
+            } catch {
+                return match;
+            }
+        }
+    );
+}
+
+function injectSeoAbout(
+    html,
+    copy
+) {
+    if (
+        html.includes(
+            'class="seo-about"'
+        )
+    ) {
+        return html;
+    }
+
+    const block = [
+        '<div class="section seo-about-section">',
+        '<details class="seo-about">',
+        `<summary>${escapeSeoHtml(copy.heading)}</summary>`,
+        '<div class="seo-about-copy">',
+        `<p>${escapeSeoHtml(copy.intro)}</p>`,
+        `<p>${escapeSeoHtml(copy.usage)}</p>`,
+        '</div>',
+        '</details>',
+        '</div>'
+    ].join('\n');
+
+    return html.replace(
+        /<\/aside>/i,
+        `${block}\n</aside>`
+    );
+}
+
+function applySeoV2(
+    html,
+    appConfig,
+    language
+) {
+    const copy =
+        SEO_PAGE_CONTENT[language] ||
+        SEO_PAGE_CONTENT.en;
+
+    let output =
+        replaceSeoMetaContent(
+            html,
+            'name',
+            'description',
+            copy.description
+        );
+
+    output =
+        replaceSeoMetaContent(
+            output,
+            'property',
+            'og:description',
+            copy.description
+        );
+
+    output =
+        replaceSeoMetaContent(
+            output,
+            'name',
+            'twitter:description',
+            copy.description
+        );
+
+    output =
+        refreshSeoV2StructuredData(
+            output,
+            appConfig,
+            copy
+        );
+
+    output =
+        injectSeoAbout(
+            output,
+            copy
+        );
+
+    return output;
+}
+
 function mobileUrlForLanguage(language) {
     return language === 'en'
         ? 'https://wardogs-artillery.com/mobile/'
@@ -200,9 +366,13 @@ function addMobileAlternate(html, language) {
 async function writeDesktopPage(source, target, appConfig, language) {
     const html = await readFile(source, 'utf8');
     const prepared = addMobileAlternate(
-        refreshSeoMetadata(
-            normalizeDesktopRuntimePlaceholders(html),
-            appConfig
+        applySeoV2(
+            refreshSeoMetadata(
+                normalizeDesktopRuntimePlaceholders(html),
+                appConfig
+            ),
+            appConfig,
+            language
         ),
         language
     );

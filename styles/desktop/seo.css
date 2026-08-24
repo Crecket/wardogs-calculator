@@ -1,0 +1,45 @@
+/* =========================
+   SEO / ABOUT
+   ========================= */
+
+.seo-about-section {
+    margin-top: 22px;
+    padding-top: 14px;
+
+    border-top: 1px solid var(--border);
+}
+
+.seo-about {
+    color: var(--muted);
+
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.seo-about > summary {
+    color: var(--text);
+
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+
+    cursor: pointer;
+    user-select: none;
+}
+
+.seo-about > summary:hover {
+    color: var(--accent);
+}
+
+.seo-about-copy {
+    padding-top: 10px;
+}
+
+.seo-about-copy p {
+    margin: 0 0 10px;
+}
+
+.seo-about-copy p:last-child {
+    margin-bottom: 0;
+}
