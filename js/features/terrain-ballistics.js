@@ -8,15 +8,11 @@
     const CONFIG_URL =
         'data/ballistics/terrain-context.json';
 
-
     const state = {
         initialized: false,
         enabled: false,
         config: null,
-        terrainManifest: null,
-        terrainManifestUrl: null,
-        chunkCache: new Map(),
-        chunkPending: new Map(),
+        terrains: new Map(),
         rerenderQueued: false,
         lastWarning: null,
         confirmedOrigin: null,
@@ -307,12 +303,61 @@
             );
         }
 
-        if (!config.terrainManifest) {
-            throw new Error('Terrain config has no terrainManifest path');
+        const hasRegistry =
+            config.terrainMaps &&
+            typeof config.terrainMaps === 'object' &&
+            Object.keys(config.terrainMaps).length > 0;
+
+        const hasLegacySingleMap =
+            Boolean(config.mapId && config.terrainManifest);
+
+        if (!hasRegistry && !hasLegacySingleMap) {
+            throw new Error('Terrain config has no supported map manifests');
         }
     }
 
-    function validateTerrainManifest(manifest) {
+    function normalizeTerrainMaps(config) {
+        const maps = new Map();
+
+        if (
+            config.terrainMaps &&
+            typeof config.terrainMaps === 'object'
+        ) {
+            for (const [mapId, definition] of Object.entries(config.terrainMaps)) {
+                const manifest =
+                    typeof definition === 'string'
+                        ? definition
+                        : definition?.terrainManifest;
+
+                if (mapId && manifest) {
+                    maps.set(mapId, {
+                        mapId,
+                        terrainManifest: manifest
+                    });
+                }
+            }
+        }
+
+        /*
+         * Backward compatibility with the original single-map v1 config.
+         * It also keeps Bakurani functional if terrainMaps is accidentally
+         * stripped by an older deployment step.
+         */
+        if (
+            config.mapId &&
+            config.terrainManifest &&
+            !maps.has(config.mapId)
+        ) {
+            maps.set(config.mapId, {
+                mapId: config.mapId,
+                terrainManifest: config.terrainManifest
+            });
+        }
+
+        return maps;
+    }
+
+    function validateTerrainManifest(manifest, expectedMapId) {
         if (
             !manifest ||
             manifest.format !== 'wardogs-landscape-collision-u16-v1' ||
@@ -322,6 +367,34 @@
         ) {
             throw new Error('Unsupported or incomplete Terrain3D manifest');
         }
+
+        if (
+            manifest.mapId &&
+            expectedMapId &&
+            manifest.mapId !== expectedMapId
+        ) {
+            throw new Error(
+                `Terrain manifest mapId ${manifest.mapId} != ${expectedMapId}`
+            );
+        }
+    }
+
+    async function loadTerrainDefinition(definition) {
+        const manifestUrl = new URL(
+            definition.terrainManifest,
+            document.baseURI
+        ).href;
+
+        const manifest = await fetchJson(manifestUrl);
+        validateTerrainManifest(manifest, definition.mapId);
+
+        return {
+            mapId: definition.mapId,
+            manifest,
+            manifestUrl,
+            chunkCache: new Map(),
+            chunkPending: new Map()
+        };
     }
 
     async function initTerrainBallistics() {
@@ -330,30 +403,46 @@
         }
 
         state.initialized = true;
-        state.enabled = true;
 
         try {
             const config = await fetchJson(CONFIG_URL);
             validateConfig(config);
 
-            const manifestUrl = new URL(
-                config.terrainManifest,
-                document.baseURI
-            ).href;
+            const definitions = [
+                ...normalizeTerrainMaps(config).values()
+            ];
 
-            const terrainManifest = await fetchJson(manifestUrl);
-            validateTerrainManifest(terrainManifest);
+            const results = await Promise.allSettled(
+                definitions.map(loadTerrainDefinition)
+            );
+
+            for (let i = 0; i < results.length; i++) {
+                const result = results[i];
+                const definition = definitions[i];
+
+                if (result.status === 'fulfilled') {
+                    const terrain = result.value;
+                    state.terrains.set(terrain.mapId, terrain);
+
+                    terrainLog(
+                        'loaded',
+                        `map=${terrain.mapId}`,
+                        `chunks=${Object.keys(terrain.manifest.chunks).length}`
+                    );
+                } else {
+                    terrainWarn(
+                        `Failed to initialize Terrain3D for map ${definition.mapId}; that map will use flat-table fallback.`,
+                        result.reason
+                    );
+                }
+            }
 
             state.config = config;
-            state.terrainManifest = terrainManifest;
-            state.terrainManifestUrl = manifestUrl;
+            state.enabled = state.terrains.size > 0;
 
-            terrainLog(
-                'loaded',
-                `map=${config.mapId}`,
-                `weapon=${config.weaponId}`,
-                `calibrated=${Boolean(config.calibration?.ready)}`
-            );
+            if (!state.enabled) {
+                throw new Error('No Terrain3D map manifests could be loaded');
+            }
 
             if (!config.calibration?.ready) {
                 terrainWarn(
@@ -408,8 +497,8 @@
         return Math.min(max, Math.max(min, value));
     }
 
-    function locateTerrainPoint(point) {
-        const manifest = state.terrainManifest;
+    function locateTerrainPoint(terrain, point) {
+        const manifest = terrain.manifest;
         const gameX = Number(point.x);
         const gameY = Number(point.y);
 
@@ -463,38 +552,40 @@
         };
     }
 
-    function getChunkEntry(key) {
-        return state.terrainManifest?.chunks?.[key] || null;
+    function getChunkEntry(terrain, key) {
+        return terrain.manifest?.chunks?.[key] || null;
     }
 
-    function resolveChunkUrl(entry) {
+    function resolveChunkUrl(terrain, entry) {
         return new URL(
             entry.file,
-            state.terrainManifestUrl
+            terrain.manifestUrl
         ).href;
     }
 
-    async function loadChunk(key) {
-        if (state.chunkCache.has(key)) {
-            return state.chunkCache.get(key);
+    async function loadChunk(terrain, key) {
+        if (terrain.chunkCache.has(key)) {
+            return terrain.chunkCache.get(key);
         }
 
-        if (state.chunkPending.has(key)) {
-            return state.chunkPending.get(key);
+        if (terrain.chunkPending.has(key)) {
+            return terrain.chunkPending.get(key);
         }
 
-        const entry = getChunkEntry(key);
+        const entry = getChunkEntry(terrain, key);
 
         if (!entry) {
-            throw new Error(`Terrain chunk ${key} is missing from manifest`);
+            throw new Error(
+                `Terrain chunk ${terrain.mapId}:${key} is missing from manifest`
+            );
         }
 
         const promise = (async () => {
-            const response = await fetch(resolveChunkUrl(entry));
+            const response = await fetch(resolveChunkUrl(terrain, entry));
 
             if (!response.ok) {
                 throw new Error(
-                    `${response.status} ${response.statusText} loading terrain chunk ${key}`
+                    `${response.status} ${response.statusText} loading terrain chunk ${terrain.mapId}:${key}`
                 );
             }
 
@@ -506,7 +597,7 @@
                 buffer.byteLength !== expectedBytes
             ) {
                 throw new Error(
-                    `Terrain chunk ${key} byte length ${buffer.byteLength} != ${expectedBytes}`
+                    `Terrain chunk ${terrain.mapId}:${key} byte length ${buffer.byteLength} != ${expectedBytes}`
                 );
             }
 
@@ -515,16 +606,16 @@
                 view: new DataView(buffer)
             };
 
-            state.chunkCache.set(key, chunk);
+            terrain.chunkCache.set(key, chunk);
             return chunk;
         })();
 
-        state.chunkPending.set(key, promise);
+        terrain.chunkPending.set(key, promise);
 
         try {
             return await promise;
         } finally {
-            state.chunkPending.delete(key);
+            terrain.chunkPending.delete(key);
         }
     }
 
@@ -544,11 +635,11 @@
         });
     }
 
-    function primeTerrainForPoints(points) {
+    function primeTerrainForPoints(terrain, points) {
         const keys = new Set();
 
         for (const point of points) {
-            const located = locateTerrainPoint(point);
+            const located = locateTerrainPoint(terrain, point);
 
             if (located) {
                 keys.add(located.key);
@@ -556,30 +647,30 @@
         }
 
         const missing = [...keys].filter(
-            key => !state.chunkCache.has(key)
+            key => !terrain.chunkCache.has(key)
         );
 
         if (!missing.length) {
             return;
         }
 
-        Promise.all(missing.map(loadChunk))
+        Promise.all(missing.map(key => loadChunk(terrain, key)))
             .then(queueResultRerender)
             .catch(error => {
                 terrainWarn(
-                    'Could not load required terrain payload; using flat-table fallback.',
+                    `Could not load required ${terrain.mapId} terrain payload; using flat-table fallback.`,
                     error
                 );
             });
     }
 
-    function rawHeightAt(chunk, x, y) {
-        const side = Number(state.terrainManifest.verticesPerSide);
+    function rawHeightAt(terrain, chunk, x, y) {
+        const side = Number(terrain.manifest.verticesPerSide);
         const index = y * side + x;
         return chunk.view.getUint16(index * 2, true);
     }
 
-    function decodeRawHeight(raw, entry) {
+    function decodeRawHeight(terrain, raw, entry) {
         const minLocalZ = Number(entry.minLocalZ);
         const maxLocalZ = Number(entry.maxLocalZ);
 
@@ -595,26 +686,26 @@
             (raw / 65535) * (maxLocalZ - minLocalZ);
 
         return (
-            Number(state.terrainManifest.worldZOffsetMeters) +
-            localZ * Number(state.terrainManifest.worldZScaleMetersPerLocalUnit)
+            Number(terrain.manifest.worldZOffsetMeters) +
+            localZ * Number(terrain.manifest.worldZScaleMetersPerLocalUnit)
         );
     }
 
-    function terrainHeightAtPointSync(point) {
-        const located = locateTerrainPoint(point);
+    function terrainHeightAtPointSync(terrain, point) {
+        const located = locateTerrainPoint(terrain, point);
 
         if (!located) {
             return null;
         }
 
-        const chunk = state.chunkCache.get(located.key);
+        const chunk = terrain.chunkCache.get(located.key);
 
         if (!chunk) {
             return null;
         }
 
         const maxVertex =
-            Number(state.terrainManifest.verticesPerSide) - 1;
+            Number(terrain.manifest.verticesPerSide) - 1;
 
         const x0 = clamp(Math.floor(located.localX), 0, maxVertex);
         const y0 = clamp(Math.floor(located.localY), 0, maxVertex);
@@ -625,22 +716,26 @@
         const fy = located.localY - y0;
 
         const z00 = decodeRawHeight(
-            rawHeightAt(chunk, x0, y0),
+            terrain,
+            rawHeightAt(terrain, chunk, x0, y0),
             chunk.entry
         );
 
         const z10 = decodeRawHeight(
-            rawHeightAt(chunk, x1, y0),
+            terrain,
+            rawHeightAt(terrain, chunk, x1, y0),
             chunk.entry
         );
 
         const z01 = decodeRawHeight(
-            rawHeightAt(chunk, x0, y1),
+            terrain,
+            rawHeightAt(terrain, chunk, x0, y1),
             chunk.entry
         );
 
         const z11 = decodeRawHeight(
-            rawHeightAt(chunk, x1, y1),
+            terrain,
+            rawHeightAt(terrain, chunk, x1, y1),
             chunk.entry
         );
 
@@ -803,27 +898,43 @@
             !context?.solutions ||
             !state.enabled ||
             !state.config ||
-            !state.terrainManifest ||
             !isFinitePoint(context.origin) ||
             !isFinitePoint(context.target)
         ) {
             return fallback;
         }
 
-        if (context.mapId !== state.config.mapId) {
+        const terrain = state.terrains.get(context.mapId);
+
+        if (!terrain) {
             return fallback;
         }
 
-        primeTerrainForPoints([
-            context.origin,
-            context.target
-        ]);
+        const originLocation =
+            locateTerrainPoint(terrain, context.origin);
+
+        const targetLocation =
+            locateTerrainPoint(terrain, context.target);
+
+        /*
+         * Outside verified coverage is a normal safe-fallback condition.
+         * Do not label it as "terrain loading" and never clamp an unsupported
+         * coordinate to the final recovered edge chunk.
+         */
+        if (!originLocation || !targetLocation) {
+            return fallback;
+        }
+
+        primeTerrainForPoints(
+            terrain,
+            [context.origin, context.target]
+        );
 
         const originZ =
-            terrainHeightAtPointSync(context.origin);
+            terrainHeightAtPointSync(terrain, context.origin);
 
         const targetZ =
-            terrainHeightAtPointSync(context.target);
+            terrainHeightAtPointSync(terrain, context.target);
 
         if (
             !Number.isFinite(originZ) ||
@@ -835,7 +946,8 @@
                     available: true,
                     pendingTerrain: true,
                     applied: false,
-                    reason: 'terrain-pending'
+                    reason: 'terrain-pending',
+                    mapId: terrain.mapId
                 }
             };
         }
@@ -851,6 +963,7 @@
                 pendingTerrain: false,
                 applied: false,
                 reason: 'information-only',
+                mapId: terrain.mapId,
                 originZ,
                 targetZ,
                 deltaZ: targetZ - originZ
@@ -859,17 +972,21 @@
     }
 
     function getTerrainBallisticsState() {
+        let cachedChunks = 0;
+
+        for (const terrain of state.terrains.values()) {
+            cachedChunks += terrain.chunkCache.size;
+        }
+
         return {
             initialized: state.initialized,
             enabled: state.enabled,
-            ready: Boolean(
-                state.config &&
-                state.terrainManifest
-            ),
+            ready: state.terrains.size > 0,
             calibrated: false,
             autoCorrectionEnabled: false,
             mode: 'terrain-information-only',
-            cachedChunks: state.chunkCache.size
+            supportedMaps: [...state.terrains.keys()],
+            cachedChunks
         };
     }
 

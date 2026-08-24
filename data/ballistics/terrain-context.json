@@ -1,15 +1,23 @@
 {
   "schema": "wardogs-terrain-ballistics-v1",
-  "status": "SAFE_RELEASE_CANDIDATE_2026-08-23",
+  "status": "SAFE_RELEASE_CANDIDATE_2026-08-24",
   "mapId": "bakurani",
   "weaponId": "spg",
   "ammo": "155MM HE SHELL",
   "arc": "high",
   "terrainManifest": "data/terrain/bakurani/manifest.json",
+  "terrainMaps": {
+    "bakurani": {
+      "terrainManifest": "data/terrain/bakurani/manifest.json"
+    },
+    "ozeti": {
+      "terrainManifest": "data/terrain/ozeti/manifest.json"
+    }
+  },
   "releasePolicy": {
     "automaticMilCorrection": false,
     "flatTableAuthoritative": true,
-    "reason": "Field tests proved that SPH front/back and side attitude can change effective launch elevation materially. Terrain3D itself is verified, but platform attitude is not yet modeled safely."
+    "reason": "Terrain3D elevation is verified for supported maps, but projectile delta-Z compensation and platform attitude are not yet validated safely enough for automatic MIL correction."
   },
   "calibration": {
     "ready": false

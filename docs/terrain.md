@@ -2,13 +2,16 @@
 
 Terrain elevation is optional map data used to provide vertical context for artillery calculations. It is separate from the visible tile map and from the weapon firing tables.
 
-The first supported terrain dataset is **Bakurani**.
+Supported Terrain3D datasets:
+
+- **Bakurani**
+- **Ozeti**
 
 ---
 
 ## What the Terrain3D feature does
 
-When Bakurani is selected and valid terrain data is available, the calculator samples terrain elevation at:
+When a supported map is selected and valid terrain data is available, the calculator samples terrain elevation at:
 
 - the current **Artillery** coordinate
 - the current **Target** coordinate
@@ -28,9 +31,9 @@ Examples:
 
 The value is shown as secondary firing-solution context.
 
-### v1.6.0 release behavior
+### Current release behavior
 
-Terrain3D is informational in v1.6.0.
+Terrain3D is informational only.
 
 ```text
 Distance -> normal coordinate calculation
@@ -39,40 +42,73 @@ MIL      -> existing weapon firing table
 ΔZ       -> Terrain3D elevation context
 ```
 
-Automatic terrain or vehicle-attitude MIL correction is **not enabled** in this release.
+Automatic terrain, ΔZ, or vehicle-attitude MIL correction is **not enabled**.
 
 ---
 
 ## Data layout
 
-Bakurani elevation resources are stored under:
+Each supported map stores its elevation dataset under its own directory:
 
 ```text
-data/terrain/bakurani/
+data/terrain/<map-id>/
 ├── manifest.json
 └── chunks/
     ├── ...
     └── *.bin
 ```
 
-`manifest.json` describes the terrain grid, chunk coverage, coordinate mapping, elevation conversion, and integrity metadata used by the runtime and release verifier.
+Current datasets:
+
+```text
+data/terrain/bakurani/
+data/terrain/ozeti/
+```
+
+`manifest.json` describes the terrain grid, verified coordinate coverage, coordinate-to-Landscape mapping, elevation conversion, and integrity metadata used by the runtime.
 
 The binary terrain chunks contain only elevation samples. They are not map-image tiles and should not be placed under `maps/tiles/`.
 
 ---
 
-## Runtime loading
+## Multi-map runtime registry
 
-Terrain data is loaded on demand.
+`data/ballistics/terrain-context.json` contains the Terrain3D map registry.
+
+The runtime keeps the original top-level `mapId` / `terrainManifest` fields as a backward-compatible single-map fallback and uses `terrainMaps` for the current multi-map configuration.
+
+Example shape:
+
+```json
+{
+  "mapId": "bakurani",
+  "terrainManifest": "data/terrain/bakurani/manifest.json",
+  "terrainMaps": {
+    "bakurani": {
+      "terrainManifest": "data/terrain/bakurani/manifest.json"
+    },
+    "ozeti": {
+      "terrainManifest": "data/terrain/ozeti/manifest.json"
+    }
+  }
+}
+```
+
+Each map has an independent manifest and independent in-browser chunk cache. Failure to load one map's terrain dataset does not disable Terrain3D for other successfully loaded maps.
+
+---
+
+## Runtime loading
 
 For each firing solution, the runtime:
 
-1. Checks whether the current map has a supported terrain dataset.
-2. Resolves the Artillery and Target coordinates to terrain chunks.
-3. Loads missing chunks with `fetch()`.
-4. Caches loaded chunks for later samples.
-5. Samples Artillery and Target elevation.
-6. Computes and displays ΔZ.
+1. Checks whether the current map has a registered Terrain3D dataset.
+2. Checks whether Artillery and Target are inside that dataset's verified coverage.
+3. Resolves both coordinates to terrain chunks.
+4. Loads missing chunks with `fetch()`.
+5. Caches loaded chunks for later samples.
+6. Samples Artillery and Target elevation.
+7. Computes and displays ΔZ.
 
 Only the chunks needed by the current positions have to be decoded by the browser.
 
@@ -81,6 +117,51 @@ The feature runtime lives in:
 ```text
 js/features/terrain-ballistics.js
 ```
+
+---
+
+## Ozeti coordinate mapping
+
+Ozeti was reconstructed from the cooked Europe Landscape collision heightfields and aligned to the UI WorldCapture data.
+
+Verified Landscape transform:
+
+```text
+Landscape root = (-1632200, -1632200, 4) cm
+Landscape scale = (200, 200, 900)
+```
+
+Verified UI capture XY bounds from `DA_UI_Europe.uasset`:
+
+```text
+Min = (-1616000, -1616000) cm
+Max = (   16000,    16000) cm
+```
+
+Therefore:
+
+```text
+WorldX(m) = GameX * 100 - 16160
+WorldY(m) = GameY * 100 - 16160
+
+GlobalQuadX = 81 + GameX * 50
+GlobalQuadY = 81 + GameY * 50
+```
+
+Ozeti height conversion:
+
+```text
+worldZ(m) = 0.04 + localZ * 9
+```
+
+The recovered proxy set is `0..15 × 0..15`. With the verified +81-quad capture offset, exact recovered coverage extends through:
+
+```text
+Game X: 0 .. 161.58
+Game Y: 0 .. 161.58
+```
+
+The visible Ozeti map itself extends farther. Coordinates outside the verified Terrain3D coverage deliberately fall back to the normal firing table instead of clamping to the last terrain edge.
 
 ---
 
@@ -118,21 +199,21 @@ The warning is guidance, not an automatic correction input.
 
 ---
 
-## Validation
+## Validation requirements
 
-Before a terrain-enabled release, run:
+Before publishing a terrain-enabled build, verify every registered dataset:
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-terrain-release.ps1
-```
-
-The release verifier checks the installed Bakurani terrain dataset and release safety invariants, including:
-
-- terrain manifest present
-- expected terrain chunks present
-- chunk SHA-256 integrity
-- release metadata
-- automatic MIL correction disabled
+- manifest exists and parses as JSON
+- `format` is `wardogs-landscape-collision-u16-v1`
+- `verticesPerSide = 511`
+- `chunkQuads = 510`
+- every manifest chunk file exists
+- every chunk has the declared byte length
+- every chunk SHA-256 matches the manifest
+- map-specific coordinate coverage is verified
+- `releasePolicy.automaticMilCorrection` remains `false`
+- `releasePolicy.flatTableAuthoritative` remains `true`
+- `calibration.ready` remains `false` until projectile/platform correction is independently validated
 
 Then build normally:
 
@@ -152,13 +233,19 @@ npm.cmd run build
 
 Terrain elevation is optional and should stay map-specific.
 
-A future map can add its own dataset under:
+A new map should add its dataset under:
 
 ```text
 data/terrain/<map-id>/
 ```
 
-The implementation should define:
+and add one entry to `terrainMaps` in:
+
+```text
+data/ballistics/terrain-context.json
+```
+
+The map dataset must define:
 
 - supported coordinate coverage
 - chunk layout and resolution
@@ -174,6 +261,6 @@ Maps without a terrain dataset require no changes and continue to use the existi
 
 Terrain3D extraction and display are separate from ballistic compensation.
 
-A terrain dataset can be considered valid for elevation display without implying that an automatic firing correction is valid. Vehicle pose, suspension, chassis attitude, and final barrel transform may affect real firing elevation independently of map terrain height.
+A terrain dataset can be considered valid for elevation display without implying that an automatic firing correction is valid. Vehicle pose, suspension, chassis attitude, projectile model, and final barrel transform may affect real firing elevation independently of map terrain height.
 
-For that reason, v1.6.0 exposes verified elevation context while keeping the existing firing tables authoritative.
+For that reason, verified elevation context is exposed while the existing firing tables remain authoritative.
