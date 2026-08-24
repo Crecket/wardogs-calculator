@@ -4,10 +4,10 @@
   "w": 32,
   "h": 32,
   "bounds": {
-    "minX": 0.0,
-    "maxX": 163.2,
-    "minY": 0.0,
-    "maxY": 163.2
+    "minX": 57.58,
+    "maxX": 143.07,
+    "minY": 21.81,
+    "maxY": 99.56
   },
   "tiles": {
     "path": "maps/tiles/ozeti",
@@ -149,30 +149,30 @@
   "zones": [],
   "polygons": [
     {
-    "color": "#d86666",
-    "fillOpacity": 0.12,
-    "strokeWidth": 2,
-    "dashed": true,
-    "label": "VALKYRA Spawn",
-    "points": [
-      {
-        "x": 13398,
-        "y": 6851
-      },
-      {
-        "x": 13858,
-        "y": 6992
-      },
-      {
-        "x": 13999,
-        "y": 6532
-      },
-      {
-        "x": 13539,
-        "y": 6391
-      }
-    ]
-  },
+      "color": "#d86666",
+      "fillOpacity": 0.12,
+      "strokeWidth": 2,
+      "dashed": true,
+      "label": "VALKYRA Spawn",
+      "points": [
+        {
+          "x": 13398,
+          "y": 6851
+        },
+        {
+          "x": 13858,
+          "y": 6992
+        },
+        {
+          "x": 13999,
+          "y": 6532
+        },
+        {
+          "x": 13539,
+          "y": 6391
+        }
+      ]
+    },
     {
       "color": "#82c596",
       "fillOpacity": 0.12,
@@ -188,7 +188,6 @@
           "x": 7309,
           "y": 8798
         },
-
         {
           "x": 7022,
           "y": 8412
