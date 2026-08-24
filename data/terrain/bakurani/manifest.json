@@ -11,8 +11,10 @@
   "verticesPerSide": 511,
   "vertexSpacingMeters": 2,
   "globalQuadOffsetX": 8160,
-  "globalQuadOffsetY": 6120,
+  "globalQuadOffsetY": 14280,
   "gameUnitsToLandscapeQuads": 50,
+  "gameUnitsToLandscapeQuadsX": 50,
+  "gameUnitsToLandscapeQuadsY": -50,
   "worldZOffsetMeters": 0.5,
   "worldZScaleMetersPerLocalUnit": 9,
   "coverage": {
@@ -21,6 +23,7 @@
     "gameYMin": 0,
     "gameYMax": 163.2
   },
+  "coordinateMappingEvidence": "Absolute Y sign corrected 2026-08-24 after top-view production tile overlay on the verified Bakurani reference showed Terrain3D mirrored along game Y. Chunk-local row-major orientation and inter-chunk seams remain unchanged.",
   "chunks": {
     "16,12": {
       "file": "chunks/16_12.bin",
@@ -446,7 +449,7 @@
       "file": "chunks/28_15.bin",
       "bytes": 522242,
       "minLocalZ": -69.984375,
-      "maxLocalZ": -31.0,
+      "maxLocalZ": -31,
       "sha256": "983eb6bbac811522a2a23e637102afb792c402d9510d56f0878b9667079fdd75"
     },
     "29,15": {
@@ -999,7 +1002,7 @@
       "file": "chunks/27_20.bin",
       "bytes": 522242,
       "minLocalZ": -95.484375,
-      "maxLocalZ": -52.0,
+      "maxLocalZ": -52,
       "sha256": "4f2142491a5f0c79ad82c817c1d011ec6dbacc8011edfa52bb4924406b41bf66"
     },
     "28,20": {
@@ -1062,7 +1065,7 @@
       "file": "chunks/20_21.bin",
       "bytes": 522242,
       "minLocalZ": -99.0390625,
-      "maxLocalZ": -74.0,
+      "maxLocalZ": -74,
       "sha256": "c06fe6b52f6e27c962e8968ff58291499f7d038b945a2dfef3ee5922abb3f64b"
     },
     "21,21": {
@@ -1181,7 +1184,7 @@
       "file": "chunks/21_22.bin",
       "bytes": 522242,
       "minLocalZ": -110.34375,
-      "maxLocalZ": -99.0,
+      "maxLocalZ": -99,
       "sha256": "cf91a754aebfe04a761c2c63aa36363369ffbb67d13b3ffdc8a6e6f0b695ecc3"
     },
     "22,22": {
@@ -1334,7 +1337,7 @@
     "27,23": {
       "file": "chunks/27_23.bin",
       "bytes": 522242,
-      "minLocalZ": -103.0,
+      "minLocalZ": -103,
       "maxLocalZ": -73.4765625,
       "sha256": "adaabda6fd0beec70eb19e8abef87b98f2f3a9f835ef7c0e06ae92c1d56d7a60"
     },

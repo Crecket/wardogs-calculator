@@ -120,6 +120,31 @@ js/features/terrain-ballistics.js
 
 ---
 
+## Coordinate-axis orientation
+
+Terrain chunks store Landscape collision rows in native Landscape +Y order. Game/UI map coordinates use +Y toward the north/top of the tactical map, which is the opposite absolute Landscape-Y direction for the captured regions.
+
+The runtime therefore supports independent per-axis factors:
+
+```text
+gameUnitsToLandscapeQuadsX = +50
+gameUnitsToLandscapeQuadsY = -50
+```
+
+Bakurani reference mapping:
+
+```text
+WorldX(m) = GameX * 100 - 16320
+WorldY(m) = -4080 - GameY * 100
+
+GlobalQuadX = 8160 + GameX * 50
+GlobalQuadY = 14280 - GameY * 50
+```
+
+The sign correction does not alter decoded height samples, chunk ordering, or seam validation. It only fixes which native Landscape Y location corresponds to a given game/UI Y coordinate.
+
+---
+
 ## Ozeti coordinate mapping
 
 Ozeti was reconstructed from the cooked Europe Landscape collision heightfields and aligned to the UI WorldCapture data.
@@ -142,10 +167,10 @@ Therefore:
 
 ```text
 WorldX(m) = GameX * 100 - 16160
-WorldY(m) = GameY * 100 - 16160
+WorldY(m) = 160 - GameY * 100
 
 GlobalQuadX = 81 + GameX * 50
-GlobalQuadY = 81 + GameY * 50
+GlobalQuadY = 8241 - GameY * 50
 ```
 
 Ozeti height conversion:
@@ -154,11 +179,11 @@ Ozeti height conversion:
 worldZ(m) = 0.04 + localZ * 9
 ```
 
-The recovered proxy set is `0..15 × 0..15`. With the verified +81-quad capture offset, exact recovered coverage extends through:
+The recovered proxy set is `0..15 × 0..15`. The capture is offset by 81 quads from the recovered Landscape on both sides. Because game +Y runs opposite Landscape +Y, exact recovered coverage is:
 
 ```text
 Game X: 0 .. 161.58
-Game Y: 0 .. 161.58
+Game Y: 1.62 .. 163.20
 ```
 
 The visible Ozeti map itself extends farther. Coordinates outside the verified Terrain3D coverage deliberately fall back to the normal firing table instead of clamping to the last terrain edge.

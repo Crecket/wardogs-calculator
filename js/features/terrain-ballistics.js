@@ -377,6 +377,21 @@
                 `Terrain manifest mapId ${manifest.mapId} != ${expectedMapId}`
             );
         }
+
+        const mappingValues = [
+            Number(manifest.globalQuadOffsetX),
+            Number(manifest.globalQuadOffsetY),
+            landscapeQuadsPerGameUnit(manifest, 'X'),
+            landscapeQuadsPerGameUnit(manifest, 'Y')
+        ];
+
+        if (
+            !mappingValues.every(Number.isFinite) ||
+            mappingValues[2] === 0 ||
+            mappingValues[3] === 0
+        ) {
+            throw new Error('Terrain manifest has invalid coordinate mapping');
+        }
     }
 
     async function loadTerrainDefinition(definition) {
@@ -476,6 +491,22 @@
         );
     }
 
+    function landscapeQuadsPerGameUnit(manifest, axis) {
+        const specific = Number(
+            manifest?.[`gameUnitsToLandscapeQuads${axis}`]
+        );
+
+        if (Number.isFinite(specific) && specific !== 0) {
+            return specific;
+        }
+
+        const legacy = Number(
+            manifest?.gameUnitsToLandscapeQuads
+        );
+
+        return legacy;
+    }
+
     function withinCoverage(gameX, gameY, manifest) {
         const coverage = manifest.coverage;
 
@@ -508,11 +539,11 @@
 
         const quadX =
             Number(manifest.globalQuadOffsetX) +
-            gameX * Number(manifest.gameUnitsToLandscapeQuads);
+            gameX * landscapeQuadsPerGameUnit(manifest, 'X');
 
         const quadY =
             Number(manifest.globalQuadOffsetY) +
-            gameY * Number(manifest.gameUnitsToLandscapeQuads);
+            gameY * landscapeQuadsPerGameUnit(manifest, 'Y');
 
         const chunkQuads = Number(manifest.chunkQuads);
 

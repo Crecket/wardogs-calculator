@@ -11,16 +11,19 @@
   "verticesPerSide": 511,
   "vertexSpacingMeters": 2,
   "globalQuadOffsetX": 81,
-  "globalQuadOffsetY": 81,
+  "globalQuadOffsetY": 8241,
   "gameUnitsToLandscapeQuads": 50,
+  "gameUnitsToLandscapeQuadsX": 50,
+  "gameUnitsToLandscapeQuadsY": -50,
   "worldZOffsetMeters": 0.04,
   "worldZScaleMetersPerLocalUnit": 9.0,
   "coverage": {
     "gameXMin": 0,
     "gameXMax": 161.58,
-    "gameYMin": 0,
-    "gameYMax": 161.58
+    "gameYMin": 1.62,
+    "gameYMax": 163.2
   },
+  "coordinateMappingEvidence": "Absolute Y sign corrected 2026-08-24 after top-view production tile overlay on the verified Bakurani reference showed Terrain3D mirrored along game Y. Chunk-local row-major orientation and inter-chunk seams remain unchanged.",
   "chunks": {
     "0,0": {
       "file": "chunks/0_0.bin",
