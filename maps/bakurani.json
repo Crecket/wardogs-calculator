@@ -93,7 +93,7 @@
       "icon": "manticore",
       "x": 4009,
       "y": 7752,
-      "label": "manticore",
+      "label": "Manticore",
       "minZoom": 10,
       "maxZoom": 100
     },
@@ -125,7 +125,7 @@
       "icon": "lonestar",
       "x": 8746,
       "y": 3250,
-      "label": "lonestar",
+      "label": "Lonestar",
       "minZoom": 10,
       "maxZoom": 100
     },
