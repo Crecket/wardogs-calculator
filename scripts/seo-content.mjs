@@ -1,18 +1,64 @@
 export const SEO_PAGE_CONTENT = {
     en: {
-        description: 'Free WARDOGS artillery and mortar calculator with SPH-2 firing solutions, interactive Bakurani and Ozeti maps, Terrain3D elevation, saved targets and tactical tools.',
+        title: 'WARDOGS Artillery Calculator | Mortar, SPH-2 & Maps',
+        description: 'Free WARDOGS artillery and mortar calculator for Mortar and SPH-2, with Bakurani and Ozeti maps, Terrain3D elevation context and tactical map tools.',
         heading: 'About this calculator',
         intro: 'WARDOGS Artillery Calculator is a free, open-source community tool for mortar and SPH-2 firing solutions. It includes interactive tactical maps for Bakurani and Ozeti, coordinate-based targeting, distance, azimuth and MIL calculations, and Terrain3D elevation context where available.',
         usage: 'Select a map and weapon, place the artillery and target positions, then read the firing solution. Saved targets, the ruler, drawing tools and map markers can be used for tactical planning. Existing firing tables remain authoritative for MIL; automatic terrain and vehicle-tilt MIL correction is not enabled.',
         features: [
             'WARDOGS mortar firing solutions',
-            'SPH-2 firing solutions',
-            'Bakurani tactical map',
+            'SPH-2 LOW and HIGH firing-table solutions',
+            'Bakurani interactive tactical map',
             'Ozeti tactical map',
-            'Terrain3D elevation context',
+            'Terrain3D elevation and height-difference context',
             'Saved targets',
             'Ruler and drawing tools',
             'Tactical map markers'
+        ],
+        cluster: {
+            heading: 'WARDOGS Artillery Calculator',
+            navLabel: 'Calculator and map guide',
+            intro: 'WARDOGS Artillery Calculator is a free, open-source community tool for calculating distance, azimuth and MIL from manually placed artillery and target positions. Players looking for a quick WARDOGS arty calc can use the same interface for Mortar and SPH-2 while keeping the firing solution on the tactical map.',
+            sections: [
+                {
+                    id: 'wardogs-mortar-calculator',
+                    heading: 'WARDOGS Mortar Calculator',
+                    body: 'Choose Mortar, place the mortar and target on the map, and the calculator returns distance, azimuth and the firing-table MIL value. Range status helps show whether the selected target is inside the supported mortar range.'
+                },
+                {
+                    id: 'wardogs-sph-2-calculator',
+                    heading: 'WARDOGS SPH-2 Calculator',
+                    body: 'Choose SPH-2 to calculate distance, azimuth and the available LOW/HIGH firing-table solutions. On maps with Terrain3D data, the app can show elevation context and the height difference (ΔZ) between the artillery and target. Automatic terrain and vehicle-tilt MIL correction is not enabled, so the firing tables remain authoritative.'
+                },
+                {
+                    id: 'bakurani-interactive-map',
+                    heading: 'Bakurani Interactive Map',
+                    body: 'The Bakurani interactive map is calibrated to WARDOGS coordinates so artillery positions, targets, saved targets, the ruler, drawings and tactical markers share the same map space. Ozeti is also available. Beyond firing solutions, the workspace can be used as a WARDOGS map for coordinate and tactical planning.'
+                },
+                {
+                    id: 'how-to-use',
+                    heading: 'How to use',
+                    body: 'Select Bakurani, Ozeti or a custom map, choose Mortar or SPH-2, place the artillery position and target, then read distance, azimuth and MIL. Save useful targets or use the ruler, drawing tools and markers when planning with a squad.'
+                }
+            ]
+        },
+        faq: [
+            {
+                question: 'Is this also a WARDOGS mortar calculator?',
+                answer: 'Yes. Select Mortar, place the mortar and target positions, and the calculator provides distance, azimuth, range status and the firing-table MIL value.'
+            },
+            {
+                question: 'Does WARDOGS Artillery Calculator support SPH-2?',
+                answer: 'Yes. SPH-2 support includes distance, azimuth and the available LOW/HIGH firing-table solutions.'
+            },
+            {
+                question: 'Which WARDOGS maps are available?',
+                answer: 'The calculator includes interactive maps for Bakurani and Ozeti, plus a custom-map mode. Bakurani and Ozeti use calibrated game-coordinate mapping.'
+            },
+            {
+                question: 'Does Terrain3D automatically correct SPH-2 MIL for terrain or vehicle tilt?',
+                answer: 'No. Terrain3D currently provides elevation and height-difference context where available. Existing firing tables remain authoritative; automatic terrain and vehicle-tilt MIL correction is disabled.'
+            }
         ]
     },
 

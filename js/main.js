@@ -2,6 +2,49 @@
    INIT
    ========================= */
 
+const APP_ASSET_VERSION = (() => {
+    const source =
+        document.currentScript?.src;
+
+    if (!source) {
+        return '';
+    }
+
+    try {
+        return (
+            new URL(source)
+                .searchParams
+                .get('v') ||
+            ''
+        );
+    } catch {
+        return '';
+    }
+})();
+
+function versionRuntimeAsset(url) {
+    if (!APP_ASSET_VERSION) {
+        return url;
+    }
+
+    try {
+        const resolved =
+            new URL(
+                url,
+                document.baseURI
+            );
+
+        resolved.searchParams.set(
+            'v',
+            APP_ASSET_VERSION
+        );
+
+        return resolved.href;
+    } catch {
+        return url;
+    }
+}
+
 async function loadTerrainBallisticsRuntime() {
     try {
         await new Promise((resolve, reject) => {
@@ -39,7 +82,9 @@ async function loadTerrainBallisticsRuntime() {
                 document.createElement('script');
 
             script.src =
-                'js/features/terrain-ballistics.js';
+                versionRuntimeAsset(
+                    'js/features/terrain-ballistics.js'
+                );
 
             script.async = false;
             script.dataset.terrainBallistics = '1';
@@ -151,17 +196,16 @@ async function init() {
             error
         );
 
-        document.body.innerHTML = `
-            <div style="
-                padding:40px;
-                font-family:system-ui;
-                color:#d86666;
-                background:#101316;
-            ">
-                <h1>Failed to initialize application</h1>
-                <pre>${error.message}</pre>
-            </div>
-        `;
+        document.documentElement.dataset.appInitState =
+            'failed';
+
+        const status =
+            document.getElementById('status');
+
+        if (status) {
+            status.textContent =
+                'Interactive tools failed to load. Please reload the page.';
+        }
     }
 }
 

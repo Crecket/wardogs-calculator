@@ -7,6 +7,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const dist = join(root, 'dist');
 
+const NON_INDEXABLE_PAGE_LANGUAGES =
+    new Set(['cat']);
+
 const sourceDirs = [
     'assets',
     'config',
@@ -193,6 +196,20 @@ function escapeSeoRegExp(value) {
         .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function replaceSeoTitle(
+    html,
+    title
+) {
+    if (!title) {
+        return html;
+    }
+
+    return html.replace(
+        /<title>[\s\S]*?<\/title>/i,
+        `<title>${escapeSeoHtml(title)}</title>`
+    );
+}
+
 function replaceSeoMetaContent(
     html,
     attribute,
@@ -264,6 +281,132 @@ function refreshSeoV2StructuredData(
     );
 }
 
+function injectFaqStructuredData(
+    html,
+    faq
+) {
+    if (
+        !Array.isArray(faq) ||
+        !faq.length ||
+        html.includes('\"@type\": \"FAQPage\"')
+    ) {
+        return html;
+    }
+
+    const data = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faq.map(item => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: item.answer
+            }
+        }))
+    };
+
+    const script =
+        `<script type="application/ld+json">${JSON.stringify(data, null, 2)}</script>`;
+
+    return html.replace(
+        /<\/head>/i,
+        `${script}\n</head>`
+    );
+}
+
+function renderSeoTopicLinks(cluster, faq) {
+    const links = [
+        {
+            id: 'wardogs-artillery-calculator',
+            label: cluster.heading
+        },
+        ...cluster.sections.map(section => ({
+            id: section.id,
+            label: section.heading
+        }))
+    ];
+
+    if (Array.isArray(faq) && faq.length) {
+        links.push({
+            id: 'wardogs-calculator-faq',
+            label: 'FAQ'
+        });
+    }
+
+    return links
+        .map(link => (
+            `<a href="#${escapeSeoHtml(link.id)}">${escapeSeoHtml(link.label)}</a>`
+        ))
+        .join('');
+}
+
+function renderSeoFaq(faq) {
+    if (!Array.isArray(faq) || !faq.length) {
+        return '';
+    }
+
+    const items = faq
+        .map(item => [
+            '<details class="seo-faq-item">',
+            `<summary>${escapeSeoHtml(item.question)}</summary>`,
+            `<p>${escapeSeoHtml(item.answer)}</p>`,
+            '</details>'
+        ].join('\n'))
+        .join('\n');
+
+    return [
+        '<section class="seo-faq" id="wardogs-calculator-faq">',
+        '<h3>WARDOGS Artillery Calculator FAQ</h3>',
+        items,
+        '</section>'
+    ].join('\n');
+}
+
+function injectSeoContentCluster(
+    html,
+    copy
+) {
+    const cluster = copy.cluster;
+
+    if (
+        !cluster ||
+        !Array.isArray(cluster.sections) ||
+        !cluster.sections.length ||
+        html.includes('class="seo-content-cluster"')
+    ) {
+        return html;
+    }
+
+    const sections = cluster.sections
+        .map(section => [
+            `<section class="seo-topic" id="${escapeSeoHtml(section.id)}">`,
+            `<h3>${escapeSeoHtml(section.heading)}</h3>`,
+            `<p>${escapeSeoHtml(section.body)}</p>`,
+            '</section>'
+        ].join('\n'))
+        .join('\n');
+
+    const block = [
+        '<div class="section seo-content-cluster">',
+        `<h2 id="wardogs-artillery-calculator">${escapeSeoHtml(cluster.heading)}</h2>`,
+        `<p class="seo-content-lead">${escapeSeoHtml(cluster.intro)}</p>`,
+        `<nav aria-label="${escapeSeoHtml(cluster.navLabel)}" class="seo-topic-nav">`,
+        renderSeoTopicLinks(cluster, copy.faq),
+        '</nav>',
+        '<div class="seo-topic-list">',
+        sections,
+        '</div>',
+        renderSeoFaq(copy.faq),
+        '</div>'
+    ].join('\n');
+
+    return html.replace(
+        /<\/aside>/i,
+        `${block}\n</aside>`
+    );
+}
+
 function injectSeoAbout(
     html,
     copy
@@ -311,6 +454,30 @@ function applySeoV2(
             copy.description
         );
 
+    if (copy.title) {
+        output =
+            replaceSeoTitle(
+                output,
+                copy.title
+            );
+
+        output =
+            replaceSeoMetaContent(
+                output,
+                'property',
+                'og:title',
+                copy.title
+            );
+
+        output =
+            replaceSeoMetaContent(
+                output,
+                'name',
+                'twitter:title',
+                copy.title
+            );
+    }
+
     output =
         replaceSeoMetaContent(
             output,
@@ -334,11 +501,25 @@ function applySeoV2(
             copy
         );
 
-    output =
-        injectSeoAbout(
-            output,
-            copy
-        );
+    if (copy.cluster) {
+        output =
+            injectSeoContentCluster(
+                output,
+                copy
+            );
+
+        output =
+            injectFaqStructuredData(
+                output,
+                copy.faq
+            );
+    } else {
+        output =
+            injectSeoAbout(
+                output,
+                copy
+            );
+    }
 
     return output;
 }
@@ -441,6 +622,12 @@ async function getDesktopLanguages() {
         .filter(file => file.endsWith('.html'))
         .map(file => file.slice(0, -5))
         .filter(Boolean)
+        .filter(
+            language =>
+                !NON_INDEXABLE_PAGE_LANGUAGES.has(
+                    language
+                )
+        )
         .sort();
 
     return ['en', ...localized];
@@ -513,10 +700,15 @@ function renderMobileLocale(template, language) {
         ? '../'
         : '../../';
 
-    const indexableTemplate = template.replace(
-        '<meta content="noindex, follow" name="robots"/>',
-        '<meta content="index, follow, max-image-preview:large" name="robots"/>'
-    );
+    const indexableTemplate =
+        NON_INDEXABLE_PAGE_LANGUAGES.has(
+            language
+        )
+            ? template
+            : template.replace(
+                '<meta content="noindex, follow" name="robots"/>',
+                '<meta content="index, follow, max-image-preview:large" name="robots"/>'
+            );
 
     return indexableTemplate
         .replace(
