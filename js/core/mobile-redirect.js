@@ -58,8 +58,34 @@
         // Continue with automatic detection.
     }
 
+    const userAgent =
+        navigator.userAgent ||
+        '';
+
+    const iPadDevice =
+        /\biPad\b/i.test(
+            userAgent
+        ) ||
+        (
+            navigator.platform ===
+                'MacIntel' &&
+            Number(
+                navigator.maxTouchPoints
+            ) > 1
+        ) ||
+        (
+            /Macintosh/i.test(
+                userAgent
+            ) &&
+            Number(
+                navigator.maxTouchPoints
+            ) > 1
+        );
+
     const mobileDevice =
-        navigator.userAgentData?.mobile === true ||
+        iPadDevice ||
+        navigator.userAgentData
+            ?.mobile === true ||
         (
             window.matchMedia(
                 '(pointer: coarse)'
