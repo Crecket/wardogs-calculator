@@ -113,8 +113,7 @@
   "unlockPosition": "Déverrouiller",
   "lockPositionHint": "Verrouiller cette position contre les clics et déplacements sur la carte",
   "unlockPositionHint": "Autoriser à nouveau la modification de cette position sur la carte",
-  "forcePlacement": "Forcer",
-  "forcePlacementHint": "Forcer les clics sur la carte à placer le point sélectionné au lieu de saisir le plus proche",
-  "forcePlacementHintActive": "Les clics placent toujours le point sélectionné ; cliquez pour saisir à nouveau le plus proche",
+  "forcePlacementHint": "Forcer les clics ici",
+  "forcePlacementHintActive": "Forcé — cliquez pour libérer",
   "mil": "MIL"
 }

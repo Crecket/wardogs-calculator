@@ -388,23 +388,45 @@ button:disabled {
    FORCE PLACEMENT
    ========================= */
 
-.point-mode-actions {
+.mode-option {
+    position: relative;
+}
+
+.mode-option > button:not(.mode-force-pin) {
+    width: 100%;
+}
+
+.mode-force-pin {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+
+    width: 21px;
+    min-height: 0;
+    height: 21px;
+    padding: 0;
+
+    border: 0;
+    border-radius: 3px;
+
+    background: none;
+
     display: flex;
-    justify-content: flex-end;
-    gap: 6px;
-    margin-top: 6px;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--text);
+
+    opacity: .3;
+    cursor: pointer;
 }
 
-.point-mode-actions button {
-    width: auto;
-    min-height: 28px;
-    padding: 4px 9px;
-    color: var(--muted);
-    font-size: 10px;
+.mode-force-pin:hover {
+    border: 0;
+    opacity: .75;
 }
 
-.point-mode-actions .point-force-button.active {
-    border-color: var(--accent-border);
-    background: var(--active-bg);
+.mode-force-pin.active {
     color: var(--accent);
+    opacity: 1;
 }

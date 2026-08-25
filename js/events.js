@@ -187,46 +187,24 @@ function bindEvents() {
 
     $('originMode').addEventListener(
         'click',
-        () => {
-
-            S.mode =
-                'origin';
-
-            $('originMode')
-                .classList.add(
-                'active'
-            );
-
-            $('targetMode')
-                .classList.remove(
-                'active'
-            );
-        }
+        () => setPointMode('origin')
     );
 
     $('targetMode').addEventListener(
         'click',
-        () => {
-
-            S.mode =
-                'target';
-
-            $('targetMode')
-                .classList.add(
-                'active'
-            );
-
-            $('originMode')
-                .classList.remove(
-                'active'
-            );
-        }
+        () => setPointMode('target')
     );
 
-    $('forcePlacementMode')
+    $('originForcePin')
         ?.addEventListener(
             'click',
-            toggleForcePlacement
+            () => toggleForcePlacementFor('origin')
+        );
+
+    $('targetForcePin')
+        ?.addEventListener(
+            'click',
+            () => toggleForcePlacementFor('target')
         );
 
     ['ox', 'oy'].forEach(

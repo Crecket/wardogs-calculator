@@ -113,8 +113,7 @@
   "unlockPosition": "Odblokuj",
   "lockPositionHint": "Zablokuj zmianę tej pozycji kliknięciem lub przeciąganiem na mapie",
   "unlockPositionHint": "Ponownie zezwól na zmianę tej pozycji na mapie",
-  "forcePlacement": "Wymuś",
-  "forcePlacementHint": "Wymuś, aby kliknięcia na mapie ustawiały wybrany punkt zamiast chwytać najbliższy",
-  "forcePlacementHintActive": "Kliknięcia zawsze ustawiają wybrany punkt; kliknij, aby ponownie chwytać najbliższy",
+  "forcePlacementHint": "Wymuś kliknięcia tutaj",
+  "forcePlacementHintActive": "Wymuszone — kliknij, aby zwolnić",
   "mil": "MIL"
 }
