@@ -1,4 +1,11 @@
-const MOTD_DISMISSED_PREFIX = 'wardogs-motd-dismissed:';
+const MOTD_DISMISSED_PREFIX =
+    'wardogs-motd-dismissed:';
+
+const MOTD_READ_PREFIX =
+    'wardogs-motd-read:';
+
+let currentMobileMotd =
+    null;
 
 function getLocalizedMotdValue(value) {
     if (typeof value === 'string') {
@@ -61,6 +68,10 @@ function getMotdStorageKey(id) {
     return `${MOTD_DISMISSED_PREFIX}${id}`;
 }
 
+function getMotdReadStorageKey(id) {
+    return `${MOTD_READ_PREFIX}${id}`;
+}
+
 function isMotdDismissed(id) {
     if (!id) {
         return false;
@@ -100,6 +111,51 @@ function dismissMotd(id) {
     }
 }
 
+function isMotdRead(id) {
+    if (!id) {
+        return true;
+    }
+
+    try {
+        return (
+            localStorage.getItem(
+                getMotdReadStorageKey(id)
+            ) === 'true'
+        );
+    } catch (error) {
+        console.warn(
+            'Failed to read MOTD read state:',
+            error
+        );
+
+        return false;
+    }
+}
+
+function markMotdRead(id) {
+    if (!id) {
+        return;
+    }
+
+    try {
+        localStorage.setItem(
+            getMotdReadStorageKey(id),
+            'true'
+        );
+    } catch (error) {
+        console.warn(
+            'Failed to save MOTD read state:',
+            error
+        );
+    }
+}
+
+function isMobileMotdUI() {
+    return document.body.classList.contains(
+        'mobile-app'
+    );
+}
+
 function removeExistingMotd() {
     document
         .querySelectorAll('.motd')
@@ -108,6 +164,8 @@ function removeExistingMotd() {
                 element.remove();
             }
         );
+
+    syncMobileMotdButton();
 }
 
 function closeMotd(
@@ -115,10 +173,13 @@ function closeMotd(
     motd,
     dontShowAgain
 ) {
-    if (
-        dontShowAgain?.checked &&
-        motd.id
-    ) {
+    const dismiss =
+        Boolean(
+            dontShowAgain?.checked &&
+            motd.id
+        );
+
+    if (dismiss) {
         dismissMotd(
             motd.id
         );
@@ -131,6 +192,18 @@ function closeMotd(
     window.setTimeout(
         () => {
             container.remove();
+
+            if (
+                dismiss &&
+                isMobileMotdUI() &&
+                currentMobileMotd?.id ===
+                    motd.id
+            ) {
+                currentMobileMotd =
+                    null;
+            }
+
+            syncMobileMotdButton();
         },
         150
     );
@@ -195,11 +268,11 @@ function createMotd(motd) {
 
     closeButton.setAttribute(
         'aria-label',
-        tr('close')
+        tr('motdClose')
     );
 
     closeButton.title =
-        tr('close');
+        tr('motdClose');
 
     header.append(
         title,
@@ -293,10 +366,211 @@ function createMotd(motd) {
             container.classList.add(
                 'motd--visible'
             );
+
+            syncMobileMotdButton();
         }
     );
 
     return container;
+}
+
+function createMobileMotdButton() {
+    let button =
+        document.getElementById(
+            'mobileMotdButton'
+        );
+
+    if (button) {
+        return button;
+    }
+
+    const controls =
+        document.querySelector(
+            '.mobile-header-controls'
+        );
+
+    if (!controls) {
+        return null;
+    }
+
+    button =
+        document.createElement(
+            'button'
+        );
+
+    button.id =
+        'mobileMotdButton';
+
+    button.type =
+        'button';
+
+    button.className =
+        'mobile-motd-button';
+
+    button.hidden =
+        true;
+
+    button.setAttribute(
+        'aria-expanded',
+        'false'
+    );
+
+    button.innerHTML = `
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <path
+                d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+            ></path>
+            <path d="M10 21h4"></path>
+        </svg>
+    `;
+
+    button.addEventListener(
+        'click',
+        event => {
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!currentMobileMotd) {
+                return;
+            }
+
+            const existing =
+                document.querySelector(
+                    '.motd'
+                );
+
+            if (existing) {
+                existing.remove();
+                syncMobileMotdButton();
+                return;
+            }
+
+            /*
+             * Reading is separate from "Don't show again":
+             * opening the bell clears only the unread highlight,
+             * while the same message can still be reopened later.
+             */
+            markMotdRead(
+                currentMobileMotd.id
+            );
+
+            syncMobileMotdButton();
+
+            createMotd(
+                currentMobileMotd
+            );
+        }
+    );
+
+    const menuToggle =
+        document.getElementById(
+            'mobileSideMenuToggle'
+        );
+
+    if (
+        menuToggle &&
+        menuToggle.parentElement ===
+            controls
+    ) {
+        controls.insertBefore(
+            button,
+            menuToggle
+        );
+    } else {
+        controls.appendChild(
+            button
+        );
+    }
+
+    updateMotdLocalization();
+
+    return button;
+}
+
+function syncMobileMotdButton() {
+    if (!isMobileMotdUI()) {
+        return;
+    }
+
+    const button =
+        createMobileMotdButton();
+
+    if (!button) {
+        return;
+    }
+
+    const hasMotd =
+        Boolean(
+            currentMobileMotd?.id
+        );
+
+    button.hidden =
+        !hasMotd;
+
+    if (!hasMotd) {
+        button.classList.remove(
+            'has-unread'
+        );
+
+        button.setAttribute(
+            'aria-expanded',
+            'false'
+        );
+
+        return;
+    }
+
+    const unread =
+        !isMotdRead(
+            currentMobileMotd.id
+        );
+
+    button.classList.toggle(
+        'has-unread',
+        unread
+    );
+
+    button.setAttribute(
+        'aria-expanded',
+        document.querySelector(
+            '.motd'
+        )
+            ? 'true'
+            : 'false'
+    );
+}
+
+function updateMotdLocalization() {
+    const button =
+        document.getElementById(
+            'mobileMotdButton'
+        );
+
+    if (!button) {
+        return;
+    }
+
+    const label =
+        tr('motdTitle');
+
+    button.setAttribute(
+        'aria-label',
+        label
+    );
+
+    button.title =
+        label;
 }
 
 async function loadMotd() {
@@ -366,6 +640,22 @@ async function loadMotd() {
 async function initMotd() {
     const motd =
         await loadMotd();
+
+    /*
+     * Desktop keeps the existing automatic popup.
+     * Mobile only exposes the current MOTD through
+     * the notification bell in the header.
+     */
+    if (isMobileMotdUI()) {
+
+        currentMobileMotd =
+            motd;
+
+        createMobileMotdButton();
+        syncMobileMotdButton();
+
+        return;
+    }
 
     if (!motd) {
         return;

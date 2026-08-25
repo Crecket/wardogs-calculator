@@ -535,3 +535,119 @@
     display: none !important;
 }
 
+/* =========================
+   MOBILE MOTD BELL
+   ========================= */
+
+.mobile-app .mobile-motd-button {
+    position: relative;
+
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+
+    margin: 0;
+    padding: 0;
+
+    display: grid;
+    place-items: center;
+
+    flex: 0 0 40px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--button-bg);
+    color: var(--muted);
+}
+
+.mobile-app .mobile-motd-button[hidden] {
+    display: none !important;
+}
+
+.mobile-app .mobile-motd-button:hover,
+.mobile-app .mobile-motd-button:focus-visible,
+.mobile-app .mobile-motd-button[aria-expanded="true"] {
+    border-color: var(--accent-border);
+    background: var(--active-bg);
+    color: var(--accent);
+}
+
+.mobile-app .mobile-motd-button.has-unread {
+    border-color: var(--accent-border);
+
+    color: var(--accent);
+
+    background:
+        color-mix(
+            in srgb,
+            var(--active-bg) 82%,
+            var(--button-bg)
+        );
+
+    box-shadow:
+        0 0 0 2px
+        color-mix(
+            in srgb,
+            var(--accent) 10%,
+            transparent
+        );
+}
+
+.mobile-app .mobile-motd-button.has-unread::after {
+    content: "";
+
+    position: absolute;
+
+    top: 6px;
+    right: 6px;
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 999px;
+
+    background: var(--accent);
+
+    box-shadow:
+        0 0 0 2px
+        var(--header-bg);
+}
+
+/*
+ * Mobile MOTD becomes an on-demand notification panel
+ * below the header instead of appearing automatically.
+ */
+.mobile-app .motd {
+    top:
+        calc(
+            var(--mobile-header-height) +
+            env(safe-area-inset-top) +
+            8px
+        );
+
+    right: 10px;
+    bottom: auto;
+    left: auto;
+
+    width:
+        min(
+            360px,
+            calc(100vw - 20px)
+        );
+
+    max-height:
+        min(
+            68dvh,
+            calc(
+                100dvh -
+                var(--mobile-header-height) -
+                env(safe-area-inset-top) -
+                24px
+            )
+        );
+
+    z-index: 200;
+}
+
