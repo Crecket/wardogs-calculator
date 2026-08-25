@@ -779,8 +779,27 @@ function bindEvents() {
         e => {
             if (handleMapToolShortcut(e)) {
                 e.preventDefault();
+                return;
+            }
+
+            if (handleCameraKeyDown(e)) {
+                e.preventDefault();
             }
         }
+    );
+
+    window.addEventListener(
+        'keyup',
+        handleCameraKeyUp
+    );
+
+    /*
+     * Held keys would otherwise stick when the window
+     * loses focus mid-pan.
+     */
+    window.addEventListener(
+        'blur',
+        stopCameraPan
     );
 
     window.addEventListener(
