@@ -113,5 +113,8 @@
   "unlockPosition": "Entsperren",
   "lockPositionHint": "Diese Position gegen Kartenklicks und Ziehen sperren",
   "unlockPositionHint": "Diese Position wieder auf der Karte änderbar machen",
+  "forcePlacement": "Erzwingen",
+  "forcePlacementHint": "Kartenklicks setzen immer den ausgewählten Punkt statt den nächstgelegenen zu greifen",
+  "forcePlacementHintActive": "Kartenklicks setzen jetzt immer den ausgewählten Punkt; klicken, um wieder den nächstgelegenen zu greifen",
   "mil": "MIL"
 }

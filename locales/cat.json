@@ -119,5 +119,8 @@
   "unlockPosition": "UNLOCK IT",
   "lockPositionHint": "CAT-PROOF THIS POSITION AGAINST MAP ACCIDENTS",
   "unlockPositionHint": "LET THE HUMANS MOVE THIS POSITION AGAIN",
+  "forcePlacement": "FORCE IT",
+  "forcePlacementHint": "MAKE EVERY CLICK OBEY THE CHOSEN BUTTON, NO NEAREST-PAW GRABBING",
+  "forcePlacementHintActive": "EVERY CLICK NOW OBEYS THE BUTTON; CLICK TO LET THE PAW GRAB AGAIN",
   "mil": "MIL"
 }

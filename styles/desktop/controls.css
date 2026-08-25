@@ -383,3 +383,28 @@ button:disabled {
     content: "  🔒";
     font-size: 10px;
 }
+
+/* =========================
+   FORCE PLACEMENT
+   ========================= */
+
+.point-mode-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.point-mode-actions button {
+    width: auto;
+    min-height: 28px;
+    padding: 4px 9px;
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.point-mode-actions .point-force-button.active {
+    border-color: var(--accent-border);
+    background: var(--active-bg);
+    color: var(--accent);
+}

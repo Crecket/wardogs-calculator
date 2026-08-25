@@ -223,6 +223,12 @@ function bindEvents() {
         }
     );
 
+    $('forcePlacementMode')
+        ?.addEventListener(
+            'click',
+            toggleForcePlacement
+        );
+
     ['ox', 'oy'].forEach(
         id => {
 
@@ -512,6 +518,7 @@ function bindEvents() {
                 metersToWorldDistance(300);
 
             if (
+                !isForcePlacementEnabled() &&
                 Math.min(d1, d2) <
                 pointHitThreshold
             ) {
