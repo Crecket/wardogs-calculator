@@ -681,7 +681,7 @@
 
     color: #f0b24a;
 
-    font-size: 7px;
+    font-size: 10px;
     font-weight: 900;
     line-height: 1.15;
     letter-spacing: .045em;
@@ -720,7 +720,7 @@
 
     color: var(--text);
 
-    font-size: 8px;
+    font-size: 9px;
     line-height: 1.35;
 
     pointer-events: auto;
