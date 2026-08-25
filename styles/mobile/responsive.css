@@ -399,3 +399,139 @@
         min-height: 36px;
     }
 }
+
+/* =========================
+   MOBILE SPH-2 WARNING IN SOLUTION HUD
+   ========================= */
+
+.mobile-app .mobile-solution-hud
+.sph-level-warning {
+    margin: 4px 0 0;
+    padding: 4px 2px 0;
+
+    border: 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+    border-radius: 0;
+
+    background: transparent;
+    box-shadow: none;
+
+    pointer-events: auto;
+}
+
+.mobile-app .mobile-solution-hud
+.sph-level-warning-toggle {
+    width: 100%;
+    min-height: 24px;
+
+    margin: 0;
+    padding: 2px 1px;
+
+    display: grid;
+
+    grid-template-columns:
+        auto
+        minmax(0, 1fr)
+        auto;
+
+    align-items: center;
+    gap: 5px;
+
+    border: 0;
+    border-radius: 4px;
+
+    background: transparent;
+    color: #f0b24a;
+
+    font: inherit;
+    text-align: left;
+
+    cursor: pointer;
+
+    pointer-events: auto;
+}
+
+.mobile-app .mobile-solution-hud
+.sph-level-warning-toggle:hover,
+.mobile-app .mobile-solution-hud
+.sph-level-warning-toggle:focus-visible,
+.mobile-app .mobile-solution-hud
+.sph-level-warning-toggle:active {
+    border: 0;
+
+    background:
+        color-mix(
+            in srgb,
+            #f0b24a 8%,
+            transparent
+        );
+
+    color: #f0b24a;
+}
+
+.mobile-app .mobile-solution-hud
+.sph-level-warning-icon {
+    font-size: 11px;
+}
+
+.mobile-app .mobile-solution-hud
+.sph-level-warning-title-text {
+    min-width: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #f0b24a;
+
+    font-size: 7px;
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+}
+
+.mobile-app .mobile-solution-hud
+.sph-level-warning-chevron {
+    display: block;
+
+    color: #f0b24a;
+
+    font-size: 10px;
+    line-height: 1;
+
+    transition:
+        transform .16s ease;
+}
+
+.mobile-app .mobile-solution-hud
+.sph-level-warning.expanded
+.sph-level-warning-chevron {
+    transform: rotate(180deg);
+}
+
+.mobile-app .mobile-solution-hud
+.sph-level-warning-body {
+    max-height: 118px;
+
+    margin: 3px 1px 1px;
+    padding: 4px 3px 2px;
+
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+
+    color: var(--text);
+
+    font-size: 8px;
+    line-height: 1.35;
+
+    pointer-events: auto;
+}
+
+.mobile-app .mobile-solution-hud
+.sph-level-warning-body[hidden] {
+    display: none !important;
+}
+
