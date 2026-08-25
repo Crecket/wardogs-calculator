@@ -33,7 +33,12 @@ export const SEO_PAGE_CONTENT = {
                 {
                     id: 'bakurani-interactive-map',
                     heading: 'Bakurani Interactive Map',
-                    body: 'The Bakurani interactive map is calibrated to WARDOGS coordinates so artillery positions, targets, saved targets, the ruler, drawings and tactical markers share the same map space. Ozeti is also available. Beyond firing solutions, the workspace can be used as a WARDOGS map for coordinate and tactical planning.'
+                    body: 'The Bakurani interactive map is calibrated to WARDOGS coordinates so artillery positions, targets, saved targets, the ruler, drawings and tactical markers share the same map space. Terrain3D elevation context is available where supported, while normal firing tables remain authoritative for MIL.'
+                },
+                {
+                    id: 'ozeti-interactive-map',
+                    heading: 'Ozeti Interactive Map',
+                    body: 'The Ozeti interactive map uses calibrated WARDOGS coordinates and the corrected playable-area alignment for artillery and tactical planning. Artillery positions, targets, saved targets, the ruler, drawings and markers all use the same coordinate space. Terrain3D elevation and height-difference context is available on supported Ozeti terrain, but it does not automatically modify the firing-table MIL solution.'
                 },
                 {
                     id: 'how-to-use',
@@ -53,7 +58,7 @@ export const SEO_PAGE_CONTENT = {
             },
             {
                 question: 'Which WARDOGS maps are available?',
-                answer: 'The calculator includes interactive maps for Bakurani and Ozeti, plus a custom-map mode. Bakurani and Ozeti use calibrated game-coordinate mapping.'
+                answer: 'The calculator includes interactive maps for Bakurani and Ozeti, plus a custom-map mode. Both maps use calibrated game-coordinate mapping, and Terrain3D elevation context is available where the supported terrain data covers the selected positions.'
             },
             {
                 question: 'Does Terrain3D automatically correct SPH-2 MIL for terrain or vehicle tilt?',
