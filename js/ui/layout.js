@@ -8,6 +8,9 @@ const SIDEBAR_COLLAPSED_KEY =
 let mapResizeObserver =
     null;
 
+let mobileSideMenuOpen =
+    false;
+
 function isSidebarCollapsed() {
 
     return document
@@ -165,6 +168,425 @@ function toggleSidebar() {
     );
 }
 
+/* =========================
+   MOBILE RIGHT-SIDE MENU
+   ========================= */
+
+function setMobileSideMenuOpen(
+    open
+) {
+
+    const menu =
+        $('mobileSideMenu');
+
+    const toggle =
+        $('mobileSideMenuToggle');
+
+    const backdrop =
+        $('mobileSideMenuBackdrop');
+
+    if (
+        !menu ||
+        !toggle ||
+        !backdrop
+    ) {
+        return;
+    }
+
+    mobileSideMenuOpen =
+        Boolean(open);
+
+    document.body.classList.toggle(
+        'mobile-side-menu-open',
+        mobileSideMenuOpen
+    );
+
+    toggle.classList.toggle(
+        'active',
+        mobileSideMenuOpen
+    );
+
+    toggle.setAttribute(
+        'aria-expanded',
+        mobileSideMenuOpen
+            ? 'true'
+            : 'false'
+    );
+
+    menu.setAttribute(
+        'aria-hidden',
+        mobileSideMenuOpen
+            ? 'false'
+            : 'true'
+    );
+
+    backdrop.setAttribute(
+        'aria-hidden',
+        mobileSideMenuOpen
+            ? 'false'
+            : 'true'
+    );
+
+    if (mobileSideMenuOpen) {
+
+        /*
+         * Keep the calculator bottom sheet closed
+         * while the global mobile menu is open.
+         */
+        if (
+            typeof setMobileSheetOpen ===
+            'function'
+        ) {
+            setMobileSheetOpen(
+                false
+            );
+        }
+
+        if (
+            typeof closeLanguagePicker ===
+            'function'
+        ) {
+            closeLanguagePicker();
+        }
+    }
+}
+
+function createMobileSideMenuToggle() {
+
+    const button =
+        document.createElement(
+            'button'
+        );
+
+    button.id =
+        'mobileSideMenuToggle';
+
+    button.type =
+        'button';
+
+    button.className =
+        'mobile-side-menu-toggle';
+
+    button.title =
+        'Menu';
+
+    button.setAttribute(
+        'aria-label',
+        'Menu'
+    );
+
+    button.setAttribute(
+        'aria-controls',
+        'mobileSideMenu'
+    );
+
+    button.setAttribute(
+        'aria-expanded',
+        'false'
+    );
+
+    button.innerHTML = `
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+        >
+            <path d="M5 7h14"></path>
+            <path d="M5 12h14"></path>
+            <path d="M5 17h14"></path>
+        </svg>
+    `;
+
+    return button;
+}
+
+function initMobileSideMenu() {
+
+    const mobileApp =
+        document.body.classList.contains(
+            'mobile-app'
+        );
+
+    if (!mobileApp) {
+        return;
+    }
+
+    if (
+        $('mobileSideMenu')
+    ) {
+        return;
+    }
+
+    const headerControls =
+        document.querySelector(
+            '.mobile-header-controls'
+        );
+
+    if (!headerControls) {
+        return;
+    }
+
+    const themeToggle =
+        $('themeToggle');
+
+    const languagePicker =
+        $('languagePicker');
+
+    const languageSelect =
+        $('language');
+
+    const desktopLink =
+        $('mobileDesktopVersion');
+
+    const partnerLink =
+        document.querySelector(
+            '.mobile-partner-link'
+        );
+
+    const toggle =
+        createMobileSideMenuToggle();
+
+    const backdrop =
+        document.createElement(
+            'button'
+        );
+
+    backdrop.id =
+        'mobileSideMenuBackdrop';
+
+    backdrop.type =
+        'button';
+
+    backdrop.className =
+        'mobile-side-menu-backdrop';
+
+    backdrop.setAttribute(
+        'aria-label',
+        'Close menu'
+    );
+
+    backdrop.setAttribute(
+        'aria-hidden',
+        'true'
+    );
+
+    const menu =
+        document.createElement(
+            'aside'
+        );
+
+    menu.id =
+        'mobileSideMenu';
+
+    menu.className =
+        'mobile-side-menu';
+
+    menu.setAttribute(
+        'aria-label',
+        'Menu'
+    );
+
+    menu.setAttribute(
+        'aria-hidden',
+        'true'
+    );
+
+    const menuHeader =
+        document.createElement(
+            'div'
+        );
+
+    menuHeader.className =
+        'mobile-side-menu-header';
+
+    const closeButton =
+        document.createElement(
+            'button'
+        );
+
+    closeButton.type =
+        'button';
+
+    closeButton.className =
+        'mobile-side-menu-close';
+
+    closeButton.textContent =
+        '×';
+
+    closeButton.title =
+        'Close menu';
+
+    closeButton.setAttribute(
+        'aria-label',
+        'Close menu'
+    );
+
+    menuHeader.appendChild(
+        closeButton
+    );
+
+    const settings =
+        document.createElement(
+            'div'
+        );
+
+    settings.className =
+        'mobile-side-menu-settings';
+
+    if (themeToggle) {
+
+        settings.appendChild(
+            themeToggle
+        );
+    }
+
+    if (languagePicker) {
+
+        settings.appendChild(
+            languagePicker
+        );
+    }
+
+    /*
+     * buildLanguagePicker() keeps the native select
+     * as a hidden accessible fallback. Move it together
+     * with the custom picker so all language controls live
+     * inside the new menu.
+     */
+    if (languageSelect) {
+
+        settings.appendChild(
+            languageSelect
+        );
+    }
+
+    const links =
+        document.createElement(
+            'div'
+        );
+
+    links.className =
+        'mobile-side-menu-links';
+
+    if (desktopLink) {
+
+        links.appendChild(
+            desktopLink
+        );
+    }
+
+    if (partnerLink) {
+
+        partnerLink.dataset
+            .umamiEventPlacement =
+            'mobile-menu';
+
+        links.appendChild(
+            partnerLink
+        );
+    }
+
+    menu.append(
+        menuHeader,
+        settings,
+        links
+    );
+
+    /*
+     * Moving the existing controls keeps all listeners,
+     * IDs, localization logic and analytics intact.
+     */
+    headerControls.appendChild(
+        toggle
+    );
+
+    document.body.append(
+        backdrop,
+        menu
+    );
+
+    toggle.addEventListener(
+        'click',
+        event => {
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            setMobileSideMenuOpen(
+                !mobileSideMenuOpen
+            );
+        }
+    );
+
+    closeButton.addEventListener(
+        'click',
+        () => {
+
+            setMobileSideMenuOpen(
+                false
+            );
+        }
+    );
+
+    backdrop.addEventListener(
+        'click',
+        () => {
+
+            setMobileSideMenuOpen(
+                false
+            );
+        }
+    );
+
+    desktopLink
+        ?.addEventListener(
+            'click',
+            () => {
+
+                setMobileSideMenuOpen(
+                    false
+                );
+            }
+        );
+
+    partnerLink
+        ?.addEventListener(
+            'click',
+            () => {
+
+                setMobileSideMenuOpen(
+                    false
+                );
+            }
+        );
+
+    document.addEventListener(
+        'keydown',
+        event => {
+
+            if (
+                event.key ===
+                    'Escape' &&
+                mobileSideMenuOpen
+            ) {
+
+                setMobileSideMenuOpen(
+                    false
+                );
+            }
+        }
+    );
+
+    setMobileSideMenuOpen(
+        false
+    );
+}
+
 function updateLayoutLocalization() {
 
     updateSidebarToggle();
@@ -196,6 +618,8 @@ function initLayout() {
             loadSidebarState(),
             false
         );
+    } else {
+        initMobileSideMenu();
     }
 
     const map =
