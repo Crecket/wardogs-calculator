@@ -38,6 +38,17 @@ function inputs() {
     }
 
     /*
+     * And the same for remembering the two points across a reload — one
+     * throttled write here rather than a hook at each of those six sites.
+     */
+    if (
+        typeof persistMapPoints ===
+        'function'
+    ) {
+        persistMapPoints();
+    }
+
+    /*
      * Same reasoning for the saved-target highlight: it is derived from
      * where the target sits, so every writer of S.target refreshes it by
      * arriving here.
