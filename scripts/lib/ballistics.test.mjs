@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 
 import {
     GRAVITY,
+    maxRangeMeters,
     milCorrection,
     milFromTan,
     missMeters,
@@ -147,4 +148,51 @@ test('fitArc reports the branch it was given', () => {
     const rows = [[1181, 20], [1232, 30], [1283, 40]];
 
     assert.equal(fitArc(rows, 'low').branch, 'low');
+});
+
+test('maxRangeMeters on the level is v squared over g', () => {
+    close(
+        maxRangeMeters(SPG_HIGH.muzzleVelocity, 0),
+        SPG_HIGH.muzzleVelocity ** 2 / GRAVITY,
+        1e-9
+    );
+});
+
+test('maxRangeMeters lengthens downhill and shortens uphill', () => {
+    const level = maxRangeMeters(SPG_HIGH.muzzleVelocity, 0);
+
+    assert.ok(maxRangeMeters(SPG_HIGH.muzzleVelocity, -200) > level);
+    assert.ok(maxRangeMeters(SPG_HIGH.muzzleVelocity, 200) < level);
+});
+
+/*
+ * The whole design rests on these being the same boundary: solveTan returns
+ * null exactly where maxRangeMeters says the range ran out.
+ */
+test('maxRangeMeters is the boundary solveTan refuses to cross', () => {
+    for (const deltaZ of [-400, -100, 0, 100, 300]) {
+        const limit = maxRangeMeters(SPG_HIGH.muzzleVelocity, deltaZ);
+
+        assert.ok(
+            solveTan(SPG_HIGH.muzzleVelocity, limit * 0.999, deltaZ, 'high') !== null,
+            `inside the limit at deltaZ ${deltaZ} should solve`
+        );
+
+        assert.equal(
+            solveTan(SPG_HIGH.muzzleVelocity, limit * 1.001, deltaZ, 'high'),
+            null,
+            `outside the limit at deltaZ ${deltaZ} should not solve`
+        );
+    }
+});
+
+test('maxRangeMeters returns null above the ballistic ceiling', () => {
+    const ceiling = SPG_HIGH.muzzleVelocity ** 2 / (2 * GRAVITY);
+
+    assert.equal(maxRangeMeters(SPG_HIGH.muzzleVelocity, ceiling + 1), null);
+});
+
+test('maxRangeMeters rejects unusable input', () => {
+    assert.equal(maxRangeMeters(0, 0), null);
+    assert.equal(maxRangeMeters(160, NaN), null);
 });

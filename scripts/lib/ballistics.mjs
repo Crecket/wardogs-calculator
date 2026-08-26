@@ -62,6 +62,38 @@ export function solveTan(
         : (rangeMeters - root) / (2 * k);
 }
 
+/*
+ * Furthest horizontal distance reachable at any launch angle, for a target
+ * deltaZMeters above the muzzle.
+ *
+ * This is solveTan's discriminant solved for R. Setting
+ * R^2 - 4k(dZ + k) = 0 with k = g R^2 / 2 v^2 gives
+ * R = (v/g) * sqrt(v^2 - 2 g dZ), so the two agree by construction: inside
+ * this distance solveTan finds an angle, outside it returns null.
+ *
+ * Null means no angle reaches that height at all — the target sits above the
+ * ballistic ceiling v^2 / 2g.
+ */
+export function maxRangeMeters(muzzleVelocity, deltaZMeters) {
+    if (
+        !Number.isFinite(muzzleVelocity) ||
+        muzzleVelocity <= 0 ||
+        !Number.isFinite(deltaZMeters)
+    ) {
+        return null;
+    }
+
+    const inner =
+        muzzleVelocity * muzzleVelocity -
+        2 * GRAVITY * deltaZMeters;
+
+    if (inner <= 0) {
+        return null;
+    }
+
+    return muzzleVelocity * Math.sqrt(inner) / GRAVITY;
+}
+
 export function milFromTan(arcModel, tanTheta) {
     return (
         Math.atan(tanTheta) * DEG - arcModel.angleOffsetDeg
