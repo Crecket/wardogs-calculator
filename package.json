@@ -7,6 +7,6 @@
     "dev:sync": "npm --prefix sync run dev",
     "sync-tiles": "node scripts/sync-tiles.mjs",
     "build-contours": "node scripts/build-contours.mjs",
-    "test:scripts": "node --test scripts/lib/sigv4.test.mjs scripts/lib/dev-env.test.mjs scripts/lib/contours.test.mjs"
+    "test:scripts": "node --test scripts/lib/sigv4.test.mjs scripts/lib/dev-env.test.mjs scripts/lib/contours.test.mjs scripts/lib/ballistics.test.mjs"
   }
 }

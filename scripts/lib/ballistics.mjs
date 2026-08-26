@@ -1,0 +1,135 @@
+/*
+ * A vacuum trajectory model for the shipped firing tables.
+ *
+ * The elevation angle is affine in mil, theta = a + b * mil, and range
+ * follows R = v^2 sin(2 theta) / g. Both are approximations: fitting the
+ * SPG's two arcs jointly is four times worse than fitting them apart, which
+ * is the vacuum model absorbing real drag differently on each branch. See
+ * the design doc section 4.
+ *
+ * Nothing here is used to produce a MIL directly. Callers take the
+ * DIFFERENCE between two points on the same model curve, so most of that
+ * absolute error cancels and flat ground is corrected by exactly zero.
+ */
+
+export const GRAVITY = 9.81;
+
+const DEG = 180 / Math.PI;
+
+export function rangeForTan(muzzleVelocity, tanTheta) {
+    const sin2Theta = 2 * tanTheta / (1 + tanTheta * tanTheta);
+
+    return muzzleVelocity * muzzleVelocity * sin2Theta / GRAVITY;
+}
+
+/*
+ * Launch angle whose trajectory passes through (rangeMeters, deltaZMeters).
+ *
+ * With t = tan(theta) and k = g R^2 / 2 v^2 the trajectory equation becomes
+ * k t^2 - R t + (dZ + k) = 0. The high branch takes the larger root.
+ */
+export function solveTan(
+    muzzleVelocity,
+    rangeMeters,
+    deltaZMeters,
+    branch
+) {
+    if (
+        !Number.isFinite(muzzleVelocity) ||
+        !Number.isFinite(rangeMeters) ||
+        !Number.isFinite(deltaZMeters) ||
+        rangeMeters <= 0
+    ) {
+        return null;
+    }
+
+    const k =
+        GRAVITY * rangeMeters * rangeMeters /
+        (2 * muzzleVelocity * muzzleVelocity);
+
+    const discriminant =
+        rangeMeters * rangeMeters -
+        4 * k * (deltaZMeters + k);
+
+    if (discriminant < 0) {
+        return null;
+    }
+
+    const root = Math.sqrt(discriminant);
+
+    return branch === 'high'
+        ? (rangeMeters + root) / (2 * k)
+        : (rangeMeters - root) / (2 * k);
+}
+
+export function milFromTan(arcModel, tanTheta) {
+    return (
+        Math.atan(tanTheta) * DEG - arcModel.angleOffsetDeg
+    ) / arcModel.anglePerMilDeg;
+}
+
+/*
+ * Mil to ADD to the flat-table value. Zero on flat ground by construction.
+ */
+export function milCorrection(arcModel, rangeMeters, deltaZMeters) {
+    const aimed = solveTan(
+        arcModel.muzzleVelocity,
+        rangeMeters,
+        deltaZMeters,
+        arcModel.branch
+    );
+
+    const flat = solveTan(
+        arcModel.muzzleVelocity,
+        rangeMeters,
+        0,
+        arcModel.branch
+    );
+
+    if (aimed === null || flat === null) {
+        return null;
+    }
+
+    return milFromTan(arcModel, aimed) - milFromTan(arcModel, flat);
+}
+
+/*
+ * How far short (positive) or long (negative) the UNCORRECTED shot lands:
+ * where the flat-aimed trajectory descends through altitude deltaZMeters.
+ * This is what the suppression threshold gates on, because metres of miss
+ * is the quantity a player can act on and mil-per-metre is not.
+ */
+export function missMeters(arcModel, rangeMeters, deltaZMeters) {
+    const tanTheta = solveTan(
+        arcModel.muzzleVelocity,
+        rangeMeters,
+        0,
+        arcModel.branch
+    );
+
+    if (tanTheta === null) {
+        return null;
+    }
+
+    const v = arcModel.muzzleVelocity;
+    const cosSquared = 1 / (1 + tanTheta * tanTheta);
+    const a = GRAVITY / (2 * v * v * cosSquared);
+    const discriminant = tanTheta * tanTheta - 4 * a * deltaZMeters;
+
+    if (discriminant < 0) {
+        return null;
+    }
+
+    const root = Math.sqrt(discriminant);
+    const crossings = [
+        (tanTheta - root) / (2 * a),
+        (tanTheta + root) / (2 * a)
+    ].filter(x => x > 0);
+
+    if (!crossings.length) {
+        return null;
+    }
+
+    /* The descending crossing is the far one. */
+    return rangeMeters - Math.max(...crossings);
+}
