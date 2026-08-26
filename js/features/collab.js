@@ -559,11 +559,11 @@ function collabOnMarkerAdded(marker) {
 }
 
 /*
- * Rotating an existing marker rides on `marker.add`, which replaces by id.
- * The inverse is the marker as it stood before the turn — not a removal,
+ * Editing an existing marker rides on `marker.add`, which replaces by id.
+ * The inverse is the marker as it stood before the edit — not a removal,
  * which is what undoing a freshly placed marker means.
  */
-function collabOnMarkerRotated(marker, previous) {
+function collabOnMarkerEdited(marker, previous) {
     if (!marker || !previous) {
         return;
     }
@@ -572,6 +572,14 @@ function collabOnMarkerRotated(marker, previous) {
         { op: 'marker.add', marker },
         { op: 'marker.add', marker: previous }
     );
+}
+
+function collabOnMarkerRotated(marker, previous) {
+    collabOnMarkerEdited(marker, previous);
+}
+
+function collabOnMarkerMoved(marker, previous) {
+    collabOnMarkerEdited(marker, previous);
 }
 
 function collabOnMarkerRemoved(marker) {

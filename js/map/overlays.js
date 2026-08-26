@@ -333,13 +333,6 @@ function drawRadiusSquare(
     ctx.restore();
 }
 
-function formatRingRadius(radiusMeters) {
-
-    return radiusMeters < 1000
-        ? `${Math.round(radiusMeters)} m`
-        : `${(radiusMeters / 1000).toFixed(2)} km`;
-}
-
 /* =========================
    MAIN ZONE
    ========================= */
