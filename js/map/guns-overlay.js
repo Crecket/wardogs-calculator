@@ -169,15 +169,15 @@ function drawGunRangeRings(gun, at) {
         traceRangeRing(at, ring.radii, v.scale, null);
         traceRangeRing(at, ring.radii, v.scale, ring.maxRangeMeters);
 
-        ctx.fillStyle = 'rgba(215,164,82,.07)';
+        ctx.fillStyle = 'rgba(255,210,127,.20)';
         ctx.fill('evenodd');
 
         ctx.beginPath();
         traceRangeRing(at, ring.radii, v.scale, null);
 
-        ctx.strokeStyle = 'rgba(215,164,82,.8)';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = '#ffd27f';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([12, 7]);
         ctx.stroke();
         ctx.setLineDash([]);
     }
