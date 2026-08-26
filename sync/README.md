@@ -40,7 +40,6 @@ the free plan for personal use:
   storage imposes.
 
 ## Deploying
-
 ```sh
 cd sync
 npm install
