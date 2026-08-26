@@ -71,6 +71,14 @@ const COLLAB = {
     leaving: false,
     pendingPush: false,
 
+    /*
+     * Set once a snapshot has arrived. Distinguishes "this room rejected
+     * us" from "we lost a room we were in", which need opposite handling.
+     */
+    everConnected: false,
+
+    throttleTimer: null,
+
     statusKey: null,
     statusIsError: false,
     copied: false
@@ -867,11 +875,14 @@ function collabConnect(code, includeMine = false) {
         }
 
         /*
-         * 1008 and 1011 are the server refusing this room outright — a
-         * full room, an expired room. Retrying those just burns attempts
-         * against an answer that will not change.
+         * A close before any snapshot means the join itself was refused:
+         * a bad code, an expired room, a full room. The server answers
+         * those by declining the upgrade, which reaches the browser as a
+         * generic 1006 — indistinguishable from a network blip by code
+         * alone, but not by whether we ever got in. Retrying for 75
+         * seconds before admitting a typo is the wrong answer, so fail fast.
          */
-        if (event.code === 1008 || event.code === 1011) {
+        if (!COLLAB.everConnected) {
             collabAbandon('collabErrorJoin');
             return;
         }
@@ -890,6 +901,7 @@ function collabHandleMessage(message) {
             COLLAB.clientId = message.you;
             COLLAB.peers = message.peers || 1;
             COLLAB.reconnectAttempt = 0;
+            COLLAB.everConnected = true;
 
             collabApplySnapshot(message.doc);
 
@@ -924,7 +936,7 @@ function collabHandleMessage(message) {
             console.warn('Collab op rejected:', message.code);
 
             if (message.code === 'rate-limited') {
-                collabSetStatus('online', 'collabStatusThrottled', true);
+                collabShowThrottled();
             }
             break;
 
@@ -935,6 +947,27 @@ function collabHandleMessage(message) {
         default:
             break;
     }
+}
+
+/*
+ * A burst of rejections would otherwise re-render the panel per message
+ * and leave the warning up forever. Show it once, clear it once things
+ * are moving again.
+ */
+function collabShowThrottled() {
+    if (COLLAB.throttleTimer) {
+        return;
+    }
+
+    collabSetStatus('online', 'collabStatusThrottled', true);
+
+    COLLAB.throttleTimer = setTimeout(() => {
+        COLLAB.throttleTimer = null;
+
+        if (collabIsOnline()) {
+            collabSetStatus('online', 'collabStatusOnline');
+        }
+    }, 3000);
 }
 
 /*
@@ -1023,6 +1056,12 @@ function collabResetSession() {
         COLLAB.sharedTimer = null;
     }
 
+    if (COLLAB.throttleTimer) {
+        clearTimeout(COLLAB.throttleTimer);
+        COLLAB.throttleTimer = null;
+    }
+
+    COLLAB.everConnected = false;
     COLLAB.roomCode = null;
     COLLAB.clientId = null;
     COLLAB.peers = 0;

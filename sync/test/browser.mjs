@@ -381,8 +381,35 @@ check('second leave restores solo map again',
         MAP_TOOL_STATE.markers.length === 1 &&
         MAP_TOOL_STATE.markers[0].id === 'solo-marker'));
 
+console.log('\n== joining a nonexistent room fails fast ==');
+const startedAt = Date.now();
+await openCollab(A);
+await A.fill('#collabCodeInput', 'zzzzzzzzzzzz');
+await A.click('#collabPopover .collab-join');
+await A.waitForFunction(() => COLLAB.status === 'error', null, { timeout: 20000 });
+const elapsed = Date.now() - startedAt;
+
+check('reports the failure rather than retrying', elapsed < 15000, `${elapsed}ms`);
+check('solo map intact after a failed join',
+    await A.evaluate(() => MAP_TOOL_STATE.markers.some(m => m.id === 'solo-marker')));
+check('no room left in the url', await A.evaluate(() => location.hash === ''));
+
+console.log('\n== a malformed code is rejected without a request ==');
+await openCollab(A);
+await A.fill('#collabCodeInput', 'nope!');
+await A.click('#collabPopover .collab-join');
+check('rejected locally',
+    await A.evaluate(() => COLLAB.status === 'error' && COLLAB.socket === null));
+
 console.log('\n== console errors ==');
-const real = errors.filter(e => !/favicon|umami|net::ERR_/i.test(e));
+/*
+ * The bad-code test above deliberately provokes a 404 handshake, and the
+ * browser logs that itself — it is not suppressible from page script.
+ * Scoped to that one code so a real connection failure still fails here.
+ */
+const real = errors.filter(e =>
+    !/favicon|umami|net::ERR_/i.test(e) &&
+    !/WebSocket connection to .*zzzzzzzzzzzz/i.test(e));
 check('no page errors', real.length === 0, real.slice(0, 6).join(' | '));
 
 await browser.close();
