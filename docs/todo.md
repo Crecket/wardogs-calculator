@@ -17,67 +17,31 @@ Each entry says what the current value is, where it lives, and what evidence
 
 Known to be too big. For scale, a 300 m square is 30% of the main zone's full
 width, and spans 135% of the gap between the two closest towers on Bakurani
-(223 m apart) — one FOB would cover the ground between two objectives.
+(218 m apart) — one FOB would cover the ground between two objectives.
 
 Nothing in the repo constrains this the way tower positions constrain the main
-zone, so it cannot be narrowed by inference. It needs an in-game measurement.
-
-**Also confirm the units.** `radius` currently means *centre to edge*, so 150
-draws a 300 m square. If the in-game figure is quoted as a full side length
-instead, either halve it when entering it or change the meaning in
-`getRingConfig` / `drawRadiusSquare` and update the comment in
-`js/core/config.js`.
-
-## Main zone centre and radius
-
-**Current:** `mainZone: { x, y, radius: 500 }` in `maps/bakurani.json` and
-`maps/ozeti.json`
-**Renders as:** a 1 km green circle
-**Evidence:** inferred from tower positions — reasonable, but not measured.
-
-| Map | Centre | Basis |
-|---|---|---|
-| Bakurani | `8015, 7091` | centroid of its 5 towers |
-| Ozeti | `10032, 6335` | centroid of its 4 towers |
-
-The radius clears the tower spread on both maps (399 m on Bakurani, 455 m on
-Ozeti), so every tower falls inside the circle with margin.
-
-Two things support the centre being roughly right: the tower centroid sits
-within 400 m of each map's geometric middle, and the three faction bases are
-near-equidistant from it (3860 / 4060 / 3910 m on Bakurani), which is what a
-deliberately symmetric contested area looks like.
-
-That is circumstantial. If the real scoring area sits somewhere else, or is not
-circular, it is two numbers per map to correct. A map with no `mainZone` block
-falls back to the middle of its bounds at the `config/app.json` radius.
+zone, so it cannot be narrowed by inference, and no third-party map publishes
+it either — MetaForge has no FOB layer on any Wardogs map. It needs an in-game
+measurement.
 
 ## Ozeti Valkyra marker is in the wrong place
 
 **Current:** `valkyra` at `11875, 7093` in `maps/ozeti.json`
-**Problem:** that is byte-identical to Bakurani's `valkyra` coordinate — it
-looks copy-pasted and never moved.
+**Problem:** byte-identical to Bakurani's `valkyra` coordinate — copy-pasted
+and never moved. Confirmed: that coordinate is Bakurani's real Valkyra spawn
+(18 m from the position MetaForge publishes), so it is the Ozeti copy that is
+wrong. The label currently renders ~2 km from the Ozeti Valkyra base.
 
-Two independent checks agree it is wrong:
+The fix needs the true position, and it has to come from the game — MetaForge
+publishes no facilities for Ozeti at all (`facilities: []`, `towers: []`), only
+zone polygons. Its own vendor cluster sits at ~`13803, 6733`; on Bakurani the
+marker sits ~49 m from its vendors, so somewhere near that cluster is the
+expectation, but interpolating it is not good enough.
 
-- Its own vendor cluster on Ozeti sits at ~`13803, 6733`, about **1960 m
-  away**. On Bakurani the same marker sits **49 m** from its vendors.
-- Faction bases sit 3.6–4.0 km from the map centre on both maps (Ozeti's
-  vendor clusters measure 3792 / 4032 / 3641 m). The shipped `valkyra` marker
-  measures **1993 m** — the only outlier on either map.
+## `fob` and `tank` marker icons are drawn approximations
 
-This is a live bug in the map data regardless of any circle drawn on it: the
-Valkyra label currently renders ~2 km from the Valkyra base.
-
-The fix needs the true position. Placing it next to its vendor cluster (as on
-Bakurani, where marker and vendors are ~49 m apart) would be consistent with
-the other bases, but the exact coordinate should be read off the game rather
-than interpolated.
-
-## Marker icons are drawn approximations, not game art
-
-**Current:** `fob`, `tank`, `artillery`, `spawn_vehicle` in `assets/map-markers/`
-(editable sources in `assets/map-markers/src/*.svg`)
+**Current:** `fob`, `tank` in `assets/map-markers/` (editable sources in
+`assets/map-markers/src/*.svg`)
 **Renders as:** flat white 32 × 32 glyphs in the marker picker and on the map
 **Evidence:** none — these were drawn by hand, not traced from the game.
 
@@ -87,18 +51,13 @@ later; all art lives inside signed IoStore paks
 (`Wardogs/Content/Paks/pakchunk0-WindowsClient.*`) that are no longer on disk.
 Early Access on 2026-09-10 restores them.
 
-**The style is also unsettled.** The icons the maps actually use — the ones
-added in `737cd73d` — share a plate treatment: a full-bleed 32 × 32 diamond,
-`#000000` at alpha 202/255, roughly 2 px rounded corners, with a pure white
-opaque glyph in a centred ~15 × 10 box. The four drawn icons instead use the
-plain white-glyph style of the class icons (`assault`, `medic`, …), which are
-menu art and appear on no map. Whether tactical markers wear the plate in-game
-is unknown. Two consequences if they should: they would match the real POIs,
-and the plate would carry its own background, which fixes white-on-transparent
-glyphs washing out on the light theme.
+Neither has a map glyph anywhere reachable today. The only art under those
+names (`t_ui_icon_utility_fob_textured_512x512_temp`,
+`t_ui_icon_vehicle_hvy_tank_textured`) is 512 × 512 rendered inventory art, not
+a marker. Both stay hand-drawn until Early Access.
 
-Replacing an icon is a file swap — `maps/assets.json` already registers all
-four and `labelKey` already supplies the picker label, so no code changes.
+Replacing an icon is a file swap — `maps/assets.json` already registers them
+and `labelKey` already supplies the picker label, so no code changes.
 
 ## `spawn_deploy` has no artwork of its own
 
@@ -121,6 +80,36 @@ the file.
 
 ---
 
+## Known, not yet modelled
+
+Not unverified — measured and understood, but the app does not represent it.
+
+**The main zone moves between matches.** Each map ships several named control
+zones and the match picks one; we draw the Default variant and nothing else.
+
+| Map | Variant | Centre | Offset from Default |
+|---|---|---|---|
+| Bakurani | Default | `7991, 7183` | — |
+| Bakurani | Farmland | `8137, 6938` | 285 m |
+| Bakurani | Lumberyard | `8249, 7182` | 258 m |
+| Ozeti | Default | `10002, 6357` | — |
+| Ozeti | Farmland | `9471, 6359` | 531 m |
+| Ozeti | Church | `10163, 6326` | 164 m |
+| Ozeti | River | `9774, 6244` | 254 m |
+
+On Ozeti the Farmland zone sits 531 m from Default — about one full radius — so
+on that rotation the circle we draw barely overlaps the real one. Supporting
+all variants means a per-map list plus a picker: a feature, not a data fix.
+
+**Real map art is available for two markers we draw by hand.** The game's own
+marker textures are mirrored at
+`https://static.metaforge.app/wardogs/icons/<textureName>.webp`:
+`t_ui_maptracker_spawnvehicle` fits our `spawn_vehicle`, `t_ui_mortar_map_icon`
+fits our `artillery`. Pending a downscale and file swap. (`t_ui_talon_map_icon`
+and `t_ui_phalanx_map_icon` exist too, for markers we do not have yet.)
+
+---
+
 ## Not on this list
 
 Values that are already grounded and need no verification:
@@ -128,3 +117,9 @@ Values that are already grounded and need no verification:
 - Weapon ranges and ballistics — `data/weapons.json`, `data/ballistics/`
 - Map bounds and `coordinateMetersPerUnit` — per-map in `maps/*.json`
 - Preset marker positions other than Ozeti's `valkyra`
+- Main zone centre and radius — Bakurani `7991, 7183` r500, Ozeti
+  `10002, 6357` r550, from the game's own `controlZones` / `controlZoneRadius`
+- `map.rings.fob.radius` semantics — the in-game quantity is a radius, so
+  centre-to-edge is the correct reading; only the number is unknown
+- Marker plate treatment — genuine map textures carry no diamond plate, so the
+  plate on the `737cd73d` POI icons is not a universal style to match
