@@ -589,7 +589,7 @@ function setMapTool(tool) {
 }
 
 function closeMapToolMenus(except = null) {
-    ['pencilPalette', 'markerPicker', 'coordinateSearchPopover', 'mapLayersPopover', 'mapDataTransferPopover'].forEach(
+    ['pencilPalette', 'markerPicker', 'coordinateSearchPopover', 'mapLayersPopover', 'mapDataTransferPopover', 'collabPopover'].forEach(
         id => {
             if (id === except) {
                 return;
@@ -738,6 +738,22 @@ function updateMapToolsUI() {
                 active =
                     isMapToolMenuOpen(
                         'mapDataTransferPopover'
+                    );
+            }
+
+            /*
+             * The collab button also stays lit whenever a session is
+             * live, so the toolbar shows at a glance that edits are
+             * going to other people.
+             */
+            if (tool === 'collab') {
+                active =
+                    isMapToolMenuOpen(
+                        'collabPopover'
+                    ) ||
+                    (
+                        typeof collabInSession === 'function' &&
+                        collabInSession()
                     );
             }
 
@@ -1430,6 +1446,7 @@ function updateMapToolsLocalization() {
     const searchButton = $('mapToolCoordinateSearch');
     const layersButton = $('mapToolLayers');
     const dataTransferButton = $('mapToolDataTransfer');
+    const collabButton = $('mapToolCollab');
     const fullscreenButton = $('mapToolFullscreen');
     const mobileToolsToggle = $('mobileMapToolsToggle');
 
@@ -1440,6 +1457,7 @@ function updateMapToolsLocalization() {
     setToolButtonLabel(searchButton, 'mapToolCoordinateSearch', 'coordinateSearch');
     setToolButtonLabel(layersButton, 'mapToolLayers', 'layers');
     setToolButtonLabel(dataTransferButton, 'mapToolDataTransfer');
+    setToolButtonLabel(collabButton, 'collabTitle');
     setToolButtonLabel(mobileToolsToggle, 'mapToolsToggle');
 
     if (fullscreenButton) {
@@ -1450,6 +1468,10 @@ function updateMapToolsLocalization() {
     buildMarkerPicker();
     buildMapLayers();
     buildMapDataTransfer();
+
+    if (typeof collabRender === 'function') {
+        collabRender();
+    }
 
     const goButton = $('coordinateSearchGo');
     if (goButton) goButton.textContent = tr('mapToolSearchGo');
@@ -1477,6 +1499,8 @@ function initMapTools() {
         $('mapToolLayers');
     const dataTransferButton =
         $('mapToolDataTransfer');
+    const collabButton =
+        $('mapToolCollab');
     const fullscreenButton =
         $('mapToolFullscreen');
     const mobileToolsToggle =
@@ -1579,6 +1603,21 @@ function initMapTools() {
             updateMapToolsUI();
             buildMapDataTransfer();
             toggleMapToolMenu('mapDataTransferPopover');
+        }
+    );
+
+    collabButton?.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+            MAP_TOOL_STATE.tool = 'collab';
+            updateMapToolsUI();
+
+            if (typeof collabRender === 'function') {
+                collabRender();
+            }
+
+            toggleMapToolMenu('collabPopover');
         }
     );
 

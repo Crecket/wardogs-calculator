@@ -238,6 +238,7 @@
 </div>
 <div class="map-tool-popover map-tool-layers" id="mapLayersPopover"></div>
 <div class="map-tool-popover map-tool-data-transfer" id="mapDataTransferPopover"></div>
+<div class="map-tool-popover map-tool-collab" id="collabPopover"></div>
 <div class="map-tools-bar">
 <button aria-label="Ruler" class="map-tool-button" data-tool="ruler" id="mapToolRuler" title="Ruler" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -280,6 +281,9 @@
 <button aria-label="Import / Export" class="map-tool-button" data-tool="dataTransfer" id="mapToolDataTransfer" title="Import / Export" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v10"/><path d="m4 11 3 3 3-3"/><path d="M17 20V10"/><path d="m14 13 3-3 3 3"/></svg>
 </button>
+<button aria-label="Shared session" class="map-tool-button" data-tool="collab" hidden id="mapToolCollab" title="Shared session" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4"/><path d="m8.2 13.2 7.6 4.4"/></svg>
+</button>
 <button aria-label="Fullscreen" class="map-tool-button map-tool-fullscreen-button" id="mapToolFullscreen" title="Fullscreen" type="button">
 <svg aria-hidden="true" class="map-tool-fullscreen-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
 <path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4"/>
@@ -310,6 +314,7 @@
 <script src="js/ui/theme.js"></script><script src="js/ui/footer.js"></script>
 <script src="js/ui/layout.js"></script>
 <script src="js/features/saved-targets.js"></script>
+<script src="js/features/collab.js"></script>
 <script src="js/features/motd.js"></script>
 <script src="js/features/weapons.js"></script>
 <script src="js/map/assets.js"></script>

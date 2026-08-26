@@ -83,6 +83,7 @@
                 </div>
                 <div class="map-tool-popover map-tool-layers" id="mapLayersPopover"></div>
 <div class="map-tool-popover map-tool-data-transfer" id="mapDataTransferPopover"></div>
+<div class="map-tool-popover map-tool-collab" id="collabPopover"></div>
                 <button aria-controls="mapToolsBar" aria-expanded="false" aria-label="Map tools" class="mobile-map-tools-toggle" id="mobileMapToolsToggle" title="Map tools" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 12h2"/><path d="M10 12h10"/><circle cx="8" cy="12" r="2"/><path d="M4 17h8"/><path d="M16 17h4"/><circle cx="14" cy="17" r="2"/></svg>
 </button>
@@ -107,6 +108,9 @@
                     </button>
 <button aria-label="Import / Export" class="map-tool-button" data-tool="dataTransfer" id="mapToolDataTransfer" title="Import / Export" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v10"/><path d="m4 11 3 3 3-3"/><path d="M17 20V10"/><path d="m14 13 3-3 3 3"/></svg>
+</button>
+<button aria-label="Shared session" class="map-tool-button" data-tool="collab" hidden id="mapToolCollab" title="Shared session" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4"/><path d="m8.2 13.2 7.6 4.4"/></svg>
 </button>
                 </div>
             </div>
@@ -255,6 +259,7 @@
 <script src="js/ui/footer.js"></script>
 <script src="js/ui/layout.js"></script>
 <script src="js/features/saved-targets.js"></script>
+<script src="js/features/collab.js"></script>
 <script src="js/features/motd.js"></script>
 <script src="js/features/weapons.js"></script>
 <script src="js/map/assets.js"></script>

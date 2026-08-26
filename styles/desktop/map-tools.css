@@ -444,3 +444,160 @@ canvas.map-tool-eraser-active {
 .map-tool-data-transfer-status.error {
     color: #d86b6b;
 }
+
+/* =========================
+   COLLABORATION
+   ========================= */
+
+.map-tool-collab {
+    width: min(250px, calc(100vw - 32px));
+    gap: 8px;
+}
+
+.collab-hint {
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+.collab-include {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.35;
+
+    cursor: pointer;
+}
+
+.collab-include input {
+    width: 13px;
+    height: 13px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.map-tool-collab button {
+    min-width: 0;
+    min-height: 34px;
+    padding: 7px 8px;
+
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+
+    background: var(--input-bg);
+    color: var(--text);
+
+    font: inherit;
+    font-size: 10px;
+    line-height: 1.2;
+
+    cursor: pointer;
+}
+
+.map-tool-collab button:hover {
+    border-color: var(--accent-border);
+    background: var(--input-hover-bg);
+    color: var(--accent);
+}
+
+.map-tool-collab .collab-primary {
+    border-color: var(--accent-border);
+    color: var(--accent);
+}
+
+.map-tool-collab .collab-leave:hover {
+    border-color: #d86b6b;
+    color: #d86b6b;
+}
+
+.collab-divider {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 6px;
+
+    color: var(--muted);
+    font-size: 9px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.collab-divider::before,
+.collab-divider::after {
+    content: "";
+    height: 1px;
+    background: var(--border-light);
+}
+
+.collab-join-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+}
+
+.collab-join-row input {
+    min-width: 0;
+    min-height: 34px;
+    padding: 7px 8px;
+
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+
+    background: var(--input-bg);
+    color: var(--text);
+
+    font: inherit;
+    font-size: 11px;
+    letter-spacing: .06em;
+}
+
+.collab-join-row input:focus {
+    border-color: var(--accent-border);
+    outline: none;
+}
+
+.collab-code-row {
+    display: flex;
+    justify-content: center;
+
+    padding: 7px 8px;
+
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+
+    background: var(--input-bg);
+}
+
+/*
+ * The room code is the credential people read aloud over voice chat,
+ * so it gets generous tracking and a monospace face.
+ */
+.collab-code {
+    color: var(--accent);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    letter-spacing: .16em;
+    word-break: break-all;
+}
+
+.collab-peers {
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.collab-status {
+    min-height: 14px;
+    color: var(--accent);
+    font-size: 10px;
+    line-height: 1.35;
+}
+
+.collab-status.error {
+    color: #d86b6b;
+}

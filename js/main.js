@@ -189,6 +189,17 @@ async function init() {
 
         renderSavedTargets();
 
+        /*
+         * Last: joining from a #room= link replaces map content, so it
+         * must run after the solo state is fully loaded and rendered.
+         */
+        if (
+            typeof initCollab ===
+            'function'
+        ) {
+            initCollab();
+        }
+
     } catch (error) {
 
         console.error(

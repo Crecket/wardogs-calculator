@@ -172,3 +172,20 @@
     min-height: 42px;
     font-size: 12px;
 }
+
+.mobile-app .map-tool-collab {
+    width: min(280px, calc(100vw - 72px));
+}
+
+.mobile-app .map-tool-collab button,
+.mobile-app .collab-join-row input {
+    min-height: 42px;
+    font-size: 12px;
+}
+
+.mobile-app .collab-hint,
+.mobile-app .collab-include,
+.mobile-app .collab-peers,
+.mobile-app .collab-status {
+    font-size: 11px;
+}
