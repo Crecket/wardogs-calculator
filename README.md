@@ -8,7 +8,8 @@
 A lightweight, open-source artillery calculator and tactical map tool for **WARDOGS**.
 
 **Live app:** https://wardogs-artillery.com/  
-**Mobile UI:** https://wardogs-artillery.com/mobile/
+**Mobile UI:** https://wardogs-artillery.com/mobile/  
+**简体中文:** https://wardogs-artillery.com/zh-cn/
 
 <table>
   <tr>
@@ -38,6 +39,19 @@ Phones are automatically routed from the desktop entry pages to the matching mob
 
 Both interfaces reuse the same calculator logic, maps, tile pyramid, configuration, translations, saved targets, drawings, and browser storage.
 
+## Localization
+
+The shared locale system supports English, Russian, Ukrainian, German, French, Spanish, Polish, Portuguese, **Simplified Chinese**, and the non-indexed Cat locale.
+
+Simplified Chinese is published at:
+
+```text
+Desktop: /zh-cn/
+Mobile:  /mobile/zh-cn/
+```
+
+`zh-CN` browser language is detected automatically when the user has not saved another manual language preference. The production build also publishes Chinese canonical/`hreflang`, Open Graph locale metadata, sitemap coverage, localized SEO content and FAQ structured data.
+
 ## Documentation
 
 Detailed documentation is split into focused files to keep this README concise.
@@ -47,10 +61,10 @@ Detailed documentation is split into focused files to keep this README concise.
 - [Mobile interface](docs/mobile.md) — mobile routes, automatic routing, touch controls, and deployment architecture
 - [Shared sessions](docs/collaboration.md) — real-time collaborative map planning (disabled by default; needs a separately deployed sync service)
 - [Fork deployment](docs/deployment.md) — running your own copy: `.env` settings, hosting tiles on R2, and deploying the site and sync Worker
-- [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, and localized URLs
+- [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, localized URLs, and SEO metadata
 - [Development](docs/development.md) — project structure, local development, unified build process, and GitHub Pages deployment
 - [Analytics](docs/analytics.md) — Umami custom events, event payloads, debouncing, and privacy considerations
-- [Message of the Day](docs/motd.md) — MOTD configuration and behavior
+- [Message of the Day](docs/motd.md) — MOTD configuration, localization, and behavior
 - [Contributing](docs/contributing.md) — contribution guidelines
 - [License & Disclaimer](docs/legal.md) — MIT scope, third-party assets, and project disclaimer
 
@@ -65,8 +79,10 @@ python -m http.server 8000
 Then open:
 
 ```text
-Desktop: http://localhost:8000/
-Mobile:  http://localhost:8000/mobile/
+Desktop:            http://localhost:8000/
+Mobile:             http://localhost:8000/mobile/
+Simplified Chinese: http://localhost:8000/zh-cn/
+Chinese mobile:     http://localhost:8000/mobile/zh-cn/
 ```
 
 ## Contributing
