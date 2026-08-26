@@ -73,6 +73,47 @@ function gunAtScreen(x, y, radiusPx) {
     );
 }
 
+/*
+ * Traces a ring whose radius varies by bearing. Bearing 0 is +x and the
+ * angle increases the same way it does in range-ring.js; screen y is
+ * inverted, which is why sin is subtracted.
+ */
+function traceRangeRing(at, radii, scale, clampMetres) {
+    ctx.beginPath();
+
+    for (let b = 0; b < radii.length; b += 1) {
+        const angle = b * 2 * Math.PI / radii.length;
+
+        const metres = clampMetres === null
+            ? radii[b]
+            : Math.min(radii[b], clampMetres);
+
+        const r = metersToWorldDistance(metres) * scale;
+
+        const x = at.x + Math.cos(angle) * r;
+        const y = at.y - Math.sin(angle) * r;
+
+        if (b === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+
+    ctx.closePath();
+}
+
+/*
+ * The max range ring, terrain-aware where the data allows it.
+ *
+ * Two outlines: the solid one is clamped to the weapon's declared max range,
+ * because past that the shipped table cannot produce a MIL and drawing it
+ * filled would promise a shot we cannot lay. The faint one is the true
+ * terrain reach, drawn only where it exceeds the clamp — context in the same
+ * register as the deltaZ readout, never a number to fire on.
+ *
+ * With no heightfield this falls back to the circle it replaced.
+ */
 function drawGunRangeRings(gun, at) {
     const weapon = WEAPONS[gun.weapon];
 
@@ -91,8 +132,18 @@ function drawGunRangeRings(gun, at) {
     const minRangePx =
         kilometersToWorldDistance(minRange) * v.scale;
 
-    ctx.beginPath();
-    ctx.arc(at.x, at.y, rangePx, 0, Math.PI * 2);
+    const ring =
+        typeof terrainRangeRing === 'function'
+            ? terrainRangeRing(gun, S.map)
+            : null;
+
+    if (ring) {
+        traceRangeRing(at, ring.radii, v.scale, ring.maxRangeMeters);
+    } else {
+        ctx.beginPath();
+        ctx.arc(at.x, at.y, rangePx, 0, Math.PI * 2);
+    }
+
     ctx.fillStyle = 'rgba(215,164,82,.08)';
     ctx.fill();
 
@@ -101,6 +152,20 @@ function drawGunRangeRings(gun, at) {
     ctx.setLineDash([7, 5]);
     ctx.stroke();
     ctx.setLineDash([]);
+
+    /*
+     * Only worth drawing when the terrain actually buys range somewhere.
+     * On flat ground it coincides with the solid ring exactly.
+     */
+    if (ring && ring.radii.some(r => r > ring.maxRangeMeters + 1)) {
+        traceRangeRing(at, ring.radii, v.scale, null);
+
+        ctx.strokeStyle = 'rgba(215,164,82,.45)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
 
     if (minRangePx > 0) {
         ctx.beginPath();
