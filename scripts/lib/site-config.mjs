@@ -53,6 +53,17 @@ export function collabUrl() {
     return String(process.env.COLLAB_URL || '').trim();
 }
 
+/*
+ * Umami's website id. Empty by default, which is what keeps analytics off:
+ * the tracker tag lives in the tracked page shells, so a fork that does
+ * not set this would otherwise report into upstream's dashboard.
+ */
+export function analyticsWebsiteId() {
+    loadEnv();
+
+    return String(process.env.ANALYTICS_WEBSITE_ID || '').trim();
+}
+
 export function tileBaseUrl() {
     loadEnv();
 

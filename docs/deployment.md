@@ -20,7 +20,13 @@ set take precedence, so CI and one-off overrides still win.
 |---|---|---|
 | `COLLAB_URL` | build, dev | Shared sessions disable themselves entirely |
 | `TILE_BASE_URL` | build, dev | Tiles are bundled into `dist/` |
+| `ANALYTICS_WEBSITE_ID` | build, dev | Analytics are stripped from the built pages |
 | `R2_*` | sync-tiles | Tile upload refuses to run |
+
+Analytics are opt-in for the same reason: the Umami website id committed in the
+page shells is upstream's, so a build that left the tracker in place would
+report a fork's traffic into someone else's dashboard. See
+[analytics](analytics.md).
 
 ### The tile problem
 

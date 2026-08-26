@@ -3,6 +3,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SEO_ALTERNATE_NAMES, SEO_PAGE_CONTENT } from './seo-content.mjs';
 import {
+    analyticsWebsiteId,
     collabUrl,
     patchAppConfig,
     patchMapConfig,
@@ -576,8 +577,47 @@ function addMobileAlternate(html, language) {
     );
 }
 
+const ANALYTICS_TAG_PATTERN =
+    /\s*<script[^>]*src=["']https:\/\/cloud\.umami\.is\/script\.js["'][^>]*><\/script>/gi;
+
+/*
+ * Analytics are off unless ANALYTICS_WEBSITE_ID says otherwise.
+ *
+ * The tracker tag is committed in the page shells, so a build that did
+ * nothing here would report a fork's traffic into upstream's dashboard.
+ * Stripping it in the built copy rather than editing the shells keeps
+ * those files byte-identical to upstream, the same way COLLAB_URL and
+ * TILE_BASE_URL are kept out of the tracked config — see
+ * scripts/lib/site-config.mjs.
+ *
+ * The flag matches the dev server's, so a build with analytics off
+ * behaves exactly like local development: js/core/analytics.js drops
+ * events instead of queueing them for a tracker that never arrives.
+ */
+function prepareAnalytics(html) {
+    const websiteId = analyticsWebsiteId();
+
+    if (websiteId) {
+        return html.replace(
+            ANALYTICS_TAG_PATTERN,
+            tag => tag.replace(
+                /data-website-id=["'][^"']*["']/i,
+                `data-website-id="${websiteId}"`
+            )
+        );
+    }
+
+    return html
+        .replace(ANALYTICS_TAG_PATTERN, '')
+        .replace(
+            '<head>',
+            '<head>\n' +
+            '<script>window.__WARDOGS_ANALYTICS_DISABLED__ = true;</script>'
+        );
+}
+
 async function writeDesktopPage(source, target, appConfig, language) {
-    const html = await readFile(source, 'utf8');
+    const html = prepareAnalytics(await readFile(source, 'utf8'));
     const prepared = addMobileAlternate(
         applySeoV2(
             refreshSeoMetadata(
@@ -889,9 +929,11 @@ async function buildMobilePages() {
         await getMobileLanguages();
 
     for (const language of languages) {
-        const html = renderMobileLocale(
-            template,
-            language
+        const html = prepareAnalytics(
+            renderMobileLocale(
+                template,
+                language
+            )
         );
 
         if (language === 'en') {
