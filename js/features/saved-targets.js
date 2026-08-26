@@ -12,6 +12,79 @@ const SAVED_TARGET_EXPORT_VERSION = 1;
 
 const SAVED_TARGET_IMPORT_LIMIT = 500;
 
+/*
+ * Both sides of the comparison have been through clamp(), which rounds
+ * to a fixed precision, so they land on the same quantum — but that
+ * rounding is a float division, so === is not safe to lean on.
+ */
+const SAVED_TARGET_MATCH_EPSILON = 1e-6;
+
+/*
+ * Which saved target the list highlights is derived from where the
+ * target actually sits, never tracked separately. In a collab room the
+ * target moves because a peer moved it just as often as because we
+ * clicked a row, and a tracked selection only ever knew about the
+ * latter.
+ */
+function activeSavedTargetId() {
+
+    if (
+        !S.target ||
+        !Number.isFinite(S.target.x) ||
+        !Number.isFinite(S.target.y)
+    ) {
+        return null;
+    }
+
+    const match =
+        savedTargets.find(
+            target =>
+                Math.abs(
+                    Number(target.x) -
+                    S.target.x
+                ) < SAVED_TARGET_MATCH_EPSILON &&
+                Math.abs(
+                    Number(target.y) -
+                    S.target.y
+                ) < SAVED_TARGET_MATCH_EPSILON
+        );
+
+    return match
+        ? match.id
+        : null;
+}
+
+/*
+ * inputs() runs on every frame of a map drag, so this toggles the class
+ * on the rows already in the DOM rather than rebuilding the list. A
+ * full renderSavedTargets() is still what runs when the targets
+ * themselves change.
+ */
+function refreshSavedTargetHighlight() {
+
+    const container =
+        $('savedTargetsList');
+
+    if (!container) {
+        return;
+    }
+
+    const activeId =
+        activeSavedTargetId();
+
+    container
+        .querySelectorAll('.saved-target')
+        .forEach(
+            item => {
+                item.classList.toggle(
+                    'active',
+                    item.dataset.targetId ===
+                    activeId
+                );
+            }
+        );
+}
+
 function generateTargetId() {
 
     return (
@@ -503,11 +576,6 @@ async function importSavedTargets() {
             ...imported.targets
         );
 
-        selectedSavedTargetId =
-            imported.targets.length === 1
-                ? imported.targets[0].id
-                : selectedSavedTargetId;
-
         persistSavedTargets();
 
         if (
@@ -599,9 +667,6 @@ function saveCurrentTarget() {
         target
     );
 
-    selectedSavedTargetId =
-        target.id;
-
     persistSavedTargets();
 
     if (
@@ -644,13 +709,6 @@ function deleteTarget(id) {
             index,
             1
         );
-
-    if (
-        selectedSavedTargetId === id
-    ) {
-        selectedSavedTargetId =
-            null;
-    }
 
     persistSavedTargets();
 
@@ -744,9 +802,6 @@ function restoreTarget(target) {
     clamp(S.target);
     clamp(S.origin);
 
-    selectedSavedTargetId =
-        target.id;
-
     if (
         typeof trackAnalytics ===
         'function'
@@ -814,6 +869,9 @@ function renderSavedTargets() {
         return;
     }
 
+    const activeId =
+        activeSavedTargetId();
+
     savedTargets.forEach(
         target => {
 
@@ -825,9 +883,12 @@ function renderSavedTargets() {
             item.className =
                 'saved-target';
 
+            item.dataset.targetId =
+                target.id;
+
             if (
                 target.id ===
-                selectedSavedTargetId
+                activeId
             ) {
                 item.classList.add(
                     'active'

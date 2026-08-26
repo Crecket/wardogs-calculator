@@ -37,6 +37,18 @@ function inputs() {
         collabSyncShared();
     }
 
+    /*
+     * Same reasoning for the saved-target highlight: it is derived from
+     * where the target sits, so every writer of S.target refreshes it by
+     * arriving here.
+     */
+    if (
+        typeof refreshSavedTargetHighlight ===
+        'function'
+    ) {
+        refreshSavedTargetHighlight();
+    }
+
     result();
     draw();
 }

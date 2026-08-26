@@ -238,8 +238,6 @@ function collabRestoreSolo() {
         MAP_TOOL_STATE.hoverPathId = null;
         MAP_TOOL_STATE.hoverDeletePoint = null;
         MAP_TOOL_STATE.hoverMarkerId = null;
-
-        selectedSavedTargetId = null;
     } finally {
         COLLAB.applying = false;
     }
@@ -377,8 +375,6 @@ function collabApplySnapshot(doc) {
         MAP_TOOL_STATE.hoverPathId = null;
         MAP_TOOL_STATE.hoverDeletePoint = null;
         MAP_TOOL_STATE.hoverMarkerId = null;
-
-        selectedSavedTargetId = null;
     } finally {
         COLLAB.applying = false;
     }
@@ -438,10 +434,6 @@ function collabApplyOp(op) {
                 savedTargets = savedTargets.filter(
                     item => item.id !== op.id
                 );
-
-                if (selectedSavedTargetId === op.id) {
-                    selectedSavedTargetId = null;
-                }
                 break;
 
             case 'target.rename': {
@@ -493,7 +485,6 @@ function collabApplyOp(op) {
 
                 if (op.scope === 'all' || op.scope === 'targets') {
                     savedTargets = [];
-                    selectedSavedTargetId = null;
                 }
                 break;
 

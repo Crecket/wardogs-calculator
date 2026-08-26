@@ -395,9 +395,6 @@ function bindEvents() {
                 bounds.minY
             };
 
-            selectedSavedTargetId =
-                null;
-
             inputs();
 
             renderSavedTargets();
