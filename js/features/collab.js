@@ -61,7 +61,10 @@ const COLLAB = {
     lastShared: {
         origin: null,
         target: null,
-        weapon: null
+        weapon: null,
+
+        /* id -> { x, y } of what was last sent for each gun. */
+        guns: {}
     },
 
     sharedTimer: null,
@@ -70,6 +73,9 @@ const COLLAB = {
     reconnectTimer: null,
     leaving: false,
     pendingPush: false,
+
+    /* Set when the room's snapshot had no guns and ours must seed it. */
+    pendingGunSeed: false,
 
     /*
      * Set once a snapshot has arrived. Distinguishes "this room rejected
@@ -204,6 +210,7 @@ function collabCaptureSolo() {
         drawings: structuredClone(MAP_TOOL_STATE.drawings),
         markers: structuredClone(MAP_TOOL_STATE.markers),
         savedTargets: structuredClone(savedTargets),
+        guns: structuredClone(S.guns),
         origin: structuredClone(S.origin),
         target: structuredClone(S.target),
         weapon: S.weapon
@@ -223,6 +230,11 @@ function collabRestoreSolo() {
         MAP_TOOL_STATE.drawings = structuredClone(solo.drawings);
         MAP_TOOL_STATE.markers = structuredClone(solo.markers);
         savedTargets = structuredClone(solo.savedTargets);
+
+        if (Array.isArray(solo.guns) && solo.guns.length) {
+            S.guns = structuredClone(solo.guns);
+            S.activeGunId = S.guns[0].id;
+        }
 
         S.origin = structuredClone(solo.origin);
         S.target = structuredClone(solo.target);
@@ -325,8 +337,64 @@ function collabValidMarker(marker) {
     return Boolean(asset && asset.placeable);
 }
 
+/* =========================
+   GUNS
+   ========================= */
+
+/*
+ * Guns travel flat, like markers and targets. `visible` is omitted on the
+ * way out and forced true on the way in: which guns you have hidden is how
+ * you are looking at the map, not room content.
+ */
+function collabGunWire(gun) {
+    return {
+        id: gun.id,
+        name: gun.name,
+        x: gun.position.x,
+        y: gun.position.y,
+        weapon: gun.weapon || null
+    };
+}
+
+function collabGunFromWire(entry) {
+    const gun = createGun({
+        x: entry.x,
+        y: entry.y,
+        weapon: entry.weapon || null,
+        name: entry.name
+    });
+
+    gun.id = entry.id;
+    gun.visible = true;
+
+    return gun;
+}
+
+function collabSendGunAdd(gun) {
+    if (!collabIsOnline() || COLLAB.applying) {
+        return;
+    }
+
+    collabSend({ op: 'gun.add', gun: collabGunWire(gun) });
+}
+
+function collabSendGunRemove(id) {
+    if (!collabIsOnline() || COLLAB.applying) {
+        return;
+    }
+
+    collabSend({ op: 'gun.remove', id });
+}
+
 function collabApplySnapshot(doc) {
     COLLAB.applying = true;
+
+    /*
+     * A room starts with no guns and the first client in seeds it. Flagged
+     * here and sent by the snapshot handler, which is where the status
+     * finally goes online — collabSend refuses to emit before that.
+     */
+    COLLAB.pendingGunSeed = !(Array.isArray(doc.guns) && doc.guns.length);
 
     try {
         COLLAB.mapId = doc.mapId;
@@ -352,6 +420,20 @@ function collabApplySnapshot(doc) {
             ? doc.savedTargets
             : [];
 
+        /*
+         * Before doc.origin: the origin setter writes through activeGun(),
+         * so the list has to be settled first.
+         */
+        if (Array.isArray(doc.guns) && doc.guns.length) {
+            S.guns = doc.guns
+                .slice(0, GUN_LIMIT)
+                .map(collabGunFromWire);
+
+            S.activeGunId = S.guns[0].id;
+
+            S.guns.forEach(gun => clamp(gun.position));
+        }
+
         if (doc.origin) {
             S.origin = { x: doc.origin.x, y: doc.origin.y };
             clamp(S.origin);
@@ -367,9 +449,25 @@ function collabApplySnapshot(doc) {
         }
 
         COLLAB.lastShared = {
-            origin: structuredClone(S.origin),
+            /*
+             * The legacy origin mirrors gun 1, so that is what the diff
+             * has to be seeded from — not the selected gun.
+             */
+            origin: structuredClone(S.guns[0].position),
             target: structuredClone(S.target),
-            weapon: S.weapon
+            weapon: S.weapon,
+            /*
+             * Seeded from the room's guns, not this client's. A room that
+             * has none must leave the diff empty so the next flush emits a
+             * gun.add for each local gun — seeding from S.guns would mark
+             * them already-sent and the battery would never reach anyone.
+             */
+            guns: Object.fromEntries(
+                S.guns.map(gun => [
+                    gun.id,
+                    { x: gun.position.x, y: gun.position.y }
+                ])
+            )
         };
 
         MAP_TOOL_STATE.hoverPathId = null;
@@ -381,6 +479,7 @@ function collabApplySnapshot(doc) {
 
     inputs();
     renderSavedTargets();
+    renderGuns();
     buildMapLayers();
     draw();
 
@@ -447,9 +546,74 @@ function collabApplyOp(op) {
                 break;
             }
 
-            case 'point.set':
-                S[op.point] = { x: op.x, y: op.y };
-                clamp(S[op.point]);
+            case 'gun.add': {
+                const existing = gunById(op.gun.id);
+
+                if (existing) {
+                    existing.name = op.gun.name;
+                    existing.weapon = op.gun.weapon;
+                    existing.position.x = op.gun.x;
+                    existing.position.y = op.gun.y;
+                } else if (S.guns.length < GUN_LIMIT) {
+                    S.guns.push(collabGunFromWire(op.gun));
+                }
+
+                COLLAB.lastShared.guns[op.gun.id] = {
+                    x: op.gun.x,
+                    y: op.gun.y
+                };
+
+                renderGuns();
+                break;
+            }
+
+            case 'gun.move': {
+                const gun = gunById(op.id);
+
+                if (gun) {
+                    gun.position.x = op.x;
+                    gun.position.y = op.y;
+                    clamp(gun.position);
+                }
+
+                COLLAB.lastShared.guns[op.id] = { x: op.x, y: op.y };
+
+                renderGuns();
+                break;
+            }
+
+            case 'gun.remove': {
+                /*
+                 * S.guns.length >= 1 is an invariant. A peer removing its
+                 * last-but-one gun must not empty this client's list.
+                 */
+                if (S.guns.length > 1) {
+                    S.guns = S.guns.filter(gun => gun.id !== op.id);
+
+                    if (!gunById(S.activeGunId)) {
+                        S.activeGunId = S.guns[0].id;
+                    }
+                }
+
+                delete COLLAB.lastShared.guns[op.id];
+
+                renderGuns();
+                break;
+            }
+
+            case 'point.set': {
+                /*
+                 * The legacy origin is gun 1, not the selected gun — the
+                 * mirror in collabFlushShared sends it that way, so an
+                 * incoming one has to land there too.
+                 */
+                const destination = op.point === 'origin'
+                    ? S.guns[0].position
+                    : S.target;
+
+                destination.x = op.x;
+                destination.y = op.y;
+                clamp(destination);
 
                 /*
                  * Record what we just adopted, so the diff in
@@ -457,8 +621,16 @@ function collabApplyOp(op) {
                  * and bounce it straight back to the sender.
                  */
                 COLLAB.lastShared[op.point] =
-                    structuredClone(S[op.point]);
+                    structuredClone(destination);
+
+                if (op.point === 'origin') {
+                    COLLAB.lastShared.guns[S.guns[0].id] = {
+                        x: destination.x,
+                        y: destination.y
+                    };
+                }
                 break;
+            }
 
             case 'weapon.set':
                 if (op.weapon && WEAPONS[op.weapon]) {
@@ -514,6 +686,28 @@ function collabApplyOp(op) {
                 savedTargets = savedTargets
                     .filter(item => !targetIds.has(item.id))
                     .concat(op.targets);
+
+                /*
+                 * Upsert rather than concat: a push carrying this client's
+                 * own battery must not duplicate the guns it already has.
+                 */
+                for (const entry of op.guns || []) {
+                    const existing = gunById(entry.id);
+
+                    if (existing) {
+                        existing.name = entry.name;
+                        existing.weapon = entry.weapon;
+                        existing.position.x = entry.x;
+                        existing.position.y = entry.y;
+                    } else if (S.guns.length < GUN_LIMIT) {
+                        S.guns.push(collabGunFromWire(entry));
+                    }
+
+                    COLLAB.lastShared.guns[entry.id] = {
+                        x: entry.x,
+                        y: entry.y
+                    };
+                }
                 break;
             }
 
@@ -526,6 +720,7 @@ function collabApplyOp(op) {
 
     inputs();
     renderSavedTargets();
+    renderGuns();
     draw();
 }
 
@@ -624,11 +819,22 @@ function collabOnTargetRenamed(id, previousName, nextName) {
  * Not undoable: an import is a deliberate bulk action, and inverting it
  * would mean removing items other peers may already have built on.
  */
-function collabOnBulkAdd({ drawings = [], markers = [], targets = [] }) {
+function collabOnBulkAdd({
+    drawings = [],
+    markers = [],
+    targets = [],
+    guns = []
+}) {
+    /*
+     * `guns` is deliberately out of the emptiness guard: a battery is
+     * always non-empty, and pushing it into a room that has none is the
+     * whole point of "include my map".
+     */
     if (
         !drawings.length &&
         !markers.length &&
-        !targets.length
+        !targets.length &&
+        !guns.length
     ) {
         return;
     }
@@ -637,7 +843,8 @@ function collabOnBulkAdd({ drawings = [], markers = [], targets = [] }) {
         op: 'push',
         drawings,
         markers,
-        targets
+        targets,
+        guns
     });
 }
 
@@ -710,8 +917,52 @@ function collabFlushShared() {
         return;
     }
 
+    /*
+     * Gun 1 also mirrors to the legacy `point.set origin` op below, so a
+     * client that predates guns still tracks a real artillery position.
+     */
+    for (const gun of S.guns) {
+        const previous = COLLAB.lastShared.guns[gun.id];
+
+        const moved =
+            !previous ||
+            previous.x !== gun.position.x ||
+            previous.y !== gun.position.y;
+
+        if (!moved) {
+            continue;
+        }
+
+        const sent = previous
+            ? collabSend({
+                op: 'gun.move',
+                id: gun.id,
+                x: gun.position.x,
+                y: gun.position.y
+            })
+            : collabSend({
+                op: 'gun.add',
+                gun: collabGunWire(gun)
+            });
+
+        if (sent) {
+            COLLAB.lastShared.guns[gun.id] = {
+                x: gun.position.x,
+                y: gun.position.y
+            };
+        }
+    }
+
     ['origin', 'target'].forEach(point => {
-        const current = S[point];
+        /*
+         * The legacy origin is gun 1, not the selected gun. A peer running
+         * a build that predates guns would otherwise watch the shared
+         * origin teleport every time somebody changed their selection.
+         */
+        const current = point === 'origin'
+            ? S.guns[0].position
+            : S.target;
+
         const previous = COLLAB.lastShared[point];
 
         if (collabSamePoint(current, previous)) {
@@ -975,6 +1226,20 @@ function collabHandleMessage(message) {
             collabSetStatus('online', 'collabStatusOnline');
             collabWriteHash();
 
+            /*
+             * Immediately, not via the throttled shared-scalar flush: two
+             * clients joining an empty room inside the throttle window
+             * would each still be holding their own battery when the
+             * other's snapshot was served, and both would seed it.
+             */
+            if (COLLAB.pendingGunSeed) {
+                COLLAB.pendingGunSeed = false;
+
+                for (const gun of S.guns) {
+                    collabSendGunAdd(gun);
+                }
+            }
+
             if (COLLAB.pendingPush) {
                 COLLAB.pendingPush = false;
                 collabPushSolo();
@@ -1060,7 +1325,8 @@ function collabPushSolo() {
     const payload = {
         drawings: solo.drawings.map(drawing => ({ ...drawing, mapId })),
         markers: solo.markers.map(marker => ({ ...marker, mapId })),
-        targets: structuredClone(solo.savedTargets)
+        targets: structuredClone(solo.savedTargets),
+        guns: (solo.guns || []).map(collabGunWire)
     };
 
     collabOnBulkAdd(payload);
@@ -1157,12 +1423,14 @@ function collabResetSession() {
     COLLAB.redoOps = [];
     COLLAB.reconnectAttempt = 0;
     COLLAB.pendingPush = false;
+    COLLAB.pendingGunSeed = false;
     COLLAB.copied = false;
 
     COLLAB.lastShared = {
         origin: null,
         target: null,
-        weapon: null
+        weapon: null,
+        guns: {}
     };
 }
 
