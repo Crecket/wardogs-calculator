@@ -357,8 +357,16 @@ function bindEvents() {
 
             pushMapToolHistory();
 
-            const oldOrigin =
-                S.origin;
+            /*
+             * S.origin is a live reference to the active gun's position, so
+             * capturing it directly would alias the gun: the setter below
+             * would overwrite the very object we are about to hand to
+             * S.target. Copy at capture.
+             */
+            const oldOrigin = {
+                x: S.origin.x,
+                y: S.origin.y
+            };
 
             S.origin =
                 S.target;
