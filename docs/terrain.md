@@ -33,7 +33,8 @@ The value is shown as secondary firing-solution context.
 
 ### Current release behavior
 
-Terrain3D is informational only.
+Terrain3D drives an elevation correction that is built but gated off; until
+`releasePolicy.automaticMilCorrection` flips, it is informational only.
 
 ```text
 Distance -> normal coordinate calculation
@@ -311,10 +312,27 @@ Maps without a terrain dataset require no changes and continue to use the existi
 
 ---
 
-## Release boundary
+## Ballistic compensation
 
-Terrain3D extraction and display are separate from ballistic compensation.
+Terrain3D supplies ΔZ to an elevation correction that is **built but gated
+off**. `data/ballistics/terrain-context.json` carries
+`releasePolicy.automaticMilCorrection`, and while it is `false` the printed MIL
+is the flat-table value, unchanged.
 
-A terrain dataset can be considered valid for elevation display without implying that an automatic firing correction is valid. Vehicle pose, suspension, chassis attitude, projectile model, and final barrel transform may affect real firing elevation independently of map terrain height.
+When it is `true`, the correction is looked up from
+`data/ballistics/height-correction.json` and **added** to the flat-table mil. It
+is a differential from a model, so it is exactly zero at ΔZ = 0 and the shipped
+tables stay authoritative on flat ground.
 
-For that reason, verified elevation context is exposed while the existing firing tables remain authoritative.
+The correction applies to the mortar `single` and SPG-2 `high` tables. SPG-2
+`low` is deliberately `null` in the grid and carries a caption saying so.
+
+The model in `data/ballistics/projectile-model.json` is currently a vacuum fit
+to our own firing tables, marked `source: "vacuum-fit"`. It is meant to be
+replaced by pak extraction, not refined. See
+[the design doc](superpowers/specs/2026-08-26-elevation-correction-design.md).
+
+Regenerate both files with:
+
+    npm run fit-ballistics
+    npm run build-height-correction
