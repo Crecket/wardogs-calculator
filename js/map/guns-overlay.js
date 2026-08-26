@@ -169,7 +169,7 @@ function drawGunRangeRings(gun, at) {
         traceRangeRing(at, ring.radii, v.scale, null);
         traceRangeRing(at, ring.radii, v.scale, ring.maxRangeMeters);
 
-        ctx.fillStyle = 'rgba(255,210,127,.20)';
+        ctx.fillStyle = 'rgba(255,210,127,.12)';
         ctx.fill('evenodd');
 
         ctx.beginPath();
