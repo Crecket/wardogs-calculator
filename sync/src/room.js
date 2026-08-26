@@ -67,6 +67,21 @@ export class Room extends DurableObject {
                 INSERT INTO _sql_schema_migrations (id) VALUES (1);
             `);
         }
+
+        /*
+         * Guns are a collection, unlike origin/target which are single
+         * meta rows. A room created before this migration simply gains an
+         * empty table; its existing origin keeps working untouched.
+         */
+        if (version < 2) {
+            sql.exec(`
+                CREATE TABLE IF NOT EXISTS guns (
+                    id TEXT PRIMARY KEY,
+                    json TEXT NOT NULL
+                );
+                INSERT INTO _sql_schema_migrations (id) VALUES (2);
+            `);
+        }
     }
 
     /* ---------- meta helpers ---------- */
@@ -164,6 +179,7 @@ export class Room extends DurableObject {
             DELETE FROM drawings;
             DELETE FROM markers;
             DELETE FROM targets;
+            DELETE FROM guns;
             DELETE FROM meta;
         `);
     }
@@ -190,6 +206,7 @@ export class Room extends DurableObject {
             drawings: this.rows('drawings'),
             markers: this.rows('markers'),
             savedTargets: this.rows('targets'),
+            guns: this.rows('guns'),
             origin: this.readMeta('origin'),
             target: this.readMeta('target'),
             weapon: this.readMeta('weapon')
@@ -291,6 +308,35 @@ export class Room extends DurableObject {
                 return true;
             }
 
+            case 'gun.add':
+                return this.insert('guns', LIMITS.guns, op.gun);
+
+            case 'gun.move': {
+                const rows = sql
+                    .exec('SELECT json FROM guns WHERE id = ?', op.id)
+                    .toArray();
+
+                if (!rows.length) {
+                    return false;
+                }
+
+                const gun = JSON.parse(rows[0].json);
+
+                gun.x = op.x;
+                gun.y = op.y;
+
+                sql.exec(
+                    'UPDATE guns SET json = ? WHERE id = ?',
+                    JSON.stringify(gun),
+                    op.id
+                );
+
+                return true;
+            }
+
+            case 'gun.remove':
+                return this.remove('guns', op.id);
+
             case 'point.set':
                 this.writeMeta(op.point, { x: op.x, y: op.y });
                 return true;
@@ -312,6 +358,10 @@ export class Room extends DurableObject {
                     sql.exec('DELETE FROM targets');
                 }
 
+                if (op.scope === 'all') {
+                    sql.exec('DELETE FROM guns');
+                }
+
                 return true;
 
             case 'push': {
@@ -327,6 +377,10 @@ export class Room extends DurableObject {
 
                 for (const target of op.targets) {
                     changed = this.insert('targets', LIMITS.targets, target) || changed;
+                }
+
+                for (const gun of op.guns) {
+                    changed = this.insert('guns', LIMITS.guns, gun) || changed;
                 }
 
                 return changed;

@@ -16,6 +16,7 @@ export const LIMITS = {
     drawings: 2000,
     markers: 5000,
     targets: 500,
+    guns: 8,
     pointsPerDrawing: 10000,
 
     peers: 16,
@@ -202,6 +203,30 @@ export function validateTarget(value) {
 }
 
 /*
+ * A gun on the wire is flat, like markers and targets — the client's
+ * nested `position` is its own concern.
+ *
+ * `visible` is deliberately absent: it is per-viewer view state, so it is
+ * dropped here rather than relayed. Returning a fresh object is what
+ * enforces that; a peer cannot smuggle extra fields to everyone else.
+ */
+export function validateGun(value) {
+    if (!value || typeof value !== 'object') {
+        fail('bad-gun');
+    }
+
+    return {
+        id: id(value.id),
+        name: name(value.name),
+        x: coordinate(value.x),
+        y: coordinate(value.y),
+        weapon: value.weapon === null || value.weapon === undefined
+            ? null
+            : slug(value.weapon, null) ?? fail('bad-weapon')
+    };
+}
+
+/*
  * Returns the op in canonical form, or throws an OpError whose .code
  * the caller reports back over the socket. Never returns the caller's
  * object: rebroadcasting an unvalidated shape would let one peer smuggle
@@ -254,6 +279,26 @@ export function validateOp(raw, mapId) {
                 op: 'target.rename',
                 id: id(raw.id),
                 name: name(raw.name)
+            };
+
+        case 'gun.add':
+            return {
+                op: 'gun.add',
+                gun: validateGun(raw.gun)
+            };
+
+        case 'gun.move':
+            return {
+                op: 'gun.move',
+                id: id(raw.id),
+                x: coordinate(raw.x),
+                y: coordinate(raw.y)
+            };
+
+        case 'gun.remove':
+            return {
+                op: 'gun.remove',
+                id: id(raw.id)
             };
 
         case 'point.set':
@@ -312,10 +357,15 @@ export function validateOp(raw, mapId) {
                 ? raw.targets
                 : [];
 
+            const guns = Array.isArray(raw.guns)
+                ? raw.guns
+                : [];
+
             if (
                 drawings.length > LIMITS.drawings ||
                 markers.length > LIMITS.markers ||
-                targets.length > LIMITS.targets
+                targets.length > LIMITS.targets ||
+                guns.length > LIMITS.guns
             ) {
                 fail('too-large');
             }
@@ -328,7 +378,8 @@ export function validateOp(raw, mapId) {
                 markers: markers.map(
                     marker => validateMarker(marker, mapId)
                 ),
-                targets: targets.map(validateTarget)
+                targets: targets.map(validateTarget),
+                guns: guns.map(validateGun)
             };
         }
 

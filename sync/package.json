@@ -8,7 +8,8 @@
         "tail": "wrangler tail",
         "test:smoke": "node test/smoke.mjs",
         "test:browser": "node test/browser.mjs",
-        "test:disabled": "node test/disabled.mjs"
+        "test:disabled": "node test/disabled.mjs",
+        "test:guns": "node test/guns.mjs"
     },
     "devDependencies": {
         "wrangler": "^4.0.0"
