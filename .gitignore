@@ -4,3 +4,4 @@ dist-mobile/
 .env
 .wrangler/
 node_modules/
+maps/tiles/
