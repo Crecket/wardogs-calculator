@@ -133,3 +133,91 @@ export function missMeters(arcModel, rangeMeters, deltaZMeters) {
     /* The descending crossing is the far one. */
     return rangeMeters - Math.max(...crossings);
 }
+
+/*
+ * Least squares over the affine mil mapping. The two angle parameters are
+ * searched on a grid; muzzle velocity is solved in closed form for each
+ * candidate, because for fixed angles R = (v^2/g) sin(2 theta) is linear in
+ * v^2/g and the optimum is a ratio of sums.
+ */
+const ANGLE_OFFSET_MIN_DEG = -90;
+const ANGLE_OFFSET_MAX_DEG = 90;
+const ANGLE_OFFSET_STEP_DEG = 0.25;
+const ANGLE_PER_MIL_MIN_DEG = 0.0005;
+const ANGLE_PER_MIL_MAX_DEG = 0.2;
+const ANGLE_PER_MIL_STEP_DEG = 0.0005;
+
+export function fitArc(rows, branch) {
+    const samples = rows
+        .map(([distance, mil]) => [Number(distance), Number(mil)])
+        .filter(pair => pair.every(Number.isFinite));
+
+    if (samples.length < 3) {
+        throw new Error('fitArc needs at least three table rows');
+    }
+
+    let best = null;
+
+    for (
+        let offset = ANGLE_OFFSET_MIN_DEG;
+        offset <= ANGLE_OFFSET_MAX_DEG;
+        offset += ANGLE_OFFSET_STEP_DEG
+    ) {
+        for (
+            let perMil = ANGLE_PER_MIL_MIN_DEG;
+            perMil <= ANGLE_PER_MIL_MAX_DEG;
+            perMil += ANGLE_PER_MIL_STEP_DEG
+        ) {
+            let numerator = 0;
+            let denominator = 0;
+            let usable = true;
+
+            for (const [distance, mil] of samples) {
+                const theta = (offset + perMil * mil) * Math.PI / 180;
+                const sin2Theta = Math.sin(2 * theta);
+
+                if (sin2Theta <= 1e-6) {
+                    usable = false;
+                    break;
+                }
+
+                numerator += distance * sin2Theta;
+                denominator += sin2Theta * sin2Theta;
+            }
+
+            if (!usable || denominator <= 0) {
+                continue;
+            }
+
+            /* k = v^2 / g */
+            const k = numerator / denominator;
+
+            let squared = 0;
+
+            for (const [distance, mil] of samples) {
+                const theta = (offset + perMil * mil) * Math.PI / 180;
+                const predicted = k * Math.sin(2 * theta);
+
+                squared += (distance - predicted) ** 2;
+            }
+
+            const rms = Math.sqrt(squared / samples.length);
+
+            if (!best || rms < best.rmsMeters) {
+                best = {
+                    branch,
+                    muzzleVelocity: Math.sqrt(k * GRAVITY),
+                    angleOffsetDeg: offset,
+                    anglePerMilDeg: perMil,
+                    rmsMeters: rms
+                };
+            }
+        }
+    }
+
+    if (!best) {
+        throw new Error('fitArc found no usable parameters');
+    }
+
+    return best;
+}

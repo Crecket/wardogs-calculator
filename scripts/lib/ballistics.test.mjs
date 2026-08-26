@@ -111,3 +111,40 @@ test('short-range mortar miss falls under the suppression threshold', () => {
 test('a low arc cannot reach above its own apex', () => {
     assert.equal(missMeters(SPG_LOW, 1181, 100), null);
 });
+
+import { fitArc } from './ballistics.mjs';
+
+/*
+ * A table generated FROM the model must fit back to the model's own
+ * parameters. This is the only test of fitArc that does not depend on the
+ * shipped tables, so it isolates the search from the data.
+ */
+test('fitArc recovers parameters from a synthetic table', () => {
+    const truth = {
+        muzzleVelocity: 160,
+        angleOffsetDeg: 14.5,
+        anglePerMilDeg: 0.048
+    };
+
+    const rows = [];
+
+    for (let mil = 700; mil <= 1300; mil += 10) {
+        const deg = truth.angleOffsetDeg + truth.anglePerMilDeg * mil;
+        const t = Math.tan(deg * Math.PI / 180);
+
+        rows.push([Math.round(rangeForTan(truth.muzzleVelocity, t)), mil]);
+    }
+
+    const fit = fitArc(rows, 'high');
+
+    assert.ok(fit.rmsMeters < 1, `RMS ${fit.rmsMeters} should be under 1 m`);
+    close(fit.angleOffsetDeg, truth.angleOffsetDeg, 0.3);
+    close(fit.anglePerMilDeg, truth.anglePerMilDeg, 0.001);
+    close(fit.muzzleVelocity, truth.muzzleVelocity, 1);
+});
+
+test('fitArc reports the branch it was given', () => {
+    const rows = [[1181, 20], [1232, 30], [1283, 40]];
+
+    assert.equal(fitArc(rows, 'low').branch, 'low');
+});
