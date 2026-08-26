@@ -69,6 +69,7 @@
   "mapToolSearchInvalid": "Entrez des coordonnées valides",
   "mapToolSearchOutOfBounds": "Les coordonnées sont hors de la carte",
   "mapLayerMap": "Carte",
+  "mapLayerContours": "Courbes de niveau",
   "mapLayerGrid": "Grille",
   "mapLayerZones": "Zones",
   "mapLayerPolygons": "Polygones",

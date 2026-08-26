@@ -69,6 +69,7 @@
   "mapToolSearchInvalid": "Introduza coordenadas válidas",
   "mapToolSearchOutOfBounds": "As coordenadas estão fora do mapa",
   "mapLayerMap": "Mapa",
+  "mapLayerContours": "Curvas de nível",
   "mapLayerGrid": "Grelha",
   "mapLayerZones": "Zonas",
   "mapLayerPolygons": "Polígonos",

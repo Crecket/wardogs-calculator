@@ -65,6 +65,7 @@
   "mapToolSearchInvalid": "Введите корректные координаты",
   "mapToolSearchOutOfBounds": "Координаты находятся за пределами карты",
   "mapLayerMap": "Карта",
+  "mapLayerContours": "Изолинии",
   "mapLayerGrid": "Сетка",
   "mapLayerZones": "Зоны",
   "mapLayerPolygons": "Полигоны",

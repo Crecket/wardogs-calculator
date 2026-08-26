@@ -58,6 +58,11 @@ const MAP_TOOL_STATE = {
 
     layers: {
         tiles: true,
+        /*
+         * Off by default: the contour lines are a separate few-hundred-KB
+         * download, only made when somebody actually asks for them.
+         */
+        contours: false,
         grid: true,
         zones: true,
         polygons: true,
@@ -297,22 +302,51 @@ function matchesConfiguredCombo(event, combo) {
 function saveMapToolState() {
     /*
      * A shared session must not write room content over your own map.
-     * Suppressing the write here (rather than restoring afterwards) means
-     * even a crashed tab leaves 'wardogs-map-tools' exactly as it was.
+     * Suppressing that write here (rather than restoring afterwards) means
+     * even a crashed tab leaves the room's drawings and markers out of
+     * 'wardogs-map-tools' entirely.
+     *
+     * Layer visibility is not room content, though — it is how you have
+     * chosen to look at the map, and it has to survive a reload whether or
+     * not you happen to be in a session. So in a shared session the stored
+     * drawings and markers are read back and rewritten untouched, and only
+     * the layers are updated.
      */
-    if (
+    const roomContentSuppressed =
         typeof collabSuppressesLocalPersistence === 'function' &&
-        collabSuppressesLocalPersistence()
-    ) {
-        return;
-    }
+        collabSuppressesLocalPersistence();
 
     try {
+        let stored = {
+            drawings: MAP_TOOL_STATE.drawings,
+            markers: MAP_TOOL_STATE.markers
+        };
+
+        if (roomContentSuppressed) {
+            const raw =
+                localStorage.getItem(
+                    MAP_TOOLS_STORAGE_KEY
+                );
+
+            const parsed = raw
+                ? JSON.parse(raw)
+                : null;
+
+            stored = {
+                drawings: Array.isArray(parsed?.drawings)
+                    ? parsed.drawings
+                    : [],
+
+                markers: Array.isArray(parsed?.markers)
+                    ? parsed.markers
+                    : []
+            };
+        }
+
         localStorage.setItem(
             MAP_TOOLS_STORAGE_KEY,
             JSON.stringify({
-                drawings: MAP_TOOL_STATE.drawings,
-                markers: MAP_TOOL_STATE.markers,
+                ...stored,
                 layers: MAP_TOOL_STATE.layers
             })
         );
@@ -1041,6 +1075,18 @@ function setMapLayerVisible(layer, visible) {
     MAP_TOOL_STATE.layers[layer] = Boolean(visible);
     saveMapToolState();
 
+    /*
+     * Start the download the moment the layer is asked for rather than
+     * waiting for the redraw, so the lines appear as soon as they can.
+     */
+    if (
+        layer === 'contours' &&
+        visible &&
+        typeof ensureContoursLoaded === 'function'
+    ) {
+        ensureContoursLoaded(currentMapToolMapId());
+    }
+
     if (
         layer === 'cursorCoords' &&
         !MAP_TOOL_STATE.layers.cursorCoords
@@ -1064,6 +1110,16 @@ function buildMapLayers() {
 
     const layers = [
         ['tiles', 'mapLayerMap'],
+        /*
+         * Only offered where contours were precomputed; a custom map has
+         * no heightfield to have built them from.
+         */
+        ...(
+            typeof mapHasContours === 'function' &&
+            mapHasContours(currentMapToolMapId())
+                ? [['contours', 'mapLayerContours']]
+                : []
+        ),
         ['grid', 'mapLayerGrid'],
         ['zones', 'mapLayerZones'],
         ['polygons', 'mapLayerPolygons'],
