@@ -96,14 +96,22 @@ function updateMapToolHistoryUI() {
     const redoButton =
         $('mapToolRedoButton');
 
+    const inRoom =
+        typeof collabHandlesHistory === 'function' &&
+        collabHandlesHistory();
+
     if (undoButton) {
         undoButton.disabled =
-            MAP_TOOL_STATE.undoStack.length === 0;
+            inRoom
+                ? !collabCanUndo()
+                : MAP_TOOL_STATE.undoStack.length === 0;
     }
 
     if (redoButton) {
         redoButton.disabled =
-            MAP_TOOL_STATE.redoStack.length === 0;
+            inRoom
+                ? !collabCanRedo()
+                : MAP_TOOL_STATE.redoStack.length === 0;
     }
 }
 
@@ -167,6 +175,18 @@ function restoreMapToolContent(snapshot) {
 }
 
 function pushMapToolHistory() {
+    /*
+     * In a room, history is per-op and per-user (see collabUndo) rather
+     * than whole-document snapshots: restoring a snapshot would silently
+     * revert edits other peers made in the meantime.
+     */
+    if (
+        typeof collabHandlesHistory === 'function' &&
+        collabHandlesHistory()
+    ) {
+        return;
+    }
+
     MAP_TOOL_STATE.undoStack.push(
         snapshotMapToolContent()
     );
@@ -188,6 +208,13 @@ function resetMapToolHistory() {
 }
 
 function undoMapToolAction() {
+    if (
+        typeof collabHandlesHistory === 'function' &&
+        collabHandlesHistory()
+    ) {
+        return collabUndo();
+    }
+
     if (!MAP_TOOL_STATE.undoStack.length) {
         return false;
     }
@@ -204,6 +231,13 @@ function undoMapToolAction() {
 }
 
 function redoMapToolAction() {
+    if (
+        typeof collabHandlesHistory === 'function' &&
+        collabHandlesHistory()
+    ) {
+        return collabRedo();
+    }
+
     if (!MAP_TOOL_STATE.redoStack.length) {
         return false;
     }
@@ -231,6 +265,18 @@ function matchesConfiguredCombo(event, combo) {
 }
 
 function saveMapToolState() {
+    /*
+     * A shared session must not write room content over your own map.
+     * Suppressing the write here (rather than restoring afterwards) means
+     * even a crashed tab leaves 'wardogs-map-tools' exactly as it was.
+     */
+    if (
+        typeof collabSuppressesLocalPersistence === 'function' &&
+        collabSuppressesLocalPersistence()
+    ) {
+        return;
+    }
+
     try {
         localStorage.setItem(
             MAP_TOOLS_STORAGE_KEY,
@@ -477,6 +523,20 @@ function applyImportedMapToolChanges(imported) {
     MAP_TOOL_STATE.hoverMarkerId = null;
 
     saveMapToolState();
+
+    /*
+     * Layer visibility stays local — it is a view preference, not content.
+     */
+    if (
+        typeof collabOnBulkAdd ===
+        'function'
+    ) {
+        collabOnBulkAdd({
+            drawings: imported.drawings,
+            markers: imported.markers
+        });
+    }
+
     buildMapLayers();
     updateMapToolsUI();
     draw();
@@ -1663,15 +1723,24 @@ function placeMapToolMarker(point) {
 
     pushMapToolHistory();
 
-    MAP_TOOL_STATE.markers.push({
+    const marker = {
         id: mapToolId(),
         mapId: currentMapToolMapId(),
         icon: MAP_TOOL_STATE.selectedMarkerIcon,
         x: point.x,
         y: point.y
-    });
+    };
+
+    MAP_TOOL_STATE.markers.push(marker);
 
     saveMapToolState();
+
+    if (
+        typeof collabOnMarkerAdded ===
+        'function'
+    ) {
+        collabOnMarkerAdded(marker);
+    }
 
     if (
         typeof trackAnalytics ===
@@ -1823,6 +1892,18 @@ function deleteHoveredPencilPath() {
 
     pushMapToolHistory();
 
+    /*
+     * Captured before the filter: undoing a remove in a room re-adds the
+     * whole path under its original id, so peers merge it back rather
+     * than gaining a duplicate.
+     */
+    const removed =
+        MAP_TOOL_STATE.drawings.find(
+            item =>
+                item.id ===
+                MAP_TOOL_STATE.hoverPathId
+        );
+
     MAP_TOOL_STATE.drawings =
         MAP_TOOL_STATE.drawings.filter(
             item =>
@@ -1838,6 +1919,14 @@ function deleteHoveredPencilPath() {
         before
     ) {
         saveMapToolState();
+
+        if (
+            typeof collabOnDrawingRemoved ===
+            'function'
+        ) {
+            collabOnDrawingRemoved(removed);
+        }
+
         draw();
         return true;
     }
@@ -1869,6 +1958,9 @@ function deleteHoveredMapToolMarker() {
 
     pushMapToolHistory();
 
+    const removed =
+        getHoveredMapToolMarker();
+
     MAP_TOOL_STATE.markers =
         MAP_TOOL_STATE.markers.filter(
             item =>
@@ -1883,6 +1975,14 @@ function deleteHoveredMapToolMarker() {
         before
     ) {
         saveMapToolState();
+
+        if (
+            typeof collabOnMarkerRemoved ===
+            'function'
+        ) {
+            collabOnMarkerRemoved(removed);
+        }
+
         draw();
         return true;
     }
@@ -2274,6 +2374,17 @@ function handleMapToolMouseUp() {
                 path
             );
             saveMapToolState();
+
+            /*
+             * Once, here on pointerup — never per point, which would put
+             * a stroke's worth of ops through the rate limiter.
+             */
+            if (
+                typeof collabOnDrawingAdded ===
+                'function'
+            ) {
+                collabOnDrawingAdded(path);
+            }
 
             if (
                 typeof trackAnalytics ===

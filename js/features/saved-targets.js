@@ -77,6 +77,17 @@ function loadSavedTargets() {
 
 function persistSavedTargets() {
 
+    /*
+     * See saveMapToolState: a shared session never writes room content
+     * over your own saved targets.
+     */
+    if (
+        typeof collabSuppressesLocalPersistence === 'function' &&
+        collabSuppressesLocalPersistence()
+    ) {
+        return;
+    }
+
     localStorage.setItem(
         SAVED_TARGETS_KEY,
         JSON.stringify(
@@ -498,6 +509,16 @@ async function importSavedTargets() {
                 : selectedSavedTargetId;
 
         persistSavedTargets();
+
+        if (
+            typeof collabOnBulkAdd ===
+            'function'
+        ) {
+            collabOnBulkAdd({
+                targets: imported.targets
+            });
+        }
+
         renderSavedTargets();
 
         savedTargetTransferStatus(
@@ -584,6 +605,13 @@ function saveCurrentTarget() {
     persistSavedTargets();
 
     if (
+        typeof collabOnTargetAdded ===
+        'function'
+    ) {
+        collabOnTargetAdded(target);
+    }
+
+    if (
         typeof trackAnalytics ===
         'function'
     ) {
@@ -611,10 +639,11 @@ function deleteTarget(id) {
         return;
     }
 
-    savedTargets.splice(
-        index,
-        1
-    );
+    const [removed] =
+        savedTargets.splice(
+            index,
+            1
+        );
 
     if (
         selectedSavedTargetId === id
@@ -624,6 +653,13 @@ function deleteTarget(id) {
     }
 
     persistSavedTargets();
+
+    if (
+        typeof collabOnTargetRemoved ===
+        'function'
+    ) {
+        collabOnTargetRemoved(removed);
+    }
 
     renderSavedTargets();
 }
@@ -657,10 +693,24 @@ function editTargetName(id) {
         return;
     }
 
+    const previousName =
+        target.name;
+
     target.name =
         trimmed;
 
     persistSavedTargets();
+
+    if (
+        typeof collabOnTargetRenamed ===
+        'function'
+    ) {
+        collabOnTargetRenamed(
+            id,
+            previousName,
+            trimmed
+        );
+    }
 
     renderSavedTargets();
 }

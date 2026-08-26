@@ -103,6 +103,13 @@ function bindEvents() {
                 $('weapon').value;
 
             if (
+                typeof collabSyncShared ===
+                'function'
+            ) {
+                collabSyncShared();
+            }
+
+            if (
                 typeof trackAnalytics ===
                 'function'
             ) {
@@ -121,6 +128,18 @@ function bindEvents() {
     $('apply').addEventListener(
         'click',
         () => {
+
+            /*
+             * A room's map is fixed at creation: saved targets carry no
+             * map id, so resizing under them would silently misplace
+             * every one for every peer.
+             */
+            if (
+                typeof collabHandlesHistory === 'function' &&
+                collabHandlesHistory()
+            ) {
+                return;
+            }
 
             S.map =
                 'custom';
