@@ -97,9 +97,25 @@ npm run dev          # one shell
 npm run test:smoke   # another
 ```
 
-The smoke test runs against real `workerd` rather than mocks, covering room
+`test:smoke` runs against real `workerd` rather than mocks, covering room
 creation, op relay, late-joiner snapshots, exactly-once removal, every
 validation rejection, canonical rebroadcast, and rate limiting.
+
+Two browser tests cover the client half. They need a built site
+(`npm run build` in the repo root) plus Chromium:
+
+```sh
+npm install --no-save playwright-core
+npx playwright install chromium
+```
+
+- `npm run test:browser` — two real browsers in one room, with the worker
+  running. Covers strokes, markers, targets and point moves syncing both
+  ways, per-user undo, the map lock, and that leaving restores your own map
+  with local storage untouched throughout.
+- `npm run test:disabled` — no worker needed. Asserts the feature is inert
+  with `collab.url` unset, on desktop, a locale page, and mobile. This is
+  the one to run before sending anything upstream.
 
 ## Design notes
 
