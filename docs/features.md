@@ -43,7 +43,10 @@ The floating Map Tools toolbar provides:
 - **Coordinate Search** — jump to specific coordinates
 - **Layers** — toggle map tiles, overlays, drawings, markers, and cursor coordinates
 - **Import / Export** — back up or share drawings, user markers, and layer visibility settings as JSON
+- **Shared Session** — real-time collaborative planning over a shared link; hidden unless a sync service is configured
 - **Undo / Redo** — drawings, erased strokes, user markers, and Artillery/Target position changes
+
+Shared Sessions let several people edit one map together over a link. The feature is disabled unless `collab.url` is set in `config/app.json`, since it requires a service deployed separately from GitHub Pages. See [Shared Sessions](collaboration.md).
 
 Drawings and user markers are stored locally per map and are shared between desktop and mobile because both interfaces use the same site origin. The Import / Export Map Tool exports the complete persistent Map Tools state across maps (drawings, user markers, and layer visibility settings). Imports are merged with existing user content and imported drawing/marker IDs are regenerated to avoid collisions.
 

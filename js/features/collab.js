@@ -949,29 +949,27 @@ function collabPushSolo() {
         return;
     }
 
+    /*
+     * Re-stamp with the room's map: your content may have been drawn on a
+     * different map, and the room's is fixed.
+     */
     const mapId = S.map;
 
-    collabOnBulkAdd({
-        drawings: solo.drawings.map(drawing => ({
-            ...drawing,
-            mapId
-        })),
-        markers: solo.markers.map(marker => ({
-            ...marker,
-            mapId
-        })),
-        targets: solo.savedTargets
-    });
+    const payload = {
+        drawings: solo.drawings.map(drawing => ({ ...drawing, mapId })),
+        markers: solo.markers.map(marker => ({ ...marker, mapId })),
+        targets: structuredClone(solo.savedTargets)
+    };
+
+    collabOnBulkAdd(payload);
 
     /*
-     * The push is broadcast to peers but never echoed back to us, so it
-     * has to be applied locally too.
+     * The server broadcasts to peers but never echoes back to the sender,
+     * so the push has to be applied locally as well.
      */
     collabApplyOp({
         op: 'push',
-        drawings: solo.drawings.map(drawing => ({ ...drawing, mapId })),
-        markers: solo.markers.map(marker => ({ ...marker, mapId })),
-        targets: solo.savedTargets
+        ...payload
     });
 }
 

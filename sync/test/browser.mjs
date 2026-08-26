@@ -137,6 +137,22 @@ async function ready(page) {
     await page.evaluate(() => document.querySelector('.motd')?.remove());
 }
 
+/*
+ * The toolbar button toggles, and the popover stays open after an action
+ * inside it. Clicking unconditionally would close an already-open panel.
+ */
+async function openCollab(page) {
+    const open = await page.evaluate(
+        () => document.getElementById('collabPopover').classList.contains('open')
+    );
+
+    if (!open) {
+        await page.click('#mapToolCollab');
+    }
+
+    await page.waitForSelector('#collabPopover.open');
+}
+
 const A = await newPage(await browser.newContext());
 const B = await newPage(await browser.newContext());
 
@@ -165,7 +181,7 @@ const soloBefore = await A.evaluate(() => ({
 check('solo state seeded to local storage', soloBefore.tools.includes('solo-marker'));
 
 console.log('\n== create room ==');
-await A.click('#mapToolCollab');
+await openCollab(A);
 await A.waitForSelector('#collabPopover.open .collab-primary');
 /* Do not push the solo map, so the room starts empty and diffs are clear. */
 await A.uncheck('#collabIncludeMine');
@@ -298,7 +314,7 @@ console.log('\n== map is locked during session ==');
 check('map select disabled', await A.evaluate(() => $('mapSelect').disabled));
 
 console.log('\n== leaving restores the solo map ==');
-await A.click('#mapToolCollab');
+await openCollab(A);
 await A.waitForSelector('#collabPopover.open .collab-leave');
 await A.click('#collabPopover .collab-leave');
 await A.waitForFunction(() => COLLAB.status === 'off', null, { timeout: 10000 });
@@ -330,6 +346,40 @@ const bAfter = await B.evaluate(() => ({
     drawings: MAP_TOOL_STATE.drawings.length
 }));
 check('B still holds room content', bAfter.markers === 2 && bAfter.drawings === 1, JSON.stringify(bAfter));
+
+console.log('\n== rejoin with "bring my drawings and targets" ==');
+await openCollab(A);
+await A.waitForSelector('#collabPopover.open #collabCodeInput');
+await A.check('#collabIncludeMine');
+await A.fill('#collabCodeInput', code);
+await A.click('#collabPopover .collab-join');
+await A.waitForFunction(() => COLLAB.status === 'online', null, { timeout: 15000 });
+
+/* A's solo content should now be in the room, on top of what was there. */
+await B.waitForFunction(
+    () => MAP_TOOL_STATE.markers.some(m => m.id === 'solo-marker'),
+    null, { timeout: 10000 }
+);
+check('pushed solo marker reached B', true);
+check('pushed solo target reached B',
+    await B.evaluate(() => savedTargets.some(t => t.id === 'solo-target')));
+check('room content survived the push',
+    await B.evaluate(() => MAP_TOOL_STATE.drawings.length === 1));
+check('A sees the merged room',
+    await A.evaluate(() =>
+        MAP_TOOL_STATE.drawings.length === 1 &&
+        MAP_TOOL_STATE.markers.some(m => m.id === 'solo-marker')));
+
+/* Leaving again must still hand back the untouched solo map. */
+await openCollab(A);
+await A.waitForSelector('#collabPopover.open .collab-leave');
+await A.click('#collabPopover .collab-leave');
+await A.waitForFunction(() => COLLAB.status === 'off', null, { timeout: 10000 });
+check('second leave restores solo map again',
+    await A.evaluate(() =>
+        MAP_TOOL_STATE.drawings.length === 0 &&
+        MAP_TOOL_STATE.markers.length === 1 &&
+        MAP_TOOL_STATE.markers[0].id === 'solo-marker'));
 
 console.log('\n== console errors ==');
 const real = errors.filter(e => !/favicon|umami|net::ERR_/i.test(e));

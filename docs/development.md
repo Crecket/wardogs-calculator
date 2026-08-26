@@ -63,6 +63,14 @@ wardogs-calculator/
 │       └── mobile/
 │           └── index.html
 │
+├── sync/                     # Shared-session server (deployed separately)
+│   ├── src/
+│   │   ├── index.js          # Worker: room creation + WebSocket routing
+│   │   ├── room.js           # Durable Object: one per room
+│   │   └── ops.js            # Op validation
+│   ├── test/
+│   └── wrangler.jsonc
+│
 ├── package.json
 ├── style.css
 ├── mobile.css
@@ -74,6 +82,11 @@ wardogs-calculator/
 ```
 
 `dist/` is generated during the build process and is not committed to the repository.
+
+`sync/` is a self-contained Cloudflare Worker with its own `package.json` and
+deployment. It is not part of the site build and is never copied into `dist/`.
+The site only contacts it when `collab.url` is set in `config/app.json`; see
+[Shared Sessions](collaboration.md).
 
 CSS source is split into focused modules under `styles/desktop/` and `styles/mobile/`.
 The root `style.css` and `mobile.css` files are lightweight development entry points that import those modules.

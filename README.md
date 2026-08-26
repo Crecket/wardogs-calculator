@@ -45,6 +45,7 @@ Detailed documentation is split into focused files to keep this README concise.
 - [Features & weapons](docs/features.md) — calculator features, Map Tools, weapons, touch controls, and coordinate system
 - [Maps](docs/maps.md) — map configuration, tile structure, bounds, marker zoom visibility, and adding new maps
 - [Mobile interface](docs/mobile.md) — mobile routes, automatic routing, touch controls, and deployment architecture
+- [Shared sessions](docs/collaboration.md) — real-time collaborative map planning (disabled by default; needs a separately deployed sync service)
 - [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, and localized URLs
 - [Development](docs/development.md) — project structure, local development, unified build process, and GitHub Pages deployment
 - [Analytics](docs/analytics.md) — Umami custom events, event payloads, debouncing, and privacy considerations
