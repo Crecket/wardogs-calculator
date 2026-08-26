@@ -59,6 +59,345 @@ function marker(
 
 
 /* =========================
+   RADIUS RINGS
+   ========================= */
+
+/*
+ * One dashed circle of a given in-game radius, drawn in screen space.
+ */
+function drawRadiusRing(
+    worldX,
+    worldY,
+    radiusMeters,
+    color,
+    label,
+    {
+        fill = true,
+        dash = [7, 5]
+    } = {}
+) {
+
+    const v =
+        view();
+
+    const pos =
+        worldToLocalScreen(
+            worldX,
+            worldY
+        );
+
+    const radius =
+        metersToWorldDistance(
+            radiusMeters
+        ) *
+        v.scale;
+
+    if (
+        !Number.isFinite(radius) ||
+        radius <= 0
+    ) {
+        return;
+    }
+
+    const stroke =
+        color ||
+        '#d7a452';
+
+    ctx.beginPath();
+
+    ctx.arc(
+        pos.x,
+        pos.y,
+        radius,
+        0,
+        Math.PI * 2
+    );
+
+    if (fill) {
+
+        ctx.fillStyle =
+            hexToRgba(
+                stroke,
+                0.12
+            );
+
+        ctx.fill();
+    }
+
+    ctx.strokeStyle =
+        stroke;
+
+    ctx.lineWidth =
+        2;
+
+    ctx.setLineDash(
+        dash
+    );
+
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+    if (!label) {
+        return;
+    }
+
+    /*
+     * The label rides the top edge rather than the centre, where the
+     * marker icon sits and where overlapping shapes would stack their
+     * text on top of each other.
+     */
+    ctx.save();
+
+    ctx.font =
+        '600 12px system-ui, sans-serif';
+
+    ctx.textAlign =
+        'center';
+
+    ctx.textBaseline =
+        'bottom';
+
+    ctx.lineWidth =
+        3;
+
+    ctx.strokeStyle =
+        'rgba(0, 0, 0, 0.75)';
+
+    ctx.strokeText(
+        label,
+        pos.x,
+        pos.y - radius - 4
+    );
+
+    ctx.fillStyle =
+        stroke;
+
+    ctx.fillText(
+        label,
+        pos.x,
+        pos.y - radius - 4
+    );
+
+    ctx.restore();
+}
+
+/*
+ * A FOB's build area is a square, not a circle, so it gets its own
+ * primitive. `halfExtent` is the in-game distance from the centre to an
+ * edge — the full side is twice that. Axis-aligned, matching the way
+ * build volumes sit against the world grid.
+ */
+function drawRadiusSquare(
+    worldX,
+    worldY,
+    halfExtentMeters,
+    color,
+    label
+) {
+
+    const v =
+        view();
+
+    const pos =
+        worldToLocalScreen(
+            worldX,
+            worldY
+        );
+
+    const half =
+        metersToWorldDistance(
+            halfExtentMeters
+        ) *
+        v.scale;
+
+    if (
+        !Number.isFinite(half) ||
+        half <= 0
+    ) {
+        return;
+    }
+
+    const stroke =
+        color ||
+        '#d7a452';
+
+    const side =
+        half * 2;
+
+    ctx.fillStyle =
+        hexToRgba(
+            stroke,
+            0.12
+        );
+
+    ctx.fillRect(
+        pos.x - half,
+        pos.y - half,
+        side,
+        side
+    );
+
+    ctx.strokeStyle =
+        stroke;
+
+    ctx.lineWidth =
+        2;
+
+    ctx.setLineDash([
+        7,
+        5
+    ]);
+
+    ctx.strokeRect(
+        pos.x - half,
+        pos.y - half,
+        side,
+        side
+    );
+
+    ctx.setLineDash([]);
+
+    if (!label) {
+        return;
+    }
+
+    ctx.save();
+
+    ctx.font =
+        '600 12px system-ui, sans-serif';
+
+    ctx.textAlign =
+        'center';
+
+    ctx.textBaseline =
+        'bottom';
+
+    ctx.lineWidth =
+        3;
+
+    ctx.strokeStyle =
+        'rgba(0, 0, 0, 0.75)';
+
+    ctx.strokeText(
+        label,
+        pos.x,
+        pos.y - half - 4
+    );
+
+    ctx.fillStyle =
+        stroke;
+
+    ctx.fillText(
+        label,
+        pos.x,
+        pos.y - half - 4
+    );
+
+    ctx.restore();
+}
+
+function formatRingRadius(radiusMeters) {
+
+    return radiusMeters < 1000
+        ? `${Math.round(radiusMeters)} m`
+        : `${(radiusMeters / 1000).toFixed(2)} km`;
+}
+
+/* =========================
+   MAIN ZONE
+   ========================= */
+
+/*
+ * The scoring area — one circle per map, showing where people have to be
+ * to earn points. Not one per spawn and not one per tower: there is a
+ * single contested area.
+ *
+ * Its real centre is not recorded anywhere in the map data, so a map may
+ * carry a `mainZone: { x, y, radius }` block (stored metres, like every
+ * other coordinate in maps/*.json) and otherwise falls back to the
+ * middle of the map's own bounds at the configured default radius. The
+ * fallback is a guess that puts the circle on screen to be dragged into
+ * place — it is not a measured position.
+ */
+function getMainZone(map) {
+
+    const config =
+        getRingConfig('mainZone');
+
+    if (!config) {
+        return null;
+    }
+
+    const stored =
+        map?.mainZone;
+
+    if (
+        stored &&
+        Number.isFinite(Number(stored.x)) &&
+        Number.isFinite(Number(stored.y))
+    ) {
+
+        const radius =
+            Number(stored.radius);
+
+        return {
+            x: storedMetersToWorldCoordinate(
+                Number(stored.x)
+            ),
+            y: storedMetersToWorldCoordinate(
+                Number(stored.y)
+            ),
+            radius:
+                Number.isFinite(radius) &&
+                radius > 0
+                    ? radius
+                    : config.radius,
+            color: config.color,
+            placed: true
+        };
+    }
+
+    const bounds =
+        getViewBounds();
+
+    return {
+        x: (bounds.minX + bounds.maxX) / 2,
+        y: (bounds.minY + bounds.maxY) / 2,
+        radius: config.radius,
+        color: config.color,
+        placed: false
+    };
+}
+
+function drawMainZone(map) {
+
+    const zone =
+        getMainZone(map);
+
+    if (!zone) {
+        return;
+    }
+
+    /*
+     * Outline only, solid: the scoring area covers a large part of the
+     * map, so a fill would tint everything under it, and a dashed line
+     * would read as one more of the dashed circles already on screen.
+     */
+    drawRadiusRing(
+        zone.x,
+        zone.y,
+        zone.radius,
+        zone.color,
+        tr('mapLayerMainZone'),
+        {
+            fill: false,
+            dash: []
+        }
+    );
+}
+
+/* =========================
    PRESET ZONES
    ========================= */
 
@@ -73,9 +412,6 @@ function drawPresetZones(map) {
         return;
     }
 
-    const v =
-        view();
-
     map.zones.forEach(
         zone => {
 
@@ -87,56 +423,16 @@ function drawPresetZones(map) {
                 return;
             }
 
-            const pos =
-                worldToLocalScreen(
-                    storedMetersToWorldCoordinate(zone.x),
-
-                    storedMetersToWorldCoordinate(zone.y)
-                );
-
-            const radius =
-                (
-                    metersToWorldDistance(zone.radius)
-                ) *
-                v.scale;
-
-            ctx.beginPath();
-
-            ctx.arc(
-                pos.x,
-                pos.y,
-                radius,
-                0,
-                Math.PI * 2
+            drawRadiusRing(
+                storedMetersToWorldCoordinate(zone.x),
+                storedMetersToWorldCoordinate(zone.y),
+                zone.radius,
+                zone.color,
+                null
             );
-
-            ctx.fillStyle =
-                hexToRgba(
-                    zone.color,
-                    0.12
-                );
-
-            ctx.fill();
-
-            ctx.strokeStyle =
-                zone.color ||
-                '#d7a452';
-
-            ctx.lineWidth =
-                2;
-
-            ctx.setLineDash([
-                7,
-                5
-            ]);
-
-            ctx.stroke();
-
-            ctx.setLineDash([]);
         }
     );
 }
-
 
 /* =========================
    PRESET POLYGONS

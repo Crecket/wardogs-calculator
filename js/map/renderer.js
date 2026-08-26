@@ -143,6 +143,18 @@ function draw() {
     }
 
     /*
+     * Build areas sit under the drawings and markers, so the FOB icon
+     * they belong to stays legible on top of its own square.
+     */
+    if (isMapLayerVisible('mainZone')) {
+        drawMainZone(currentMap);
+    }
+
+    if (isMapLayerVisible('fobAreas')) {
+        drawFobBuildAreas();
+    }
+
+    /*
      * User pencil drawings are persistent
      * map annotations and live below the
      * artillery solution overlays.

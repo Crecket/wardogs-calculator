@@ -60,6 +60,8 @@ const MAP_TOOL_STATE = {
         presetMarkers: true,
         drawings: true,
         userMarkers: true,
+        mainZone: true,
+        fobAreas: true,
         artillery: true,
         cursorCoords: true
     }
@@ -713,18 +715,18 @@ function updateMapToolsUI() {
 
             /*
              * Menu-only tools should only look active
-             * while their popover is actually open.
-             * Their internal tool state can remain set
-             * without leaving a permanently highlighted
-             * toolbar icon.
+             * while their popover is actually open:
+             * for them the popover IS the tool, so a
+             * highlight once it closes would point at
+             * nothing.
+             *
+             * The marker tool deliberately is not one of
+             * these. Picking an icon closes the picker but
+             * leaves the tool armed, and every map click
+             * then places a marker — so the button has to
+             * stay lit to say so, the way the pencil's
+             * already does after its palette closes.
              */
-            if (tool === 'marker') {
-                active =
-                    isMapToolMenuOpen(
-                        'markerPicker'
-                    );
-            }
-
             if (
                 tool ===
                 'coordinateSearch'
@@ -898,13 +900,16 @@ function buildMarkerPicker() {
         button.type = 'button';
         button.className =
             'map-tool-marker-option';
+        const label =
+            getMarkerAssetLabel(asset);
+
         button.dataset.icon =
             asset.id;
         button.title =
-            asset.id;
+            label;
         button.setAttribute(
             'aria-label',
-            asset.id
+            label
         );
 
         const image =
@@ -1027,6 +1032,8 @@ function buildMapLayers() {
         ['presetMarkers', 'mapLayerPresetMarkers'],
         ['drawings', 'mapLayerDrawings'],
         ['userMarkers', 'mapLayerUserMarkers'],
+        ['mainZone', 'mapLayerMainZone'],
+        ['fobAreas', 'mapLayerFobAreas'],
         ['artillery', 'mapLayerArtillery'],
         ['cursorCoords', 'mapLayerCursorCoordinates']
     ];
@@ -1560,6 +1567,7 @@ function initMapTools() {
         }
     );
 
+
     markerButton?.addEventListener(
         'click',
         event => {
@@ -1802,6 +1810,49 @@ function placeMapToolMarker(point) {
     }
 
     draw();
+}
+
+/* =========================
+   FOB BUILD AREAS
+   ========================= */
+
+/*
+ * A FOB's build area is a square around the icon rather than a circle,
+ * and it belongs to the marker rather than being its own object: place
+ * the FOB icon and the area comes with it. That also means it needs no
+ * state, no erasing and no sync of its own — the marker it hangs off
+ * already has all three.
+ */
+function drawFobBuildAreas() {
+
+    const config =
+        getRingConfig('fob');
+
+    if (!config) {
+        return;
+    }
+
+    MAP_TOOL_STATE.markers
+        .filter(
+            marker =>
+                marker.icon === 'fob' &&
+                marker.mapId ===
+                currentMapToolMapId()
+        )
+        .forEach(
+            marker => {
+
+                drawRadiusSquare(
+                    marker.x,
+                    marker.y,
+                    config.radius,
+                    config.color,
+                    formatRingRadius(
+                        config.radius
+                    )
+                );
+            }
+        );
 }
 
 function findPencilPathAtCanvasPoint(

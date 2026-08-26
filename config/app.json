@@ -30,6 +30,16 @@
   "map": {
     "camera": {
       "maxZoom": 100
+    },
+    "rings": {
+      "fob": {
+        "radius": 150,
+        "color": "#5fa8d3"
+      },
+      "mainZone": {
+        "radius": 500,
+        "color": "#82c596"
+      }
     }
   }
 }

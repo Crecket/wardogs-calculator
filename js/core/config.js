@@ -6,6 +6,31 @@ const DEFAULT_APP_CONFIG = {
     map: {
         camera: {
             maxZoom: 100
+        },
+
+        /*
+         * PLACEHOLDER SIZES — these are not measured in-game values.
+         * Both are in metres and exist so the shapes render at a sane
+         * size until someone confirms the real numbers; replace them in
+         * config/app.json rather than here.
+         *
+         * A FOB build area is a square: its `radius` is the distance
+         * from the FOB to an edge, so the buildable side is twice it.
+         *
+         * The main zone is a circle and `radius` means what it says —
+         * a fallback only. Real maps record their own centre and radius in
+         * maps/*.json; the values there are inferred from where the towers
+         * sit, not measured in-game.
+         */
+        rings: {
+            fob: {
+                radius: 150,
+                color: '#5fa8d3'
+            },
+            mainZone: {
+                radius: 500,
+                color: '#82c596'
+            }
         }
     },
 
@@ -63,6 +88,18 @@ function mergeAppConfig(base, override) {
             camera: {
                 ...base.map.camera,
                 ...(override?.map?.camera || {})
+            },
+            rings: {
+                ...base.map.rings,
+                ...(override?.map?.rings || {}),
+                fob: {
+                    ...base.map.rings.fob,
+                    ...(override?.map?.rings?.fob || {})
+                },
+                mainZone: {
+                    ...base.map.rings.mainZone,
+                    ...(override?.map?.rings?.mainZone || {})
+                }
             }
         },
 
@@ -177,6 +214,42 @@ function isCollabConfigured() {
     return Boolean(
         getCollabServiceUrl()
     );
+}
+
+function getRingConfig(kind) {
+
+    const fallback =
+        DEFAULT_APP_CONFIG.map.rings[kind];
+
+    if (!fallback) {
+        return null;
+    }
+
+    const configured =
+        APP_CONFIG
+            ?.map
+            ?.rings
+            ?.[kind];
+
+    const radius =
+        Number(
+            configured?.radius
+        );
+
+    const color =
+        typeof configured?.color === 'string' &&
+        /^#[0-9a-fA-F]{6}$/.test(configured.color)
+            ? configured.color
+            : fallback.color;
+
+    return {
+        radius:
+            Number.isFinite(radius) &&
+            radius > 0
+                ? radius
+                : fallback.radius,
+        color
+    };
 }
 
 function getMaxCameraZoom() {
