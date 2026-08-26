@@ -321,14 +321,24 @@ looked up from `data/ballistics/height-correction.json` and **added** to the
 flat-table mil. It is a differential from a model, so it is exactly zero at
 ΔZ = 0 and the shipped tables stay authoritative on flat ground.
 
-The correction is deliberately withheld in three cases, each of which reports
-itself in the panel caption rather than failing quietly:
+The correction applies to **every arc** — mortar `single`, SPG-2 `low` and
+SPG-2 `high`. It is withheld in two cases, each of which reports itself in the
+panel caption rather than failing quietly:
 
 | Case | Why | Where it is configured |
 |---|---|---|
-| SPG-2 `low` | Research puts its break-even impact angle at 25°, where the vacuum fit says 13°. A correction there is a coin flip. | `null` in the grid, from `CORRECTED_ARCS` in `scripts/build-height-correction.mjs` |
 | Any map outside `correctedMaps` | Bakurani's coordinate alignment was validated by visual overlay after the Y-flip fix in `5c462a173`; Ozeti's never was, and a numeric correction tolerates misalignment far worse than a caption does. | `releasePolicy.correctedMaps` |
-| A miss under 10 m | Below this the correction is not worth acting on, and printing one implies a precision the model does not have. | `releasePolicy.suppressionMissMeters` |
+| A miss under 10 m | Below this the correction is not worth acting on, and printing one implies a precision the model does not have. Applied per arc, so a shallow ΔZ can leave the steep arc alone while correcting the flat one. | `releasePolicy.suppressionMissMeters` |
+
+A shot can also be uncorrectable on one arc because the target sits above that
+arc's apex — common on the low arc at large ΔZ. That reads the same way as the
+suppression case: the arc is named in the caption as not corrected.
+
+SPG-2 `low` was withheld until 2026-08-27 on the grounds that its break-even
+impact angle is 25° in research against 13° in this fit. A sweep of 1,652
+(arc, range, ΔZ) cells found no case where correcting is worse than ignoring;
+on the low arc, the flattest of the three, it is the difference between roughly
+600 m of miss and 25 m against a model perturbed 2% in muzzle velocity.
 
 An absent or empty `correctedMaps` corrects **nothing**. It does not fall back
 to correcting every map.

@@ -20,7 +20,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { milCorrection, missMeters } from './lib/ballistics.mjs';
+import { GRAVITY, milCorrection, missMeters } from './lib/ballistics.mjs';
 
 const root = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -29,10 +29,19 @@ const root = resolve(
 
 const CORRECTION_SCHEMA = 'wardogs-height-correction-v1';
 
-/* Arcs the correction ships on. Anything absent is written as null. */
+/*
+ * Arcs the correction ships on. Anything absent is written as null.
+ *
+ * spg.low was withheld until 2026-08-27 on the grounds that its break-even
+ * impact angle is 25 degrees in research against 13 in this fit. Sweeping
+ * every arc, range and deltaZ says that caution was misplaced: correcting
+ * beats ignoring in all 1652 cells, and on the low arc it is the difference
+ * between ~600 m of miss and ~25 m, measured against a model perturbed 2% in
+ * muzzle velocity. It is the flattest arc, so it is the one height hurts most.
+ */
 const CORRECTED_ARCS = {
     mortar: ['single'],
-    spg: ['high']
+    spg: ['low', 'high']
 };
 
 const DISTANCE_SAMPLES = 40;
@@ -43,13 +52,27 @@ const DELTA_Z_STEP_METERS = 50;
 const round = (value, places) =>
     value === null ? null : Number(value.toFixed(places));
 
-function distanceAxis(rows) {
+/*
+ * The axis stops at the model's own reach, not the table's.
+ *
+ * A vacuum trajectory cannot exceed v^2/g, and the SPG high table's last row
+ * (2629 m) sits just past its fitted ceiling (2622.6 m). Sampling out to the
+ * table maximum puts a column of nulls at the right edge, and because the
+ * bilinear lookup needs both bracketing columns, that column poisons every
+ * shot above the last valid sample -- 49 m of range that could be corrected
+ * and was not. Clamping costs the few metres the model genuinely cannot
+ * reach instead.
+ */
+function distanceAxis(rows, arcModel) {
     const distances = rows
         .map(row => Number(row[0]))
         .filter(Number.isFinite);
 
+    const ceiling =
+        arcModel.muzzleVelocity * arcModel.muzzleVelocity / GRAVITY;
+
     const min = Math.min(...distances);
-    const max = Math.max(...distances);
+    const max = Math.min(Math.max(...distances), ceiling * 0.9995);
     const step = (max - min) / (DISTANCE_SAMPLES - 1);
 
     return Array.from(
@@ -73,7 +96,7 @@ function deltaZAxis() {
 }
 
 function buildGrid(arcModel, rows) {
-    const distancesMeters = distanceAxis(rows);
+    const distancesMeters = distanceAxis(rows, arcModel);
     const deltaZMeters = deltaZAxis();
 
     const milCorrections = deltaZMeters.map(

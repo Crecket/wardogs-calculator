@@ -86,19 +86,15 @@ the file.
 
 ## Elevation correction — what is still switched off
 
-The height correction is **on**
+The height correction is **on for every arc**
 (`releasePolicy.automaticMilCorrection` in
-`data/ballistics/terrain-context.json`). It is withheld in three cases, each of
-which says so in the panel caption. Each entry below is what it would take to
-turn one on.
+`data/ballistics/terrain-context.json`). SPG-2 `low` was enabled on 2026-08-27:
+sweeping 1,652 (arc, range, ΔZ) cells found no case where correcting is worse
+than ignoring, and on the low arc it is the difference between roughly 600 m of
+miss and 25 m against a model perturbed 2% in muzzle velocity.
 
-- **SPG-2 `low` arc.** Stored as `null` in the grid, captioned "high arc
-  corrected for height, low arc not". Research puts its break-even impact angle
-  at 25° where the vacuum fit says 13°, so a correction is as likely to hurt as
-  help — see [ideas-research/01-terrain-heightmap.md](ideas-research/01-terrain-heightmap.md)
-  § 5. Needs the real projectile parameters, then a re-run of the break-even.
-  Enable by adding `low` to `CORRECTED_ARCS` in
-  `scripts/build-height-correction.mjs` and regenerating.
+Two things still hold it back, both captioned in the panel rather than silent:
+
 - **Ozeti, and every map except Bakurani.** `releasePolicy.correctedMaps` lists
   only `bakurani`, whose alignment was validated by visual overlay after the
   Y-flip fix in `5c462a173`. Ozeti's never was. Validate it the same way, then
@@ -119,14 +115,14 @@ turn one on.
   ΔZ, comparing the corrected MIL against where the round actually lands.
   Nothing in this pipeline has been checked against the game — only against
   itself.
-- **The SPG `high` table outruns its own fitted model.** The table's last row is
-  2629 m; the fit's vacuum ceiling is v²/g = 2622.6 m. The final distance column
-  of the grid is `null` at every ΔZ, so shots at the extreme end of the SPG's
-  range are never corrected. Harmless, and it disappears when the model comes
-  from the paks.
+- **The SPG tables outrun their own fitted model.** The high table's last row is
+  2629 m against a fitted vacuum ceiling of 2622.6 m. The grid's distance axis is
+  now clamped to that ceiling, so the corrected span reaches 2621 m instead of
+  stopping at 2580; the last few metres of table range still get nothing. It
+  disappears when the model comes from the paks.
 - **No automated coverage under `js/`.** `scripts/lib/ballistics.test.mjs` covers
   the solver and the fit; the runtime half — the gate, the map allowlist,
-  `correctArc`, the caption selection — has none, because the repo has no
+  `correctArc`, the per-arc caption selection — has none, because the repo has no
   browser test harness for it. Verified once against a throwaway VM harness.
 - **Vehicle attitude is not modelled.** The SPH-2 level warning is still just a
   caption. Chassis tilt moves the impact independently of terrain ΔZ, so a

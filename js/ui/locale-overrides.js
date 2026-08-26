@@ -288,10 +288,22 @@
              * caption even when the correction had been applied.
              */
             if (meta.applied && meta.arcsUncorrected?.length) {
-                return zhText(
-                    'terrainStatusUncorrectedArc',
-                    'ΔZ {dz} m · 高抛弹道已修正，低伸弹道未修正'
-                ).replace('{dz}', dz);
+                const names = {
+                    low: zhText('arcNameLow', '低伸弹道'),
+                    high: zhText('arcNameHigh', '高抛弹道')
+                };
+
+                const listed = meta.arcsUncorrected
+                    .map(arc => names[arc])
+                    .filter(Boolean)
+                    .join(' + ');
+
+                if (listed) {
+                    return zhText(
+                        'terrainStatusUncorrectedArc',
+                        'ΔZ {dz} m · {arcs}未按高差修正'
+                    ).replace('{dz}', dz).replace('{arcs}', listed);
+                }
             }
 
             if (meta.applied) {

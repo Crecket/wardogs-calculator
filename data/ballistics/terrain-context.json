@@ -22,7 +22,7 @@
     "correctedMaps": [
       "bakurani"
     ],
-    "reason": "Height correction is on where we trust the inputs and off where we do not. Off for SPG-2 low (null in the grid: research puts its break-even impact angle at 25 degrees where the vacuum fit says 13). Off for any map outside correctedMaps: Bakurani's coordinate alignment was validated by visual overlay after the Y-flip fix in 5c462a173, Ozeti's never was. The projectile model is still a vacuum fit to our own tables; see docs/superpowers/specs/2026-08-26-elevation-correction-design.md section 8."
+    "reason": "Height correction is on for every arc on the maps in correctedMaps. spg.low was enabled on 2026-08-27: a sweep of 1652 (arc, range, deltaZ) cells found no case where correcting is worse than ignoring, and on the low arc it is the difference between roughly 600 m of miss and 25 m against a model perturbed 2% in muzzle velocity. Still off for maps outside correctedMaps: Bakurani's coordinate alignment was validated by visual overlay after the Y-flip fix in 5c462a173, Ozeti's never was. The projectile model remains a vacuum fit to our own tables and has never been checked against the game; see docs/superpowers/specs/2026-08-26-elevation-correction-design.md section 8."
   },
   "calibration": {
     "ready": false
