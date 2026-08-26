@@ -2,72 +2,39 @@
 
 ```text
 wardogs-calculator/
-├── .github/
-│   └── workflows/
-│       └── pages.yml
-│
+├── .github/workflows/pages.yml
 ├── assets/
 │   ├── flags/
 │   ├── map-markers/
 │   ├── favicon.png
 │   └── preview.png
-│
 ├── config/
 ├── data/
 │   ├── ballistics/
 │   └── terrain/
-│       └── bakurani/
-│           ├── manifest.json
-│           └── chunks/
 ├── js/
 │   ├── core/
-│   │   └── mobile-redirect.js
 │   ├── features/
-│   │   └── terrain-ballistics.js
 │   ├── map/
 │   ├── mobile/
-│   │   └── mobile.js
 │   └── ui/
-│
+│       └── locale-overrides.js
 ├── locales/
+│   ├── index.json
+│   └── zh-cn.json
 ├── maps/
-│   └── tiles/
-│
-├── styles/
-│   ├── desktop/
-│   │   ├── base.css
-│   │   ├── layout.css
-│   │   ├── controls.css
-│   │   ├── map.css
-│   │   ├── saved-targets.css
-│   │   ├── chrome.css
-│   │   ├── map-tools.css
-│   │   └── motd.css
-│   └── mobile/
-│       ├── shell.css
-│       ├── map.css
-│       ├── tools.css
-│       ├── sheet.css
-│       └── responsive.css
-│
 ├── scripts/
 │   ├── build-pages.mjs
-│   ├── dev-server.mjs
-│   ├── install-terrain-release.ps1
-│   └── verify-terrain-release.ps1
-│
-├── src/
-│   └── pages/
-│       ├── index.html
-│       ├── locales/
-│       └── mobile/
-│           └── index.html
-│
+│   ├── sync-locales.mjs
+│   ├── zh-cn-seo.mjs
+│   ├── version-assets.mjs
+│   └── dev-server.mjs
+├── src/pages/
+├── styles/
 ├── package.json
 ├── style.css
 ├── mobile.css
 ├── robots.txt
-├── sitemap.xml
 ├── CNAME
 ├── LICENSE
 └── README.md
@@ -75,137 +42,29 @@ wardogs-calculator/
 
 `dist/` is generated during the build process and is not committed to the repository.
 
-CSS source is split into focused modules under `styles/desktop/` and `styles/mobile/`.
-The root `style.css` and `mobile.css` files are lightweight development entry points that import those modules.
+CSS source is split into focused modules under `styles/desktop/` and `styles/mobile/`. The root `style.css` and `mobile.css` files are development entry points; production receives bundled `dist/style.css` and `dist/mobile.css`.
 
-During `npm run build`, the modules are concatenated in a fixed order into:
-
-```text
-dist/style.css
-dist/mobile.css
-```
-
-This keeps the source maintainable while production still loads only one desktop stylesheet and one mobile override stylesheet.
-
-The old standalone `dist-mobile/` output is no longer used. Desktop and mobile are built into one artifact.
-
----
-
-## Technologies
-
-- HTML5
-- CSS3
-- Vanilla JavaScript
-- HTML Canvas API
-- Pointer Events
-- Fetch API
-- JSON
-- Browser `localStorage` / `sessionStorage`
-- Node.js build and development scripts
-- GitHub Actions
-- GitHub Pages
-
-The application itself intentionally uses **no frontend framework**.
-
-Node.js is only used for the build/deployment process.
-
----
+The application intentionally uses no frontend framework. Runtime code is HTML5, modular CSS, Vanilla JavaScript, Canvas, Pointer Events, Fetch API, JSON and browser storage. Node.js is used only for build/development scripts.
 
 ## Running Locally
 
-The project should be served over HTTP because maps, configuration files, localization files, terrain data, and other resources are loaded using `fetch()`.
-
-### Requirements
-
-Install a recent version of Node.js.
+The project must be served over HTTP because maps, configuration, locales, Terrain3D and other resources are loaded with `fetch()`.
 
 ### Development server
 
-From the project root:
-
 ```bash
 npm run dev
 ```
 
-The development server serves source files directly, so it does **not** generate or copy `dist/` on every change.
+Production analytics are disabled by default in the development server. Set `WARDOGS_DISABLE_ANALYTICS=false` only when explicitly testing the Umami integration.
 
-Desktop:
-
-```text
-http://localhost:8000/
-http://localhost:8000/ru/
-```
-
-Mobile:
-
-```text
-http://localhost:8000/mobile/
-http://localhost:8000/mobile/ru/
-```
-
-The dev server includes live reload for JavaScript, modular CSS, page sources, locales, config, data, assets, and top-level map configuration files.
-
-The Bakurani tile pyramid is intentionally not watched because of its size. Tiles are served directly from disk, so after replacing a tile a manual browser refresh is enough to see the new file.
-
-Production Umami analytics are disabled by default on the development server so local testing does not pollute analytics data. The behavior is controlled by the `WARDOGS_DISABLE_ANALYTICS` environment variable.
-
-To explicitly keep analytics disabled:
-
-```bash
-WARDOGS_DISABLE_ANALYTICS=true npm run dev
-```
-
-On PowerShell:
-
-```powershell
-$env:WARDOGS_DISABLE_ANALYTICS = "true"
-npm run dev
-```
-
-To test the production Umami integration locally, explicitly enable it for that dev session:
-
-```bash
-WARDOGS_DISABLE_ANALYTICS=false npm run dev
-```
-
-On PowerShell:
-
-```powershell
-$env:WARDOGS_DISABLE_ANALYTICS = "false"
-npm run dev
-```
-
-Accepted boolean values are `1` / `0`, `true` / `false`, `yes` / `no`, and `on` / `off`. When analytics are disabled, the dev server removes the Umami loader and injects a runtime flag so the application analytics wrapper does not queue custom events either. This setting affects only `npm run dev`; production builds are unchanged.
-
-Browser caching is also disabled for local responses.
-
-### Testing on another device
-
-To expose the development server on the local network:
+To test on another device:
 
 ```bash
 npm run dev -- --host 0.0.0.0
 ```
 
-You can also change the port:
-
-```bash
-npm run dev -- --port 8080
-```
-
-Environment variables are supported as well:
-
-```bash
-HOST=0.0.0.0 PORT=8080 npm run dev
-```
-
-On PowerShell:
-
-```powershell
-$env:HOST = "0.0.0.0"
-$env:PORT = "8080"
-npm run dev
-```
+The source dev server continues to serve the legacy static desktop locale shells. **Generated production locales such as Simplified Chinese should be validated from a production build**, because their desktop route and SEO metadata are intentionally created by the locale synchronization step.
 
 ### Production build
 
@@ -215,142 +74,119 @@ Before committing or deploying, run:
 npm run build
 ```
 
-This generates the production artifact:
+The build pipeline is:
+
+```text
+scripts/build-pages.mjs
+        ↓
+scripts/sync-locales.mjs
+        ↓
+scripts/version-assets.mjs
+```
+
+Responsibilities:
+
+1. `build-pages.mjs`
+   - clears `dist/`;
+   - copies shared assets, JS, locales, maps, config and data;
+   - bundles desktop/mobile CSS;
+   - creates the normal desktop routes;
+   - creates mobile locale routes from `locales/index.json`.
+2. `sync-locales.mjs`
+   - generates the official `/zh-cn/` desktop route from the canonical desktop shell;
+   - synchronizes canonical, `hreflang`, Open Graph locale metadata and sitemap data from the locale registry;
+   - applies Chinese product-intent SEO content and FAQ structured data;
+   - localizes `/mobile/zh-cn/` metadata;
+   - injects the shared locale runtime override before the app initializes.
+3. `version-assets.mjs`
+   - fingerprints the final JS/CSS assets and updates every generated HTML route.
+
+The final artifact includes:
 
 ```text
 dist/
 ├── index.html
 ├── ru/
 ├── de/
-├── ...
+├── zh-cn/
+│   └── index.html
 ├── mobile/
 │   ├── index.html
-│   ├── ru/
-│   ├── de/
-│   └── ...
+│   └── zh-cn/
+│       └── index.html
 ├── assets/
 ├── js/
 ├── locales/
 ├── maps/
 ├── config/
-└── data/
+├── data/
+└── sitemap.xml
 ```
 
-Large shared resources such as the Bakurani tile pyramid and Terrain3D data exist only once in the unified `dist/` artifact and are reused by both interfaces.
+Large resources such as map tiles and Terrain3D chunks exist only once and are shared by desktop/mobile locale routes.
 
-### Terrain3D verification
+### Simplified Chinese validation
 
-Bakurani terrain data is a release resource and should be verified before deployment:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-terrain-release.ps1
-```
-
-The verifier checks that the terrain manifest exists, all expected terrain chunks are present, recorded SHA-256 values match, release metadata is correct, and automatic MIL correction remains disabled.
-
-The runtime terrain feature is implemented in:
+After `npm run build`, serve `dist/` and verify:
 
 ```text
-js/features/terrain-ballistics.js
+http://localhost:8000/zh-cn/
+http://localhost:8000/mobile/zh-cn/
 ```
 
-Its v1.6.0 release contract is intentionally conservative:
+Check the UI, language selector, China flag, Mortar/SPH-2 naming, mobile menu, footer/legal copy, Terrain3D status and SPH-2 warning. Inspect generated HTML to confirm:
 
 ```text
-Terrain3D available  -> show ΔZ context
+lang="zh-CN"
+canonical -> https://wardogs-artillery.com/zh-cn/
+hreflang="zh-CN"
+og:locale = zh_CN
+FAQPage JSON-LD
+```
+
+Also confirm `dist/sitemap.xml` contains `/zh-cn/` and that every indexable desktop locale advertises the Chinese alternate.
+
+## Terrain3D verification
+
+Terrain3D remains a release resource and should be verified independently of localization work. The public safety contract remains:
+
+```text
+Terrain3D available   -> show elevation / ΔZ context
 Terrain3D unavailable -> keep normal firing solution
-MIL                   -> always comes from existing firing tables
+MIL                   -> existing firing tables remain authoritative
 ```
 
-See [Terrain Elevation & SPH-2 Setup](terrain.md) for the public behavior and data layout.
+Simplified Chinese localization must not change the terrain calibration, firing tables, release safety flags, or automatic-correction behavior.
 
-### Development Workflow
+## Development Workflow
 
 ```text
 npm run dev
     ↓
-Edit source
+Edit shared source / locale JSON
     ↓
-Browser reloads automatically
+Browser reloads automatically for normal source routes
     ↓
-verify Terrain3D when terrain/release data changes
+npm run build
     ↓
-npm run build before deploy
+Validate generated locale routes + SEO
+    ↓
+verify Terrain3D if terrain/release data changed
+    ↓
+Deploy
 ```
-
----
-
-### Map Tools state and history
-
-Map Tool drawings, user markers, and layer preferences are stored in `localStorage` under `wardogs-map-tools`.
-
-Undo/redo history itself is session-only and is not persisted. `Ctrl + Z`, `Ctrl + Y`, and `Ctrl + Shift + Z` cover map-content edits such as pencil/eraser changes, user marker changes, and Artillery/Target position changes. History is reset when switching maps so coordinates from one map cannot be restored into another map.
-
-The mobile UI exposes Undo / Redo buttons inside **Layers** because hardware keyboard shortcuts are not assumed on touch devices.
-
----
-
-## Unified Build
-
-`scripts/build-pages.mjs` now creates both interfaces in a single pass:
-
-1. Clears `dist/`
-2. Copies shared assets, JavaScript, locales, map data, map tiles, config, and data resources including Terrain3D
-3. Bundles modular desktop/mobile CSS into `dist/style.css` and `dist/mobile.css`
-4. Generates desktop language pages
-5. Generates `/mobile/` and its language routes from the mobile template
-6. Copies the root `CNAME` and sitemap
-
-There is no separate mobile CNAME or mobile deployment artifact.
-
----
 
 ## Deployment
 
-Production is available at:
-
-**https://wardogs-artillery.com/**
-
-Mobile is part of the same deployment:
-
-**https://wardogs-artillery.com/mobile/**
-
-Deployment is handled automatically by GitHub Actions through:
+Production:
 
 ```text
-.github/workflows/pages.yml
+https://wardogs-artillery.com/
+https://wardogs-artillery.com/mobile/
+https://wardogs-artillery.com/zh-cn/
+https://wardogs-artillery.com/mobile/zh-cn/
 ```
 
-On a push to `main`, GitHub Actions:
+GitHub Actions runs `npm run build`, uploads the single `dist/` artifact and deploys it to GitHub Pages. The only custom domain remains `wardogs-artillery.com`.
 
-1. Checks out the repository
-2. Sets up Node.js
-3. Runs:
-
-```bash
-npm run build
-```
-
-4. Generates the complete production site in `dist/`
-5. Uploads `dist/` as one GitHub Pages artifact
-6. Deploys it to GitHub Pages
-
-GitHub Pages should be configured to use:
-
-```text
-Settings
-→ Pages
-→ Build and deployment
-→ Source
-→ GitHub Actions
-```
-
-The only custom domain required is:
-
-```text
-wardogs-artillery.com
-```
-
-No `m.wardogs-artillery.com` DNS record or second repository is required.
-
-Do not manually edit files inside `dist/`, as they will be regenerated during the next build.
+Do not manually edit files inside `dist/`; they are regenerated on every build.
