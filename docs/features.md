@@ -174,9 +174,9 @@ Two outlines are drawn:
 
 - **The solid ring** is the reachable area, never drawn past the weapon's
   table max range.
-- **A faint dashed outline** appears outside it when terrain buys range the
-  firing table does not cover. It is context, like the ΔZ readout — the app
-  will not print a MIL for a target out there.
+- **A tinted band with a dashed outline** appears outside it when terrain
+  buys range the firing table does not cover. It is context, like the ΔZ
+  readout — the app will not print a MIL for a target out there.
 
 A bearing that outreaches the edge of the elevation data samples the nearest
 point on the boundary rather than stopping there, so the outline is never cut
