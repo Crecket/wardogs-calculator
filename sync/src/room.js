@@ -334,6 +334,28 @@ export class Room extends DurableObject {
                 return true;
             }
 
+            case 'gun.weapon': {
+                const rows = sql
+                    .exec('SELECT json FROM guns WHERE id = ?', op.id)
+                    .toArray();
+
+                if (!rows.length) {
+                    return false;
+                }
+
+                const gun = JSON.parse(rows[0].json);
+
+                gun.weapon = op.weapon;
+
+                sql.exec(
+                    'UPDATE guns SET json = ? WHERE id = ?',
+                    JSON.stringify(gun),
+                    op.id
+                );
+
+                return true;
+            }
+
             case 'gun.remove':
                 return this.remove('guns', op.id);
 

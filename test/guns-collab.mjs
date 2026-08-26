@@ -107,6 +107,56 @@ await settle();
 check('the peer received the per-gun weapon',
     await peer.evaluate(() => S.guns[1].weapon) === chosen);
 
+/*
+ * The reported bug: the host swaps gun 2's weapon while the peer has gun 1
+ * selected. The change has to land on gun 2 on the peer as well, and leave
+ * the peer's own selection alone.
+ *
+ * The two guns are given different weapons first, so a swap landing on the
+ * wrong gun cannot pass by coincidence.
+ */
+const swapped = await host.evaluate(() => {
+    const [first, second] = Object.keys(WEAPONS);
+
+    selectGun(S.guns[0].id);
+    S.weapon = second;
+    inputs();
+
+    return { first, second };
+});
+await settle();
+
+await host.evaluate(weapon => {
+    selectGun(S.guns[1].id);
+    S.weapon = weapon;
+    inputs();
+}, swapped.first);
+await settle();
+
+check('a peer applies the swap to the gun it was made on',
+    await peer.evaluate(() => S.guns[1].weapon) === swapped.first);
+
+check('a peer\'s own selected gun keeps its weapon',
+    await peer.evaluate(() => S.guns[0].weapon) === swapped.second);
+
+check('the swap did not move the peer\'s selection',
+    await peer.evaluate(() => S.activeGunId === S.guns[0].id));
+
+/* --- swapping gun 1 still mirrors to the legacy weapon --- */
+
+await host.evaluate(weapon => {
+    selectGun(S.guns[0].id);
+    S.weapon = weapon;
+    inputs();
+}, swapped.first);
+await settle();
+
+check('a peer receives a gun 1 swap on gun 1',
+    await peer.evaluate(() => S.guns[0].weapon) === swapped.first);
+
+check('gun 1\'s weapon is what the legacy mirror tracks',
+    await peer.evaluate(() => COLLAB.lastShared.weapon) === swapped.first);
+
 /* --- the legacy origin mirror is gun 1 --- */
 
 await host.evaluate(() => {

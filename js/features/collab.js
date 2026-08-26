@@ -444,8 +444,13 @@ function collabApplySnapshot(doc) {
             clamp(S.target);
         }
 
+        /*
+         * The legacy weapon mirrors gun 1, the same way the legacy origin
+         * does — a room seeded by a client that predates guns carries the
+         * battery's weapon here and nowhere else.
+         */
         if (doc.weapon && WEAPONS[doc.weapon]) {
-            S.weapon = doc.weapon;
+            S.guns[0].weapon = doc.weapon;
         }
 
         COLLAB.lastShared = {
@@ -455,7 +460,7 @@ function collabApplySnapshot(doc) {
              */
             origin: structuredClone(S.guns[0].position),
             target: structuredClone(S.target),
-            weapon: S.weapon,
+            weapon: S.guns[0].weapon,
             /*
              * Seeded from the room's guns, not this client's. A room that
              * has none must leave the diff empty so the next flush emits a
@@ -465,7 +470,11 @@ function collabApplySnapshot(doc) {
             guns: Object.fromEntries(
                 S.guns.map(gun => [
                     gun.id,
-                    { x: gun.position.x, y: gun.position.y }
+                    {
+                        x: gun.position.x,
+                        y: gun.position.y,
+                        weapon: gun.weapon || null
+                    }
                 ])
             )
         };
@@ -560,7 +569,8 @@ function collabApplyOp(op) {
 
                 COLLAB.lastShared.guns[op.gun.id] = {
                     x: op.gun.x,
-                    y: op.gun.y
+                    y: op.gun.y,
+                    weapon: op.gun.weapon || null
                 };
 
                 renderGuns();
@@ -576,7 +586,36 @@ function collabApplyOp(op) {
                     clamp(gun.position);
                 }
 
-                COLLAB.lastShared.guns[op.id] = { x: op.x, y: op.y };
+                COLLAB.lastShared.guns[op.id] = {
+                    x: op.x,
+                    y: op.y,
+                    weapon: gun ? gun.weapon || null : null
+                };
+
+                renderGuns();
+                break;
+            }
+
+            case 'gun.weapon': {
+                const gun = gunById(op.id);
+
+                /*
+                 * Unknown weapons are dropped rather than adopted: the
+                 * server validates the slug's shape but has no weapon
+                 * list, so data/weapons.json stays a client concern.
+                 */
+                if (gun && (!op.weapon || WEAPONS[op.weapon])) {
+                    gun.weapon = op.weapon || null;
+                }
+
+                if (COLLAB.lastShared.guns[op.id]) {
+                    COLLAB.lastShared.guns[op.id].weapon =
+                        gun ? gun.weapon || null : op.weapon || null;
+                }
+
+                if (op.id === S.guns[0].id) {
+                    COLLAB.lastShared.weapon = S.guns[0].weapon;
+                }
 
                 renderGuns();
                 break;
@@ -626,25 +665,37 @@ function collabApplyOp(op) {
                 if (op.point === 'origin') {
                     COLLAB.lastShared.guns[S.guns[0].id] = {
                         x: destination.x,
-                        y: destination.y
+                        y: destination.y,
+                        weapon: S.guns[0].weapon || null
                     };
                 }
                 break;
             }
 
-            case 'weapon.set':
+            /*
+             * Legacy, and gun 1 like the legacy origin: it carries no gun
+             * id, so landing it on the selected gun would swap whichever
+             * gun this client happens to be looking at. Clients that know
+             * about guns send `gun.weapon` alongside it, which lands on
+             * gun 1 too and simply agrees.
+             */
+            case 'weapon.set': {
+                const first = S.guns[0];
+
                 if (op.weapon && WEAPONS[op.weapon]) {
-                    S.weapon = op.weapon;
-
-                    const select = $('weapon');
-
-                    if (select) {
-                        select.value = op.weapon;
-                    }
+                    first.weapon = op.weapon;
                 }
 
-                COLLAB.lastShared.weapon = S.weapon;
+                COLLAB.lastShared.weapon = first.weapon;
+
+                if (COLLAB.lastShared.guns[first.id]) {
+                    COLLAB.lastShared.guns[first.id].weapon =
+                        first.weapon || null;
+                }
+
+                renderGuns();
                 break;
+            }
 
             case 'clear':
                 if (op.scope === 'all' || op.scope === 'drawings') {
@@ -705,7 +756,8 @@ function collabApplyOp(op) {
 
                     COLLAB.lastShared.guns[entry.id] = {
                         x: entry.x,
-                        y: entry.y
+                        y: entry.y,
+                        weapon: entry.weapon || null
                     };
                 }
                 break;
@@ -929,26 +981,50 @@ function collabFlushShared() {
             previous.x !== gun.position.x ||
             previous.y !== gun.position.y;
 
-        if (!moved) {
+        /*
+         * Swapping a weapon has to name its gun, so it rides its own op
+         * rather than the legacy `weapon.set` — which carries no id and
+         * would land on whatever gun the receiver has selected.
+         */
+        const swapped =
+            previous &&
+            (previous.weapon || null) !== (gun.weapon || null);
+
+        if (!moved && !swapped) {
             continue;
         }
 
-        const sent = previous
-            ? collabSend({
-                op: 'gun.move',
-                id: gun.id,
-                x: gun.position.x,
-                y: gun.position.y
-            })
-            : collabSend({
+        let sent = true;
+
+        if (!previous) {
+            sent = collabSend({
                 op: 'gun.add',
                 gun: collabGunWire(gun)
             });
+        } else {
+            if (moved) {
+                sent = collabSend({
+                    op: 'gun.move',
+                    id: gun.id,
+                    x: gun.position.x,
+                    y: gun.position.y
+                });
+            }
+
+            if (swapped) {
+                sent = collabSend({
+                    op: 'gun.weapon',
+                    id: gun.id,
+                    weapon: gun.weapon || null
+                }) && sent;
+            }
+        }
 
         if (sent) {
             COLLAB.lastShared.guns[gun.id] = {
                 x: gun.position.x,
-                y: gun.position.y
+                y: gun.position.y,
+                weapon: gun.weapon || null
             };
         }
     }
@@ -982,9 +1058,17 @@ function collabFlushShared() {
         }
     });
 
-    if (S.weapon !== COLLAB.lastShared.weapon) {
-        if (collabSend({ op: 'weapon.set', weapon: S.weapon })) {
-            COLLAB.lastShared.weapon = S.weapon;
+    /*
+     * The legacy weapon is gun 1's, not the selected gun's — same reason
+     * as the legacy origin above: a peer on a build that predates guns
+     * would otherwise watch the shared weapon change every time somebody
+     * else selected a different gun.
+     */
+    const legacyWeapon = S.guns[0].weapon;
+
+    if (legacyWeapon !== COLLAB.lastShared.weapon) {
+        if (collabSend({ op: 'weapon.set', weapon: legacyWeapon })) {
+            COLLAB.lastShared.weapon = legacyWeapon;
         }
     }
 }

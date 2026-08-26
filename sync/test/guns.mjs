@@ -107,6 +107,35 @@ check('gun.add upserts a rename and weapon change',
         m => m.op.gun.name === 'Renamed' && m.op.gun.weapon === 'spg'
     ));
 
+/*
+ * Swapping one gun's weapon is its own op, carrying the gun's id: the
+ * receiving client must change that gun, not whichever one it has
+ * selected.
+ */
+drain(a); drain(b);
+a.send(JSON.stringify({
+    op: 'gun.weapon',
+    id: 'gun-alpha',
+    weapon: 'howitzer'
+}));
+await settle();
+
+check('gun.weapon is relayed with its gun id',
+    relayed(b, 'gun.weapon').some(
+        m => m.op.id === 'gun-alpha' && m.op.weapon === 'howitzer'
+    ));
+
+drain(a);
+a.send(JSON.stringify({
+    op: 'gun.weapon',
+    id: 'gun-alpha',
+    weapon: 'not a slug!'
+}));
+await settle();
+
+check('a bad gun.weapon slug is rejected',
+    a.inbox.some(m => m.type === 'error' && m.code === 'bad-slug'));
+
 /* --- the snapshot carries guns --- */
 
 const c = await open(code);
@@ -120,6 +149,9 @@ check('a joiner sees the gun in its snapshot',
 
 check('the snapshot gun kept the upserted values',
     doc.guns[0].name === 'Renamed' && doc.guns[0].x === 50);
+
+check('the snapshot gun kept the swapped weapon',
+    doc.guns[0].weapon === 'howitzer');
 
 /* --- validation --- */
 

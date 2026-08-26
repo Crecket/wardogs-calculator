@@ -295,6 +295,20 @@ export function validateOp(raw, mapId) {
                 y: coordinate(raw.y)
             };
 
+        /*
+         * A weapon swap carries the gun's id. Without it the receiver has
+         * to guess which gun changed, and guesses at its own selection —
+         * which is not the one the sender swapped.
+         */
+        case 'gun.weapon':
+            return {
+                op: 'gun.weapon',
+                id: id(raw.id),
+                weapon: raw.weapon === null || raw.weapon === undefined
+                    ? null
+                    : slug(raw.weapon, null) ?? fail('bad-weapon')
+            };
+
         case 'gun.remove':
             return {
                 op: 'gun.remove',

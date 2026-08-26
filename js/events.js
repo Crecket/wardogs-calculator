@@ -102,6 +102,17 @@ function bindEvents() {
             S.weapon =
                 $('weapon').value;
 
+            /*
+             * The row for the selected gun names its weapon, so the list
+             * has to redraw with it.
+             */
+            if (
+                typeof renderGuns ===
+                'function'
+            ) {
+                renderGuns();
+            }
+
             if (
                 typeof collabSyncShared ===
                 'function'
