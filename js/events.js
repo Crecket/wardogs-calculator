@@ -514,14 +514,32 @@ function bindEvents() {
                 return;
             }
 
-            const d1 =
-                Math.hypot(
-                    p.x -
-                    S.origin.x,
+            const pointHitThreshold =
+                metersToWorldDistance(300);
 
-                    p.y -
-                    S.origin.y
-                );
+            /*
+             * Any drawn gun is grabbable, not just the selected one:
+             * clicking a neighbour picks that gun up rather than
+             * teleporting the current one onto it.
+             */
+            const hitGun =
+                typeof gunAtPoint === 'function'
+                    ? gunAtPoint(
+                        p,
+                        pointHitThreshold
+                    )
+                    : null;
+
+            const d1 =
+                hitGun
+                    ? Math.hypot(
+                        p.x -
+                        hitGun.position.x,
+
+                        p.y -
+                        hitGun.position.y
+                    )
+                    : Infinity;
 
             const d2 =
                 Math.hypot(
@@ -531,9 +549,6 @@ function bindEvents() {
                     p.y -
                     S.target.y
                 );
-
-            const pointHitThreshold =
-                metersToWorldDistance(300);
 
             if (
                 Math.min(d1, d2) <
@@ -552,6 +567,18 @@ function bindEvents() {
                     drag = null;
                     updateCursor(e);
                     return;
+                }
+
+                /*
+                 * Select before the write below: S.origin resolves through
+                 * the active gun, so the selection has to move first or
+                 * the drag would edit the gun you just clicked away from.
+                 */
+                if (
+                    nearestPoint === 'origin' &&
+                    hitGun.id !== S.activeGunId
+                ) {
+                    selectGun(hitGun.id);
                 }
 
                 drag = nearestPoint;
