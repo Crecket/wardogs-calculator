@@ -33,8 +33,8 @@ The value is shown as secondary firing-solution context.
 
 ### Current release behavior
 
-Terrain3D drives an elevation correction that is built but gated off; until
-`releasePolicy.automaticMilCorrection` flips, it is informational only.
+Terrain3D drives an automatic elevation correction, applied where we trust the
+inputs and switched off where we do not.
 
 ```text
 Distance -> normal coordinate calculation
@@ -314,22 +314,34 @@ Maps without a terrain dataset require no changes and continue to use the existi
 
 ## Ballistic compensation
 
-Terrain3D supplies ΔZ to an elevation correction that is **built but gated
-off**. `data/ballistics/terrain-context.json` carries
-`releasePolicy.automaticMilCorrection`, and while it is `false` the printed MIL
-is the flat-table value, unchanged.
+Terrain3D supplies ΔZ to an elevation correction that is **on**.
+`data/ballistics/terrain-context.json` carries
+`releasePolicy.automaticMilCorrection`; while it is `true`, the correction is
+looked up from `data/ballistics/height-correction.json` and **added** to the
+flat-table mil. It is a differential from a model, so it is exactly zero at
+ΔZ = 0 and the shipped tables stay authoritative on flat ground.
 
-When it is `true`, the correction is looked up from
-`data/ballistics/height-correction.json` and **added** to the flat-table mil. It
-is a differential from a model, so it is exactly zero at ΔZ = 0 and the shipped
-tables stay authoritative on flat ground.
+The correction is deliberately withheld in three cases, each of which reports
+itself in the panel caption rather than failing quietly:
 
-The correction applies to the mortar `single` and SPG-2 `high` tables. SPG-2
-`low` is deliberately `null` in the grid and carries a caption saying so.
+| Case | Why | Where it is configured |
+|---|---|---|
+| SPG-2 `low` | Research puts its break-even impact angle at 25°, where the vacuum fit says 13°. A correction there is a coin flip. | `null` in the grid, from `CORRECTED_ARCS` in `scripts/build-height-correction.mjs` |
+| Any map outside `correctedMaps` | Bakurani's coordinate alignment was validated by visual overlay after the Y-flip fix in `5c462a173`; Ozeti's never was, and a numeric correction tolerates misalignment far worse than a caption does. | `releasePolicy.correctedMaps` |
+| A miss under 10 m | Below this the correction is not worth acting on, and printing one implies a precision the model does not have. | `releasePolicy.suppressionMissMeters` |
 
-The model in `data/ballistics/projectile-model.json` is currently a vacuum fit
-to our own firing tables, marked `source: "vacuum-fit"`. It is meant to be
-replaced by pak extraction, not refined. See
+An absent or empty `correctedMaps` corrects **nothing**. It does not fall back
+to correcting every map.
+
+The caption says which of these applies: "corrected for height", "high arc
+corrected for height, low arc not", or "not corrected for height". Strings live
+in `UI_TEXT` in `js/features/terrain-ballistics.js` — not in `locales/*.json`,
+except `zh-cn`, which also has entries there and a wrapper in
+`js/ui/locale-overrides.js` that must be kept in step.
+
+The model in `data/ballistics/projectile-model.json` is still a vacuum fit to
+our own firing tables, marked `source: "vacuum-fit"`. It is meant to be replaced
+by pak extraction, not refined. See
 [the design doc](superpowers/specs/2026-08-26-elevation-correction-design.md).
 
 Regenerate both files with:

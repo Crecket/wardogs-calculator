@@ -282,9 +282,28 @@
             const dz =
                 `${meta.deltaZ >= 0 ? '+' : ''}${meta.deltaZ.toFixed(1)}`;
 
+            /*
+             * Mirrors the state selection in formatTerrainBallisticsStatus.
+             * Without it this wrapper would pin Chinese to the uncorrected
+             * caption even when the correction had been applied.
+             */
+            if (meta.applied && meta.arcsUncorrected?.length) {
+                return zhText(
+                    'terrainStatusUncorrectedArc',
+                    'ΔZ {dz} m · 高抛弹道已修正，低伸弹道未修正'
+                ).replace('{dz}', dz);
+            }
+
+            if (meta.applied) {
+                return zhText(
+                    'terrainStatusCorrected',
+                    'ΔZ {dz} m · 已按高差修正'
+                ).replace('{dz}', dz);
+            }
+
             return zhText(
                 'terrainStatus',
-                'ΔZ {dz} m · MIL 未自动修正'
+                'ΔZ {dz} m · 未按高差修正'
             ).replace('{dz}', dz);
         };
 

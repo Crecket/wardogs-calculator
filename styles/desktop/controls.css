@@ -278,6 +278,65 @@ button:disabled {
     line-height: 1.15;
 }
 
+/*
+ * Terrain elevation note. It sits between the firing-solution cards and the
+ * delta readouts because it qualifies the MIL above it rather than adding a
+ * fourth measurement. It wraps: the string carries a signed ΔZ and a
+ * correction state, and truncating either one makes it worse than absent.
+ *
+ * The warning state borrows #f0b24a and the 4px left rule from
+ * .sph-level-warning, so the two read as one family of caveat.
+ */
+.solution-terrain-note {
+    margin-top: 7px;
+    padding: 7px 10px;
+
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--muted);
+    border-radius: 6px;
+    background:
+        color-mix(
+            in srgb,
+            var(--input-bg) 42%,
+            transparent
+        );
+
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.solution-terrain-note[hidden] {
+    display: none;
+}
+
+/* Corrected, with no arc left behind: the MIL above can be trusted. */
+.solution-terrain-note[data-state="corrected"] {
+    border-color:
+        color-mix(in srgb, var(--accent-border) 62%, var(--border));
+    border-left-color: var(--accent);
+    background:
+        color-mix(in srgb, var(--accent) 11%, transparent);
+}
+
+/*
+ * One arc corrected and another not is the state most worth reading, so it
+ * gets the same treatment as the level warning.
+ */
+.solution-terrain-note[data-state="mixed"] {
+    border-color:
+        color-mix(in srgb, #f0b24a 62%, var(--border));
+    border-left-color: #f0b24a;
+    background:
+        color-mix(in srgb, #f0b24a 13%, transparent);
+}
+
+.solution-terrain-note[data-state="loading"] {
+    color: var(--muted);
+    font-weight: 500;
+}
+
 .solution-secondary-grid {
     margin-top: 7px;
 

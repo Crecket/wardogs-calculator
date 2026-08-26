@@ -20,6 +20,7 @@
         confirmedOrigin: null,
         levelControl: null,
         correctionEnabled: false,
+        correctedMaps: new Set(),
         suppressionMissMeters: DEFAULT_SUPPRESSION_MISS_METERS,
         correction: null
     };
@@ -47,81 +48,81 @@
     const UI_TEXT = {
         en: {
             terrainLoading: 'terrain loading',
-            terrainStatus: 'ΔZ {dz} m · MIL not auto-corrected',
-            terrainStatusCorrected: 'ΔZ {dz} m · MIL corrected',
-            terrainStatusUncorrectedArc: 'ΔZ {dz} m · low arc NOT corrected',
+            terrainStatus: 'ΔZ {dz} m · not corrected for height',
+            terrainStatusCorrected: 'ΔZ {dz} m · corrected for height',
+            terrainStatusUncorrectedArc: 'ΔZ {dz} m · high arc corrected for height, low arc not',
             warningTitle: 'LEVEL THE SPH-2 BEFORE FIRING',
             warningBody: 'Vehicle tilt changes the actual range. Park the SPH-2 on the flattest ground available. In the gunner HUD, find the vehicle silhouette below STABILIZED / ASL: the two small side markers show lateral tilt. Reposition the vehicle until the markers are as centered and aligned as possible. Front/back slope also affects range, so avoid parking uphill or downhill.'
         },
         ru: {
             terrainLoading: 'загрузка высот',
-            terrainStatus: 'ΔZ {dz} м · MIL без автокоррекции',
-            terrainStatusCorrected: 'ΔZ {dz} м · MIL скорректирован',
-            terrainStatusUncorrectedArc: 'ΔZ {dz} м · настильная траектория БЕЗ коррекции',
+            terrainStatus: 'ΔZ {dz} м · без поправки на высоту',
+            terrainStatusCorrected: 'ΔZ {dz} м · с поправкой на высоту',
+            terrainStatusUncorrectedArc: 'ΔZ {dz} м · навесная с поправкой на высоту, настильная без',
             warningTitle: 'ВЫРОВНЯЙТЕ SPH-2 ПЕРЕД СТРЕЛЬБОЙ',
             warningBody: 'Наклон машины меняет фактическую дальность. Ставьте SPH-2 на максимально ровную поверхность. В прицеле наводчика найдите силуэт машины под STABILIZED / ASL: две боковые засечки показывают боковой наклон. Переставляйте машину, пока засечки не будут максимально по центру и на одном уровне. Наклон вперёд-назад тоже влияет на дальность — не ставьте орудие на подъёме или спуске.'
         },
         uk: {
             terrainLoading: 'завантаження висот',
-            terrainStatus: 'ΔZ {dz} м · MIL без автокорекції',
-            terrainStatusCorrected: 'ΔZ {dz} м · MIL скориговано',
-            terrainStatusUncorrectedArc: 'ΔZ {dz} м · настильна траєкторія БЕЗ корекції',
+            terrainStatus: 'ΔZ {dz} м · без поправки на висоту',
+            terrainStatusCorrected: 'ΔZ {dz} м · з поправкою на висоту',
+            terrainStatusUncorrectedArc: 'ΔZ {dz} м · навісна з поправкою на висоту, настильна без',
             warningTitle: 'ВИРІВНЯЙТЕ SPH-2 ПЕРЕД ПОСТРІЛОМ',
             warningBody: 'Нахил машини змінює фактичну дальність. Ставте SPH-2 на максимально рівну поверхню. У прицілі навідника знайдіть силует машини під STABILIZED / ASL: дві бокові позначки показують поперечний нахил. Переставляйте машину, доки позначки не будуть максимально по центру та на одному рівні. Нахил уперед-назад також впливає на дальність — уникайте стоянки на підйомі або спуску.'
         },
         de: {
             terrainLoading: 'Höhendaten werden geladen',
-            terrainStatus: 'ΔZ {dz} m · MIL ohne Autokorrektur',
-            terrainStatusCorrected: 'ΔZ {dz} m · MIL korrigiert',
-            terrainStatusUncorrectedArc: 'ΔZ {dz} m · flache Bahn NICHT korrigiert',
+            terrainStatus: 'ΔZ {dz} m · ohne Höhenkorrektur',
+            terrainStatusCorrected: 'ΔZ {dz} m · mit Höhenkorrektur',
+            terrainStatusUncorrectedArc: 'ΔZ {dz} m · steile Bahn mit Höhenkorrektur, flache ohne',
             warningTitle: 'SPH-2 VOR DEM SCHUSS NIVELLIEREN',
             warningBody: 'Die Fahrzeugneigung verändert die tatsächliche Reichweite. Stelle die SPH-2 auf möglichst ebenen Boden. Im Richtschützen-HUD befindet sich unter STABILIZED / ASL die Fahrzeugsilhouette; die beiden kleinen Seitenmarken zeigen die seitliche Neigung. Versetze das Fahrzeug, bis die Marken möglichst mittig und auf gleicher Höhe stehen. Auch Neigung nach vorn/hinten beeinflusst die Reichweite — vermeide Steigungen und Gefälle.'
         },
         fr: {
             terrainLoading: 'chargement des altitudes',
-            terrainStatus: 'ΔZ {dz} m · MIL sans correction auto',
-            terrainStatusCorrected: 'ΔZ {dz} m · MIL corrigé',
-            terrainStatusUncorrectedArc: 'ΔZ {dz} m · tir tendu NON corrigé',
+            terrainStatus: 'ΔZ {dz} m · sans correction d’altitude',
+            terrainStatusCorrected: 'ΔZ {dz} m · avec correction d’altitude',
+            terrainStatusUncorrectedArc: 'ΔZ {dz} m · tir courbe corrigé, tir tendu non corrigé',
             warningTitle: 'METTEZ LE SPH-2 À NIVEAU AVANT DE TIRER',
             warningBody: 'L’inclinaison du véhicule modifie la portée réelle. Placez le SPH-2 sur le terrain le plus plat possible. Dans le HUD du tireur, repérez la silhouette du véhicule sous STABILIZED / ASL : les deux petits repères latéraux indiquent l’inclinaison latérale. Repositionnez le véhicule jusqu’à ce que les repères soient aussi centrés et alignés que possible. La pente avant/arrière affecte aussi la portée — évitez de stationner en montée ou en descente.'
         },
         es: {
             terrainLoading: 'cargando alturas',
-            terrainStatus: 'ΔZ {dz} m · MIL sin corrección automática',
-            terrainStatusCorrected: 'ΔZ {dz} m · MIL corregido',
-            terrainStatusUncorrectedArc: 'ΔZ {dz} m · trayectoria baja SIN corregir',
+            terrainStatus: 'ΔZ {dz} m · sin corrección por altura',
+            terrainStatusCorrected: 'ΔZ {dz} m · con corrección por altura',
+            terrainStatusUncorrectedArc: 'ΔZ {dz} m · trayectoria alta corregida, baja sin corregir',
             warningTitle: 'NIVELA EL SPH-2 ANTES DE DISPARAR',
             warningBody: 'La inclinación del vehículo cambia el alcance real. Coloca el SPH-2 en el terreno más plano posible. En el HUD del artillero, busca la silueta del vehículo bajo STABILIZED / ASL: las dos pequeñas marcas laterales muestran la inclinación lateral. Reposiciona el vehículo hasta que las marcas estén lo más centradas y alineadas posible. La pendiente hacia delante/atrás también afecta al alcance; evita aparcar cuesta arriba o cuesta abajo.'
         },
         pl: {
             terrainLoading: 'ładowanie wysokości',
-            terrainStatus: 'ΔZ {dz} m · MIL bez autokorekty',
-            terrainStatusCorrected: 'ΔZ {dz} m · MIL skorygowany',
-            terrainStatusUncorrectedArc: 'ΔZ {dz} m · tor płaski BEZ korekty',
+            terrainStatus: 'ΔZ {dz} m · bez poprawki na wysokość',
+            terrainStatusCorrected: 'ΔZ {dz} m · z poprawką na wysokość',
+            terrainStatusUncorrectedArc: 'ΔZ {dz} m · tor stromy z poprawką, tor płaski bez',
             warningTitle: 'WYPOZIOMUJ SPH-2 PRZED STRZAŁEM',
             warningBody: 'Przechył pojazdu zmienia rzeczywisty zasięg. Ustaw SPH-2 na możliwie płaskim terenie. W HUD celowniczego znajdź sylwetkę pojazdu pod STABILIZED / ASL: dwie małe boczne kreski pokazują przechył boczny. Przestaw pojazd, aż znaczniki będą możliwie wycentrowane i na tej samej wysokości. Nachylenie przód/tył również wpływa na zasięg — unikaj ustawiania działa pod górę lub z górki.'
         },
         pt: {
             terrainLoading: 'a carregar altitudes',
-            terrainStatus: 'ΔZ {dz} m · MIL sem correção automática',
-            terrainStatusCorrected: 'ΔZ {dz} m · MIL corrigido',
-            terrainStatusUncorrectedArc: 'ΔZ {dz} m · trajetória baixa NÃO corrigida',
+            terrainStatus: 'ΔZ {dz} m · sem correção de altura',
+            terrainStatusCorrected: 'ΔZ {dz} m · com correção de altura',
+            terrainStatusUncorrectedArc: 'ΔZ {dz} m · trajetória alta corrigida, baixa sem correção',
             warningTitle: 'NIVELA O SPH-2 ANTES DE DISPARAR',
             warningBody: 'A inclinação do veículo altera o alcance real. Coloca o SPH-2 no terreno mais plano possível. No HUD do artilheiro, procura a silhueta do veículo por baixo de STABILIZED / ASL: as duas pequenas marcas laterais mostram a inclinação lateral. Reposiciona o veículo até as marcas ficarem o mais centradas e alinhadas possível. A inclinação para a frente/trás também afeta o alcance — evita estacionar numa subida ou descida.'
         },
         'zh-cn': {
             terrainLoading: '正在加载高程',
-            terrainStatus: 'ΔZ {dz} 米 · MIL 未自动修正',
-            terrainStatusCorrected: 'ΔZ {dz} 米 · MIL 已按高差修正',
-            terrainStatusUncorrectedArc: 'ΔZ {dz} 米 · 低伸弹道未修正',
+            terrainStatus: 'ΔZ {dz} m · 未按高差修正',
+            terrainStatusCorrected: 'ΔZ {dz} m · 已按高差修正',
+            terrainStatusUncorrectedArc: 'ΔZ {dz} m · 高抛弹道已修正，低伸弹道未修正',
             warningTitle: '射击前请将 SPH-2 停放水平',
             warningBody: '车体倾斜会改变实际射程。请将 SPH-2 停在尽可能平坦的地面上。在炮手 HUD 中，找到 STABILIZED / ASL 下方的车辆轮廓图：两侧的小标记显示横向倾斜。调整车辆位置，直到两个标记尽可能居中且对齐。前后坡度同样影响射程，请避免停在上坡或下坡上。'
         },
         cat: {
             terrainLoading: 'LOADING HEIGHT MEOWGIC',
-            terrainStatus: 'ΔZ {dz} m · NO AUTO-MIL MEOWGIC',
-            terrainStatusCorrected: 'ΔZ {dz} m · MIL MEOWGIC APPLIED',
-            terrainStatusUncorrectedArc: 'ΔZ {dz} m · FLAT SHOT HAS NO MEOWGIC',
+            terrainStatus: 'ΔZ {dz} m · NO HEIGHT MEOWGIC',
+            terrainStatusCorrected: 'ΔZ {dz} m · HEIGHT MEOWGIC APPLIED',
+            terrainStatusUncorrectedArc: 'ΔZ {dz} m · HIGH ARC HAS MEOWGIC, FLAT SHOT DOESNT',
             warningTitle: 'LEVEL THE MEOWTILLERY BEFORE FIRING',
             warningBody: 'TILTED CAT TANK = WEIRD RANGE. PARK THE SPH-2 ON THE FLATTEST GROUND YOU CAN FIND. IN THE GUNNER HUD, LOOK UNDER STABILIZED / ASL FOR THE VEHICLE SILHOUETTE: THE TWO LITTLE SIDE TICKS SHOW SIDE TILT. MOVE THE BIG CAT UNTIL THE TICKS ARE AS CENTERED AND LEVEL AS POSSIBLE. NOSE-UP / NOSE-DOWN SLOPE ALSO CHANGES RANGE. MEOW.'
         }
@@ -537,6 +538,18 @@
 
             state.correctionEnabled = Boolean(
                 policy.automaticMilCorrection
+            );
+
+            /*
+             * Maps whose coordinate alignment we actually trust. A numeric
+             * correction tolerates a misalignment far worse than a caption
+             * does, so an absent or empty list corrects nothing rather than
+             * defaulting to every map.
+             */
+            state.correctedMaps = new Set(
+                Array.isArray(policy.correctedMaps)
+                    ? policy.correctedMaps
+                    : []
             );
 
             const suppression = Number(policy.suppressionMissMeters);
@@ -1146,7 +1159,11 @@
             missMeters: null
         };
 
-        if (!state.correctionEnabled || !grids) {
+        if (
+            !state.correctionEnabled ||
+            !state.correctedMaps.has(terrain.mapId) ||
+            !grids
+        ) {
             return { solutions: context.solutions, meta };
         }
 

@@ -84,50 +84,51 @@ board. If it does, replace the file and re-add its `maps/assets.json` entry
 `markerLabelSpawnDeploy` key across `locales/*.json`. If it does not, delete
 the file.
 
-## Elevation correction — before flipping the gate
+## Elevation correction — what is still switched off
 
-`releasePolicy.automaticMilCorrection` in `data/ballistics/terrain-context.json`
-is `false` and must stay so until the blockers below are cleared. Everything
-else is built: `data/ballistics/projectile-model.json` and
-`data/ballistics/height-correction.json` are generated and committed, the
-runtime adds the correction and captions which arcs got one.
+The height correction is **on**
+(`releasePolicy.automaticMilCorrection` in
+`data/ballistics/terrain-context.json`). It is withheld in three cases, each of
+which says so in the panel caption. Each entry below is what it would take to
+turn one on.
 
-**Blockers — the flag cannot flip while any of these stands.**
+- **SPG-2 `low` arc.** Stored as `null` in the grid, captioned "high arc
+  corrected for height, low arc not". Research puts its break-even impact angle
+  at 25° where the vacuum fit says 13°, so a correction is as likely to hurt as
+  help — see [ideas-research/01-terrain-heightmap.md](ideas-research/01-terrain-heightmap.md)
+  § 5. Needs the real projectile parameters, then a re-run of the break-even.
+  Enable by adding `low` to `CORRECTED_ARCS` in
+  `scripts/build-height-correction.mjs` and regenerating.
+- **Ozeti, and every map except Bakurani.** `releasePolicy.correctedMaps` lists
+  only `bakurani`, whose alignment was validated by visual overlay after the
+  Y-flip fix in `5c462a173`. Ozeti's never was. Validate it the same way, then
+  add it to the list. An empty list corrects nothing, by design.
+- **Misses under 10 m.** `releasePolicy.suppressionMissMeters`. Not a defect —
+  below this the correction is smaller than the model's own error.
 
-- **Projectile parameters from the paks.** The model is a vacuum fit to our own
-  tables; the SPG's two arcs want different mil→degree slopes (`0.048` on
-  `high`, `0.058` on `low`), which is the fit absorbing real drag. Early Access
-  on 2026-09-10 restores `Wardogs/Content/Paks/pakchunk0-WindowsClient.*`; read
-  the projectile's muzzle velocity, gravity scale and drag term and rewrite
-  `data/ballistics/projectile-model.json` with `source: "pak-extract"`.
-- **Ozeti's coordinate alignment.** Bakurani was validated by a visual overlay
-  after the Y-flip fix in `5c462a173`; Ozeti never was. Alignment is per-map and
-  a numeric correction tolerates a misalignment far worse than a caption does.
-  Resolve it, or gate the correction to Bakurani.
-- **In-game validation.** Four or five spotting shots on known ΔZ, comparing the
-  corrected MIL against where the round actually lands. Nothing in the pipeline
-  has been checked against the game — only against itself.
+**The model itself is still unverified.** This is the one that should worry you.
 
-**Known gaps in what is built.** None of these block the flag on their own, but
-each is a place the correction is weaker than it looks.
-
-- **SPG-2 `low` is uncorrected on purpose.** It is stored as `null` in the grid
-  and captioned "low arc NOT corrected". Re-evaluate against the break-even in
-  [ideas-research/01-terrain-heightmap.md](ideas-research/01-terrain-heightmap.md)
-  § 5 once the pak parameters land — research puts its break-even impact angle
-  at 25°, where the vacuum fit says 13°.
+- **Projectile parameters from the paks.** `data/ballistics/projectile-model.json`
+  is a least-squares vacuum fit to our own firing tables, RMS 8–14 m. The SPG's
+  two arcs want different mil→degree slopes (`0.048` on `high`, `0.058` on
+  `low`), which is the fit absorbing real drag. Early Access on 2026-09-10
+  restores `Wardogs/Content/Paks/pakchunk0-WindowsClient.*`; read the
+  projectile's muzzle velocity, gravity scale and drag term and rewrite the file
+  with `source: "pak-extract"`.
+- **No in-game validation has happened.** Four or five spotting shots on known
+  ΔZ, comparing the corrected MIL against where the round actually lands.
+  Nothing in this pipeline has been checked against the game — only against
+  itself.
 - **The SPG `high` table outruns its own fitted model.** The table's last row is
   2629 m; the fit's vacuum ceiling is v²/g = 2622.6 m. The final distance column
-  of the grid is therefore `null` at every ΔZ, including ΔZ = 0, so shots at the
-  extreme end of the SPG's range get no correction at all. Harmless (a null
-  never changes the MIL) but it disappears only when the model comes from the
-  paks rather than from a 8.1 m-RMS fit.
+  of the grid is `null` at every ΔZ, so shots at the extreme end of the SPG's
+  range are never corrected. Harmless, and it disappears when the model comes
+  from the paks.
 - **No automated coverage under `js/`.** `scripts/lib/ballistics.test.mjs` covers
-  the solver and the fit; the runtime half — the gate, `correctArc`, the caption
-  selection — has none, because the repo has no browser test harness. It was
-  verified once against a throwaway VM harness. Standing up a real one is the
-  only way this stops being a manual check on every change.
-- **Vehicle attitude is still not modelled.** The SPH-2 level warning remains a
+  the solver and the fit; the runtime half — the gate, the map allowlist,
+  `correctArc`, the caption selection — has none, because the repo has no
+  browser test harness for it. Verified once against a throwaway VM harness.
+- **Vehicle attitude is not modelled.** The SPH-2 level warning is still just a
   caption. Chassis tilt moves the impact independently of terrain ΔZ, so a
   corrected MIL fired from a tilted platform is still wrong.
 

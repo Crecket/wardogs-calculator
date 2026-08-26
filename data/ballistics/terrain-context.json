@@ -15,11 +15,14 @@
     }
   },
   "releasePolicy": {
-    "automaticMilCorrection": false,
+    "automaticMilCorrection": true,
     "flatTableAuthoritative": true,
     "suppressionMissMeters": 10,
     "heightCorrection": "data/ballistics/height-correction.json",
-    "reason": "Terrain3D elevation is verified for supported maps, but the projectile model is a vacuum fit to our own tables rather than extracted game data. Flip automaticMilCorrection only after the model is rebuilt from the paks; see docs/superpowers/specs/2026-08-26-elevation-correction-design.md section 8."
+    "correctedMaps": [
+      "bakurani"
+    ],
+    "reason": "Height correction is on where we trust the inputs and off where we do not. Off for SPG-2 low (null in the grid: research puts its break-even impact angle at 25 degrees where the vacuum fit says 13). Off for any map outside correctedMaps: Bakurani's coordinate alignment was validated by visual overlay after the Y-flip fix in 5c462a173, Ozeti's never was. The projectile model is still a vacuum fit to our own tables; see docs/superpowers/specs/2026-08-26-elevation-correction-design.md section 8."
   },
   "calibration": {
     "ready": false

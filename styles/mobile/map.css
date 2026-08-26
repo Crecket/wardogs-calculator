@@ -210,6 +210,48 @@
     line-height: 1.05;
 }
 
+/*
+ * Terrain elevation note. Same role as .solution-terrain-note on desktop:
+ * it qualifies the MIL above it, so it wraps rather than truncating.
+ */
+.mobile-terrain-note {
+    margin-top: 4px;
+    padding: 4px 6px;
+
+    border-left: 3px solid var(--muted);
+    border-radius: 4px;
+    background:
+        color-mix(
+            in srgb,
+            var(--input-bg) 46%,
+            transparent
+        );
+
+    color: var(--text);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.mobile-terrain-note[hidden] {
+    display: none;
+}
+
+.mobile-terrain-note[data-state="corrected"] {
+    border-left-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 13%, transparent);
+}
+
+.mobile-terrain-note[data-state="mixed"] {
+    border-left-color: #f0b24a;
+    background: color-mix(in srgb, #f0b24a 15%, transparent);
+}
+
+.mobile-terrain-note[data-state="loading"] {
+    color: var(--muted);
+    font-weight: 500;
+}
+
 .mobile-range-status {
     margin-top: 4px;
     padding: 4px 2px 0;

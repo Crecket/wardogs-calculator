@@ -75,6 +75,42 @@ function formatTerrainBallisticDetail(meta) {
     return formatTerrainBallisticsStatus(meta);
 }
 
+/*
+ * Which of the note's four looks to wear. The text itself already says all
+ * of this; the state only drives colour, so an unknown meta falls through to
+ * the neutral default rather than guessing.
+ */
+function terrainNoteState(meta) {
+    if (meta?.pendingTerrain) {
+        return 'loading';
+    }
+
+    if (!meta?.applied) {
+        return 'uncorrected';
+    }
+
+    return meta.arcsUncorrected?.length
+        ? 'mixed'
+        : 'corrected';
+}
+
+function renderTerrainNote(meta, text) {
+    const note = $('terrainNote');
+
+    if (!note) {
+        return;
+    }
+
+    note.textContent = text;
+    note.hidden = !text;
+
+    if (text) {
+        note.dataset.state = terrainNoteState(meta);
+    } else {
+        delete note.dataset.state;
+    }
+}
+
 function renderElevationResult(weapon, distanceMeters) {
     const value = $('mil');
     const detail = $('milAlt');
@@ -124,11 +160,10 @@ function renderElevationResult(weapon, distanceMeters) {
         secondary = tr('noFiringSolution');
     }
 
-    if (terrainDetail) {
-        secondary = secondary
-            ? `${secondary} · ${terrainDetail}`
-            : terrainDetail;
-    }
+    renderTerrainNote(
+        resolved.terrainMeta,
+        terrainDetail
+    );
 
     value.textContent = primary;
 
