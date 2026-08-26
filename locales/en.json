@@ -118,7 +118,7 @@
   "unlockPositionHint": "Allow this position to be changed on the map",
   "mil": "MIL",
   "collabTitle": "Shared session",
-  "collabHint": "Everyone with the link can edit this map. The room closes 12 hours after the last change.",
+  "collabHint": "Everyone with the link can edit this map. The room closes 2 weeks after the last change.",
   "collabStart": "Start a shared session",
   "collabOr": "or",
   "collabJoin": "Join",

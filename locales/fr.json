@@ -120,7 +120,7 @@
   "unlockPositionHint": "Autoriser à nouveau la modification de cette position sur la carte",
   "mil": "MIL",
   "collabTitle": "Session partagée",
-  "collabHint": "Toute personne disposant du lien peut modifier cette carte. Le salon ferme 12 heures après la dernière modification.",
+  "collabHint": "Toute personne disposant du lien peut modifier cette carte. Le salon ferme 2 semaines après la dernière modification.",
   "collabStart": "Démarrer une session partagée",
   "collabOr": "ou",
   "collabJoin": "Rejoindre",

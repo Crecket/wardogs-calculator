@@ -25,7 +25,7 @@ export const LIMITS = {
     opsPerSecond: 20,
     opsBurst: 40,
 
-    idleMs: 12 * 60 * 60 * 1000
+    idleMs: 14 * 24 * 60 * 60 * 1000
 };
 
 const ID_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;

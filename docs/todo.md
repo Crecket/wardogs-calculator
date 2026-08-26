@@ -11,13 +11,19 @@ Each entry says what the current value is, where it lives, and what evidence
 
 ## FOB build area size
 
-**Current:** `150` in `config/app.json` → `map.rings.fob.radius`
-**Renders as:** a 300 × 300 m square around every placed `fob` marker
-**Evidence:** none — this number was invented to make the shape visible.
+**Current:** `60` in `config/app.json` → `map.rings.fob.radius`
+**Renders as:** a 120 × 120 m square around every placed `fob` marker
+**Evidence:** the build area is a square roughly 120 m on a side, per someone
+who has played it. Not tape-measured in-game, but no longer invented.
 
-Known to be too big. For scale, a 300 m square is 30% of the main zone's full
-width, and spans 135% of the gap between the two closest towers on Bakurani
-(218 m apart) — one FOB would cover the ground between two objectives.
+For scale, a 120 m square is 12% of the main zone's full width and spans 55% of
+the gap between the two closest towers on Bakurani (218 m apart).
+
+**The field name is misleading.** `map.rings.fob.radius` is the half-width of a
+square, not a radius — there is no circle involved. It is worth renaming to
+`halfSide` (or storing the full 120 and halving at draw time) so the next person
+reading the config does not have to guess. `getRingConfig` and `drawRadiusSquare`
+in `js/map/overlays.js` would need updating with it.
 
 Nothing in the repo constrains this the way tower positions constrain the main
 zone, so it cannot be narrowed by inference, and no third-party map publishes

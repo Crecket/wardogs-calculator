@@ -96,7 +96,7 @@ Enforced by the server, not the client:
 | Ops per second per peer | 20 sustained, 40 burst |
 | Message size | 64 KB |
 | Drawings / markers / targets | 2000 / 5000 / 500 |
-| Room lifetime | 12 hours after the last change |
+| Room lifetime | 2 weeks after the last change |
 
 ### How it works
 

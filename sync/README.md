@@ -83,7 +83,7 @@ do not subject to CORS — joining is gated by the room code itself.
 | Ops per socket | 20/sec sustained, 40 burst |
 | Message size | 64 KB |
 | Drawings / markers / targets | 2000 / 5000 / 500 |
-| Room lifetime | 12h after last activity |
+| Room lifetime | 14d after last activity |
 
 The caps are what keep a leaked room code from becoming a bill. Cloudflare has
 no hard spend limit for Workers, so also set a billing notification.

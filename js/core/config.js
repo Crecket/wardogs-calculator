@@ -19,12 +19,11 @@ const DEFAULT_APP_CONFIG = {
          *
          * The main zone is a circle and `radius` means what it says —
          * a fallback only. Real maps record their own centre and radius in
-         * maps/*.json; the values there are inferred from where the towers
-         * sit, not measured in-game.
+         * maps/*.json, taken from the game's own control-zone values.
          */
         rings: {
             fob: {
-                radius: 150,
+                radius: 60,
                 color: '#5fa8d3'
             },
             mainZone: {

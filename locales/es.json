@@ -120,7 +120,7 @@
   "unlockPositionHint": "Permitir volver a cambiar esta posición en el mapa",
   "mil": "MIL",
   "collabTitle": "Sesión compartida",
-  "collabHint": "Cualquiera con el enlace puede editar este mapa. La sala se cierra 12 horas después del último cambio.",
+  "collabHint": "Cualquiera con el enlace puede editar este mapa. La sala se cierra 2 semanas después del último cambio.",
   "collabStart": "Iniciar sesión compartida",
   "collabOr": "o",
   "collabJoin": "Unirse",
