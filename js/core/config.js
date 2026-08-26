@@ -26,6 +26,16 @@ const DEFAULT_APP_CONFIG = {
         }
     },
 
+    /*
+     * Realtime collaboration is off unless a sync service URL is
+     * configured. The service deploys separately from the static site
+     * (see sync/README.md), so a fork without one simply never shows
+     * the feature rather than failing at runtime.
+     */
+    collab: {
+        url: null
+    },
+
     mapTools: {
         shortcuts: {
             ruler: 'r',
@@ -63,6 +73,11 @@ function mergeAppConfig(base, override) {
                 ...base.site.footer,
                 ...(override?.site?.footer || {})
             }
+        },
+
+        collab: {
+            ...base.collab,
+            ...(override?.collab || {})
         },
 
         mapTools: {
@@ -111,6 +126,57 @@ function getMapToolShortcut(action) {
     )
         .trim()
         .toLowerCase();
+}
+
+/*
+ * Returns the sync service base URL, or '' when collaboration is not
+ * configured. Only wss:// (or ws:// against a local dev server) is
+ * accepted: the room code travels in this URL, so a plain-http endpoint
+ * would leak the credential that grants edit access to the room.
+ */
+function getCollabServiceUrl() {
+    const configured = String(
+        APP_CONFIG
+            ?.collab
+            ?.url || ''
+    ).trim();
+
+    if (!configured) {
+        return '';
+    }
+
+    try {
+        const parsed = new URL(configured);
+
+        const isLocal =
+            parsed.hostname === 'localhost' ||
+            parsed.hostname === '127.0.0.1';
+
+        if (
+            parsed.protocol !== 'wss:' &&
+            !(parsed.protocol === 'ws:' && isLocal)
+        ) {
+            console.warn(
+                'Ignoring collab.url: expected wss://',
+                configured
+            );
+            return '';
+        }
+
+        return configured.replace(/\/+$/, '');
+    } catch {
+        console.warn(
+            'Ignoring collab.url: not a valid URL',
+            configured
+        );
+        return '';
+    }
+}
+
+function isCollabConfigured() {
+    return Boolean(
+        getCollabServiceUrl()
+    );
 }
 
 function getMaxCameraZoom() {
