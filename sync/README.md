@@ -48,22 +48,21 @@ npx wrangler login
 npm run deploy
 ```
 
-That prints a `https://wardogs-sync.<your-subdomain>.workers.dev` URL. Put its
-`wss://` form in the site's `config/app.json`:
+`wrangler.jsonc` declares a `wardogs-map-sync.olm.pet` custom domain. Because
+that zone is on Cloudflare, Wrangler creates the DNS record itself. Delete the
+`routes` block to use the free `wardogs-sync.<subdomain>.workers.dev` hostname
+instead.
 
-```json
-{ "collab": { "url": "wss://wardogs-sync.<your-subdomain>.workers.dev" } }
+Then build the site against it — the URL is supplied at build time so the
+repository never carries one deployment's address:
+
+```sh
+cd .. && COLLAB_URL=wss://wardogs-map-sync.olm.pet npm run build
 ```
 
-A `workers.dev` hostname handles WebSockets fine — a custom domain is optional
-and only worth it if the domain is already on your Cloudflare account. To use
-one, add to `wrangler.jsonc`:
-
-```jsonc
-"routes": [
-    { "pattern": "sync.example.com", "custom_domain": true }
-]
-```
+A `workers.dev` hostname handles WebSockets fine, so the custom domain is only
+worth it when the zone is already on your Cloudflare account — otherwise
+Wrangler cannot create the record and you would be managing DNS by hand.
 
 ### Locking down who can create rooms
 

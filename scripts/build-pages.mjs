@@ -605,6 +605,39 @@ async function readAppConfig() {
     return JSON.parse(await readFile(path, 'utf8'));
 }
 
+/*
+ * The shared-session service URL is deployment-specific, so config/app.json
+ * keeps it null and a build supplies it:
+ *
+ *     COLLAB_URL=wss://your-worker.example.com npm run build
+ *
+ * Committing a real URL instead would point every build of this repo at one
+ * person's Cloudflare account — including anyone who forked it.
+ */
+async function applyCollabUrl() {
+    const url = String(process.env.COLLAB_URL || '').trim();
+
+    if (!url) {
+        return;
+    }
+
+    const path = join(dist, 'config', 'app.json');
+    const config = JSON.parse(await readFile(path, 'utf8'));
+
+    config.collab = {
+        ...config.collab,
+        url
+    };
+
+    await writeFile(
+        path,
+        JSON.stringify(config, null, 2) + '\n',
+        'utf8'
+    );
+
+    console.log(`Shared sessions enabled against ${url}`);
+}
+
 async function getDesktopLanguages() {
     const localizedDir = join(
         root,
@@ -837,6 +870,7 @@ await mkdir(
 );
 
 await copySharedStatic();
+await applyCollabUrl();
 await bundleStyles();
 await buildDesktopPages();
 await buildSitemap();

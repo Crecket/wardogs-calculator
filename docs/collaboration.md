@@ -11,12 +11,24 @@ change of any kind. See [`sync/README.md`](../sync/README.md) for the server.
 
 ### Enabling it
 
-Set the service URL in `config/app.json`:
+Supply the service URL at build time:
+
+```sh
+COLLAB_URL=wss://your-worker.example.com npm run build
+```
+
+`config/app.json` deliberately keeps `collab.url: null` in the repository.
+Committing a real URL would point every build of this repo — including anyone
+else's fork — at one person's Cloudflare account. The build writes the value
+into `dist/config/app.json` only.
+
+You can still set it directly in `config/app.json` for a private fork that is
+never sent upstream:
 
 ```json
 {
   "collab": {
-    "url": "wss://wardogs-sync.example.workers.dev"
+    "url": "wss://your-worker.example.com"
   }
 }
 ```
