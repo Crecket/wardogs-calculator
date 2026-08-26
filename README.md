@@ -46,6 +46,7 @@ Detailed documentation is split into focused files to keep this README concise.
 - [Maps](docs/maps.md) — map configuration, tile structure, bounds, marker zoom visibility, and adding new maps
 - [Mobile interface](docs/mobile.md) — mobile routes, automatic routing, touch controls, and deployment architecture
 - [Shared sessions](docs/collaboration.md) — real-time collaborative map planning (disabled by default; needs a separately deployed sync service)
+- [Fork deployment](docs/deployment.md) — running your own copy: `.env` settings, hosting tiles on R2, and deploying the site and sync Worker
 - [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, and localized URLs
 - [Development](docs/development.md) — project structure, local development, unified build process, and GitHub Pages deployment
 - [Analytics](docs/analytics.md) — Umami custom events, event payloads, debouncing, and privacy considerations

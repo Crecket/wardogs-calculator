@@ -21,6 +21,15 @@ import {
 import {
     fileURLToPath
 } from 'node:url';
+import {
+    collabUrl,
+    loadEnv,
+    patchAppConfig,
+    patchMapConfig,
+    tileBaseUrl
+} from './lib/site-config.mjs';
+
+loadEnv();
 
 const __dirname = dirname(
     fileURLToPath(import.meta.url)
@@ -379,6 +388,60 @@ function safeStaticPath(pathname) {
     return absolute;
 }
 
+/*
+ * config/app.json and maps/*.json are rewritten on the way out, exactly as
+ * the build rewrites them, so `npm run dev` talks to the same sync service
+ * and tile host as a deployed build. Without this, collaboration is dead in
+ * development no matter what .env says.
+ */
+async function sendPatchedJson(
+    response,
+    pathname,
+    path
+) {
+    const original =
+        JSON.parse(
+            await readFile(path, 'utf8')
+        );
+
+    const patched =
+        pathname === '/config/app.json'
+            ? patchAppConfig(original)
+            : patchMapConfig(original);
+
+    if (!patched) {
+        return false;
+    }
+
+    const body =
+        JSON.stringify(patched, null, 2);
+
+    response.writeHead(
+        200,
+        {
+            'Content-Type':
+                'application/json; charset=utf-8',
+
+            'Content-Length':
+                Buffer.byteLength(body),
+
+            'Cache-Control':
+                'no-store, max-age=0'
+        }
+    );
+
+    response.end(body);
+
+    return true;
+}
+
+function isPatchableJson(pathname) {
+    return (
+        pathname === '/config/app.json' ||
+        /^\/maps\/[^/]+\.json$/.test(pathname)
+    );
+}
+
 async function sendStatic(
     response,
     pathname
@@ -393,6 +456,17 @@ async function sendStatic(
         !(await exists(path))
     ) {
         return false;
+    }
+
+    if (
+        isPatchableJson(pathname) &&
+        await sendPatchedJson(
+            response,
+            pathname,
+            path
+        )
+    ) {
+        return true;
     }
 
     const info =
@@ -845,7 +919,14 @@ server.listen(
                 : 'Live reload enabled. Production Umami analytics ENABLED for this dev session.'
         );
         console.log(
-            'Map tiles are served directly and are not watched for changes.'
+            tileBaseUrl()
+                ? `Map tiles are served from ${tileBaseUrl()} (TILE_BASE_URL).`
+                : 'Map tiles are served directly and are not watched for changes.'
+        );
+        console.log(
+            collabUrl()
+                ? `Shared sessions point at ${collabUrl()} (COLLAB_URL).`
+                : 'Shared sessions are off. Set COLLAB_URL in .env to enable them.'
         );
         console.log(
             'Press Ctrl+C to stop.'

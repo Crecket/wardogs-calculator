@@ -1,3 +1,6 @@
 .idea
 dist/
 dist-mobile/
+.env
+.wrangler/
+node_modules/

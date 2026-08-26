@@ -11,7 +11,14 @@ change of any kind. See [`sync/README.md`](../sync/README.md) for the server.
 
 ### Enabling it
 
-Supply the service URL at build time:
+Put the service URL in `.env` (see `env.example`):
+
+```sh
+COLLAB_URL=wss://your-worker.example.com
+```
+
+This is read by both `npm run build` and `npm run dev`, so development behaves
+like a deployed build. For a one-off build you can pass it inline instead:
 
 ```sh
 COLLAB_URL=wss://your-worker.example.com npm run build
@@ -19,19 +26,10 @@ COLLAB_URL=wss://your-worker.example.com npm run build
 
 `config/app.json` deliberately keeps `collab.url: null` in the repository.
 Committing a real URL would point every build of this repo — including anyone
-else's fork — at one person's Cloudflare account. The build writes the value
-into `dist/config/app.json` only.
+else's fork — at one person's Cloudflare account. The value is injected into
+the built copy only; the tracked file never changes.
 
-You can still set it directly in `config/app.json` for a private fork that is
-never sent upstream:
-
-```json
-{
-  "collab": {
-    "url": "wss://your-worker.example.com"
-  }
-}
-```
+See [Fork deployment](deployment.md) for the full setup.
 
 Only `wss://` is accepted (`ws://` is allowed for `localhost` during
 development). The room code travels inside this URL, and it is the only
