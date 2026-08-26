@@ -63,6 +63,21 @@ function coordinate(value) {
     return parsed;
 }
 
+/*
+ * Marker rotation in degrees, wrapped into [0, 360). A missing or unusable
+ * value is 0 rather than a rejection: markers from a client that predates
+ * rotation simply sit square, the way they always did.
+ */
+function rotation(value) {
+    const degrees = Number(value);
+
+    if (!Number.isFinite(degrees)) {
+        return 0;
+    }
+
+    return ((degrees % 360) + 360) % 360;
+}
+
 function id(value) {
     if (
         typeof value !== 'string' ||
@@ -155,7 +170,8 @@ export function validateMarker(value, mapId) {
         mapId: slug(value.mapId, mapId),
         icon: slug(value.icon, null) ?? fail('bad-icon'),
         x: coordinate(value.x),
-        y: coordinate(value.y)
+        y: coordinate(value.y),
+        rotation: rotation(value.rotation)
     };
 }
 
