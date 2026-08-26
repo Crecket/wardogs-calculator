@@ -77,10 +77,11 @@ function gunAtScreen(x, y, radiusPx) {
  * Traces a ring whose radius varies by bearing. Bearing 0 is +x and the
  * angle increases the same way it does in range-ring.js; screen y is
  * inverted, which is why sin is subtracted.
+ *
+ * Appends a subpath rather than starting one, so two of these can be traced
+ * into a single path and filled even-odd to tint the band between them.
  */
 function traceRangeRing(at, radii, scale, clampMetres) {
-    ctx.beginPath();
-
     for (let b = 0; b < radii.length; b += 1) {
         const angle = b * 2 * Math.PI / radii.length;
 
@@ -137,10 +138,11 @@ function drawGunRangeRings(gun, at) {
             ? terrainRangeRing(gun, S.map)
             : null;
 
+    ctx.beginPath();
+
     if (ring) {
         traceRangeRing(at, ring.radii, v.scale, ring.maxRangeMeters);
     } else {
-        ctx.beginPath();
         ctx.arc(at.x, at.y, rangePx, 0, Math.PI * 2);
     }
 
@@ -156,13 +158,26 @@ function drawGunRangeRings(gun, at) {
     /*
      * Only worth drawing when the terrain actually buys range somewhere.
      * On flat ground it coincides with the solid ring exactly.
+     *
+     * Height buys range but the clamp above hides it: the solid ring stays
+     * on the table max, so an elevated gun draws the same circle a flat one
+     * does. The gain is only legible if this band is, hence the tint —
+     * an outline alone reads as absent.
      */
     if (ring && ring.radii.some(r => r > ring.maxRangeMeters + 1)) {
+        ctx.beginPath();
+        traceRangeRing(at, ring.radii, v.scale, null);
+        traceRangeRing(at, ring.radii, v.scale, ring.maxRangeMeters);
+
+        ctx.fillStyle = 'rgba(215,164,82,.07)';
+        ctx.fill('evenodd');
+
+        ctx.beginPath();
         traceRangeRing(at, ring.radii, v.scale, null);
 
-        ctx.strokeStyle = 'rgba(215,164,82,.45)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([2, 4]);
+        ctx.strokeStyle = 'rgba(215,164,82,.8)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
         ctx.stroke();
         ctx.setLineDash([]);
     }
