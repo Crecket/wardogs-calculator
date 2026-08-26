@@ -8,6 +8,8 @@
     const CONFIG_URL =
         'data/ballistics/terrain-context.json';
 
+    const DEFAULT_SUPPRESSION_MISS_METERS = 10;
+
     const state = {
         initialized: false,
         enabled: false,
@@ -16,7 +18,10 @@
         rerenderQueued: false,
         lastWarning: null,
         confirmedOrigin: null,
-        levelControl: null
+        levelControl: null,
+        correctionEnabled: false,
+        suppressionMissMeters: DEFAULT_SUPPRESSION_MISS_METERS,
+        correction: null
     };
 
     function terrainLog(...args) {
@@ -453,15 +458,58 @@
             }
 
             state.config = config;
+
+            state.correction = null;
+
+            const correctionUrl = config.releasePolicy?.heightCorrection;
+
+            if (correctionUrl) {
+                try {
+                    const correction = await fetchJson(correctionUrl);
+
+                    if (
+                        correction?.schema !== 'wardogs-height-correction-v1'
+                    ) {
+                        throw new Error(
+                            `Unsupported height correction schema: ${correction?.schema}`
+                        );
+                    }
+
+                    state.correction = correction;
+
+                    terrainLog(
+                        'height correction loaded',
+                        `source=${correction.modelSource}`
+                    );
+                } catch (error) {
+                    terrainWarn(
+                        'Could not load the height correction grid; the flat table remains authoritative.',
+                        error
+                    );
+                }
+            }
             state.enabled = state.terrains.size > 0;
 
             if (!state.enabled) {
                 throw new Error('No Terrain3D map manifests could be loaded');
             }
 
-            if (!config.calibration?.ready) {
+            const policy = config.releasePolicy ?? {};
+
+            state.correctionEnabled = Boolean(
+                policy.automaticMilCorrection
+            );
+
+            const suppression = Number(policy.suppressionMissMeters);
+
+            state.suppressionMissMeters =
+                Number.isFinite(suppression) && suppression >= 0
+                    ? suppression
+                    : DEFAULT_SUPPRESSION_MISS_METERS;
+
+            if (!state.correctionEnabled) {
                 terrainWarn(
-                    'Runtime hook is installed but calibration.ready=false; flat-table fallback remains authoritative.'
+                    'Runtime hook is installed but releasePolicy.automaticMilCorrection=false; the flat table remains authoritative.'
                 );
             }
 
@@ -919,6 +967,63 @@
         };
     }
 
+    const ARCS = ['single', 'low', 'high'];
+
+    /*
+     * Adds the interpolated correction to one arc, or returns the arc
+     * untouched. Returns null when the arc is absent from the solution.
+     *
+     * A null from interpolateHeightCorrection means one of three things,
+     * all handled identically: the arc is uncorrected by policy (the grid
+     * entry is null), the target is off the grid, or the target is
+     * unreachable on this arc because it sits above the trajectory's apex.
+     */
+    function correctArc(solution, grid, distanceMeters, deltaZMeters) {
+        if (!solution || !grid) {
+            return { solution, corrected: false, missMeters: null };
+        }
+
+        const miss = interpolateHeightCorrection(
+            {
+                distancesMeters: grid.distancesMeters,
+                deltaZMeters: grid.deltaZMeters,
+                milCorrections: grid.missMeters
+            },
+            distanceMeters,
+            deltaZMeters
+        );
+
+        if (
+            !Number.isFinite(miss) ||
+            Math.abs(miss) < state.suppressionMissMeters
+        ) {
+            return { solution, corrected: false, missMeters: miss ?? null };
+        }
+
+        const deltaMil = interpolateHeightCorrection(
+            grid,
+            distanceMeters,
+            deltaZMeters
+        );
+
+        if (!Number.isFinite(deltaMil)) {
+            return { solution, corrected: false, missMeters: miss };
+        }
+
+        return {
+            solution: {
+                ...solution,
+                mil: Number.isFinite(solution.mil)
+                    ? solution.mil + deltaMil
+                    : solution.mil,
+                minMil: solution.minMil + deltaMil,
+                maxMil: solution.maxMil + deltaMil
+            },
+            corrected: true,
+            missMeters: miss
+        };
+    }
+
     function getTerrainBallisticSolutions(context) {
         const fallback = {
             solutions: context?.solutions,
@@ -983,22 +1088,70 @@
             };
         }
 
-        return {
-            /*
-             * RELEASE SAFETY INVARIANT:
-             * Terrain3D never changes MIL in this build.
-             */
-            solutions: context.solutions,
-            meta: {
-                available: true,
-                pendingTerrain: false,
-                applied: false,
-                reason: 'information-only',
-                mapId: terrain.mapId,
-                originZ,
-                targetZ,
-                deltaZ: targetZ - originZ
+        const deltaZ = targetZ - originZ;
+
+        const grids =
+            state.correction?.weapons?.[context.weapon?.id] ?? null;
+
+        const meta = {
+            available: true,
+            pendingTerrain: false,
+            applied: false,
+            reason: 'information-only',
+            mapId: terrain.mapId,
+            originZ,
+            targetZ,
+            deltaZ,
+            arcsCorrected: [],
+            arcsUncorrected: [],
+            missMeters: null
+        };
+
+        if (!state.correctionEnabled || !grids) {
+            return { solutions: context.solutions, meta };
+        }
+
+        const corrected = cloneSolutions(context.solutions);
+        let worstMiss = null;
+
+        for (const arc of ARCS) {
+            if (!corrected[arc]) {
+                continue;
             }
+
+            const result = correctArc(
+                corrected[arc],
+                grids[arc] ?? null,
+                context.distanceMeters,
+                deltaZ
+            );
+
+            corrected[arc] = result.solution;
+
+            if (result.corrected) {
+                meta.arcsCorrected.push(arc);
+            } else {
+                meta.arcsUncorrected.push(arc);
+            }
+
+            if (
+                Number.isFinite(result.missMeters) &&
+                (worstMiss === null ||
+                    Math.abs(result.missMeters) > Math.abs(worstMiss))
+            ) {
+                worstMiss = result.missMeters;
+            }
+        }
+
+        meta.missMeters = worstMiss;
+        meta.applied = meta.arcsCorrected.length > 0;
+        meta.reason = meta.applied
+            ? 'terrain-corrected'
+            : 'information-only';
+
+        return {
+            solutions: meta.applied ? corrected : context.solutions,
+            meta
         };
     }
 
@@ -1013,9 +1166,11 @@
             initialized: state.initialized,
             enabled: state.enabled,
             ready: state.terrains.size > 0,
-            calibrated: false,
-            autoCorrectionEnabled: false,
-            mode: 'terrain-information-only',
+            calibrated: Boolean(state.config?.calibration?.ready),
+            autoCorrectionEnabled: state.correctionEnabled,
+            mode: state.correctionEnabled
+                ? 'terrain-corrected'
+                : 'terrain-information-only',
             supportedMaps: [...state.terrains.keys()],
             cachedChunks
         };

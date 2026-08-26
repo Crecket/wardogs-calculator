@@ -17,7 +17,9 @@
   "releasePolicy": {
     "automaticMilCorrection": false,
     "flatTableAuthoritative": true,
-    "reason": "Terrain3D elevation is verified for supported maps, but projectile delta-Z compensation and platform attitude are not yet validated safely enough for automatic MIL correction."
+    "suppressionMissMeters": 10,
+    "heightCorrection": "data/ballistics/height-correction.json",
+    "reason": "Terrain3D elevation is verified for supported maps, but the projectile model is a vacuum fit to our own tables rather than extracted game data. Flip automaticMilCorrection only after the model is rebuilt from the paks; see docs/superpowers/specs/2026-08-26-elevation-correction-design.md section 8."
   },
   "calibration": {
     "ready": false
