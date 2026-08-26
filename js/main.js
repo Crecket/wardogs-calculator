@@ -195,6 +195,10 @@ async function init() {
 
         renderSavedTargets();
 
+        if (typeof initGunsUI === 'function') {
+            initGunsUI();
+        }
+
         /*
          * Last: joining from a #room= link replaces map content, so it
          * must run after the solo state is fully loaded and rendered.

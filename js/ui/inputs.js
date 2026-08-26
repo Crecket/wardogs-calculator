@@ -60,6 +60,14 @@ function inputs() {
         refreshSavedTargetHighlight();
     }
 
+    /*
+     * The row shows each gun's own coordinates, so it has to follow the
+     * same writes the ox/oy fields do.
+     */
+    if (typeof renderGuns === 'function') {
+        renderGuns();
+    }
+
     result();
     draw();
 }
