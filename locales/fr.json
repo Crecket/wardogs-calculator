@@ -133,5 +133,8 @@
   "collabErrorJoin": "Impossible de rejoindre. Le salon est plein ou expiré.",
   "collabErrorCode": "Cela ne ressemble pas à un code de salon.",
   "collabErrorLost": "Connexion perdue. Votre propre carte a été restaurée.",
-  "collabMapLocked": "La carte est figée pendant une session."
+  "collabMapLocked": "La carte est figée pendant une session.",
+  "collabErrorRejected": "Le salon a refusé cette modification ; rechargement depuis le serveur.",
+  "collabErrorMap": "Ce salon utilise une carte absente de ce site.",
+  "collabErrorCustomMap": "Une session partagée exige une carte prédéfinie, pas une carte personnalisée."
 }

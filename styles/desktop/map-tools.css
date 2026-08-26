@@ -45,6 +45,15 @@
     pointer-events: auto;
 }
 
+/*
+ * An author-origin `display` beats the user-agent `[hidden]` rule, so
+ * without this the Shared Session button renders even when the feature is
+ * switched off and its controls do nothing.
+ */
+.map-tool-button[hidden] {
+    display: none;
+}
+
 .map-tool-button {
     width: 36px;
     height: 34px;

@@ -133,5 +133,8 @@
   "collabErrorJoin": "No se pudo entrar. La sala está llena o ha caducado.",
   "collabErrorCode": "Eso no parece un código de sala.",
   "collabErrorLost": "Conexión perdida. Se ha restaurado tu propio mapa.",
-  "collabMapLocked": "El mapa queda fijo durante una sesión."
+  "collabMapLocked": "El mapa queda fijo durante una sesión.",
+  "collabErrorRejected": "La sala rechazó ese cambio; recargando desde el servidor.",
+  "collabErrorMap": "Esa sala usa un mapa que este sitio no tiene.",
+  "collabErrorCustomMap": "Las sesiones compartidas necesitan un mapa predefinido, no uno personalizado."
 }

@@ -52,6 +52,18 @@ function allowedOrigin(request, env) {
         return origin || '*';
     }
 
+    /*
+     * No Origin header means no browser, so there is no origin to police —
+     * curl, native clients and the test suite all arrive this way. An
+     * allowlist is a browser-tab defence, not an authentication check;
+     * pretending otherwise here would only break non-browser callers while
+     * stopping nobody, since anything without a browser can send any
+     * Origin it likes.
+     */
+    if (!origin) {
+        return '*';
+    }
+
     return configured.includes(origin)
         ? origin
         : null;
@@ -126,24 +138,31 @@ async function createRoom(request, env, origin) {
 export default {
     async fetch(request, env) {
         const origin = allowedOrigin(request, env);
-
-        if (!origin) {
-            return new Response('Forbidden origin', { status: 403 });
-        }
+        const url = new URL(request.url);
 
         if (request.method === 'OPTIONS') {
             return new Response(null, {
                 status: 204,
-                headers: corsHeaders(origin)
+                headers: corsHeaders(origin || '*')
             });
         }
 
-        const url = new URL(request.url);
-
+        /*
+         * The allowlist gates room CREATION only. Joining is deliberately
+         * left open to any origin: the room code is the credential, and
+         * people share links into contexts this Worker cannot enumerate.
+         * Gating the upgrade here would also break every non-browser
+         * client while stopping no attacker, since Origin is trivially
+         * forged outside a browser.
+         */
         if (
             url.pathname === '/room' &&
             request.method === 'POST'
         ) {
+            if (!origin) {
+                return new Response('Forbidden origin', { status: 403 });
+            }
+
             return createRoom(request, env, origin);
         }
 
@@ -167,7 +186,7 @@ export default {
         }
 
         if (url.pathname === '/health') {
-            return json({ ok: true }, 200, origin);
+            return json({ ok: true }, 200, origin || '*');
         }
 
         return new Response('Not found', { status: 404 });

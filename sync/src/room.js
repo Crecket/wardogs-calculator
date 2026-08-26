@@ -376,7 +376,10 @@ export class Room extends DurableObject {
             doc: this.snapshot()
         });
 
-        this.broadcastPeers(server);
+        this.broadcastPeers(
+            this.ctx.getWebSockets().length,
+            server
+        );
 
         return new Response(null, {
             status: 101,
@@ -408,11 +411,17 @@ export class Room extends DurableObject {
         }
     }
 
-    broadcastPeers(except = null) {
+    /*
+     * The count is passed in rather than derived, because the two callers
+     * disagree about whether `except` is present: a joining socket is
+     * already in getWebSockets() and should be counted, while a closing
+     * one is still in getWebSockets() and must not be.
+     */
+    broadcastPeers(count, except = null) {
         this.broadcast(
             {
                 type: 'peers',
-                count: this.ctx.getWebSockets().length
+                count
             },
             except
         );
@@ -463,7 +472,15 @@ export class Room extends DurableObject {
             return;
         }
 
-        if (message.length > LIMITS.messageBytes) {
+        /*
+         * String .length counts UTF-16 units, so a limit named in bytes has
+         * to be measured in bytes: 64K characters of Cyrillic or CJK is
+         * ~192 KB. Target names are the reachable path for multibyte text.
+         */
+        if (
+            new TextEncoder().encode(message).length >
+            LIMITS.messageBytes
+        ) {
             this.send(socket, { type: 'error', code: 'too-large' });
             return;
         }
@@ -491,6 +508,27 @@ export class Room extends DurableObject {
 
         if (raw?.type === 'ping') {
             this.send(socket, { type: 'pong' });
+            return;
+        }
+
+        /*
+         * Re-send the authoritative document. A client asks for this after
+         * an op is rejected, so a local edit the room never accepted does
+         * not linger on screen as though everyone could see it.
+         */
+        if (raw?.type === 'sync') {
+            this.send(socket, {
+                type: 'snapshot',
+                you: clientId,
+                peers: this.ctx.getWebSockets().length,
+                limits: {
+                    drawings: LIMITS.drawings,
+                    markers: LIMITS.markers,
+                    targets: LIMITS.targets,
+                    peers: LIMITS.peers
+                },
+                doc: this.snapshot()
+            });
             return;
         }
 
@@ -537,7 +575,13 @@ export class Room extends DurableObject {
             this.buckets.delete(clientId);
         }
 
-        this.broadcastPeers(socket);
+        this.broadcastPeers(
+            this.ctx
+                .getWebSockets()
+                .filter(open => open !== socket)
+                .length,
+            socket
+        );
     }
 
     async webSocketError(socket) {

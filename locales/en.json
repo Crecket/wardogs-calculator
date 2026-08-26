@@ -129,5 +129,8 @@
   "collabErrorJoin": "Could not join. The room may be full or expired.",
   "collabErrorCode": "That does not look like a room code.",
   "collabErrorLost": "Connection lost. Your own map has been restored.",
-  "collabMapLocked": "The map is fixed while a session is running."
+  "collabMapLocked": "The map is fixed while a session is running.",
+  "collabErrorRejected": "The room refused that change; reloading from the server.",
+  "collabErrorMap": "That room uses a map this site does not have.",
+  "collabErrorCustomMap": "Shared sessions need a preset map, not a custom one."
 }

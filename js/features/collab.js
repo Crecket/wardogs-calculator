@@ -265,12 +265,18 @@ function collabRestoreSolo() {
  */
 function collabApplyMapId(mapId) {
     if (!mapId || mapId === S.map) {
-        return;
+        return true;
     }
 
+    /*
+     * Staying on our own map would be worse than failing: every room
+     * drawing would be filtered out of rendering by its mapId, and every
+     * op we sent would be stamped with a map the others do not have, so
+     * both sides would see an empty room and no error.
+     */
     if (mapId !== 'custom' && !MAPS[mapId]) {
         console.warn('Room uses an unknown map:', mapId);
-        return;
+        return false;
     }
 
     S.map = mapId;
@@ -292,6 +298,8 @@ function collabApplyMapId(mapId) {
     if (typeof updatePresetLock === 'function') {
         updatePresetLock();
     }
+
+    return true;
 }
 
 function collabUpdateMapLock() {
@@ -324,7 +332,10 @@ function collabApplySnapshot(doc) {
 
     try {
         COLLAB.mapId = doc.mapId;
-        collabApplyMapId(doc.mapId);
+
+        if (!collabApplyMapId(doc.mapId)) {
+            return false;
+        }
 
         MAP_TOOL_STATE.drawings = Array.isArray(doc.drawings)
             ? doc.drawings
@@ -376,6 +387,8 @@ function collabApplySnapshot(doc) {
     renderSavedTargets();
     buildMapLayers();
     draw();
+
+    return true;
 }
 
 function collabApplyOp(op) {
@@ -650,10 +663,17 @@ function collabSamePoint(a, b) {
 function collabRecordPointMove(point, previous, next) {
     const last = COLLAB.ownOps[COLLAB.ownOps.length - 1];
 
+    /*
+     * Only coalesce into the entry if it is still the newest thing that
+     * happened. Merging into an older point move — one that some undone
+     * op sits behind — would make a single undo jump back over both
+     * drags, and would leave a redo entry that reapplies work out of order.
+     */
     if (
         last &&
         last.op.op === 'point.set' &&
-        last.op.point === point
+        last.op.point === point &&
+        !COLLAB.redoOps.length
     ) {
         last.op = { op: 'point.set', point, x: next.x, y: next.y };
         return;
@@ -779,6 +799,17 @@ async function collabCreateRoom(includeMine) {
         return;
     }
 
+    /*
+     * Custom maps carry their size in S.w/S.h, which the room document has
+     * no field for — a joiner would default to their own dimensions and
+     * every shared coordinate would land in a different frame, silently.
+     * Rooms are preset-map only until the document carries w/h.
+     */
+    if (S.map === 'custom') {
+        collabSetStatus('error', 'collabErrorCustomMap', true);
+        return;
+    }
+
     collabSetStatus('connecting', 'collabStatusConnecting');
 
     try {
@@ -852,6 +883,15 @@ function collabConnect(code, includeMine = false) {
     COLLAB.socket = socket;
 
     socket.addEventListener('message', event => {
+        /*
+         * A socket replaced by a leave-then-rejoin can still be draining
+         * frames. Without this guard a late snapshot from the old room
+         * would overwrite the new room's document wholesale.
+         */
+        if (COLLAB.socket !== socket) {
+            return;
+        }
+
         let message;
 
         try {
@@ -903,7 +943,10 @@ function collabHandleMessage(message) {
             COLLAB.reconnectAttempt = 0;
             COLLAB.everConnected = true;
 
-            collabApplySnapshot(message.doc);
+            if (!collabApplySnapshot(message.doc)) {
+                collabAbandon('collabErrorMap');
+                return;
+            }
 
             /*
              * Own-op history does not survive a reconnect: the ops it
@@ -937,7 +980,18 @@ function collabHandleMessage(message) {
 
             if (message.code === 'rate-limited') {
                 collabShowThrottled();
+                break;
             }
+
+            /*
+             * The op was applied locally before it was sent, but the room
+             * refused it — a full room document, or a shape the server
+             * would not take. Without reconciling, that edit sits on screen
+             * looking shared while no peer has it and the next snapshot
+             * silently deletes it. Pull the authoritative document instead.
+             */
+            collabSetStatus('online', 'collabErrorRejected', true);
+            collabSend({ type: 'sync' });
             break;
 
         case 'ack':
@@ -1034,6 +1088,24 @@ function collabScheduleReconnect() {
 function collabAbandon(messageKey) {
     const hadSolo = Boolean(COLLAB.solo);
 
+    /*
+     * Abandon can be reached with the socket still open (a room whose map
+     * we cannot use), not only from the close handler. Tear it down
+     * explicitly, and mark the intent so the close it triggers does not
+     * start a reconnect.
+     */
+    COLLAB.leaving = true;
+
+    if (COLLAB.socket) {
+        try {
+            COLLAB.socket.close(1000, 'abandoned');
+        } catch {
+            /* Already closed. */
+        }
+
+        COLLAB.socket = null;
+    }
+
     COLLAB.status = 'off';
 
     if (hadSolo) {
@@ -1125,8 +1197,13 @@ function collabReadHash() {
     const params = new URLSearchParams(hash);
     const code = params.get(COLLAB_HASH_KEY);
 
+    /*
+     * Lower-cased to match the server's alphabet: Durable Object names are
+     * case-sensitive, and share links get upper-cased by chat clients and
+     * by people retyping them.
+     */
     return code && /^[a-z0-9]{6,32}$/i.test(code)
-        ? code
+        ? code.toLowerCase()
         : null;
 }
 
@@ -1271,7 +1348,25 @@ function collabJoinFromInput(input, includeMine) {
     code = code.trim().toLowerCase();
 
     if (!/^[a-z0-9]{6,32}$/.test(code)) {
-        collabSetStatus('error', 'collabErrorCode', true);
+        /*
+         * Written straight into the status line rather than through
+         * collabSetStatus, which re-renders the panel and would wipe the
+         * code being corrected — a one-character typo should not cost the
+         * user all twelve.
+         */
+        COLLAB.status = 'error';
+        COLLAB.statusKey = 'collabErrorCode';
+        COLLAB.statusIsError = true;
+
+        const status = document.querySelector('#collabPopover .collab-status');
+
+        if (status) {
+            status.textContent = tr('collabErrorCode');
+            status.classList.add('error');
+        }
+
+        input.focus();
+        input.select();
         return;
     }
 

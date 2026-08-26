@@ -133,5 +133,8 @@
   "collabErrorJoin": "Nie udało się dołączyć. Pokój jest pełny lub wygasł.",
   "collabErrorCode": "To nie wygląda na kod pokoju.",
   "collabErrorLost": "Utracono połączenie. Przywrócono twoją własną mapę.",
-  "collabMapLocked": "Podczas sesji mapa jest zablokowana."
+  "collabMapLocked": "Podczas sesji mapa jest zablokowana.",
+  "collabErrorRejected": "Pokój odrzucił tę zmianę; przeładowanie z serwera.",
+  "collabErrorMap": "Ten pokój używa mapy, której nie ma na tej stronie.",
+  "collabErrorCustomMap": "Sesje współdzielone wymagają mapy predefiniowanej, nie własnej."
 }

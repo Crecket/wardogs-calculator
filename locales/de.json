@@ -133,5 +133,8 @@
   "collabErrorJoin": "Beitritt fehlgeschlagen. Der Raum ist voll oder abgelaufen.",
   "collabErrorCode": "Das sieht nicht nach einem Raumcode aus.",
   "collabErrorLost": "Verbindung verloren. Deine eigene Karte wurde wiederhergestellt.",
-  "collabMapLocked": "Während einer Sitzung ist die Karte fest."
+  "collabMapLocked": "Während einer Sitzung ist die Karte fest.",
+  "collabErrorRejected": "Der Raum hat die Änderung abgelehnt; lade neu vom Server.",
+  "collabErrorMap": "Dieser Raum nutzt eine Karte, die es hier nicht gibt.",
+  "collabErrorCustomMap": "Gemeinsame Sitzungen brauchen eine vorgefertigte Karte, keine eigene."
 }

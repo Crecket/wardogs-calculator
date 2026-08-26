@@ -139,5 +139,8 @@
   "collabErrorJoin": "COULD NOT JOIN. BOX IS FULL OR GONE.",
   "collabErrorCode": "THAT IS NOT A BOX CODE.",
   "collabErrorLost": "STRING LOST. YOUR OWN MEOWP IS BACK.",
-  "collabMapLocked": "THE MEOWP STAYS PUT DURING A CATNAP."
+  "collabMapLocked": "THE MEOWP STAYS PUT DURING A CATNAP.",
+  "collabErrorRejected": "THE BOX SAID NO. FETCHING IT AGAIN.",
+  "collabErrorMap": "THAT BOX USES A MEOWP THIS SITE HAS NEVER SNIFFED.",
+  "collabErrorCustomMap": "CATNAPS NEED A PROPER MEOWP, NOT A HOMEMADE ONE."
 }

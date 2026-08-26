@@ -525,15 +525,27 @@ function applyImportedMapToolChanges(imported) {
     saveMapToolState();
 
     /*
+     * Only items belonging to this map are shared. An import keeps each
+     * item's own mapId, so a file exported on another map stays invisible
+     * here — broadcasting those would put content in the room that nobody,
+     * including the importer, ever renders, and a hand-edited mapId that
+     * fails the server's slug check would reject the whole batch.
+     *
      * Layer visibility stays local — it is a view preference, not content.
      */
     if (
         typeof collabOnBulkAdd ===
         'function'
     ) {
+        const mapId = currentMapToolMapId();
+
         collabOnBulkAdd({
-            drawings: imported.drawings,
-            markers: imported.markers
+            drawings: imported.drawings.filter(
+                drawing => drawing.mapId === mapId
+            ),
+            markers: imported.markers.filter(
+                marker => marker.mapId === mapId
+            )
         });
     }
 

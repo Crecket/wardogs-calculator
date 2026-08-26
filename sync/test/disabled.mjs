@@ -12,7 +12,7 @@
 
 import { chromium } from 'playwright-core';
 import { createServer } from 'node:http';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
@@ -87,11 +87,23 @@ const server = createServer(async (req, res) => {
 
 await new Promise(r => server.listen(PORT, r));
 
-const config = JSON.parse(
-    await readFile(join(ROOT, 'config/app.json'), 'utf8')
+/*
+ * The guarantee that matters is what the repo ships, so assert against the
+ * source config rather than dist/ — browser.mjs rewrites the built copy to
+ * point at a local worker, and these two suites must not depend on which
+ * ran last.
+ */
+const source = JSON.parse(
+    await readFile(resolve(HERE, '../../config/app.json'), 'utf8')
 );
-check('dist ships collab.url = null', config.collab?.url === null,
-    JSON.stringify(config.collab));
+check('repo ships collab.url = null', source.collab?.url === null,
+    JSON.stringify(source.collab));
+
+/* Then force dist/ to the disabled state this suite is about. */
+const distConfigPath = join(ROOT, 'config/app.json');
+const distConfig = JSON.parse(await readFile(distConfigPath, 'utf8'));
+distConfig.collab = { url: null };
+await writeFile(distConfigPath, JSON.stringify(distConfig, null, 2));
 
 const browser = await chromium.launch({
     executablePath: await findChrome(),
@@ -121,8 +133,16 @@ for (const [label, path] of [
     check(`${label}: app initialised`, true);
     check(`${label}: collab reports unconfigured`,
         await page.evaluate(() => isCollabConfigured() === false));
+    /*
+     * Computed display, not the .hidden IDL property: that property stays
+     * true no matter what CSS does, so asserting it passes even when an
+     * author-origin `display` rule overrides [hidden] and the button is
+     * plainly visible on screen.
+     */
     check(`${label}: collab button stays hidden`,
-        await page.evaluate(() => document.getElementById('mapToolCollab').hidden));
+        await page.evaluate(() => getComputedStyle(
+            document.getElementById('mapToolCollab')
+        ).display === 'none'));
     check(`${label}: no socket opened`,
         await page.evaluate(() => COLLAB.socket === null && COLLAB.status === 'off'));
 
