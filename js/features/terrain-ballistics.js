@@ -49,7 +49,6 @@
         en: {
             terrainLoading: 'terrain loading',
             terrainStatus: 'ΔZ {dz} m · not corrected for height',
-            terrainStatusCorrected: 'ΔZ {dz} m · corrected for height',
             terrainStatusUncorrectedArc: 'ΔZ {dz} m · {arcs} not corrected for height',
             arcNameLow: 'low arc',
             arcNameHigh: 'high arc',
@@ -59,7 +58,6 @@
         ru: {
             terrainLoading: 'загрузка высот',
             terrainStatus: 'ΔZ {dz} м · без поправки на высоту',
-            terrainStatusCorrected: 'ΔZ {dz} м · с поправкой на высоту',
             terrainStatusUncorrectedArc: 'ΔZ {dz} м · {arcs} без поправки на высоту',
             arcNameLow: 'настильная траектория',
             arcNameHigh: 'навесная траектория',
@@ -69,7 +67,6 @@
         uk: {
             terrainLoading: 'завантаження висот',
             terrainStatus: 'ΔZ {dz} м · без поправки на висоту',
-            terrainStatusCorrected: 'ΔZ {dz} м · з поправкою на висоту',
             terrainStatusUncorrectedArc: 'ΔZ {dz} м · {arcs} без поправки на висоту',
             arcNameLow: 'настильна траєкторія',
             arcNameHigh: 'навісна траєкторія',
@@ -79,7 +76,6 @@
         de: {
             terrainLoading: 'Höhendaten werden geladen',
             terrainStatus: 'ΔZ {dz} m · ohne Höhenkorrektur',
-            terrainStatusCorrected: 'ΔZ {dz} m · mit Höhenkorrektur',
             terrainStatusUncorrectedArc: 'ΔZ {dz} m · {arcs} ohne Höhenkorrektur',
             arcNameLow: 'flache Bahn',
             arcNameHigh: 'steile Bahn',
@@ -89,7 +85,6 @@
         fr: {
             terrainLoading: 'chargement des altitudes',
             terrainStatus: 'ΔZ {dz} m · sans correction d’altitude',
-            terrainStatusCorrected: 'ΔZ {dz} m · avec correction d’altitude',
             terrainStatusUncorrectedArc: 'ΔZ {dz} m · {arcs} sans correction d’altitude',
             arcNameLow: 'tir tendu',
             arcNameHigh: 'tir courbe',
@@ -99,7 +94,6 @@
         es: {
             terrainLoading: 'cargando alturas',
             terrainStatus: 'ΔZ {dz} m · sin corrección por altura',
-            terrainStatusCorrected: 'ΔZ {dz} m · con corrección por altura',
             terrainStatusUncorrectedArc: 'ΔZ {dz} m · {arcs} sin corrección por altura',
             arcNameLow: 'trayectoria baja',
             arcNameHigh: 'trayectoria alta',
@@ -109,7 +103,6 @@
         pl: {
             terrainLoading: 'ładowanie wysokości',
             terrainStatus: 'ΔZ {dz} m · bez poprawki na wysokość',
-            terrainStatusCorrected: 'ΔZ {dz} m · z poprawką na wysokość',
             terrainStatusUncorrectedArc: 'ΔZ {dz} m · {arcs} bez poprawki na wysokość',
             arcNameLow: 'tor płaski',
             arcNameHigh: 'tor stromy',
@@ -119,7 +112,6 @@
         pt: {
             terrainLoading: 'a carregar altitudes',
             terrainStatus: 'ΔZ {dz} m · sem correção de altura',
-            terrainStatusCorrected: 'ΔZ {dz} m · com correção de altura',
             terrainStatusUncorrectedArc: 'ΔZ {dz} m · {arcs} sem correção de altura',
             arcNameLow: 'trajetória baixa',
             arcNameHigh: 'trajetória alta',
@@ -129,7 +121,6 @@
         'zh-cn': {
             terrainLoading: '正在加载高程',
             terrainStatus: 'ΔZ {dz} m · 未按高差修正',
-            terrainStatusCorrected: 'ΔZ {dz} m · 已按高差修正',
             terrainStatusUncorrectedArc: 'ΔZ {dz} m · {arcs}未按高差修正',
             arcNameLow: '低伸弹道',
             arcNameHigh: '高抛弹道',
@@ -139,7 +130,6 @@
         cat: {
             terrainLoading: 'LOADING HEIGHT MEOWGIC',
             terrainStatus: 'ΔZ {dz} m · NO HEIGHT MEOWGIC',
-            terrainStatusCorrected: 'ΔZ {dz} m · HEIGHT MEOWGIC APPLIED',
             terrainStatusUncorrectedArc: 'ΔZ {dz} m · {arcs} HAS NO HEIGHT MEOWGIC',
             arcNameLow: 'FLAT SHOT',
             arcNameHigh: 'HIGH ARC',
@@ -328,9 +318,18 @@
             `${meta.deltaZ >= 0 ? '+' : ''}${meta.deltaZ.toFixed(1)}`;
 
         /*
-         * An uncorrected arc beside a corrected one is the case the caption
-         * exists for. Naming it beats a generic "corrected" that leaves the
-         * user unable to tell which number to trust.
+         * The caption is a WARNING, not a status line. Every arc is corrected
+         * on a supported map, so saying so on every shot is noise the reader
+         * learns to skip -- and noise the reader skips is not a warning any
+         * more. It appears only when something is off:
+         *
+         *   - an arc was left uncorrected beside a corrected one
+         *   - nothing was corrected and the miss actually matters
+         *
+         * A miss under the suppression threshold is deliberately silent. It
+         * is technically uncorrected, but a few metres is not a risk, and
+         * warning about it would spend the reader's attention on the case
+         * that needs none.
          */
         if (meta.applied && meta.arcsUncorrected?.length) {
             /*
@@ -358,7 +357,20 @@
         }
 
         if (meta.applied) {
-            return text.terrainStatusCorrected.replace('{dz}', dz);
+            return '';
+        }
+
+        /*
+         * missMeters is null when no grid was consulted at all -- the gate is
+         * off, or the map is not on the allowlist, or the target sits above
+         * every arc's apex. Those are exactly the cases worth warning about,
+         * so a null warns rather than staying quiet.
+         */
+        if (
+            Number.isFinite(meta.missMeters) &&
+            Math.abs(meta.missMeters) < state.suppressionMissMeters
+        ) {
+            return '';
         }
 
         return text.terrainStatus.replace('{dz}', dz);

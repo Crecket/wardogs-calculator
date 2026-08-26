@@ -311,15 +311,6 @@ button:disabled {
     display: none;
 }
 
-/* Corrected, with no arc left behind: the MIL above can be trusted. */
-.solution-terrain-note[data-state="corrected"] {
-    border-color:
-        color-mix(in srgb, var(--accent-border) 62%, var(--border));
-    border-left-color: var(--accent);
-    background:
-        color-mix(in srgb, var(--accent) 11%, transparent);
-}
-
 /*
  * One arc corrected and another not is the state most worth reading, so it
  * gets the same treatment as the level warning.

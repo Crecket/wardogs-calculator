@@ -76,22 +76,16 @@ function formatTerrainBallisticDetail(meta) {
 }
 
 /*
- * Which of the note's four looks to wear. The text itself already says all
- * of this; the state only drives colour, so an unknown meta falls through to
- * the neutral default rather than guessing.
+ * Which look the note wears. It only ever renders as a warning now, so there
+ * is no "all good" state: when nothing is wrong the caption is empty and the
+ * note is hidden entirely.
  */
 function terrainNoteState(meta) {
     if (meta?.pendingTerrain) {
         return 'loading';
     }
 
-    if (!meta?.applied) {
-        return 'uncorrected';
-    }
-
-    return meta.arcsUncorrected?.length
-        ? 'mixed'
-        : 'corrected';
+    return meta?.applied ? 'mixed' : 'uncorrected';
 }
 
 function renderTerrainNote(meta, text) {

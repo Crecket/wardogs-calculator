@@ -132,7 +132,6 @@
   "mobileLegal": "法律信息",
   "terrainLoading": "正在加载地形高程",
   "terrainStatus": "ΔZ {dz} m · 未按高差修正",
-  "terrainStatusCorrected": "ΔZ {dz} m · 已按高差修正",
   "terrainStatusUncorrectedArc": "ΔZ {dz} m · {arcs}未按高差修正",
   "arcNameLow": "低伸弹道",
   "arcNameHigh": "高抛弹道",

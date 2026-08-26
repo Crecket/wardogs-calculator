@@ -237,11 +237,6 @@
     display: none;
 }
 
-.mobile-terrain-note[data-state="corrected"] {
-    border-left-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 13%, transparent);
-}
-
 .mobile-terrain-note[data-state="mixed"] {
     border-left-color: #f0b24a;
     background: color-mix(in srgb, #f0b24a 15%, transparent);

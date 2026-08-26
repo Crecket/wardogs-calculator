@@ -250,6 +250,13 @@
         }
     }
 
+    /*
+     * Mirrors releasePolicy.suppressionMissMeters. This wrapper runs outside
+     * the terrain module's closure and cannot read its state, so the value is
+     * duplicated; keep the two in step.
+     */
+    const SUPPRESSION_MISS_METERS = 10;
+
     function installTerrainChineseOverrides() {
         if (
             typeof window.formatTerrainBallisticsStatus !== 'function' ||
@@ -306,11 +313,16 @@
                 }
             }
 
+            /* Warning-only, matching formatTerrainBallisticsStatus. */
             if (meta.applied) {
-                return zhText(
-                    'terrainStatusCorrected',
-                    'ΔZ {dz} m · 已按高差修正'
-                ).replace('{dz}', dz);
+                return '';
+            }
+
+            if (
+                Number.isFinite(meta.missMeters) &&
+                Math.abs(meta.missMeters) < SUPPRESSION_MISS_METERS
+            ) {
+                return '';
             }
 
             return zhText(
