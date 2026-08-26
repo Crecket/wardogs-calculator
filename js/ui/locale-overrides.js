@@ -250,13 +250,6 @@
         }
     }
 
-    /*
-     * Mirrors releasePolicy.suppressionMissMeters. This wrapper runs outside
-     * the terrain module's closure and cannot read its state, so the value is
-     * duplicated; keep the two in step.
-     */
-    const SUPPRESSION_MISS_METERS = 10;
-
     function installTerrainChineseOverrides() {
         if (
             typeof window.formatTerrainBallisticsStatus !== 'function' ||
@@ -290,38 +283,42 @@
                 `${meta.deltaZ >= 0 ? '+' : ''}${meta.deltaZ.toFixed(1)}`;
 
             /*
-             * Mirrors the state selection in formatTerrainBallisticsStatus.
-             * Without it this wrapper would pin Chinese to the uncorrected
-             * caption even when the correction had been applied.
+             * Mirrors the warning selection in
+             * formatTerrainBallisticsStatus: an arc that cannot reach the
+             * target, then a correction withheld by policy, then silence.
              */
-            if (meta.applied && meta.arcsUncorrected?.length) {
-                const names = {
-                    low: zhText('arcNameLow', '低伸弹道'),
-                    high: zhText('arcNameHigh', '高抛弹道')
-                };
+            const names = {
+                low: zhText('arcNameLow', '低伸弹道'),
+                high: zhText('arcNameHigh', '高抛弹道'),
+                single: zhText('arcNameSingle', '弹道')
+            };
 
-                const listed = meta.arcsUncorrected
-                    .map(arc => names[arc])
-                    .filter(Boolean)
-                    .join(' + ');
+            const unreachable = (meta.arcsUnreliable || [])
+                .map(arc => names[arc])
+                .filter(Boolean)
+                .join(' + ');
 
-                if (listed) {
+            if (meta.arcsUnreliable?.length) {
+                const total =
+                    (meta.arcsCorrected?.length || 0) +
+                    (meta.arcsUncorrected?.length || 0);
+
+                if (meta.arcsUnreliable.length >= total) {
                     return zhText(
-                        'terrainStatusUncorrectedArc',
-                        'ΔZ {dz} m · {arcs}未按高差修正'
-                    ).replace('{dz}', dz).replace('{arcs}', listed);
+                        'terrainStatusUnreachableAll',
+                        'ΔZ {dz} m · 无法打到该目标'
+                    ).replace('{dz}', dz);
+                }
+
+                if (unreachable) {
+                    return zhText(
+                        'terrainStatusUnreachable',
+                        'ΔZ {dz} m · {arcs}无法打到该目标'
+                    ).replace('{dz}', dz).replace('{arcs}', unreachable);
                 }
             }
 
-            /* Warning-only, matching formatTerrainBallisticsStatus. */
-            if (meta.applied) {
-                return '';
-            }
-
-            if (
-                Number.isFinite(meta.missMeters) &&
-                Math.abs(meta.missMeters) < SUPPRESSION_MISS_METERS
-            ) {
+            if (!meta.arcsWithheld?.length) {
                 return '';
             }
 

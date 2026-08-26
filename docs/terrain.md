@@ -330,9 +330,21 @@ panel caption rather than failing quietly:
 | Any map outside `correctedMaps` | Bakurani's coordinate alignment was validated by visual overlay after the Y-flip fix in `5c462a173`; Ozeti's never was, and a numeric correction tolerates misalignment far worse than a caption does. | `releasePolicy.correctedMaps` |
 | A miss under 10 m | Below this the correction is not worth acting on, and printing one implies a precision the model does not have. Applied per arc, so a shallow ΔZ can leave the steep arc alone while correcting the flat one. | `releasePolicy.suppressionMissMeters` |
 
-A shot can also be uncorrectable on one arc because the target sits above that
-arc's apex — common on the low arc at large ΔZ. That reads the same way as the
-suppression case: the arc is named in the caption as not corrected.
+The panel caption is a **warning**, not a status line: on a supported map with
+everything corrected it shows nothing at all. It appears only when the printed
+MIL cannot be trusted —
+
+- an arc cannot be corrected at all, because the target sits above that arc's
+  apex or beyond the model's reach. The flat-table MIL beside it does not
+  describe a shot that lands on the target, and the caption says so
+  (*"low arc cannot reach this target"*, or *"cannot reach this target"* when
+  no arc can).
+- a correction was possible and material, and policy withheld it — an
+  unsupported map, or the gate off (*"not corrected for height"*).
+
+An arc skipped because its miss is under the suppression threshold is
+deliberately silent: leaving it alone changed nothing, and a caption that
+warns about nothing is one people stop reading.
 
 SPG-2 `low` was withheld until 2026-08-27 on the grounds that its break-even
 impact angle is 25° in research against 13° in this fit. A sweep of 1,652
