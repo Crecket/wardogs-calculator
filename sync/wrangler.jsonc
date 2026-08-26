@@ -46,6 +46,6 @@
         // enumerate. Requests with no Origin header (curl, native clients,
         // the test suite) are allowed through — an origin allowlist is a
         // browser-tab defence, not authentication.
-        "ALLOWED_ORIGINS": "https://wardogs-map.olm.pet,http://localhost:8801"
+        "ALLOWED_ORIGINS": "https://wardogs-map.olm.pet,http://localhost:8000,http://127.0.0.1:8000"
     }
 }
