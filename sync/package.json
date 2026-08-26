@@ -1,0 +1,14 @@
+{
+    "name": "wardogs-sync",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "wrangler dev --port 8799",
+        "deploy": "wrangler deploy",
+        "tail": "wrangler tail",
+        "test:smoke": "node test/smoke.mjs"
+    },
+    "devDependencies": {
+        "wrangler": "^4.0.0"
+    }
+}
