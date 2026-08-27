@@ -11,6 +11,7 @@ The application currently supports:
 - Polish
 - Portuguese
 - Simplified Chinese (`zh-CN`)
+- Korean (`ko`)
 - Cat 🐈
 
 Translation data is stored once under:
@@ -55,6 +56,7 @@ Desktop pages:
 ├── pl/
 ├── pt/
 ├── zh-cn/
+├── ko/
 └── cat/
 ```
 
@@ -70,6 +72,7 @@ Mobile pages:
 ├── pl/
 ├── pt/
 ├── zh-cn/
+├── ko/
 └── cat/
 ```
 

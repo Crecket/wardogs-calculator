@@ -168,6 +168,22 @@ export const SEO_PAGE_CONTENT = {
             'Markery taktyczne'
         ]
     },
+    ko: {
+        description: '무료 WARDOGS 포병 및 박격포 계산기로 SPH-2 사격 제원, Bakurani와 Ozeti 지도, Terrain3D 고도 정보, 저장된 목표와 전술 도구를 제공합니다.',
+        heading: '계산기 소개',
+        intro: 'WARDOGS Artillery Calculator는 박격포와 SPH-2 사격 제원을 계산하기 위한 무료 오픈 소스 커뮤니티 도구입니다. Bakurani와 Ozeti 인터랙티브 전술 지도, 좌표 기반 표적 지정, 거리, 방위각 및 MIL 계산과 지원되는 지역의 Terrain3D 고도 정보를 제공합니다.',
+        usage: '지도와 무기를 선택하고 포병 위치와 목표 위치를 지정한 다음 사격 제원을 확인하세요. 저장된 목표, 거리 측정 도구, 그리기 도구와 지도 마커를 전술 계획에 활용할 수 있습니다. MIL은 기존 사격표가 기준이며 지형 및 차량 기울기에 따른 MIL 자동 보정은 활성화되어 있지 않습니다.',
+        features: [
+            'WARDOGS 박격포 사격 제원 계산',
+            'SPH-2 LOW 및 HIGH 사격 제원 계산',
+            'Bakurani 인터랙티브 전술 지도',
+            'Ozeti 전술 지도',
+            'Terrain3D 고도 및 고도차 정보',
+            '저장된 목표',
+            '거리 측정 및 그리기 도구',
+            '전술 지도 마커'
+        ]
+    },
 
     pt: {
         description: 'Calculadora gratuita de artilharia e morteiro WARDOGS com soluções SPH-2, mapas Bakurani e Ozeti, altitude Terrain3D, alvos guardados e ferramentas táticas.',
