@@ -415,9 +415,15 @@
     top: calc(100% + 7px);
     right: 0;
     left: auto;
+    position: static;
 
+    margin-top: 7px;
     width: 100%;
-    max-height: min(420px, 58vh);
+    max-height: min(260px, 38vh);
+
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .mobile-side-menu-links {
