@@ -13,6 +13,7 @@
         "es": "Mortero",
         "pl": "Moździerz",
         "pt": "Morteiro",
+        "ko": "박격포",
         "cat": "MEOWTAR"
       },
       "minRangeKm": 0.132,
@@ -372,6 +373,7 @@
         "es": "SPH-2",
         "pl": "SPH-2",
         "pt": "SPH-2",
+        "ko": "SPH-2",
         "cat": "SPH-2"
       },
       "minRangeKm": 0.78,
