@@ -17,17 +17,6 @@ MOTD supports:
 
 A new announcement can therefore be published without modifying the application logic.
 
-## Localization
-
-Production announcements should include every supported locale id in both `title` and `message`, including:
-
-```text
-zh-cn
-ko
-```
-
-The runtime can fall back to English when a translation is missing, but normal release QA should not rely on that fallback for a supported production language.
-
 ---
 
 ## Small-screen behavior
