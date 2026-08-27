@@ -23,6 +23,7 @@ Production announcements should include every supported locale id in both `title
 
 ```text
 zh-cn
+ko
 ```
 
 The runtime can fall back to English when a translation is missing, but normal release QA should not rely on that fallback for a supported production language.
