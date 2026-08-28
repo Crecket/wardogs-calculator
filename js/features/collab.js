@@ -30,6 +30,20 @@ const COLLAB_HASH_KEY = 'room';
  */
 const COLLAB_SHARED_INTERVAL = 100;
 
+/*
+ * Heartbeat. Nothing in the protocol requires it — the room is happy to sit
+ * silent for a fortnight — but a socket dropped by a NAT or a proxy stops
+ * carrying frames without ever closing, and the panel would go on claiming
+ * "online" until TCP noticed on its own. One ping every interval, and a
+ * reply still outstanding when the next one is due means the path is gone.
+ *
+ * The frame is matched byte for byte by the room's auto-response, so it is
+ * answered by the runtime without waking a hibernating room. Changing this
+ * string means changing setWebSocketAutoResponse in sync/src/room.js too.
+ */
+const COLLAB_PING_INTERVAL = 30000;
+const COLLAB_PING_FRAME = '{"type":"ping"}';
+
 const COLLAB_RECONNECT_BASE = 1000;
 const COLLAB_RECONNECT_MAX = 15000;
 const COLLAB_RECONNECT_ATTEMPTS = 8;
@@ -68,6 +82,9 @@ const COLLAB = {
     },
 
     sharedTimer: null,
+
+    pingTimer: null,
+    pingPending: false,
 
     reconnectAttempt: 0,
     reconnectTimer: null,
@@ -1232,6 +1249,12 @@ function collabConnect(code, includeMine = false) {
 
     COLLAB.socket = socket;
 
+    socket.addEventListener('open', () => {
+        if (COLLAB.socket === socket) {
+            collabStartHeartbeat(socket);
+        }
+    });
+
     socket.addEventListener('message', event => {
         /*
          * A socket replaced by a leave-then-rejoin can still be draining
@@ -1257,6 +1280,8 @@ function collabConnect(code, includeMine = false) {
         if (COLLAB.socket !== socket) {
             return;
         }
+
+        collabStopHeartbeat();
 
         COLLAB.socket = null;
 
@@ -1358,8 +1383,11 @@ function collabHandleMessage(message) {
             collabSend({ type: 'sync' });
             break;
 
-        case 'ack':
         case 'pong':
+            COLLAB.pingPending = false;
+            break;
+
+        case 'ack':
             break;
 
         default:
@@ -1425,6 +1453,71 @@ function collabPushSolo() {
     });
 }
 
+/*
+ * `socket` is captured rather than read from COLLAB, so a heartbeat that
+ * outlives its own connection stops itself instead of pinging the socket
+ * that replaced it.
+ */
+function collabStartHeartbeat(socket) {
+    collabStopHeartbeat();
+
+    COLLAB.pingTimer = setInterval(() => {
+        if (
+            COLLAB.socket !== socket ||
+            socket.readyState !== WebSocket.OPEN
+        ) {
+            collabStopHeartbeat();
+            return;
+        }
+
+        if (COLLAB.pingPending) {
+            collabHeartbeatLost(socket);
+            return;
+        }
+
+        COLLAB.pingPending = true;
+
+        try {
+            socket.send(COLLAB_PING_FRAME);
+        } catch {
+            collabHeartbeatLost(socket);
+        }
+    }, COLLAB_PING_INTERVAL);
+}
+
+function collabStopHeartbeat() {
+    if (COLLAB.pingTimer) {
+        clearInterval(COLLAB.pingTimer);
+        COLLAB.pingTimer = null;
+    }
+
+    COLLAB.pingPending = false;
+}
+
+/*
+ * A silently dead socket may never fire 'close' — close() on a black-holed
+ * connection waits out the closing handshake first. So drop it here and
+ * start the reconnect directly; the close that eventually arrives finds
+ * COLLAB.socket already replaced and returns without doing it twice.
+ */
+function collabHeartbeatLost(socket) {
+    collabStopHeartbeat();
+
+    COLLAB.socket = null;
+
+    try {
+        socket.close(4000, 'heartbeat-timeout');
+    } catch {
+        /* Already gone. */
+    }
+
+    if (COLLAB.leaving) {
+        return;
+    }
+
+    collabScheduleReconnect();
+}
+
 function collabScheduleReconnect() {
     if (COLLAB.reconnectAttempt >= COLLAB_RECONNECT_ATTEMPTS) {
         collabAbandon('collabErrorLost');
@@ -1461,6 +1554,8 @@ function collabAbandon(messageKey) {
      */
     COLLAB.leaving = true;
 
+    collabStopHeartbeat();
+
     if (COLLAB.socket) {
         try {
             COLLAB.socket.close(1000, 'abandoned');
@@ -1492,6 +1587,8 @@ function collabResetSession() {
         clearTimeout(COLLAB.sharedTimer);
         COLLAB.sharedTimer = null;
     }
+
+    collabStopHeartbeat();
 
     if (COLLAB.throttleTimer) {
         clearTimeout(COLLAB.throttleTimer);

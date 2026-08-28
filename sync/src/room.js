@@ -7,6 +7,16 @@ import {
 } from './ops.js';
 
 /*
+ * How far the stored idle deadline is allowed to lag behind the room's
+ * real last activity. Five minutes against a fourteen-day window, in
+ * exchange for not writing storage on every op.
+ */
+const TOUCH_GRANULARITY_MS = 5 * 60 * 1000;
+
+/* Reused rather than reallocated: every inbound message is measured. */
+const ENCODER = new TextEncoder();
+
+/*
  * One Durable Object per room, addressed by its room code.
  *
  * The room code IS the credential, so this class assumes every peer is
@@ -27,6 +37,27 @@ export class Room extends DurableObject {
          * bucket that comes back full has already served its purpose.
          */
         this.buckets = new Map();
+
+        /*
+         * Mirrors the stored idle deadline so the common op does not read
+         * it back. null means "not read yet", which is also what alarm()
+         * leaves behind after a wipe. See touch().
+         */
+        this.lastActivity = null;
+
+        /*
+         * Heartbeats are answered by the runtime itself: a matching frame
+         * gets the canned reply without waking a hibernating room, so a
+         * peer can hold a map open for hours and cost nothing. The handler
+         * in webSocketMessage still exists for pings that carry extra
+         * fields, since the match here is exact string equality.
+         */
+        ctx.setWebSocketAutoResponse(
+            new WebSocketRequestResponsePair(
+                JSON.stringify({ type: 'ping' }),
+                JSON.stringify({ type: 'pong' })
+            )
+        );
 
         ctx.blockConcurrencyWhile(async () => this.migrate());
     }
@@ -132,7 +163,7 @@ export class Room extends DurableObject {
         this.writeMeta('target', null);
         this.writeMeta('weapon', null);
 
-        await this.touch();
+        await this.touch(true);
 
         return true;
     }
@@ -141,13 +172,29 @@ export class Room extends DurableObject {
      * Push the idle deadline out. Every connect and every accepted op
      * calls this, so a room only expires after LIMITS.idleMs of real
      * silence rather than a fixed time from creation.
+     *
+     * Writing on every op would be two durable writes on the hottest path
+     * there is — dragging a gun emits ten ops a second — to move a deadline
+     * that is a fortnight away. So the recorded time is allowed to lag by
+     * TOUCH_GRANULARITY_MS, and a room can expire that much early out of
+     * those fourteen days. `force` is for the first touch of a room's life,
+     * where the deadline has to exist rather than merely be approximate.
      */
-    async touch() {
-        this.writeMeta('lastActivity', Date.now());
+    async touch(force = false) {
+        const now = Date.now();
 
-        await this.ctx.storage.setAlarm(
-            Date.now() + LIMITS.idleMs
-        );
+        if (this.lastActivity === null) {
+            this.lastActivity = this.readMeta('lastActivity', 0);
+        }
+
+        if (!force && now - this.lastActivity < TOUCH_GRANULARITY_MS) {
+            return;
+        }
+
+        this.lastActivity = now;
+        this.writeMeta('lastActivity', now);
+
+        await this.ctx.storage.setAlarm(now + LIMITS.idleMs);
     }
 
     async alarm() {
@@ -210,6 +257,26 @@ export class Room extends DurableObject {
             origin: this.readMeta('origin'),
             target: this.readMeta('target'),
             weapon: this.readMeta('weapon')
+        };
+    }
+
+    /*
+     * The full document plus everything a client needs to render it. Sent
+     * on join and again whenever a client asks to resync, which must not
+     * be allowed to drift into two different shapes.
+     */
+    snapshotMessage(clientId) {
+        return {
+            type: 'snapshot',
+            you: clientId,
+            peers: this.ctx.getWebSockets().length,
+            limits: {
+                drawings: LIMITS.drawings,
+                markers: LIMITS.markers,
+                targets: LIMITS.targets,
+                peers: LIMITS.peers
+            },
+            doc: this.snapshot()
         };
     }
 
@@ -439,18 +506,7 @@ export class Room extends DurableObject {
 
         await this.touch();
 
-        this.send(server, {
-            type: 'snapshot',
-            you: clientId,
-            peers: this.ctx.getWebSockets().length,
-            limits: {
-                drawings: LIMITS.drawings,
-                markers: LIMITS.markers,
-                targets: LIMITS.targets,
-                peers: LIMITS.peers
-            },
-            doc: this.snapshot()
-        });
+        this.send(server, this.snapshotMessage(clientId));
 
         this.broadcastPeers(
             this.ctx.getWebSockets().length,
@@ -554,7 +610,7 @@ export class Room extends DurableObject {
          * ~192 KB. Target names are the reachable path for multibyte text.
          */
         if (
-            new TextEncoder().encode(message).length >
+            ENCODER.encode(message).length >
             LIMITS.messageBytes
         ) {
             this.send(socket, { type: 'error', code: 'too-large' });
@@ -582,6 +638,11 @@ export class Room extends DurableObject {
             return;
         }
 
+        /*
+         * The exact frame `{"type":"ping"}` never reaches here — the auto
+         * response set up in the constructor answers it without waking the
+         * room. This is the fallback for a ping carrying anything else.
+         */
         if (raw?.type === 'ping') {
             this.send(socket, { type: 'pong' });
             return;
@@ -593,18 +654,7 @@ export class Room extends DurableObject {
          * not linger on screen as though everyone could see it.
          */
         if (raw?.type === 'sync') {
-            this.send(socket, {
-                type: 'snapshot',
-                you: clientId,
-                peers: this.ctx.getWebSockets().length,
-                limits: {
-                    drawings: LIMITS.drawings,
-                    markers: LIMITS.markers,
-                    targets: LIMITS.targets,
-                    peers: LIMITS.peers
-                },
-                doc: this.snapshot()
-            });
+            this.send(socket, this.snapshotMessage(clientId));
             return;
         }
 
@@ -644,6 +694,11 @@ export class Room extends DurableObject {
         });
     }
 
+    /*
+     * No socket.close() here on purpose. The compatibility date this Worker
+     * pins (2026-04-07) is the one where the runtime replies to a Close
+     * frame itself, so echoing one back is redundant rather than required.
+     */
     async webSocketClose(socket) {
         const clientId = this.clientIdFor(socket);
 

@@ -200,6 +200,27 @@ const canon = await next(b, m => m.op?.op === 'marker.add' && m.op.marker.id ===
 check('extra fields stripped', canon.op.marker.evil === undefined, JSON.stringify(canon.op.marker));
 
 drain(a);
+/*
+ * Before the rate-limit burst, deliberately: that section leaves a long
+ * backlog of queued frames on this socket, and an auto-response is
+ * delivered in order behind them.
+ */
+console.log('\n== heartbeat ==');
+
+/*
+ * The exact frame is what the room's setWebSocketAutoResponse matches, so
+ * this asserts the string the client sends and the string the runtime
+ * answers stay in step. A pong here does not prove the room stayed asleep,
+ * only that the contract is intact.
+ */
+a.send('{"type":"ping"}');
+check('auto-response answers the canonical ping', (await next(a, m => m.type === 'pong')).type === 'pong');
+
+drain(a);
+a.send(JSON.stringify({ type: 'ping', extra: 1 }));
+check('a non-matching ping still gets the handler', (await next(a, m => m.type === 'pong')).type === 'pong');
+
+drain(a);
 drain(b);
 console.log('\n== rate limiting ==');
 for (let i = 0; i < 120; i++) {

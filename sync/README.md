@@ -97,7 +97,11 @@ npm run test:smoke   # another
 
 `test:smoke` runs against real `workerd` rather than mocks, covering room
 creation, op relay, late-joiner snapshots, exactly-once removal, every
-validation rejection, canonical rebroadcast, and rate limiting.
+validation rejection, canonical rebroadcast, the ping auto-response, and rate
+limiting.
+
+`npm run test:guns` covers the gun collection, including that a client
+predating it still works against a room that has one.
 
 Two browser tests cover the client half. They need a built site
 (`npm run build` in the repo root) plus Chromium:
@@ -133,3 +137,19 @@ as safe short slugs only; the client rejects ones it does not recognise when it
 applies the op. `maps/assets.json` stays a client-only concern.
 
 **Pencil strokes broadcast once on pointerup**, never per point.
+
+**Heartbeats never wake the room.** The client pings every 30 s; the room
+registers that exact frame with `setWebSocketAutoResponse`, so the runtime
+answers it without unhibernating and without billable duration. A pong still
+outstanding when the next ping is due means the path is dead — a socket
+dropped by a NAT or a proxy stops carrying frames without ever closing, and
+the client would otherwise go on believing it was online. The `{"type":"ping"}`
+handler in `webSocketMessage` remains for pings that carry extra fields, since
+the auto-response matches byte for byte.
+
+**The idle deadline lags on purpose.** Room lifetime is 14 days from the last
+op, but recording that time on *every* op would be two durable writes on the
+hottest path there is — dragging a gun emits ten ops a second. `touch()` keeps
+the stored deadline in memory and only rewrites it once it is five minutes
+stale, so a room can expire up to five minutes early out of those fourteen
+days.

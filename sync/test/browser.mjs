@@ -26,7 +26,12 @@ import { homedir } from 'node:os';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../../dist');
 
-const SITE_PORT = Number(process.env.SITE_PORT || 8801);
+/*
+ * 8000 because that is what ALLOWED_ORIGINS in wrangler.jsonc lists. Serve
+ * the site anywhere else and room creation is refused as a forbidden
+ * origin, which surfaces here as a room code that never appears.
+ */
+const SITE_PORT = Number(process.env.SITE_PORT || 8000);
 const SYNC = process.env.SYNC_URL || `ws://localhost:${process.env.SYNC_PORT || 8799}`;
 
 let pass = 0;
