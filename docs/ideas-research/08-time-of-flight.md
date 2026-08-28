@@ -12,9 +12,13 @@ readout for the **SPG-2**, where TOF swings 7.6 s → 32 s and the arc choice is
 a real decision; skip it for the mortar, where it is 15–17.5 s at every range
 and tells the player nothing.
 
-**Status: recommendation 5 is shipped.** The SPH-2 readout is live
-(`js/features/flight-time.js`, covered by `test/flight-time.mjs`), derived
-exactly as § 1 describes and suppressed for the mortar as § 2 argues.
+**Status: recommendation 5 is shipped, with one deviation.** The readout is
+live (`js/features/flight-time.js`, covered by `test/flight-time.mjs`), derived
+exactly as § 1 describes. It is **not** suppressed for the mortar as § 2
+argues: the mortar is the default weapon, so hiding it there hid the feature
+from anyone who never changed weapons, and a near-constant number still beats
+no number. § 2's reasoning stands — the mortar badge simply earns less than the
+SPH-2's.
 Recommendations 1 through 4 — the four stopwatch readings — are still open, and
 are tracked in [todo.md](../todo.md). Nothing below has been revised by
 shipping; the numbers in § 2 are what the app now computes.

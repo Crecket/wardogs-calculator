@@ -19,11 +19,13 @@
  * distance, so the printed time always belongs to the number above it —
  * including when the terrain correction has moved that number.
  *
- * Why only the SPG-2: at every range in its envelope the mortar flies
- * 14.9–17.5 s, because a shorter shot is a steeper one and the extra climb
- * cancels the shorter reach. A live readout there would imply a variability
- * the weapon does not have. The SPG-2's two arcs differ by a factor of two
- * to three at the same range, which is a real choice the panel can inform.
+ * Every weapon with a fitted arc gets one, the mortar included. It earns
+ * less there — the whole 132–684 m envelope flies 14.9–17.5 s, because a
+ * shorter shot is a steeper one and the extra climb cancels the shorter
+ * reach — but "about 17 seconds" is still the answer to a question a player
+ * asks, and printing it beats making them wonder. On the SPG-2 the two arcs
+ * differ by a factor of two to three at the same range, which is a real
+ * choice the panel can inform.
  * See docs/ideas-research/08-time-of-flight.md.
  *
  * These are DERIVED seconds and are printed with a ≈. The fit has never
@@ -32,23 +34,6 @@
  */
 
 const FLIGHT_TIME_GRAVITY = 9.81;
-
-/*
- * A weapon earns the readout by having a choice of arcs at all. That is
- * what the number is for, so the rule is the shape of the weapon's own
- * ballistics rather than a hardcoded id.
- */
-function weaponHasArcChoice(weapon) {
-    const tables = weapon?.ballistics;
-
-    if (!tables) {
-        return false;
-    }
-
-    return ['low', 'high', 'single']
-        .filter(arc => Array.isArray(tables[arc]) && tables[arc].length)
-        .length > 1;
-}
 
 /*
  * A distance that lands on a table row carrying several mils has no single
@@ -146,9 +131,9 @@ function formatFlightTime(seconds) {
 }
 
 /*
- * Which label an arc wears on its badge. `single` has none: a weapon with
- * one arc has nothing to distinguish, and only reaches here at all if some
- * future weapon pairs a single table with another arc.
+ * Which label an arc wears on its badge. `single` has none — there is no
+ * other arc to tell it apart from, so the mortar shows one unlabelled
+ * badge under the row's own heading.
  */
 const FLIGHT_TIME_ARC_LABELS = {
     low: 'lowArc',
@@ -162,7 +147,7 @@ const FLIGHT_TIME_ARC_LABELS = {
  * or a model that failed to load — and the row is hidden rather than blank.
  */
 function flightTimeBadges(weapon, solutions, deltaZMeters = 0) {
-    if (!weaponHasArcChoice(weapon) || !solutions) {
+    if (!weapon || !solutions) {
         return [];
     }
 

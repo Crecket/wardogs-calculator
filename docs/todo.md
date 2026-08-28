@@ -80,9 +80,10 @@ the file.
 
 ## Time of flight has never been timed
 
-**Current:** derived at runtime by `js/features/flight-time.js`, shown on the
-SPH-2's MIL card as `≈ 12 s / ≈ 30 s`
-**Renders as:** one figure per arc, from the MIL on screen
+**Current:** derived at runtime by `js/features/flight-time.js`, shown as a
+badge row under the metric grid — `≈ 17 s` for the mortar, `≈ 12 s` / `≈ 30 s`
+per arc for the SPH-2
+**Renders as:** one badge per arc, from the MIL on screen
 **Evidence:** none from the game. The seconds come from the same vacuum fit as
 everything else in `data/ballistics/projectile-model.json`.
 

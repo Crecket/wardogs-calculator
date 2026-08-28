@@ -114,10 +114,15 @@ comes free from the same correction. `data/weapons.json` needed no third column
 after all.
 
 The readout is a badge row under the metric grid — one badge per arc, labelled
-with that arc's own name — shown only for weapons that offer a choice of arcs.
-It started as a third line inside the MIL card and moved out: at the card's
-8 px sub-line the seconds could not be read. The mortar is suppressed:
-14.9–17.5 s across its whole envelope is not information.
+with that arc's own name where there is a choice to label. It started as a
+third line inside the MIL card and moved out: at the card's 8 px sub-line the
+seconds could not be read.
+
+**Recommendation 5 said to suppress the mortar; we ship it anyway.** The
+research is right that 14.9–17.5 s across the whole envelope carries almost no
+information — but the mortar is the default weapon, so suppressing it meant the
+feature was invisible until you switched weapons, and "roughly 17 seconds" is
+still the answer to a question players ask. It shows as one unlabelled badge.
 
 **What is still unmeasured:** everything. The seconds rest on the same
 unvalidated fit and high-branch assumption as idea 1, carry roughly ±2–4 s, and

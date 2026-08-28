@@ -149,19 +149,20 @@ The result panel calculates elevation in MIL from the configured ballistic table
 
 ## Time of flight
 
-For weapons that offer a choice of arcs — the SPH-2 today — a **TIME OF FLIGHT**
-row sits under the metric grid with one badge per arc, each carrying the arc's
-own name and how long the shell is in the air. The badges wrap rather than
+A **TIME OF FLIGHT** row sits under the metric grid with one badge per arc,
+carrying how long the shell is in the air. The badges wrap rather than
 truncate, so a locale whose arc names run long stacks them instead of cutting
-either one. At 1800 m the low arc is
-roughly 12 s and the high arc roughly 30 s, which is the trade-off the arc
-choice actually turns on: the low arc puts rounds on target in a third of the
-time, the high arc clears terrain the low arc would hit.
+either one.
 
-The mortar shows no flight time. Its whole 132–684 m envelope flies 14.9–17.5 s
-— a shorter shot is a steeper one, and the extra climb cancels the shorter
-reach — so a live readout there would imply a variability the weapon does not
-have.
+The mortar has a single arc, so it shows one unlabelled badge: about 17 s
+anywhere in its 132–684 m envelope. That near-constancy is the weapon, not a
+stuck readout — a shorter shot is a steeper one, and the extra climb cancels
+the shorter reach.
+
+The SPH-2 shows one badge per arc, each labelled with that arc's name. At
+1800 m the low arc is roughly 12 s and the high arc roughly 30 s, which is the
+trade-off the arc choice actually turns on: the low arc puts rounds on target
+in a third of the time, the high arc clears terrain the low arc would hit.
 
 Every value is prefixed `≈`. Nothing is measured: the seconds are derived from
 the fitted vacuum model in `data/ballistics/projectile-model.json`, using the

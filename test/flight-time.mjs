@@ -46,7 +46,7 @@ check(
 );
 
 check(
-    'the mortar derives too, even though it is not displayed',
+    'the mortar derives at about 17 s',
     Math.abs(derived.mortar - 16.9) < 1.5,
     derived.mortar
 );
@@ -98,8 +98,46 @@ async function readPanel(weapon, distanceMeters) {
     }, [weapon, distanceMeters]);
 }
 
+/*
+ * The mortar is one unlabelled badge: it has a single arc, so there is
+ * nothing to tell apart, and the row's own heading says what the number is.
+ * It is also the DEFAULT weapon, which is what makes this the first badge
+ * most people ever see.
+ */
 const mortar = await readPanel('mortar', 400);
-check('the mortar shows no flight time', mortar.hidden && !mortar.badges.length);
+check(
+    'the mortar shows a flight time',
+    mortar.hidden === false && mortar.badges.length === 1,
+    JSON.stringify(mortar.badges)
+);
+check(
+    'the mortar badge carries no arc label',
+    mortar.badges[0]?.arc === '',
+    mortar.badges[0]?.arc
+);
+check(
+    'and reads about 17 s',
+    Math.abs(mortar.badges[0]?.seconds - 17) <= 2,
+    mortar.badges[0]?.value
+);
+
+/*
+ * Nearly flat across the envelope — that is the weapon, not a stuck value.
+ * Both ends must still be real numbers rather than a cached one.
+ */
+const mortarNear = await readPanel('mortar', 150);
+const mortarFar = await readPanel('mortar', 660);
+check(
+    'the mortar reads across its whole envelope',
+    mortarNear.badges.length === 1 && mortarFar.badges.length === 1,
+    `${mortarNear.badges[0]?.value} / ${mortarFar.badges[0]?.value}`
+);
+
+const mortarOut = await readPanel('mortar', 900);
+check(
+    'and shows nothing past its range',
+    mortarOut.hidden && !mortarOut.badges.length
+);
 
 const spg = await readPanel('spg', 1800);
 check('the SPG row is visible', spg.hidden === false);
