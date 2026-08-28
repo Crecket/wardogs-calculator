@@ -18,7 +18,10 @@ needs a measurement we don't have, it says so.
 
 ### 1. Correct the firing solution for elevation
 
- Partially done, missing data to complete low arc predictions with height corrections:
+**Shipped on every arc, Bakurani only.** SPG-2 `low` was enabled on
+2026-08-27; what is still switched off, and the fact that the projectile model
+has never been checked against the game, are tracked in
+[todo.md](../todo.md).
 
 **They do:** SquadCalc extracts SDK heightmaps and auto-corrects elevation for
 the height difference between weapon and target, so the MIL it prints already
@@ -90,24 +93,16 @@ Wont do
 
 ### 7. Multiple guns / battery
 
-**They do:** HLL tools place up to 3 guns per team; the Foxhole planner is
-multi-gun; Reforger calculators support multi-section batteries with **sheaf
-patterns** and **time-on-target staggered firing**, where each gun fires at a
-different moment so every round lands together.
+**Shipped.** Artillery is a list: `js/features/guns.js` holds the model,
+`js/map/guns-overlay.js` draws each gun with its own range rings and target
+line, and the room carries a `guns` table with `gun.add` / `gun.move` /
+`gun.weapon` / `gun.remove` ops (`sync/src/room.js`, `sync/src/ops.js`), capped
+at `LIMITS.guns` = 8. The migration is additive, so a client predating guns
+still works against a room that has them — `sync/test/guns.mjs` asserts exactly
+that, alongside `test/guns-*.mjs` for the client half.
 
-**We do:** one Artillery position.
-
-**Cost:** a data-model change — Artillery becomes a list, and the result panel
-becomes per-gun. Sheaf and TOT are only reachable after that, and TOT also
-needs idea 8.
-
-**Researched — it is a server change too.** `sync/src/ops.js` validates
-`point` against exactly `origin | target` and `sync/src/room.js` stores each as
-a named meta column, so guns must become a collection and the Worker must be
-redeployed — into shared rooms, with no protocol version to negotiate. Client
-side it is ~110 `origin` references across 16 files plus a solution panel
-duplicated in 11 HTML shells. See
-[ideas-research/07-multiple-guns.md](07-multiple-guns.md).
+**Still open from the original entry:** sheaf patterns, and time-on-target
+staggered firing. TOT needs idea 8.
 
 ### 8. Time of flight
 
@@ -140,32 +135,22 @@ layer state) is a superset of the saved-target storage we already have.
 
 ### 10. Terrain-aware max range ring
 
-**They do:** nothing. No tool in the survey varies its range ring with the
-gun's own elevation — every one of them draws a fixed circle. This entry comes
-from a player asking why the ring does not change when the gun is on a hill.
+**Shipped, and no other tool in the survey does it.** Every gun's ring is now
+solved against the terrain rather than stroked as a circle:
+`js/map/range-ring.js` marches `RANGE_RING_BEARINGS` rays over the baked
+heightfield and bisects each one for the bearing where
+`R_max(z_gun − z(θ, r))` stops covering the distance travelled.
 
-**We do:** `drawGunRangeRings` in `js/map/guns-overlay.js` strokes
-`weapon.maxRange` as a circle, per gun, with no terrain input at all.
+**The open decision went to option 1.** The filled ring is clamped to the
+weapon's declared `maxRange`, and where the terrain gives more than that, the
+surplus is drawn as a separate tinted band with its own outline
+(`drawGunRangeRings` in `js/map/guns-overlay.js`). So an elevated gun sees the
+reach it actually has, and nothing inside the filled ring claims a shot the
+shipped table cannot produce a MIL for. `flatTableAuthoritative` in
+`data/ballistics/terrain-context.json` is untouched.
 
-**Cost:** no new physics — the ring *is* the vacuum model idea 1 already needs.
-A shot is unreachable exactly when the § 4 discriminant `R² − 4k(ΔZ + k)` goes
-negative, so the max-range locus is where it reaches zero. In closed form,
-launching from height `h` above the impact point:
-
-```
-R_max(h) = (v/g) · sqrt(v² + 2gh)
-```
-
-Anchored on `v = sqrt(maxRange · g)`, `h = 0` reproduces today's circle exactly,
-so the ring is a refinement of the current drawing rather than a replacement
-for it. Sensitivity is about **1 m of range per 1 m of height**, damped to
-roughly 0.7 by drag.
-
-**Researched — the fixed circle over-promises by a median 471 m, and the fix is
-a 234 KB file.** The ring is not a scaled circle: it is a fixed point per
-bearing, `r = R_max(z_gun − z(θ, r))`, because how far you reach in a direction
-depends on the ground you reach it over. Solved against the shipped Bakurani
-heightfield at 120 random gun positions inside coverage, SPG-2:
+**What the research predicted, for the record.** Against the shipped Bakurani
+heightfield at 120 random gun positions, SPG-2:
 
 | | p10 | p50 | p90 |
 |---|---:|---:|---:|
@@ -173,50 +158,16 @@ heightfield at 120 random gun positions inside coverage, SPG-2:
 | worst-bearing shortfall vs 2629 m | 361 m | 471 m | 678 m |
 | worst-bearing overshoot vs 2629 m | 38 m | 72 m | 188 m |
 
-The error is strongly asymmetric. The circle we draw today rarely understates
-reach, but on a typical Bakurani position it promises ~470 m of reach that is
-not there on its worst bearing — the same optimistic failure direction as idea
-1, on the same map, for the same reason. The finding survives the drag
-uncertainty that gates idea 1: sweeping the impact angle at max range from 45°
-to 60° moves the median shortfall only from 432 m to 277 m.
+The circle we used to draw rarely understated reach, but on a typical position
+it promised ~470 m that was not there on its worst bearing. The finding
+survived the drag uncertainty that gates idea 1: sweeping the impact angle at
+max range from 45° to 60° moved the median shortfall only from 432 m to 277 m.
+The 32 m grid the ring reads is baked by `npm run build-heightfield` — 234 KB,
+under half the size of the `contours.json` already shipped.
 
-**It reads as a shape, not as noise.** About 30 lobes over 360°, one feature
-per ~12°, and the radius moves 4–8 m between adjacent 1° bearings.
-
-**The data cost is the part that looked fatal and is not.**
-`js/features/terrain-ballistics.js` streams the two chunks a solution touches;
-a 2.6 km ring sweeps roughly 36 of them, about 19 MB. Baking a coarse
-heightfield the way `contours.json` is baked removes the problem:
-
-| grid | uint16 size | ring error vs the 2 m data (med / p90 / max) |
-|---|---:|---|
-| 32 m | 234 KB | 0.7 / 2.6 / 22 m |
-| 64 m | 59 KB | 1.8 / 6.1 / 38 m |
-
-32 m is under half the size of the `contours.json` we already ship. Solving 360
-bearings costs 2.25 ms per gun on that grid, or 0.58 ms at a 50 m march step —
-affordable per gun on the idea 7 gun list.
-
-**The open decision is clamping, and it is not free.** Drawing past `maxRange`
-claims range the shipped table cannot produce a MIL for, against
-`flatTableAuthoritative` in `terrain-context.json`. But clamping is not
-harmless: on the map's summit **100 %** of bearings clamp and the ring collapses
-back to exactly today's circle, discarding a ~690 m median gain — which is the
-elevated-gun case that prompted the idea. Bearings clamped by position: summit
-100 %, flat inland 68 %, mid-map ridge 4 %, valley floor 0 %. Three options, and
-only the third needs a policy change:
-
-1. Clamp the filled ring to `maxRange`, and draw the unclamped terrain reach as
-   a faint advisory outline. Says "there is more range here" without printing a
-   MIL for it.
-2. Clamp only. Fully policy-safe; elevated positions see no change.
-3. Extend past `maxRange` from the fitted model. A real
-   `flatTableAuthoritative` change, gated on the same spotting shots as idea 1
-   § 5.
-
-**Two caveats.** 6 % of positions have disconnected reachable pockets beyond
+**Two caveats that still hold.** 6 % of positions have reachable pockets beyond
 the first ring edge — a valley floor behind a high shoulder — so the ring is an
-outer boundary, not the whole reachable set. And these are Bakurani numbers;
+outer boundary, not the whole reachable set. And these are Bakurani numbers:
 Ozeti's relief is 388 m against Bakurani's 1082 m, so expect roughly a third of
 the payoff there, on top of the alignment check Ozeti has not had.
 
