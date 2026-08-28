@@ -78,6 +78,32 @@ board. If it does, replace the file and re-add its `maps/assets.json` entry
 `markerLabelSpawnDeploy` key across `locales/*.json`. If it does not, delete
 the file.
 
+## Time of flight has never been timed
+
+**Current:** derived at runtime by `js/features/flight-time.js`, shown on the
+SPH-2's MIL card as `≈ 12 s / ≈ 30 s`
+**Renders as:** one figure per arc, from the MIL on screen
+**Evidence:** none from the game. The seconds come from the same vacuum fit as
+everything else in `data/ballistics/projectile-model.json`.
+
+Two uncertainties sit under the number, and one stopwatch settles the larger:
+
+- **The branch assumption.** `sin(2θ)` is symmetric about 45°, so a range table
+  alone cannot say whether it is the shallow or the steep solution. It is
+  resolved by convention, not measurement — and TOF is brutally sensitive to
+  it: a mortar shot at 400 m is 16.9 s on the high branch and 4.8 s on the low
+  one. **One mortar shot at short range settles it beyond any doubt**, and the
+  same assumption underpins the shipped elevation correction, so that shot
+  validates far more than this readout.
+- **The fitted velocity.** ±5% moves the derived seconds by ±2–4 s. Good enough
+  to choose an arc; not good enough for the time-on-target staggering that a
+  battery would want.
+
+Four stopwatch readings — mortar short range, SPG low, SPG high, one repeat —
+close both. The full argument, including why TOF is the cheapest probe of the
+drag error that gates everything else, is in
+[ideas-research/08-time-of-flight.md](ideas-research/08-time-of-flight.md) § 3.
+
 ## Elevation correction — what is still switched off
 
 The height correction is **on for every arc**

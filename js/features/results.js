@@ -105,6 +105,30 @@ function renderTerrainNote(meta, text) {
     }
 }
 
+/*
+ * Seconds under the arc labels, in the same order. Hidden rather than
+ * blanked, so the metric tile keeps its height when there is nothing to say.
+ */
+function renderFlightTime(weapon, solutions, terrainMeta) {
+    const line = $('milFlight');
+
+    if (!line) {
+        return;
+    }
+
+    const text =
+        typeof formatFlightTimes === 'function'
+            ? formatFlightTimes(
+                weapon,
+                solutions,
+                Number(terrainMeta?.deltaZ) || 0
+            )
+            : '';
+
+    line.textContent = text;
+    line.hidden = !text;
+}
+
 function renderElevationResult(weapon, distanceMeters) {
     const value = $('mil');
     const detail = $('milAlt');
@@ -157,6 +181,12 @@ function renderElevationResult(weapon, distanceMeters) {
     renderTerrainNote(
         resolved.terrainMeta,
         terrainDetail
+    );
+
+    renderFlightTime(
+        weapon,
+        solutions,
+        resolved.terrainMeta
     );
 
     value.textContent = primary;

@@ -279,6 +279,18 @@ button:disabled {
 }
 
 /*
+ * Flight time, under the arc labels it belongs to. Quieter than the MIL
+ * above it on purpose: it is derived from the fitted projectile model
+ * rather than read from a table, which is what the ≈ in the text says.
+ */
+.solution-metric-flight {
+    margin-top: 1px;
+
+    opacity: .85;
+    font-variant-numeric: tabular-nums;
+}
+
+/*
  * Terrain elevation note. It sits between the firing-solution cards and the
  * delta readouts because it qualifies the MIL above it rather than adding a
  * fourth measurement. It wraps: the string carries a signed ΔZ and a

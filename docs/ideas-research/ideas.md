@@ -106,22 +106,26 @@ staggered firing. TOT needs idea 8.
 
 ### 8. Time of flight
 
-**They do:** Reforger calculators return TOF alongside elevation and azimuth
-so you can time your splash. It's also the precondition for time-on-target
-firing and for an audible impact countdown.
+**Shipped for the SPH-2, derived rather than stored.** `js/features/flight-time.js`
+computes it from the fitted vacuum model — `θ = angleOffsetDeg + anglePerMilDeg
+× mil`, then `t = (v sinθ + √((v sinθ)² − 2g Δz)) / g` — using the MIL actually
+on screen, so a terrain-corrected MIL gets the time that belongs to it and Δz
+comes free from the same correction. `data/weapons.json` needed no third column
+after all.
 
-**We do:** ballistic tables in `data/ballistics/` are `[distance, mil]` pairs.
-No time dimension anywhere.
+The readout appears on the MIL card, one figure per arc in the order the arcs
+are printed, and only for weapons that offer a choice of arcs. The mortar is
+suppressed: 14.9–17.5 s across its whole envelope is not information.
 
-**Cost:** a third column in the tables. Stopwatch-measurable in-game, so it's
-a `todo.md`-shaped data gap rather than a research problem.
+**What is still unmeasured:** everything. The seconds rest on the same
+unvalidated fit and high-branch assumption as idea 1, carry roughly ±2–4 s, and
+are printed with a `≈` for that reason. Four stopwatch readings settle it —
+see [todo.md](../todo.md) and
+[ideas-research/08-time-of-flight.md](08-time-of-flight.md) § 3.
 
-**Researched — there is almost no data gap here.** TOF is derivable from the
-tables we already ship, to within a few seconds. What's worth measuring is four
-stopwatch readings, not a column, because that check also validates idea 1's
-numbers. Build the readout for the SPG-2 (7.6 s → 32 s, and the arc choice is a
-real trade-off); skip it for the mortar (15–17.5 s at every range). See
-[ideas-research/08-time-of-flight.md](08-time-of-flight.md).
+**Not reachable yet:** time-on-target staggered firing needs sub-second
+agreement between guns, which a ±2–4 s derivation cannot give. That waits on
+real measurements, not on more code.
 
 ### 9. Named plans
 

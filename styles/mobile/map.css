@@ -210,6 +210,12 @@
     line-height: 1.05;
 }
 
+/* Flight time. See .solution-metric-flight on desktop. */
+.mobile-solution-flight {
+    opacity: .85;
+    font-variant-numeric: tabular-nums;
+}
+
 /*
  * Terrain elevation note. Same role as .solution-terrain-note on desktop:
  * it qualifies the MIL above it, so it wraps rather than truncating.

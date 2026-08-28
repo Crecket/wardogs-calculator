@@ -147,6 +147,29 @@ Azimuth follows standard compass bearings:
 The result panel calculates elevation in MIL from the configured ballistic tables. Mortar uses a single firing solution. SPH-2 exposes low-angle and high-angle solutions when both trajectories are available for the current distance. Weapon range limits remain separate from ballistic-table coverage, so samples outside the configured playable range are not treated as valid shots.
 
 
+## Time of flight
+
+For weapons that offer a choice of arcs — the SPH-2 today — the MIL card
+carries a third line with how long the shell is in the air on each arc, in the
+same left-to-right order as the MIL values above it. At 1800 m the low arc is
+roughly 12 s and the high arc roughly 30 s, which is the trade-off the arc
+choice actually turns on: the low arc puts rounds on target in a third of the
+time, the high arc clears terrain the low arc would hit.
+
+The mortar shows no flight time. Its whole 132–684 m envelope flies 14.9–17.5 s
+— a shorter shot is a steeper one, and the extra climb cancels the shorter
+reach — so a live readout there would imply a variability the weapon does not
+have.
+
+Every value is prefixed `≈`. Nothing is measured: the seconds are derived from
+the fitted vacuum model in `data/ballistics/projectile-model.json`, using the
+MIL actually on screen, so a corrected MIL gets the time that belongs to it.
+The derivation carries roughly ±2–4 s, which is fine for choosing an arc and
+not fine for time-on-target staggering. See
+[ideas-research/08-time-of-flight.md](ideas-research/08-time-of-flight.md) and
+the verification entry in [todo.md](todo.md).
+
+
 ## Terrain elevation and SPH-2 setup
 
 Bakurani can provide terrain height at the Artillery and Target coordinates. When both samples are available, the SPH-2 result context shows:
@@ -157,7 +180,10 @@ Bakurani can provide terrain height at the Artillery and Target coordinates. Whe
 
 A positive value means the target is above the artillery position. A negative value means the target is below it.
 
-Terrain elevation is currently **informational**. The v1.6.0 release does not automatically change MIL from Terrain3D or vehicle attitude. Existing firing tables remain authoritative.
+Terrain elevation now **corrects the printed MIL** on every arc, on the maps
+listed in `releasePolicy.correctedMaps` (Bakurani today), and says so in a
+caption when it is withheld. Vehicle attitude is still not modelled. See
+[Terrain Elevation & SPH-2 Setup](terrain.md) for the release gates.
 
 SPH-2 accuracy is also affected by vehicle attitude. A visible warning is shown under the result when SPH-2 is selected. In the gunner HUD, the two small side markers around the vehicle silhouette below `STABILIZED / ASL` indicate lateral tilt. For best accuracy, reposition the vehicle until those markers are as centered and aligned as possible and avoid parking on an obvious uphill/downhill slope.
 
