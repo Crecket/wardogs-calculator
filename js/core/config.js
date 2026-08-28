@@ -14,8 +14,9 @@ const DEFAULT_APP_CONFIG = {
          * size until someone confirms the real numbers; replace them in
          * config/app.json rather than here.
          *
-         * A FOB build area is a square: its `radius` is the distance
-         * from the FOB to an edge, so the buildable side is twice it.
+         * A FOB build area is a square, so it is measured by `halfSide`:
+         * the distance from the FOB to an edge, and the buildable side is
+         * twice it. There is no circle involved and no radius to name.
          *
          * The main zone is a circle and `radius` means what it says —
          * a fallback only. Real maps record their own centre and radius in
@@ -23,7 +24,7 @@ const DEFAULT_APP_CONFIG = {
          */
         rings: {
             fob: {
-                radius: 60,
+                halfSide: 60,
                 color: '#5fa8d3'
             },
             mainZone: {
@@ -215,6 +216,18 @@ function isCollabConfigured() {
     );
 }
 
+/*
+ * The two ring kinds do not measure the same thing — a FOB build area has a
+ * `halfSide`, the main zone has a `radius` — so each names its own key in
+ * config/app.json rather than sharing one that is only honest about half of
+ * them. The measurement comes back as `size`, so the drawing code does not
+ * have to know which kind it was handed.
+ */
+const RING_SIZE_KEYS = {
+    fob: 'halfSide',
+    mainZone: 'radius'
+};
+
 function getRingConfig(kind) {
 
     const fallback =
@@ -224,15 +237,18 @@ function getRingConfig(kind) {
         return null;
     }
 
+    const sizeKey =
+        RING_SIZE_KEYS[kind];
+
     const configured =
         APP_CONFIG
             ?.map
             ?.rings
             ?.[kind];
 
-    const radius =
+    const size =
         Number(
-            configured?.radius
+            configured?.[sizeKey]
         );
 
     const color =
@@ -242,11 +258,11 @@ function getRingConfig(kind) {
             : fallback.color;
 
     return {
-        radius:
-            Number.isFinite(radius) &&
-            radius > 0
-                ? radius
-                : fallback.radius,
+        size:
+            Number.isFinite(size) &&
+            size > 0
+                ? size
+                : fallback[sizeKey],
         color
     };
 }

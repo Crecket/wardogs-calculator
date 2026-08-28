@@ -381,7 +381,7 @@ function getMainZone(map) {
                 Number.isFinite(radius) &&
                 radius > 0
                     ? radius
-                    : config.radius,
+                    : config.size,
             color: config.color,
             placed: true
         };
@@ -393,7 +393,7 @@ function getMainZone(map) {
     return {
         x: (bounds.minX + bounds.maxX) / 2,
         y: (bounds.minY + bounds.maxY) / 2,
-        radius: config.radius,
+        radius: config.size,
         color: config.color,
         placed: false
     };

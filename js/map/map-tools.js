@@ -1939,7 +1939,7 @@ function drawFobBuildAreas() {
                 drawRadiusSquare(
                     marker.x,
                     marker.y,
-                    config.radius,
+                    config.size,
                     config.color,
                     null,
                     normalizeMarkerRotation(

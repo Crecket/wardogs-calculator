@@ -11,19 +11,13 @@ Each entry says what the current value is, where it lives, and what evidence
 
 ## FOB build area size
 
-**Current:** `60` in `config/app.json` → `map.rings.fob.radius`
+**Current:** `60` in `config/app.json` → `map.rings.fob.halfSide`
 **Renders as:** a 120 × 120 m square around every placed `fob` marker
 **Evidence:** the build area is a square roughly 120 m on a side, per someone
 who has played it. Not tape-measured in-game, but no longer invented.
 
 For scale, a 120 m square is 12% of the main zone's full width and spans 55% of
 the gap between the two closest towers on Bakurani (218 m apart).
-
-**The field name is misleading.** `map.rings.fob.radius` is the half-width of a
-square, not a radius — there is no circle involved. It is worth renaming to
-`halfSide` (or storing the full 120 and halving at draw time) so the next person
-reading the config does not have to guess. `getRingConfig` and `drawRadiusSquare`
-in `js/map/overlays.js` would need updating with it.
 
 Nothing in the repo constrains this the way tower positions constrain the main
 zone, so it cannot be narrowed by inference, and no third-party map publishes
@@ -176,7 +170,7 @@ Values that are already grounded and need no verification:
 - Preset marker positions other than Ozeti's `valkyra`
 - Main zone centre and radius — Bakurani `7991, 7183` r500, Ozeti
   `10002, 6357` r550, from the game's own `controlZones` / `controlZoneRadius`
-- `map.rings.fob.radius` semantics — the in-game quantity is a radius, so
-  centre-to-edge is the correct reading; only the number is unknown
+- `map.rings.fob.halfSide` semantics — the in-game quantity is centre-to-edge,
+  which is what the field now says; only the number is unknown
 - Marker plate treatment — genuine map textures carry no diamond plate, so the
   plate on the `737cd73d` POI icons is not a universal style to match

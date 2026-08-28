@@ -33,7 +33,7 @@
     },
     "rings": {
       "fob": {
-        "radius": 60,
+        "halfSide": 60,
         "color": "#5fa8d3"
       },
       "mainZone": {
