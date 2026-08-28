@@ -149,9 +149,11 @@ The result panel calculates elevation in MIL from the configured ballistic table
 
 ## Time of flight
 
-For weapons that offer a choice of arcs — the SPH-2 today — the MIL card
-carries a third line with how long the shell is in the air on each arc, in the
-same left-to-right order as the MIL values above it. At 1800 m the low arc is
+For weapons that offer a choice of arcs — the SPH-2 today — a **TIME OF FLIGHT**
+row sits under the metric grid with one badge per arc, each carrying the arc's
+own name and how long the shell is in the air. The badges wrap rather than
+truncate, so a locale whose arc names run long stacks them instead of cutting
+either one. At 1800 m the low arc is
 roughly 12 s and the high arc roughly 30 s, which is the trade-off the arc
 choice actually turns on: the low arc puts rounds on target in a third of the
 time, the high arc clears terrain the low arc would hit.

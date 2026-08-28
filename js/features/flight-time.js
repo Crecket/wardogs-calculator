@@ -146,31 +146,40 @@ function formatFlightTime(seconds) {
 }
 
 /*
- * The line under the arc labels, in the order the panel prints the arcs.
- * Empty means nothing to say — the mortar, an out-of-range target, or a
- * model that failed to load — and the line is hidden rather than blank.
+ * Which label an arc wears on its badge. `single` has none: a weapon with
+ * one arc has nothing to distinguish, and only reaches here at all if some
+ * future weapon pairs a single table with another arc.
  */
-function formatFlightTimes(weapon, solutions, deltaZMeters = 0) {
+const FLIGHT_TIME_ARC_LABELS = {
+    low: 'lowArc',
+    high: 'highArc',
+    single: null
+};
+
+/*
+ * One badge per arc the panel is showing, in the order it shows them.
+ * An empty list means nothing to say — the mortar, an out-of-range target,
+ * or a model that failed to load — and the row is hidden rather than blank.
+ */
+function flightTimeBadges(weapon, solutions, deltaZMeters = 0) {
     if (!weaponHasArcChoice(weapon) || !solutions) {
-        return '';
+        return [];
     }
 
-    const times = ['low', 'high', 'single']
+    const badges = ['low', 'high', 'single']
         .filter(arc => solutions[arc])
-        .map(arc =>
-            flightTimeSecondsForMil(
+        .map(arc => ({
+            arc,
+            labelKey: FLIGHT_TIME_ARC_LABELS[arc],
+            seconds: flightTimeSecondsForMil(
                 weapon.id,
                 arc,
                 flightTimeMil(solutions[arc]),
                 deltaZMeters
             )
-        );
+        }));
 
-    if (!times.length || times.some(seconds => seconds === null)) {
-        return '';
-    }
-
-    return times
-        .map(formatFlightTime)
-        .join(' / ');
+    return badges.some(badge => badge.seconds === null)
+        ? []
+        : badges;
 }

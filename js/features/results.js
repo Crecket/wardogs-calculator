@@ -106,27 +106,52 @@ function renderTerrainNote(meta, text) {
 }
 
 /*
- * Seconds under the arc labels, in the same order. Hidden rather than
- * blanked, so the metric tile keeps its height when there is nothing to say.
+ * One badge per arc, below the metric grid rather than inside the MIL card:
+ * at the sub-line's 8 px the seconds were unreadable, and this is a value in
+ * its own right rather than a footnote to the MIL.
+ *
+ * Built with the DOM rather than innerHTML — the arc labels are translated
+ * strings and the numbers are computed, but the row is rebuilt on every
+ * pointer move, so there is no reason to parse markup that often either.
  */
 function renderFlightTime(weapon, solutions, terrainMeta) {
-    const line = $('milFlight');
+    const row = $('flightTimes');
+    const host = $('flightTimeBadges');
 
-    if (!line) {
+    if (!row || !host) {
         return;
     }
 
-    const text =
-        typeof formatFlightTimes === 'function'
-            ? formatFlightTimes(
+    const badges =
+        typeof flightTimeBadges === 'function'
+            ? flightTimeBadges(
                 weapon,
                 solutions,
                 Number(terrainMeta?.deltaZ) || 0
             )
-            : '';
+            : [];
 
-    line.textContent = text;
-    line.hidden = !text;
+    row.hidden = !badges.length;
+    host.textContent = '';
+
+    badges.forEach(badge => {
+        const pill = document.createElement('span');
+        pill.className = 'flight-badge';
+
+        if (badge.labelKey) {
+            const label = document.createElement('span');
+            label.className = 'flight-badge-arc';
+            label.textContent = tr(badge.labelKey);
+            pill.appendChild(label);
+        }
+
+        const value = document.createElement('strong');
+        value.className = 'flight-badge-value';
+        value.textContent = formatFlightTime(badge.seconds);
+        pill.appendChild(value);
+
+        host.appendChild(pill);
+    });
 }
 
 function renderElevationResult(weapon, distanceMeters) {

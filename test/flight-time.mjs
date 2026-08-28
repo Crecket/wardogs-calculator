@@ -75,33 +75,57 @@ async function readPanel(weapon, distanceMeters) {
 
         result();
 
-        const line = document.getElementById('milFlight');
+        const row = document.getElementById('flightTimes');
+
+        const badges = Array.from(
+            document.querySelectorAll('#flightTimeBadges .flight-badge')
+        ).map(badge => ({
+            arc: badge.querySelector('.flight-badge-arc')?.textContent ?? '',
+            value: badge.querySelector('.flight-badge-value')?.textContent ?? '',
+            seconds: Number(
+                badge
+                    .querySelector('.flight-badge-value')
+                    ?.textContent
+                    .replace(/[^0-9.]/g, '')
+            )
+        }));
 
         return {
-            hidden: line.hidden,
-            text: line.textContent,
+            hidden: row.hidden,
+            badges,
             mil: document.getElementById('mil').textContent
         };
     }, [weapon, distanceMeters]);
 }
 
 const mortar = await readPanel('mortar', 400);
-check('the mortar shows no flight time', mortar.hidden, mortar.text);
+check('the mortar shows no flight time', mortar.hidden && !mortar.badges.length);
 
 const spg = await readPanel('spg', 1800);
-check('the SPG shows one time per arc', /≈.*\/.*≈/.test(spg.text), spg.text);
-check('the SPG line is visible', spg.hidden === false);
+check('the SPG row is visible', spg.hidden === false);
+check('one badge per arc', spg.badges.length === 2, JSON.stringify(spg.badges));
+
+check(
+    'each badge carries its arc label and an approximate value',
+    spg.badges.every(b => b.arc.length > 0 && b.value.startsWith('≈')),
+    JSON.stringify(spg.badges)
+);
+
+check(
+    'the low arc is first and is the faster one',
+    spg.badges[0].seconds < spg.badges[1].seconds,
+    spg.badges.map(b => b.value).join(' / ')
+);
 
 /*
  * Below 1181 m the low table has no coverage, so the high arc is the only
- * option and the line must not print a phantom second value.
+ * option and the row must not print a phantom second badge.
  */
 const highOnly = await readPanel('spg', 1000);
 check(
-    'a single arc prints a single time',
-    highOnly.hidden === false &&
-    !highOnly.text.includes('/'),
-    highOnly.text
+    'a single arc prints a single badge',
+    highOnly.hidden === false && highOnly.badges.length === 1,
+    JSON.stringify(highOnly.badges)
 );
 check(
     'and it agrees with the single MIL shown',
@@ -110,28 +134,81 @@ check(
 );
 
 const outOfRange = await readPanel('spg', 4000);
-check('out of range shows nothing', outOfRange.hidden, outOfRange.text);
+check(
+    'out of range shows nothing',
+    outOfRange.hidden && !outOfRange.badges.length
+);
 
-/* --- the times track the arcs they sit under --- */
+/* --- the badge is big enough to read --- */
 
-const ordering = await page.evaluate(() => {
+const size = await page.evaluate(() => {
     S.weapon = 'spg';
     S.origin = { x: 50, y: 50 };
     S.target = { x: 68, y: 50 };
 
     result();
 
-    return document
-        .getElementById('milFlight')
-        .textContent
-        .split('/')
-        .map(part => Number(part.replace(/[^0-9.]/g, '')));
+    const value = document.querySelector('.flight-badge-value');
+    const rect = value.getBoundingClientRect();
+
+    return {
+        fontPx: parseFloat(getComputedStyle(value).fontSize),
+        clipped: value.scrollWidth > value.clientWidth + 1,
+        width: rect.width
+    };
+});
+
+check('the value is set at a readable size', size.fontPx >= 12, size.fontPx);
+check('and is not truncated', size.clipped === false, size.width);
+
+/*
+ * --- the arc labels follow the language ---
+ *
+ * Switching language navigates to that locale's own page, so this is also
+ * the check that the badge markup made it into all ten shells rather than
+ * only the English one.
+ */
+
+await page.goto(`${URL}es/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+
+const translated = await page.evaluate(() => {
+    S.weapon = 'spg';
+    S.origin = { x: 50, y: 50 };
+    S.target = { x: 68, y: 50 };
+
+    result();
+
+    return {
+        arcs: Array.from(
+            document.querySelectorAll('#flightTimeBadges .flight-badge-arc')
+        ).map(node => node.textContent),
+
+        label: document
+            .querySelector('.solution-flight-label')
+            .textContent,
+
+        clipped: Array.from(
+            document.querySelectorAll('#flightTimeBadges .flight-badge-value')
+        ).some(node => node.scrollWidth > node.clientWidth + 1)
+    };
 });
 
 check(
-    'the low arc is printed first and is the faster one',
-    ordering.length === 2 && ordering[0] < ordering[1],
-    ordering.join(' / ')
+    'the badges speak the page language',
+    translated.arcs[0].toLowerCase().includes('trayectoria'),
+    translated.arcs.join(' / ')
+);
+
+check(
+    'and so does the row label',
+    translated.label.toLowerCase().includes('vuelo'),
+    translated.label
+);
+
+check(
+    'a long arc name does not truncate the seconds',
+    translated.clipped === false
 );
 
 check('no page errors', errors.length === 0, errors.join('; '));
