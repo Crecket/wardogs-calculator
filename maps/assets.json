@@ -119,6 +119,102 @@
       "anchorX": 0.5,
       "anchorY": 0.5,
       "placeable": false
+    },
+    "like": {
+      "path": "assets/map-markers/like.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "warning": {
+      "path": "assets/map-markers/warning.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "hill_warning": {
+      "path": "assets/map-markers/hill_warning.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "lasthit": {
+      "path": "assets/map-markers/lasthit.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "spotted": {
+      "path": "assets/map-markers/spotted.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "quad": {
+      "path": "assets/map-markers/quad.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "kodiak": {
+      "path": "assets/map-markers/kodiak.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "dune": {
+      "path": "assets/map-markers/dune.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "ural": {
+      "path": "assets/map-markers/ural.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "tank": {
+      "path": "assets/map-markers/tank.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "havoc": {
+      "path": "assets/map-markers/havoc.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "heli": {
+      "path": "assets/map-markers/heli.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
     }
   }
 }
