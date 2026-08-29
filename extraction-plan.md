@@ -58,13 +58,18 @@ Items 1 through 12 were extracted opportunistically, smallest and cleanest first
 
 **Phase 3 — saved-target map markers (§7.3–7.8).** Stacks on Phase 2. It collides with guns in three places, which is why it cannot run in parallel: 7.4 (click a marker to activate it) lives in the same `js/events.js` / `js/mobile/mobile.js` hit-test block as 2.6 (pick up the gun you click); 7.6's per-target artillery toggle decides whether restoring a target also moves the **guns**, plural, so it has to be written against the real gun list or written twice; and `c3edba645` carries 7.3–7.8 and 2.8/2.9 in one commit.
 
-**Phase 4 — collaboration, as three PRs, not one.** The collab files alone are **6,346 lines** before the hooks, the toolbar UI, the popover CSS and twelve locales, so realistically about 7,000. That is not a reviewable unit.
+**Phase 4 — collaboration, as two PRs, in this order.** The collab files alone are **6,346 lines** before the hooks, the toolbar UI, the popover CSS and twelve locales.
 
-1. `sync/` alone: the worker, the op validation, its tests, `sync/README.md`. It deploys standalone and changes nothing about the site (`changes.md` records 1.1 as *Needs: none*), so the maintainer can judge the service on its own terms.
-2. The client module and the config gate: `js/features/collab.js`, `collab.url`, `getCollabServiceUrl()`, the self-disabling behaviour. Dead code until 3 lands, and reviewable as such.
-3. The hooks and the UI: the `collabOn*` calls in `map-tools.js` and `saved-targets.js`, the toolbar button, the popover, the CSS, the strings. The only part that touches existing files, and small once the other two carry the bulk.
+1. **`sync/` alone** — the worker, the op validation, its ~1,160 lines of tests, `sync/README.md`. About 2,500 lines. It deploys standalone and changes nothing about the site (`changes.md` records 1.1 as *Needs: none*).
+2. **Everything client-side** — `js/features/collab.js`, the `collab.url` config gate, `getCollabServiceUrl()`, the self-disabling behaviour, the `collabOn*` hooks in `map-tools.js` and `saved-targets.js`, the toolbar button, the popover, the CSS and the strings. About 3,800 lines, and a working feature the moment it lands.
 
-**Before Phase 4, open an issue rather than a PR.** `sync/` is a Cloudflare Worker with a Durable Object that the maintainer would have to deploy, operate and pay for. That is not a code-review decision, it is a "do I want to run infrastructure for this project" decision, and it should be asked directly rather than arriving inside a 7,000-line PR. If the answer is no, nothing needs splitting.
+**Why this split and not the earlier three-way one.** Separating the client module from its hooks and UI would have produced a middle PR consisting entirely of dead code: nothing could exercise it, the real review would happen at the next PR anyway, and if that next PR were rejected upstream would be left carrying a dead 1,946-line module. Client, hooks and UI are one testable unit and ship together.
+
+The worker stays separate for a different reason: it is testable in isolation, runs under a different runtime, and reviewing a Durable Object is a different skill from reviewing the canvas client.
+
+**Worker first is an operational requirement, not just review order.** The maintainer intends to host the service on Cloudflare themselves. The client reads `collab.url` from config and self-disables when it is absent, so the Worker has to be merged and deployed, and its `wss://` endpoint known, before the client PR has anything real to point at.
+
+Still worth opening an issue before building either, to agree the shape and confirm the endpoint arrangement.
 
 **`integration/all-prs`** is a local branch merging all nine open PR branches, used as the base for Phase 2 so guns can be built against "everything landed". It is a working aid, not a thing to propose upstream. Its merge conflicts are also the only existing evidence about whether those nine PRs are mutually compatible.
 
