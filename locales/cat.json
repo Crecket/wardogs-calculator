@@ -115,6 +115,7 @@
   "targetWithArtilleryHint": "També mou l'artilleria",
   "targetOnly": "només objectiu",
   "targetOnlyHint": "Deixa l'artilleria on és",
+  "syncTarget": "Actualitza a la posició actual",
   "exportTarget": "EXPORT MEOWGET",
   "exportAllTargets": "EXPORT ALL MEOWGETS",
   "importTargets": "IMPORT MEOWGETS",

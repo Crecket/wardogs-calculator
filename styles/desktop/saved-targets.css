@@ -508,6 +508,14 @@
     color: var(--accent);
 }
 
+.saved-target-actions-inline .saved-target-sync {
+    color: var(--accent);
+}
+
+.saved-target-actions-inline .saved-target-sync[hidden] {
+    display: none;
+}
+
 .saved-target-transfer-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;

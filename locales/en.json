@@ -107,6 +107,7 @@
   "targetWithArtilleryHint": "Also moves the artillery",
   "targetOnly": "target only",
   "targetOnlyHint": "Leaves the artillery where it is",
+  "syncTarget": "Update to current position",
   "exportTarget": "Export target",
   "exportAllTargets": "Export all",
   "importTargets": "Import",

@@ -105,6 +105,7 @@
   "targetWithArtilleryHint": "同时移动火炮位置",
   "targetOnly": "仅目标",
   "targetOnlyHint": "保持火炮位置不变",
+  "syncTarget": "更新为当前位置",
   "exportTarget": "导出目标",
   "exportAllTargets": "全部导出",
   "importTargets": "导入",

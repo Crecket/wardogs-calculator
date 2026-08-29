@@ -105,6 +105,7 @@
   "targetWithArtilleryHint": "포병 위치도 함께 이동합니다",
   "targetOnly": "표적만",
   "targetOnlyHint": "포병 위치는 그대로 둡니다",
+  "syncTarget": "현재 위치로 업데이트",
   "exportTarget": "목표 내보내기",
   "exportAllTargets": "전체 내보내기",
   "importTargets": "가져오기",

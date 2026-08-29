@@ -86,6 +86,18 @@ function activeSavedTargetId() {
     return savedTargetMatchState().id;
 }
 
+function savedTargetSyncHidden(id, state) {
+
+    if (!state.id) {
+        return false;
+    }
+
+    return !(
+        state.id === id &&
+        state.level === 'partial'
+    );
+}
+
 function applySavedTargetRowState(item, state) {
 
     const isMatch =
@@ -102,6 +114,19 @@ function applySavedTargetRowState(item, state) {
         isMatch &&
         state.level === 'partial'
     );
+
+    const sync =
+        item.querySelector(
+            '.saved-target-sync'
+        );
+
+    if (sync) {
+        sync.hidden =
+            savedTargetSyncHidden(
+                item.dataset.targetId,
+                state
+            );
+    }
 }
 
 /*
@@ -977,6 +1002,65 @@ function toggleTargetArtillery(id) {
     renderSavedTargets();
 }
 
+function syncTargetToCurrent(id) {
+
+    const target =
+        savedTargets.find(
+            item =>
+                item.id === id
+        );
+
+    if (
+        !target ||
+        !S.target ||
+        !Number.isFinite(S.target.x) ||
+        !Number.isFinite(S.target.y) ||
+        savedTargetSyncHidden(
+            id,
+            savedTargetMatchState()
+        )
+    ) {
+        return;
+    }
+
+    target.x =
+        Number(S.target.x);
+
+    target.y =
+        Number(S.target.y);
+
+    if (target.saveArtillery) {
+
+        target.origin = {
+            x: Number(S.origin.x),
+            y: Number(S.origin.y)
+        };
+    }
+
+    persistSavedTargets();
+
+    if (
+        typeof trackAnalytics ===
+        'function'
+    ) {
+        trackAnalytics(
+            'target-synced',
+            {
+                withArtillery:
+                    Boolean(
+                        target.saveArtillery
+                    )
+            }
+        );
+    }
+
+    renderSavedTargets();
+
+    if (typeof draw === 'function') {
+        draw();
+    }
+}
+
 function restoreTarget(target) {
 
     if (!target) {
@@ -1225,6 +1309,40 @@ function renderSavedTargets() {
             actions.className =
                 'saved-target-actions-inline';
 
+            const sync =
+                document.createElement(
+                    'button'
+                );
+
+            sync.type =
+                'button';
+
+            sync.className =
+                'saved-target-icon-button saved-target-sync';
+
+            sync.textContent =
+                '\u27f3';
+
+            sync.title =
+                tr('syncTarget');
+
+            sync.setAttribute(
+                'aria-label',
+                tr('syncTarget')
+            );
+
+            sync.addEventListener(
+                'click',
+                event => {
+
+                    event.stopPropagation();
+
+                    syncTargetToCurrent(
+                        target.id
+                    );
+                }
+            );
+
             const exportButton =
                 document.createElement(
                     'button'
@@ -1323,6 +1441,10 @@ function renderSavedTargets() {
                         target.id
                     );
                 }
+            );
+
+            actions.appendChild(
+                sync
             );
 
             actions.appendChild(

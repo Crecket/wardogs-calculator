@@ -109,6 +109,7 @@
   "targetWithArtilleryHint": "Déplace aussi l'artillerie",
   "targetOnly": "cible seule",
   "targetOnlyHint": "Laisse l'artillerie en place",
+  "syncTarget": "Mettre à jour à la position actuelle",
   "exportTarget": "Exporter la cible",
   "exportAllTargets": "Tout exporter",
   "importTargets": "Importer",

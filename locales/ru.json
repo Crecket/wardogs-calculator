@@ -105,6 +105,7 @@
   "targetWithArtilleryHint": "Также перемещает артиллерию",
   "targetOnly": "только цель",
   "targetOnlyHint": "Оставляет артиллерию на месте",
+  "syncTarget": "Обновить до текущей позиции",
   "exportTarget": "Экспорт цели",
   "exportAllTargets": "Экспортировать все",
   "importTargets": "Импортировать",
