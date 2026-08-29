@@ -39,11 +39,14 @@ inputs and switched off where we do not.
 ```text
 Distance -> normal coordinate calculation
 Azimuth  -> normal coordinate calculation
-MIL      -> existing weapon firing table
+MIL      -> existing weapon firing table, plus the automatic
+            height correction on the maps in correctedMaps
 ΔZ       -> Terrain3D elevation context
 ```
 
-Automatic terrain, ΔZ, or vehicle-attitude MIL correction is **not enabled**.
+Automatic ΔZ MIL correction is **on** for every arc on the maps listed in
+`releasePolicy.correctedMaps` — see [Ballistic compensation](#ballistic-compensation).
+Vehicle-attitude correction is still **not enabled**.
 
 ### The elevation datum is offset
 
