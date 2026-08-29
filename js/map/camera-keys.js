@@ -26,8 +26,23 @@ const CAMERA_ZOOM_OUT_KEYS =
 
 const CAMERA_SPRINT_FACTOR = 2.5;
 
-const HELD_PAN_DIRECTIONS =
+const HELD_PAN_KEYS =
     new Set();
+
+function isPanDirectionHeld(direction) {
+
+    for (const key of HELD_PAN_KEYS) {
+
+        if (
+            CAMERA_PAN_KEYS[key] ===
+            direction
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 let cameraSprintHeld = false;
 
@@ -46,7 +61,7 @@ function isTypingTarget(target) {
 
 function stepCameraPan(timestamp) {
 
-    if (!HELD_PAN_DIRECTIONS.size) {
+    if (!HELD_PAN_KEYS.size) {
         cameraPanFrame = null;
         return;
     }
@@ -71,10 +86,10 @@ function stepCameraPan(timestamp) {
     let dx = 0;
     let dy = 0;
 
-    if (HELD_PAN_DIRECTIONS.has('left')) dx += 1;
-    if (HELD_PAN_DIRECTIONS.has('right')) dx -= 1;
-    if (HELD_PAN_DIRECTIONS.has('up')) dy += 1;
-    if (HELD_PAN_DIRECTIONS.has('down')) dy -= 1;
+    if (isPanDirectionHeld('left')) dx += 1;
+    if (isPanDirectionHeld('right')) dx -= 1;
+    if (isPanDirectionHeld('up')) dy += 1;
+    if (isPanDirectionHeld('down')) dy -= 1;
 
     if (dx || dy) {
 
@@ -136,7 +151,7 @@ function stopCameraPan() {
         cameraPanFrame = null;
     }
 
-    HELD_PAN_DIRECTIONS.clear();
+    HELD_PAN_KEYS.clear();
 
     cameraSprintHeld = false;
 }
@@ -177,14 +192,9 @@ function handleCameraKeyDown(event) {
     cameraSprintHeld =
         event.shiftKey;
 
-    const direction =
-        CAMERA_PAN_KEYS[key];
+    if (CAMERA_PAN_KEYS[key]) {
 
-    if (direction) {
-
-        HELD_PAN_DIRECTIONS.add(
-            direction
-        );
+        HELD_PAN_KEYS.add(key);
 
         startCameraPan();
 
@@ -213,14 +223,5 @@ function handleCameraKeyUp(event) {
     cameraSprintHeld =
         event.shiftKey;
 
-    const direction =
-        CAMERA_PAN_KEYS[key];
-
-    if (!direction) {
-        return;
-    }
-
-    HELD_PAN_DIRECTIONS.delete(
-        direction
-    );
+    HELD_PAN_KEYS.delete(key);
 }

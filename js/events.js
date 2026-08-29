@@ -774,6 +774,10 @@ function bindEvents() {
         }
     );
 
+    const cameraKeysLoaded =
+        typeof handleCameraKeyDown ===
+        'function';
+
     window.addEventListener(
         'keydown',
         e => {
@@ -782,25 +786,31 @@ function bindEvents() {
                 return;
             }
 
-            if (handleCameraKeyDown(e)) {
+            if (
+                cameraKeysLoaded &&
+                handleCameraKeyDown(e)
+            ) {
                 e.preventDefault();
             }
         }
     );
 
-    window.addEventListener(
-        'keyup',
-        handleCameraKeyUp
-    );
+    if (cameraKeysLoaded) {
 
-    /*
-     * Held keys would otherwise stick when the window
-     * loses focus mid-pan.
-     */
-    window.addEventListener(
-        'blur',
-        stopCameraPan
-    );
+        window.addEventListener(
+            'keyup',
+            handleCameraKeyUp
+        );
+
+        /*
+         * Held keys would otherwise stick when the window
+         * loses focus mid-pan.
+         */
+        window.addEventListener(
+            'blur',
+            stopCameraPan
+        );
+    }
 
     window.addEventListener(
         'resize',
