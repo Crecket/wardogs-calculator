@@ -23,7 +23,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | [`pr` #11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | `upstream-pr/terrain-range-ring` |
 | 6 | 7.2 | Saved-target highlight derived from position | [`pr` #13](https://github.com/apollyon-sys/wardogs-calculator/pull/13) | `upstream-pr/derived-highlight` |
 | 7 | — | Marker tool does not turn off on a second click | [`pr` #12](https://github.com/apollyon-sys/wardogs-calculator/pull/12) | `upstream-pr/marker-tool-toggle` |
-| 8 | 5.1 | Tactical markers and labels | `wip` | `upstream-pr/tactical-markers` |
+| 8 | 5.1 | Tactical marker icons and picker labels | `branch` | `upstream-pr/tactical-markers` |
 | 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `parked` | — |
 | 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
 | 11 | 4.1 | Time of flight | `todo` | — |
@@ -96,7 +96,9 @@ The tiers are the reasoning; the status board at the top is the live state.
 
 ### Tier 3 — medium, still reviewable
 
-6. **5.1 Tactical markers and labels.** The marker palette, the four new icons, marker labels. **Correction to an earlier estimate here:** this is not the big `map-tools.js` PR. `3eb0425ff` touches `map-tools.js` by **+77 lines**; the bulk of that file's +1,006 is collab plus the later marker work — FOB rotation is +578 (`e07538bf5`) and marker drag is +153 (`ab2892ab3`). So 5.1 stands alone at a comfortable size, and 5.2/5.4 follow separately.
+6. **5.1 Tactical marker icons and picker labels.** **Twice-corrected estimate, now measured against the branch that shipped it.** This is not the big `map-tools.js` PR, and it is far smaller than even the second estimate: the branch is +178/-2, of which `map-tools.js` is **7 lines** and `js/map/assets.js` is 51. The rest is artwork, `maps/assets.json` and locale keys.
+
+   Two things `changes.md` and my earlier readings got wrong about it. First, `js/map/overlays.js` contributes **nothing** — the +394 in `3eb0425ff` is entirely `drawRadiusRing`, `drawRadiusSquare`, `getMainZone`, `drawMainZone` and the `drawPresetZones` refactor, i.e. §5.3 (shipped in #9) and §5.2. Markers have no drawing code of their own; upstream's `drawMapToolMarker` already handles them and is byte-identical on the fork tip. Second, **"marker labels" are picker tooltips, not map labels.** Nothing in the fork draws text next to a placed marker. The commit title means `button.title` / `aria-label`, which upstream fills with the raw asset id (`spawn_vehicle`).
 7. **3.1 Contour layer.** `js/map/contours.js` (424 lines, collab-free), `scripts/build-contours.mjs`, `scripts/lib/contours.mjs` and its test, one `renderer.js` hunk, the layer toggle. **Caveat:** +715 KB of generated `contours.json` enters the tree (bakurani 547 KB, ozeti 168 KB). Name the regeneration command in the PR so the maintainer knows it is derived.
 8. **4.1 Time of flight.** See *Corrections to `changes.md`* below — the stated dependency is wrong, and the `results.js` hunk needs unpicking first.
 
@@ -355,4 +357,24 @@ Clicking the marker tool button a second time only closed the marker picker, lea
 The handler never called setMapTool(), which is what performs the toggle back to null, so the ruler and eraser buttons toggled off correctly but the marker button did not.
 
 Added an early return that closes the picker and calls setMapTool('marker') when the tool is already active and the picker is open. The picker-open check keeps the case where the picker was dismissed by clicking the map: the next click reopens it instead of deselecting the tool.
+````
+
+---
+
+## §5.1 — `upstream-pr/tactical-markers`
+
+https://github.com/apollyon-sys/wardogs-calculator/pull/14
+
+Decide first: the `ko` and `zh-cn` labels in the second commit are machine-written and unreviewed. Drop that commit to fall back to English, or get them checked. Also confirm dropping the dead `vendor` entry was right (upstream ships `vendor.webp` but no map references it and the fork marked it `placeable: false`).
+
+````markdown
+## Placeable tactical markers with named picker labels
+
+Adds four placeable marker icons to the map tool palette: FOB, tank, artillery and vehicle spawn. WebP for the app, SVG sources alongside them.
+
+Marker assets can now carry a labelKey naming a locale string, used for the picker button's tooltip and aria-label. Without one the asset id is title-cased instead ("spawn_board" becomes "Spawn board"), so a new icon is usable before anyone translates it. Previously the picker showed the raw id.
+
+The four labels are translated in nine locales. The last commit adds ko and zh-cn, and those two are machine-written rather than checked by a speaker, so drop that commit if you would rather they fell back to English through tr().
+
+No drawing code changes and no config changes. Nothing renders differently on the map itself.
 ````
