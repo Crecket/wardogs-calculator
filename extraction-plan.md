@@ -26,8 +26,8 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 8 | 5.1 | Tactical marker icons and picker labels | `branch` | `upstream-pr/tactical-markers` |
 | 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `parked` | — |
 | 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
-| 11 | 4.1 | Time of flight | `wip` | `upstream-pr/flight-time` (stacks on #11) |
-| 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | `wip` | `upstream-pr/fob-build-areas` (stacks on #9) |
+| 11 | 4.1 | Time of flight | [`pr` #15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | `upstream-pr/flight-time` (stacks on #11) |
+| 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | [`pr` #16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | `upstream-pr/fob-build-areas` (stacks on #9) |
 | 13 | 6.1 + 6.2 | Tiles from object storage | `todo` | — |
 | 14 | 2.1–2.3 | Multiple guns | `todo` | — |
 | 15 | 7.3–7.8 | Saved-target markers and sync | `todo` | — |
@@ -38,7 +38,9 @@ Item 7 is not an extraction at all: it is a bug that exists in `upstream/main` u
 Most branches are cut from `upstream/main` and carry only their own feature. Two are **stacked** and cannot merge before their base:
 
 - `upstream-pr/flight-time` (item 11) branches from `upstream-pr/terrain-range-ring`, because `loadProjectileModel()` and `PROJECTILE_MODEL` live in `js/map/range-ring.js`, which exists only there. It also re-adds `projectileModelArc()`, which #11 dropped as dead code with flight time as its only consumer.
-- `upstream-pr/fob-build-areas` (item 12) branches from `upstream-pr/map-visuals`, because FOB areas need a `fob` kind in `RING_SIZE_KEYS` / `getRingConfig`, and that plumbing shipped in #9 as `mainZone`-only. It may also depend on `upstream-pr/tactical-markers` for the placeable FOB icon; see that branch's notes for which way that resolved.
+- `upstream-pr/fob-build-areas` (item 12) branches from `upstream-pr/map-visuals`, because FOB areas need a `fob` kind in `RING_SIZE_KEYS` / `getRingConfig`, and that plumbing shipped in #9 as `mainZone`-only. **The markers branch turned out to be a sequencing dependency, not a code one:** `drawFobBuildAreas` filters markers for `icon === 'fob'` and draws nothing when none exist, and `markerSupportsRotation` returns false for every icon that exists today, so the wheel keeps zooming. The feature is therefore inert, not broken, until the markers PR lands the icon. That is why the branch has a single parent.
+
+Because GitHub cannot take a cross-fork PR whose base is a branch in the fork, both stacked PRs target `main` and their diffs currently include their base's commits. Each body opens by saying so.
 
 Item 8.4 evaporated on contact: since the `fob` ring config has never shipped upstream, there is no rename to perform. The key ships as `halfSide` from the start and `radius` never exists for it.
 
@@ -385,3 +387,47 @@ The four labels are translated in nine locales. The last commit adds ko and zh-c
 
 No drawing code changes and no config changes. Nothing renders differently on the map itself.
 ````
+
+---
+
+## §4.1 — `upstream-pr/flight-time` — [PR #15](https://github.com/apollyon-sys/wardogs-calculator/pull/15)
+
+Stacked on `upstream-pr/terrain-range-ring` (#11). 668 insertions, 0 deletions against that base: nothing #11 introduced was modified, only appended to. `deltaZ` is live on the base rather than always zero, so the `-2 g dz` term does real work. Arithmetic hand-checked against the closed form (SPG low MIL 400 dz 0 gives 19.162 s; mortar MIL 800 dz -150 gives 19.124 s, confirming downhill lengthens the flight).
+
+````markdown
+This stacks on #11 and cannot merge before it. It needs loadProjectileModel and PROJECTILE_MODEL from js/map/range-ring.js, which only exist on that branch. Until #11 lands, the diff here also shows #11's commits.
+
+#11 dropped projectileModelArc() as dead code. This adds it back, because the flight time is its consumer. Nothing else in that file changes.
+
+The seconds come from the same vacuum fit the range ring reads, so no new data file. The angle is taken from the MIL actually on screen rather than from the distance, so the printed time belongs to the number above it. A distance that lands on a table row with a MIL band uses the band's midpoint. Target height minus gun height comes from the terrain meta #11 already computes.
+
+These are derived seconds, never measured in game, which is what the badge's approximately-equals prefix says. Both SPG-2 arcs and the mortar are covered.
+
+The last two commits are droppable: a machine-written Korean string for the new label, and a Playwright test that was not run.
+````
+
+---
+
+## §5.2 + §5.4 + §8.4 — `upstream-pr/fob-build-areas` — [PR #16](https://github.com/apollyon-sys/wardogs-calculator/pull/16)
+
+Stacked on `upstream-pr/map-visuals` (#9). Nothing about it has been exercised, and **nothing can be** until the markers PR lands the `fob` icon: rotation, the corner grip, shift-snapping, double-click-to-straighten and marker dragging are all unreachable by construction on this branch. Needs a real pass over a live map once both parents merge.
+
+`drawRadiusSquare` deliberately ships without the `label` parameter the source added: `ab2892ab3` changed its only caller to pass `null` and deleted `formatRingRadius`, which does not exist on the base at all, so carrying it would have shipped ~40 dead lines.
+
+````markdown
+Stacks on #9 (map visuals), which has to merge first. Until it does, the diff here also shows #9's commits. It also needs the tactical markers branch, not yet opened, before any of this is reachable in the UI: the build area is drawn around a placed marker whose icon id is "fob", and that icon does not exist until that branch lands. Until then the code is inert rather than broken, drawing nothing and leaving the wheel to zoom as it always has.
+
+Adds a "fob" ring kind measured by halfSide, the distance from the FOB to an edge, so the buildable side is twice it. A square, not a circle, so it gets its own drawing primitive rather than reusing the ring.
+
+The square turns with the wheel while the marker tool is active and the cursor is over a FOB, or by dragging the grip on the icon's top-left corner. Shift snaps to 15 degrees, double-clicking the grip straightens it. Rotation lives on the marker, so undo, export and persistence come for free.
+
+Pressing a marker that is already placed now picks it up and moves it instead of stacking a second one on top.
+
+Only en has the new mapLayerFobAreas string. The other eleven locales are also still missing mapLayerMainZone from #9; both are worth one follow-up pass together.
+````
+
+---
+
+## Known follow-up: the layer-toggle locale gap
+
+`mapLayerMainZone` (#9) and `mapLayerFobAreas` (#16) exist in `en.json` only. The other eleven locales — `cat`, `de`, `es`, `fr`, `ko`, `pl`, `pt`, `ru`, `uk`, `zh-cn` — carry every other `mapLayer*` key but not these two. `tr()` falls back to English so nothing breaks, but the layer list reads half-translated. Worth one follow-up PR filling both keys in all eleven at once. Note `cat.json` is a deliberate joke locale ("Pawcil", "Pawkers") and must be written by hand, not machine-translated.
