@@ -148,6 +148,8 @@ None of these have been verified at runtime. All are based on `29fd2bafd`.
 
 ## §5.5 + §5.3 — `upstream-pr/map-visuals`
 
+https://github.com/apollyon-sys/wardogs-calculator/pull/9
+
 Decide first: whether `drawRadiusRing`'s unused `fill`/`dash` options stay, and whether the map-centre fallback is worth carrying.
 
 ````markdown
@@ -233,6 +235,8 @@ js/ui/inputs.js              |  13 +++
 
 ## §3.1 — `upstream-pr/contour-layer`
 
+https://github.com/apollyon-sys/wardogs-calculator/pull/10
+
 Decide first: the Korean string `"mapLayerContours": "등고선"` was written by an AI agent, not taken from the fork. The fork never added contour support to Korean at all, so that page would have failed to load the layer. Confirm or replace it. Also decide whether to keep the final test commit.
 
 ````markdown
@@ -267,6 +271,8 @@ The layer round-trips through the existing layer-state persistence and the map-t
 ---
 
 ## §3.2 – §3.4 + §3.7 — `upstream-pr/terrain-range-ring`
+
+https://github.com/apollyon-sys/wardogs-calculator/pull/11
 
 Decide first: this one deletes and replaces upstream code in `draw()`, unlike the others. Nobody has seen it render. If any branch is worth loading locally before proposing, it is this one.
 
