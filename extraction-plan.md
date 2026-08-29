@@ -46,6 +46,28 @@ Item 8.4 evaporated on contact: since the `fob` ring config has never shipped up
 
 Everything is pushed to `origin` (the fork). Ready-to-use PR bodies are at the bottom of this file.
 
+---
+
+## Migration phases
+
+Items 1 through 12 were extracted opportunistically, smallest and cleanest first. What remains is ordered by dependency instead, because each phase is what the next one is built on.
+
+**Phase 1 — let #8 through #16 land.** Nothing new stacked on them while they are in review. Nine open PRs is already a lot in front of one maintainer, and #15 and #16 cannot collapse to their real diffs until #11 and #9 merge.
+
+**Phase 2 — multiple guns (§2.1, then §2.2/2.3).** Before collaboration, not after. Collab's op families include `gun.add` / `gun.remove` and its client syncs the gun list, so landing guns first means collab ships once, complete. The other way round means shipping collab without gun sync and then reopening the worker's validation and op dispatch to add it, touching the riskiest file twice. §2.1 is the keystone: it makes `S.origin` and `S.weapon` accessors onto the selected gun so every existing reader is untouched and `js/core/core.js` never conflicts on an upstream merge. That property is the thing to protect.
+
+**Phase 3 — saved-target map markers (§7.3–7.8).** Stacks on Phase 2. It collides with guns in three places, which is why it cannot run in parallel: 7.4 (click a marker to activate it) lives in the same `js/events.js` / `js/mobile/mobile.js` hit-test block as 2.6 (pick up the gun you click); 7.6's per-target artillery toggle decides whether restoring a target also moves the **guns**, plural, so it has to be written against the real gun list or written twice; and `c3edba645` carries 7.3–7.8 and 2.8/2.9 in one commit.
+
+**Phase 4 — collaboration, as three PRs, not one.** The collab files alone are **6,346 lines** before the hooks, the toolbar UI, the popover CSS and twelve locales, so realistically about 7,000. That is not a reviewable unit.
+
+1. `sync/` alone: the worker, the op validation, its tests, `sync/README.md`. It deploys standalone and changes nothing about the site (`changes.md` records 1.1 as *Needs: none*), so the maintainer can judge the service on its own terms.
+2. The client module and the config gate: `js/features/collab.js`, `collab.url`, `getCollabServiceUrl()`, the self-disabling behaviour. Dead code until 3 lands, and reviewable as such.
+3. The hooks and the UI: the `collabOn*` calls in `map-tools.js` and `saved-targets.js`, the toolbar button, the popover, the CSS, the strings. The only part that touches existing files, and small once the other two carry the bulk.
+
+**Before Phase 4, open an issue rather than a PR.** `sync/` is a Cloudflare Worker with a Durable Object that the maintainer would have to deploy, operate and pay for. That is not a code-review decision, it is a "do I want to run infrastructure for this project" decision, and it should be asked directly rather than arriving inside a 7,000-line PR. If the answer is no, nothing needs splitting.
+
+**`integration/all-prs`** is a local branch merging all nine open PR branches, used as the base for Phase 2 so guns can be built against "everything landed". It is a working aid, not a thing to propose upstream. Its merge conflicts are also the only existing evidence about whether those nine PRs are mutually compatible.
+
 Fixed along the way, on `feat/collab-rooms` rather than in any extraction branch:
 
 - `24cd010d3` — the origin drag died without `guns.js`. See *Blocker* below.
