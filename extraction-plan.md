@@ -18,8 +18,8 @@ deletions across 128 files, excluding the 43,700 removed tiles.
 
 ## Status board
 
-Statuses: `todo` · `branch` (branch cut, not yet proposed) · `pr` (open
-upstream) · `merged` · `parked`.
+Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed) ·
+`pr` (open upstream) · `merged` · `parked`.
 
 | # | Item(s) | What | Status | Branch |
 | --- | --- | --- | --- | --- |
@@ -27,7 +27,7 @@ upstream) · `merged` · `parked`.
 | 2 | 5.3 | Main zone circle | `branch` | `upstream-pr/map-visuals` |
 | 3 | 7.1 | Positions survive a reload | `branch` | `upstream-pr/remember-positions` |
 | 4 | 3.1 | Contour layer | `branch` | `upstream-pr/contour-layer` |
-| 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | `branch` | `upstream-pr/terrain-range-ring` |
+| 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | `wip` | `upstream-pr/terrain-range-ring` |
 | 6 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
 | 7 | 6.3 + 6.4 | `.env` config, analytics off by default | `todo` | — |
 | 8 | 5.1/5.2/5.4 + 8.4 | Tactical markers, FOB areas, drag to move | `todo` | — |
@@ -37,8 +37,9 @@ upstream) · `merged` · `parked`.
 | 12 | 7.3–7.8 | Saved-target markers and sync | `todo` | — |
 | 13 | 1.x | Shared sessions | `todo` | — |
 
-Every branch is cut from `upstream/main` and carries only its own feature. None
-have been pushed or proposed.
+Every branch is cut from `upstream/main` and carries only its own feature, and
+is pushed to `origin` (the fork). None have been proposed upstream. Ready-to-use
+PR bodies are at the bottom of this file.
 
 Fixed along the way, on `feat/collab-rooms` rather than in any extraction branch:
 
@@ -212,3 +213,249 @@ the dev server serves the originals"* fails with `expected a local tile, got 404
 That is an artefact of this tree having no `maps/tiles/` (§6.1 removed them); the
 test assumes tiles are present, so it passes upstream but is fragile once 6.1
 lands.
+
+---
+---
+
+# PR bodies
+
+Copy-paste ready. One per branch, labelled with its `changes.md` item numbers.
+Add a new one here as each branch is cut. Read the *Before you post* note under
+each — some carry a decision that is yours, not the reviewer's.
+
+**Standing caveats that apply to all of them:** none of this has been verified at
+runtime (`playwright-core` is not installed and the app was never loaded), and
+every branch is based on `29fd2bafd`, which could not be re-verified as the
+current upstream tip because `git fetch upstream` is blocked in the session that
+produced them.
+
+---
+
+## §5.5 + §5.3 — `upstream-pr/map-visuals`
+
+*Before you post:* decide whether `drawRadiusRing`'s unused `fill`/`dash`
+options stay (they exist to serve the later FOB and saved-target rings) or get
+inlined down to what the main zone actually uses. Also decide whether the
+map-centre fallback is worth carrying at all.
+
+````markdown
+## Two small map visual additions
+
+Two independent, self-contained changes to what the map draws. Both are
+additive — nothing existing is rewritten.
+
+### 1. Main zone circle
+
+Maps can now draw their scoring area: the single contested circle players
+have to be inside to earn points.
+
+A map opts in by carrying a `mainZone` block in `maps/<map>.json`, in stored
+metres like every other coordinate in those files:
+
+```json
+"mainZone": {
+  "x": 7991,
+  "y": 7183,
+  "radius": 500
+}
+```
+
+Both shipped maps get one — Bakurani at 500 m, Ozeti at 550 m.
+
+It renders as a solid outlined circle with a label riding its top edge.
+Outline only, and solid rather than dashed, for two reasons: the zone covers
+a large part of the map, so a fill would tint everything under it, and a
+dashed line would read as one more of the dashed circles already on screen.
+
+It gets its own entry in the layers menu (`mapLayerMainZone`), on by default,
+and draws between the preset polygons and the pencil drawings so annotations
+stay on top of it.
+
+**Configuration.** `config/app.json` gains `map.rings.mainZone` with a
+fallback radius and the circle's colour:
+
+```json
+"rings": {
+  "mainZone": {
+    "radius": 500,
+    "color": "#82c596"
+  }
+}
+```
+
+`js/core/config.js` gains `getRingConfig(kind)` to read it, validating the
+radius is a positive finite number and the colour is a `#rrggbb` string,
+falling back to the built-in defaults otherwise. The helper is written to be
+kind-generic so other ring-shaped overlays can register themselves with one
+entry rather than duplicating the validation.
+
+**On the fallback.** If a map defines no `mainZone` block, the circle is
+drawn at the centre of that map's bounds at the configured default radius.
+That is a guess that puts the circle somewhere visible — it is explicitly
+*not* a measured position, and the code says so. Since both shipped maps
+define their own block, the fallback is not currently reached. Happy to drop
+it and simply draw nothing for maps without the key if you'd rather not carry
+a guess.
+
+**On the numbers.** The two radii are eyeballed, not measured in-game. They
+are in `maps/*.json` precisely so correcting them is a one-line data edit
+rather than a code change.
+
+### 2. Tower marker icon
+
+`assets/map-markers/tower.webp` now uses the game's own drill glyph instead
+of the previous placeholder, so the marker matches what the tower actually
+looks like in game.
+
+---
+
+### Notes for review
+
+- New user-facing string: `mapLayerMainZone`, added to `locales/en.json`.
+  Other locales fall through to English via `tr()`'s `DEFAULT_LANG` fallback
+  until someone translates it — say the word if you'd rather it land in every
+  locale file up front.
+- `drawRadiusRing` takes `fill` and `dash` options that `drawMainZone` does
+  not exercise (it passes `fill: false, dash: []`). They are there because
+  this primitive is meant to serve other ring overlays; if you'd prefer no
+  unused options, it can be inlined down to exactly what the main zone needs.
+- `js/map/renderer.js` gains four lines; upstream's layer ordering and
+  numbering are untouched.
+````
+
+---
+
+## §7.1 — `upstream-pr/remember-positions`
+
+*Before you post:* nothing outstanding. This is the smallest and cleanest of
+the branches.
+
+````markdown
+## Remember the artillery and target positions across a reload
+
+Coming back to the calculator currently means placing both points again from
+scratch. This stores them and puts them back.
+
+### How it works
+
+One `localStorage` key, `wardogs-map-points`, holding the two points and the
+map they belong to:
+
+```json
+{
+  "map": "bakurani",
+  "origin": { "x": 5.0, "y": 5.0 },
+  "target": { "x": 5.5, "y": 5.5 }
+}
+```
+
+The map id rides along because the coordinates are meaningless on a different
+map. On load, a mismatch drops the stored points rather than dropping the gun
+somewhere arbitrary on the new map.
+
+**One write site, not six.** `S.origin` and `S.target` are written from map
+drags, the coordinate inputs, saved-target restore, undo and coordinate
+search — but every one of those paths ends in `inputs()`, so a single hook
+there covers them all instead of a hook at each site.
+
+**Throttled.** `inputs()` runs on every frame of a drag, so the write trails
+the gesture by 300 ms rather than hitting `localStorage` a hundred times
+across it.
+
+**Restored before the clamp.** `loadMapPoints()` runs in `init()` immediately
+before the existing bounds clamp, so points restored from a previous visit
+are pulled inside the map's bounds exactly like any other point. Reads are
+validated (`Number.isFinite` on both axes) and both read and write are
+wrapped in `try`/`catch`, so corrupt or unavailable storage warns and
+continues rather than breaking startup.
+
+### Scope
+
++138 lines, no deletions, four files:
+
+```
+js/core/core.js              |   3 ++    (the storage key)
+js/features/saved-targets.js | 116 +++   (the four functions)
+js/main.js                   |   6 +++   (the load call)
+js/ui/inputs.js              |  13 +++   (the throttled write hook)
+```
+
+Nothing existing is modified — the four new functions are additive and the
+two call sites are insertions.
+````
+
+---
+
+## §3.1 — `upstream-pr/contour-layer`
+
+*Before you post:* the Korean string `"mapLayerContours": "등고선"` was
+**written by an AI agent, not taken from the fork** — the fork never added
+contour support to Korean at all (no locale key, no script tag), so the Korean
+page would silently fail to load the layer. Confirm or replace that translation
+before this goes out. Also decide whether to keep or drop the final test commit
+(`git reset --hard HEAD~1`).
+
+````markdown
+## Terrain contour layer
+
+Baked contour lines per map, drawn under everything that sits on the ground,
+toggled from the layers menu (`mapLayerContours`).
+
+### What is in here
+
+- `scripts/lib/contours.mjs` + `scripts/build-contours.mjs` — the generator:
+  marching-squares tracing over the terrain heightfield already in the repo.
+- `scripts/lib/terrain-source.mjs` — a shared reader for the raw terrain
+  chunks, so anything else that consumes them later reads them one way.
+- `data/terrain/{bakurani,ozeti}/contours.json` — the baked output
+  (54 levels for Bakurani, 20 for Ozeti).
+- `js/map/contours.js` — the runtime layer.
+- Layer toggle wiring, the `mapLayerContours` string in all 11 locales, and
+  the script tag on all 11 page shells.
+
+### About the generated data
+
+**~715 KB of generated JSON enters the tree** (Bakurani 547 KB, Ozeti
+168 KB). It is fully reproducible from data this repo already tracks:
+
+```
+npm run build-contours
+```
+
+runs offline against the existing `data/terrain/*/chunks/` and rewrites both
+files byte-for-byte identically. I verified this from a clean checkout of
+this branch — same md5s, ~30 seconds, no network and no external inputs. So
+the committed data is checkable rather than something you have to take on
+trust.
+
+If you would rather not carry the baked output in git at all, the generator
+stands on its own and this could become a build step instead — happy to
+restructure it that way.
+
+### Rendering
+
+Contours draw as Layer 2, immediately above the map tiles and below
+everything drawn on top of the ground, so the grid, zones, polygons,
+drawings and markers all stay legible over them. Upstream's existing layer
+comments are renumbered 2–8 → 3–9 accordingly; no other renderer behaviour
+changes.
+
+The layer round-trips through the existing layer-state persistence and the
+map-tools import/export with no extra work, because both handle the layer
+map generically.
+
+### Notes for review
+
+- The lines are unlabelled. `docs/terrain.md` gains a section explaining
+  why — the terrain datum offset means the absolute heights are not
+  trustworthy enough to print, while the *shape* they describe is.
+- `scripts/lib/terrain-source.mjs` is written to be shared with other
+  terrain consumers, so it is slightly more general than contours alone
+  strictly needs.
+- The final commit adds a unit test for the tracer plus a `test:scripts`
+  npm entry. Since the project has no test setup today, that commit is
+  deliberately last and separable — drop it if you would rather decide on a
+  testing convention on its own terms, and the rest of the branch is
+  unaffected.
+````
+
