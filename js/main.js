@@ -197,6 +197,10 @@ async function init() {
 
         renderSavedTargets();
 
+        if (typeof initGunsUI === 'function') {
+            initGunsUI();
+        }
+
     } catch (error) {
 
         console.error(
