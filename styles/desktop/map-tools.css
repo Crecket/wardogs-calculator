@@ -90,38 +90,23 @@
     width: 48px;
     height: 44px;
 
-    border-color: var(--border-light);
+    border-color: var(--border);
 
-    background:
-            color-mix(
-                    in srgb,
-                    var(--accent) 10%,
-                    transparent
-            );
-
-    color: var(--accent);
+    background: var(--input-bg);
+    color: var(--text);
 
     font-size: 21px;
 }
 
 .map-tool-button.map-tool-primary:hover {
-    background:
-            color-mix(
-                    in srgb,
-                    var(--accent) 18%,
-                    transparent
-            );
+    border-color: var(--border-light);
+    background: var(--input-hover-bg);
 }
 
 .map-tool-button.map-tool-primary.active {
-    border-color: var(--accent);
-
-    background:
-            color-mix(
-                    in srgb,
-                    var(--accent) 28%,
-                    transparent
-            );
+    border-color: var(--accent-border);
+    background: var(--active-bg);
+    color: var(--accent);
 }
 
 .map-tools-divider {
