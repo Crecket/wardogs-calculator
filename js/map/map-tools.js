@@ -65,6 +65,7 @@ const MAP_TOOL_STATE = {
         presetMarkers: true,
         drawings: true,
         userMarkers: true,
+        fobAreas: true,
         artillery: true,
         cursorCoords: true
     }
@@ -1014,6 +1015,7 @@ function buildMapLayers() {
                 ['zones', 'mapLayerZones'],
                 ['polygons', 'mapLayerPolygons'],
                 ['presetMarkers', 'mapLayerPresetMarkers'],
+                ['fobAreas', 'mapLayerFobAreas'],
                 ['artillery', 'mapLayerArtillery']
             ]
         },
@@ -1059,6 +1061,10 @@ function buildMapLayers() {
         userMarkers: `
             <path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z"/>
             <path d="m12 7 .9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3Z"/>
+        `,
+        fobAreas: `
+            <path d="M5 19V9l7-4 7 4v10Z"/>
+            <path d="M9.5 19v-5h5v5"/>
         `,
         artillery: `
             <circle cx="12" cy="12" r="6"/>
@@ -2073,6 +2079,46 @@ function placeMapToolMarker(point) {
     }
 
     draw();
+}
+
+/* =========================
+   FOB BUILD AREAS
+   ========================= */
+
+/*
+ * A FOB's build area is a square around the icon rather than a circle,
+ * and it belongs to the marker rather than being its own object: place
+ * the FOB icon and the area comes with it. That also means it needs no
+ * state, no erasing and no history of its own — the marker it hangs off
+ * already has all three.
+ */
+function drawFobBuildAreas() {
+
+    const config =
+        getRingConfig('fob');
+
+    if (!config) {
+        return;
+    }
+
+    MAP_TOOL_STATE.markers
+        .filter(
+            marker =>
+                marker.icon === 'fob' &&
+                marker.mapId ===
+                currentMapToolMapId()
+        )
+        .forEach(
+            marker => {
+
+                drawRadiusSquare(
+                    marker.x,
+                    marker.y,
+                    config.size,
+                    config.color
+                );
+            }
+        );
 }
 
 function findPencilPathAtCanvasPoint(
