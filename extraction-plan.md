@@ -219,38 +219,28 @@ lands.
 
 # PR bodies
 
-Copy-paste ready. One per branch, labelled with its `changes.md` item numbers.
-Add a new one here as each branch is cut. Read the *Before you post* note under
-each — some carry a decision that is yours, not the reviewer's.
+Copy-paste ready, one per branch. Add a new one as each branch is cut.
 
-**Standing caveats that apply to all of them:** none of this has been verified at
-runtime (`playwright-core` is not installed and the app was never loaded), and
-every branch is based on `29fd2bafd`, which could not be re-verified as the
-current upstream tip because `git fetch upstream` is blocked in the session that
-produced them.
+None of these have been verified at runtime. All are based on `29fd2bafd`.
 
 ---
 
 ## §5.5 + §5.3 — `upstream-pr/map-visuals`
 
-*Before you post:* decide whether `drawRadiusRing`'s unused `fill`/`dash`
-options stay (they exist to serve the later FOB and saved-target rings) or get
-inlined down to what the main zone actually uses. Also decide whether the
-map-centre fallback is worth carrying at all.
+Decide first: whether `drawRadiusRing`'s unused `fill`/`dash` options stay, and
+whether the map-centre fallback is worth carrying.
 
 ````markdown
-## Two small map visual additions
+## Main zone circle and tower marker icon
 
-Two independent, self-contained changes to what the map draws. Both are
-additive — nothing existing is rewritten.
+Two unrelated map visual changes. Both are additive.
 
-### 1. Main zone circle
+### Main zone circle
 
-Maps can now draw their scoring area: the single contested circle players
-have to be inside to earn points.
+Draws the scoring area: one circle per map.
 
-A map opts in by carrying a `mainZone` block in `maps/<map>.json`, in stored
-metres like every other coordinate in those files:
+A map opts in with a `mainZone` block in `maps/<map>.json`, in stored metres
+like the other coordinates in those files:
 
 ```json
 "mainZone": {
@@ -260,86 +250,52 @@ metres like every other coordinate in those files:
 }
 ```
 
-Both shipped maps get one — Bakurani at 500 m, Ozeti at 550 m.
+Bakurani gets 500 m, Ozeti 550 m. Both radii are eyeballed, not measured
+in-game. They live in the map data so correcting them is a data edit.
 
-It renders as a solid outlined circle with a label riding its top edge.
-Outline only, and solid rather than dashed, for two reasons: the zone covers
-a large part of the map, so a fill would tint everything under it, and a
-dashed line would read as one more of the dashed circles already on screen.
+Renders as a solid outlined circle, label on the top edge. No fill, because
+the zone covers a large part of the map. Not dashed, because there are
+already several dashed circles on screen.
 
-It gets its own entry in the layers menu (`mapLayerMainZone`), on by default,
-and draws between the preset polygons and the pencil drawings so annotations
-stay on top of it.
+New layer-menu entry `mapLayerMainZone`, on by default, drawn between the
+preset polygons and the pencil drawings.
 
-**Configuration.** `config/app.json` gains `map.rings.mainZone` with a
-fallback radius and the circle's colour:
+`config/app.json` gains `map.rings.mainZone` for the fallback radius and the
+colour. `js/core/config.js` gains `getRingConfig(kind)`, which validates the
+radius is a positive finite number and the colour is `#rrggbb`, falling back
+to the built-in defaults.
 
-```json
-"rings": {
-  "mainZone": {
-    "radius": 500,
-    "color": "#82c596"
-  }
-}
-```
+If a map has no `mainZone` block, the circle falls back to the centre of the
+map bounds at the default radius. That is a guess, not a measured position.
+Neither shipped map reaches it. Can be dropped in favour of drawing nothing.
 
-`js/core/config.js` gains `getRingConfig(kind)` to read it, validating the
-radius is a positive finite number and the colour is a `#rrggbb` string,
-falling back to the built-in defaults otherwise. The helper is written to be
-kind-generic so other ring-shaped overlays can register themselves with one
-entry rather than duplicating the validation.
+### Tower marker icon
 
-**On the fallback.** If a map defines no `mainZone` block, the circle is
-drawn at the centre of that map's bounds at the configured default radius.
-That is a guess that puts the circle somewhere visible — it is explicitly
-*not* a measured position, and the code says so. Since both shipped maps
-define their own block, the fallback is not currently reached. Happy to drop
-it and simply draw nothing for maps without the key if you'd rather not carry
-a guess.
+`assets/map-markers/tower.webp` now uses the game's drill glyph instead of
+the placeholder.
 
-**On the numbers.** The two radii are eyeballed, not measured in-game. They
-are in `maps/*.json` precisely so correcting them is a one-line data edit
-rather than a code change.
+### Review notes
 
-### 2. Tower marker icon
-
-`assets/map-markers/tower.webp` now uses the game's own drill glyph instead
-of the previous placeholder, so the marker matches what the tower actually
-looks like in game.
-
----
-
-### Notes for review
-
-- New user-facing string: `mapLayerMainZone`, added to `locales/en.json`.
-  Other locales fall through to English via `tr()`'s `DEFAULT_LANG` fallback
-  until someone translates it — say the word if you'd rather it land in every
-  locale file up front.
-- `drawRadiusRing` takes `fill` and `dash` options that `drawMainZone` does
-  not exercise (it passes `fill: false, dash: []`). They are there because
-  this primitive is meant to serve other ring overlays; if you'd prefer no
-  unused options, it can be inlined down to exactly what the main zone needs.
-- `js/map/renderer.js` gains four lines; upstream's layer ordering and
-  numbering are untouched.
+- `mapLayerMainZone` is added to `locales/en.json` only. Other locales fall
+  back to English via `tr()`. Can add it everywhere if you prefer.
+- `drawRadiusRing` has `fill` and `dash` options that `drawMainZone` does not
+  use. They are there for future ring overlays. Can be inlined out.
+- `js/map/renderer.js` gains four lines. Layer ordering and numbering are
+  unchanged.
 ````
 
 ---
 
 ## §7.1 — `upstream-pr/remember-positions`
 
-*Before you post:* nothing outstanding. This is the smallest and cleanest of
-the branches.
+Nothing outstanding.
 
 ````markdown
 ## Remember the artillery and target positions across a reload
 
-Coming back to the calculator currently means placing both points again from
-scratch. This stores them and puts them back.
+Both points currently have to be placed again on every visit.
 
-### How it works
-
-One `localStorage` key, `wardogs-map-points`, holding the two points and the
-map they belong to:
+One `localStorage` key, `wardogs-map-points`:
 
 ```json
 {
@@ -349,113 +305,76 @@ map they belong to:
 }
 ```
 
-The map id rides along because the coordinates are meaningless on a different
-map. On load, a mismatch drops the stored points rather than dropping the gun
-somewhere arbitrary on the new map.
+The map id is stored because the coordinates mean nothing on another map. A
+mismatch on load drops the stored points instead of placing the gun somewhere
+arbitrary.
 
-**One write site, not six.** `S.origin` and `S.target` are written from map
-drags, the coordinate inputs, saved-target restore, undo and coordinate
-search — but every one of those paths ends in `inputs()`, so a single hook
-there covers them all instead of a hook at each site.
+`S.origin` and `S.target` are written from six places (map drags, coordinate
+inputs, saved-target restore, undo, coordinate search), but all of them end in
+`inputs()`, so the write hooks there once rather than at each site. `inputs()`
+runs on every frame of a drag, so the write is throttled by 300 ms.
 
-**Throttled.** `inputs()` runs on every frame of a drag, so the write trails
-the gesture by 300 ms rather than hitting `localStorage` a hundred times
-across it.
+`loadMapPoints()` runs in `init()` just before the existing bounds clamp, so
+restored points are clamped like any other. Reads are validated and both read
+and write are wrapped in try/catch.
 
-**Restored before the clamp.** `loadMapPoints()` runs in `init()` immediately
-before the existing bounds clamp, so points restored from a previous visit
-are pulled inside the map's bounds exactly like any other point. Reads are
-validated (`Number.isFinite` on both axes) and both read and write are
-wrapped in `try`/`catch`, so corrupt or unavailable storage warns and
-continues rather than breaking startup.
-
-### Scope
-
-+138 lines, no deletions, four files:
++138 lines, no deletions:
 
 ```
-js/core/core.js              |   3 ++    (the storage key)
-js/features/saved-targets.js | 116 +++   (the four functions)
-js/main.js                   |   6 +++   (the load call)
-js/ui/inputs.js              |  13 +++   (the throttled write hook)
+js/core/core.js              |   3 ++
+js/features/saved-targets.js | 116 +++
+js/main.js                   |   6 +++
+js/ui/inputs.js              |  13 +++
 ```
-
-Nothing existing is modified — the four new functions are additive and the
-two call sites are insertions.
 ````
 
 ---
 
 ## §3.1 — `upstream-pr/contour-layer`
 
-*Before you post:* the Korean string `"mapLayerContours": "등고선"` was
-**written by an AI agent, not taken from the fork** — the fork never added
-contour support to Korean at all (no locale key, no script tag), so the Korean
-page would silently fail to load the layer. Confirm or replace that translation
-before this goes out. Also decide whether to keep or drop the final test commit
-(`git reset --hard HEAD~1`).
+Decide first: the Korean string `"mapLayerContours": "등고선"` was written by an
+AI agent, not taken from the fork. The fork never added contour support to
+Korean at all, so that page would have failed to load the layer. Confirm or
+replace it. Also decide whether to keep the final test commit.
 
 ````markdown
 ## Terrain contour layer
 
-Baked contour lines per map, drawn under everything that sits on the ground,
-toggled from the layers menu (`mapLayerContours`).
+Baked contour lines per map, toggled from the layers menu.
 
-### What is in here
+- `scripts/lib/contours.mjs` + `scripts/build-contours.mjs`: marching-squares
+  tracing over the terrain heightfield already in the repo.
+- `scripts/lib/terrain-source.mjs`: shared reader for the raw terrain chunks.
+- `data/terrain/{bakurani,ozeti}/contours.json`: the baked output, 54 levels
+  for Bakurani and 20 for Ozeti.
+- `js/map/contours.js`: the runtime layer.
+- Layer toggle, `mapLayerContours` in all 11 locales, script tag on all 11
+  page shells.
 
-- `scripts/lib/contours.mjs` + `scripts/build-contours.mjs` — the generator:
-  marching-squares tracing over the terrain heightfield already in the repo.
-- `scripts/lib/terrain-source.mjs` — a shared reader for the raw terrain
-  chunks, so anything else that consumes them later reads them one way.
-- `data/terrain/{bakurani,ozeti}/contours.json` — the baked output
-  (54 levels for Bakurani, 20 for Ozeti).
-- `js/map/contours.js` — the runtime layer.
-- Layer toggle wiring, the `mapLayerContours` string in all 11 locales, and
-  the script tag on all 11 page shells.
+### Generated data
 
-### About the generated data
+This adds ~715 KB of generated JSON (Bakurani 547 KB, Ozeti 168 KB).
 
-**~715 KB of generated JSON enters the tree** (Bakurani 547 KB, Ozeti
-168 KB). It is fully reproducible from data this repo already tracks:
-
-```
-npm run build-contours
-```
-
-runs offline against the existing `data/terrain/*/chunks/` and rewrites both
-files byte-for-byte identically. I verified this from a clean checkout of
-this branch — same md5s, ~30 seconds, no network and no external inputs. So
-the committed data is checkable rather than something you have to take on
-trust.
-
-If you would rather not carry the baked output in git at all, the generator
-stands on its own and this could become a build step instead — happy to
-restructure it that way.
+`npm run build-contours` regenerates it offline from the `data/terrain/*/chunks/`
+already tracked here. Verified from a clean checkout of this branch: identical
+md5s, about 30 seconds, no network. If you would rather not track the output,
+the generator stands alone and this can become a build step.
 
 ### Rendering
 
-Contours draw as Layer 2, immediately above the map tiles and below
-everything drawn on top of the ground, so the grid, zones, polygons,
-drawings and markers all stay legible over them. Upstream's existing layer
-comments are renumbered 2–8 → 3–9 accordingly; no other renderer behaviour
-changes.
+Contours draw as Layer 2, above the tiles and below everything else, so grid,
+zones, polygons, drawings and markers stay legible over them. Upstream's layer
+comments renumber 2-8 to 3-9. No other renderer behaviour changes.
 
 The layer round-trips through the existing layer-state persistence and the
-map-tools import/export with no extra work, because both handle the layer
-map generically.
+map-tools import/export without extra work.
 
-### Notes for review
+### Review notes
 
-- The lines are unlabelled. `docs/terrain.md` gains a section explaining
-  why — the terrain datum offset means the absolute heights are not
-  trustworthy enough to print, while the *shape* they describe is.
-- `scripts/lib/terrain-source.mjs` is written to be shared with other
-  terrain consumers, so it is slightly more general than contours alone
-  strictly needs.
-- The final commit adds a unit test for the tracer plus a `test:scripts`
-  npm entry. Since the project has no test setup today, that commit is
-  deliberately last and separable — drop it if you would rather decide on a
-  testing convention on its own terms, and the rest of the branch is
-  unaffected.
+- The lines are unlabelled. `docs/terrain.md` explains why: the terrain datum
+  offset makes the absolute heights untrustworthy, while the shape they
+  describe is fine.
+- The last commit adds a unit test for the tracer and a `test:scripts` entry.
+  The project has no test setup today, so that commit is last and separable.
+  Drop it if you would rather decide on testing separately.
 ````
-
