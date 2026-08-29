@@ -85,6 +85,122 @@ function persistSavedTargets() {
     );
 }
 
+/* =========================
+   ARTILLERY / TARGET POSITIONS
+   ========================= */
+
+/*
+ * Where the two points sit is worth keeping across a reload: coming back
+ * to a gun laid on the wrong side of the map means placing it again every
+ * single time.
+ *
+ * The map id rides along because the coordinates are meaningless on a
+ * different map, and a mismatch drops them rather than dropping the gun
+ * somewhere arbitrary.
+ */
+const MAP_POINTS_WRITE_DELAY_MS = 300;
+
+let mapPointsWriteTimer = null;
+
+function persistMapPoints() {
+
+    /*
+     * inputs() runs on every frame of a drag, so the write trails the
+     * gesture instead of hitting localStorage a hundred times across it.
+     */
+    if (mapPointsWriteTimer) {
+        return;
+    }
+
+    mapPointsWriteTimer = setTimeout(
+        () => {
+            mapPointsWriteTimer = null;
+            writeMapPoints();
+        },
+        MAP_POINTS_WRITE_DELAY_MS
+    );
+}
+
+function writeMapPoints() {
+
+    try {
+        localStorage.setItem(
+            MAP_POINTS_KEY,
+            JSON.stringify({
+                map: S.map,
+                origin: {
+                    x: S.origin.x,
+                    y: S.origin.y
+                },
+                target: {
+                    x: S.target.x,
+                    y: S.target.y
+                }
+            })
+        );
+    } catch (error) {
+        console.warn(
+            'Failed to save map points:',
+            error
+        );
+    }
+}
+
+function readStoredPoint(value) {
+
+    return (
+        value &&
+        Number.isFinite(Number(value.x)) &&
+        Number.isFinite(Number(value.y))
+    )
+        ? {
+            x: Number(value.x),
+            y: Number(value.y)
+        }
+        : null;
+}
+
+function loadMapPoints() {
+
+    try {
+        const raw =
+            localStorage.getItem(
+                MAP_POINTS_KEY
+            );
+
+        if (!raw) {
+            return;
+        }
+
+        const parsed =
+            JSON.parse(raw);
+
+        if (parsed?.map !== S.map) {
+            return;
+        }
+
+        const origin =
+            readStoredPoint(parsed.origin);
+
+        const target =
+            readStoredPoint(parsed.target);
+
+        if (origin) {
+            S.origin = origin;
+        }
+
+        if (target) {
+            S.target = target;
+        }
+
+    } catch (error) {
+        console.warn(
+            'Failed to load map points:',
+            error
+        );
+    }
+}
+
 function getSaveArtilleryPreference() {
 
     return (
