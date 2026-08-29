@@ -27,7 +27,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 2 | 5.3 | Main zone circle | `branch` | `upstream-pr/map-visuals` |
 | 3 | 7.1 | Positions survive a reload | `branch` | `upstream-pr/remember-positions` |
 | 4 | 3.1 | Contour layer | `branch` | `upstream-pr/contour-layer` |
-| 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | `wip` | `upstream-pr/terrain-range-ring` |
+| 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | `branch` | `upstream-pr/terrain-range-ring` |
 | 6 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
 | 7 | 6.3 + 6.4 | `.env` config, analytics off by default | `todo` | — |
 | 8 | 5.1/5.2/5.4 + 8.4 | Tactical markers, FOB areas, drag to move | `todo` | — |
@@ -377,4 +377,74 @@ map-tools import/export without extra work.
 - The last commit adds a unit test for the tracer and a `test:scripts` entry.
   The project has no test setup today, so that commit is last and separable.
   Drop it if you would rather decide on testing separately.
+````
+
+---
+
+## §3.2 – §3.4 + §3.7 — `upstream-pr/terrain-range-ring`
+
+Decide first: this one deletes and replaces upstream code in `draw()`, unlike
+the others. Nobody has seen it render. If any branch is worth loading locally
+before proposing, it is this one.
+
+Two loose ends: `projectile-model.json`'s `sourceNote` and the matching string
+in `fit-ballistics.mjs` cite a design doc that is not in the branch. Rewriting
+them would break byte-reproducibility of the committed data, so they were left.
+Also, `scripts/lib/terrain-source.mjs` is shared with `upstream-pr/contour-layer`
+and its header comment differs by one line between the two branches.
+
+````markdown
+## Solve the max range ring against the terrain
+
+The max range ring currently assumes flat ground. Shooting downhill reaches
+further than the circle shows, uphill less. This solves the ring against a
+baked heightfield instead.
+
+### What is in here
+
+- `scripts/lib/ballistics.mjs` + `scripts/fit-ballistics.mjs`: a vacuum
+  trajectory model fitted from the shipped firing tables, giving max range as
+  a function of height difference.
+- `data/ballistics/projectile-model.json`: the fitted model.
+- `scripts/lib/heightfield.mjs` + `scripts/build-heightfield.mjs`: bakes a
+  coarse height grid per map.
+- `data/terrain/{bakurani,ozeti}/heightfield.{bin,json}`: 370 KB total.
+- `scripts/lib/terrain-source.mjs`: shared reader for the raw terrain chunks.
+- `js/map/heightfield.js`: runtime loader and sampling.
+- `js/map/range-ring.js`: the solve and the drawing.
+
+Both generators reproduce the committed artifacts byte-identically (except a
+`generatedAt` timestamp) from data already tracked here.
+
+### Rendering change
+
+This is the one part that modifies existing code. `draw()` in
+`js/map/renderer.js` had the max-range circle inline under
+`/* Layer 5: artillery range. */`. That block is replaced with a call to
+`drawMaxRangeRing(a, rangePx, v.scale)`; `a`, `rangePx` and `v.scale` were
+already computed on the line above.
+
+The ring is drawn as two outlines: the flat-ground range, and the extra reach
+where the terrain gives it. When there is no heightfield, no fitted model, or
+the map is unsupported, `drawMaxRangeRing` draws exactly the circle it draws
+today, with the same canvas calls.
+
+The **min** range circle is untouched and stays inline. It is deliberately not
+height-corrected.
+
+### Safety property
+
+With the heightfield forced flat, every bearing returns the declared max range
+to within 9e-5 m, so the terrain solve cannot quietly shrink the ring relative
+to what the tables say.
+
+### Review notes
+
+- No new user-facing strings. The gain band is unlabelled.
+- No CSS. Canvas only.
+- `loadProjectileModel()` and `PROJECTILE_MODEL` are exported from
+  `range-ring.js` and load in `init()`.
+- The last commit adds unit tests and a browser test plus a `test:scripts`
+  entry. The project has no test setup today, so that commit is last and
+  separable.
 ````
