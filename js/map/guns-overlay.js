@@ -22,6 +22,58 @@ function gunShouldDraw(gun) {
 }
 
 /*
+ * Nearest grabbable gun to a point, or null. `distanceTo` decides the
+ * space — world units for the desktop drag, screen pixels for touch — so
+ * the two callers share one rule about which guns can be picked up.
+ *
+ * The active gun is measured first and beaten only strictly, so a tie
+ * keeps the current selection instead of swapping it for a neighbour. A
+ * hidden gun is not a candidate: you cannot grab what is not drawn.
+ */
+function gunNearest(distanceTo, threshold) {
+    const active = activeGun();
+    const activeDistance = distanceTo(active);
+
+    let best = activeDistance <= threshold ? active : null;
+    let bestDistance = best ? activeDistance : threshold;
+
+    for (const gun of S.guns) {
+        if (gun.id === active.id || !gunShouldDraw(gun)) {
+            continue;
+        }
+
+        const distance = distanceTo(gun);
+
+        if (distance < bestDistance) {
+            best = gun;
+            bestDistance = distance;
+        }
+    }
+
+    return best;
+}
+
+function gunAtPoint(point, threshold) {
+    return gunNearest(
+        gun => Math.hypot(
+            point.x - gun.position.x,
+            point.y - gun.position.y
+        ),
+        threshold
+    );
+}
+
+function gunAtScreen(x, y, radiusPx) {
+    return gunNearest(
+        gun => {
+            const at = toScreen(gun.position.x, gun.position.y);
+            return Math.hypot(x - at.x, y - at.y);
+        },
+        radiusPx
+    );
+}
+
+/*
  * The max range ring itself is range-ring.js's job — it is terrain-aware and
  * memoised there, and takes the gun so each one solves against its own
  * ground. Only the minimum-range circle is drawn here.
