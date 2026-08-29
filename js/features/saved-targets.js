@@ -431,18 +431,30 @@ function savedTargetTransferStatus(
     );
 }
 
+function savedTargetOrigin(target) {
+
+    const x =
+        Number(target?.origin?.x);
+
+    const y =
+        Number(target?.origin?.y);
+
+    if (
+        !Number.isFinite(x) ||
+        !Number.isFinite(y)
+    ) {
+        return null;
+    }
+
+    return {
+        x,
+        y
+    };
+}
+
 function savedTargetForExport(target) {
-    const saveArtillery =
-        Boolean(
-            target.saveArtillery &&
-            target.origin &&
-            Number.isFinite(
-                Number(target.origin.x)
-            ) &&
-            Number.isFinite(
-                Number(target.origin.y)
-            )
-        );
+    const origin =
+        savedTargetOrigin(target);
 
     return {
         name:
@@ -452,20 +464,12 @@ function savedTargetForExport(target) {
                 : '',
         x: Number(target.x),
         y: Number(target.y),
-        saveArtillery,
-        origin:
-            saveArtillery
-                ? {
-                    x:
-                        Number(
-                            target.origin.x
-                        ),
-                    y:
-                        Number(
-                            target.origin.y
-                        )
-                }
-                : null
+        saveArtillery:
+            Boolean(
+                target.saveArtillery &&
+                origin
+            ),
+        origin
     };
 }
 
@@ -600,17 +604,8 @@ function normalizeImportedSavedTarget(
         return null;
     }
 
-    const hasOrigin =
-        Boolean(
-            target.saveArtillery &&
-            target.origin &&
-            Number.isFinite(
-                Number(target.origin.x)
-            ) &&
-            Number.isFinite(
-                Number(target.origin.y)
-            )
-        );
+    const origin =
+        savedTargetOrigin(target);
 
     return {
         id: generateTargetId(),
@@ -621,20 +616,12 @@ function normalizeImportedSavedTarget(
             ),
         x: Number(target.x),
         y: Number(target.y),
-        saveArtillery: hasOrigin,
-        origin:
-            hasOrigin
-                ? {
-                    x:
-                        Number(
-                            target.origin.x
-                        ),
-                    y:
-                        Number(
-                            target.origin.y
-                        )
-                }
-                : null
+        saveArtillery:
+            Boolean(
+                target.saveArtillery &&
+                origin
+            ),
+        origin
     };
 }
 
@@ -815,17 +802,14 @@ function saveCurrentTarget() {
 
         saveArtillery,
 
-        origin:
-            saveArtillery
-                ? {
-                    x: Number(
-                        S.origin.x
-                    ),
-                    y: Number(
-                        S.origin.y
-                    )
-                }
-                : null
+        origin: {
+            x: Number(
+                S.origin.x
+            ),
+            y: Number(
+                S.origin.y
+            )
+        }
     };
 
     savedTargets.push(
@@ -909,6 +893,39 @@ function editTargetName(id) {
     renderSavedTargets();
 }
 
+function toggleTargetArtillery(id) {
+
+    const target =
+        savedTargets.find(
+            item =>
+                item.id === id
+        );
+
+    if (!target) {
+        return;
+    }
+
+    const next =
+        !target.saveArtillery;
+
+    if (
+        next &&
+        !savedTargetOrigin(target)
+    ) {
+
+        target.origin = {
+            x: Number(S.origin.x),
+            y: Number(S.origin.y)
+        };
+    }
+
+    target.saveArtillery = next;
+
+    persistSavedTargets();
+
+    renderSavedTargets();
+}
+
 function restoreTarget(target) {
 
     if (!target) {
@@ -922,17 +939,13 @@ function restoreTarget(target) {
         y: Number(target.y)
     };
 
-    if (
-        target.saveArtillery &&
-        target.origin &&
-        typeof target.origin.x === 'number' &&
-        typeof target.origin.y === 'number'
-    ) {
+    const origin =
+        target.saveArtillery
+            ? savedTargetOrigin(target)
+            : null;
 
-        S.origin = {
-            x: Number(target.origin.x),
-            y: Number(target.origin.y)
-        };
+    if (origin) {
+        S.origin = origin;
     }
 
     clamp(S.target);
@@ -946,10 +959,7 @@ function restoreTarget(target) {
             'target-restored',
             {
                 withArtillery:
-                    Boolean(
-                        target.saveArtillery &&
-                        target.origin
-                    )
+                    Boolean(origin)
             }
         );
     }
@@ -957,6 +967,15 @@ function restoreTarget(target) {
     inputs();
     renderSavedTargets();
 }
+
+const SAVED_TARGET_ARTILLERY_ICON =
+    '<svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13"' +
+    ' fill="none" stroke="currentColor" stroke-width="1.9"' +
+    ' stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M4 19h9"/>' +
+    '<path d="M7 19 20 6"/>' +
+    '<circle cx="6.6" cy="19" r="2"/>' +
+    '</svg>';
 
 function renderSavedTargets() {
 
@@ -1070,6 +1089,14 @@ function renderSavedTargets() {
             name.textContent =
                 target.name;
 
+            const meta =
+                document.createElement(
+                    'div'
+                );
+
+            meta.className =
+                'saved-target-meta';
+
             const coords =
                 document.createElement(
                     'span'
@@ -1081,12 +1108,71 @@ function renderSavedTargets() {
             coords.textContent =
                 `X ${formatGameCoordinate(target.x)} · Y ${formatGameCoordinate(target.y)}`;
 
+            const carriesArtillery =
+                Boolean(
+                    target.saveArtillery &&
+                    savedTargetOrigin(target)
+                );
+
+            const artillery =
+                document.createElement(
+                    'button'
+                );
+
+            artillery.type =
+                'button';
+
+            artillery.className =
+                carriesArtillery
+                    ? 'saved-target-artillery with-artillery'
+                    : 'saved-target-artillery target-only';
+
+            artillery.innerHTML =
+                SAVED_TARGET_ARTILLERY_ICON;
+
+            artillery.title =
+                carriesArtillery
+                    ? tr('targetWithArtilleryHint')
+                    : tr('targetOnlyHint');
+
+            artillery.setAttribute(
+                'aria-pressed',
+                String(carriesArtillery)
+            );
+
+            artillery.setAttribute(
+                'aria-label',
+                carriesArtillery
+                    ? tr('targetWithArtillery')
+                    : tr('targetOnly')
+            );
+
+            artillery.addEventListener(
+                'click',
+                event => {
+
+                    event.stopPropagation();
+
+                    toggleTargetArtillery(
+                        target.id
+                    );
+                }
+            );
+
+            meta.appendChild(
+                coords
+            );
+
+            meta.appendChild(
+                artillery
+            );
+
             info.appendChild(
                 name
             );
 
             info.appendChild(
-                coords
+                meta
             );
 
             const actions =

@@ -8,7 +8,7 @@
     top: 14px;
     right: 14px;
 
-    width: 300px;
+    width: 340px;
 
     max-width: calc(100% - 28px);
 
@@ -238,6 +238,16 @@
     font-weight: 600;
 }
 
+.saved-target-meta {
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+}
+
 .saved-target-coords {
     color: var(--muted);
 
@@ -252,6 +262,48 @@
     overflow: hidden;
 
     text-overflow: ellipsis;
+}
+
+.saved-target-artillery {
+    width: 18px;
+    min-width: 18px;
+
+    height: 18px;
+    min-height: 18px;
+
+    margin: 0;
+    padding: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border: 1px solid transparent;
+
+    border-radius: 4px;
+
+    background: none;
+
+    cursor: pointer;
+}
+
+.saved-target-artillery:hover {
+    border-color: var(--accent-border);
+
+    background: var(--input-hover-bg);
+}
+
+.saved-target-artillery.with-artillery {
+    color: var(--accent);
+}
+
+.saved-target-artillery.target-only {
+    color: var(--muted);
+
+    opacity: .45;
 }
 
 
