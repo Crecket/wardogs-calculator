@@ -29,8 +29,8 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 11 | 4.1 | Time of flight | [`pr` #15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | `upstream-pr/flight-time` (stacks on #11) |
 | 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | [`pr` #16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | `upstream-pr/fob-build-areas` (stacks on #9) |
 | 13 | 6.1 + 6.2 | Tiles from object storage | `todo` | — |
-| 14 | 2.1–2.4, 2.6, 2.8, 2.9 | Multiple guns | `branch` | `upstream-pr/multiple-guns` (on `integration/all-prs`) |
-| 15 | 7.3–7.8 | Saved-target markers and sync | `todo` | — |
+| 14 | 2.1–2.4, 2.6, 2.8, 2.9 | Multiple guns | [`pr` #17](https://github.com/apollyon-sys/wardogs-calculator/pull/17) | `upstream-pr/multiple-guns` (on `integration/all-prs`) |
+| 15 | 7.3–7.8 | Saved-target markers and sync | `wip` | `upstream-pr/saved-target-markers` (on `upstream-pr/multiple-guns`) |
 | 16 | 1.x | Shared sessions | `todo` | — |
 
 Item 7 is not an extraction at all: it is a bug that exists in `upstream/main` unchanged, found while working here. Fixed on `feat/collab-rooms` in `caa9d9a2b`; the same 12 lines apply upstream as a standalone PR. `upstream/main`'s `markerButton` handler never calls `setMapTool()`, so a second click only closes the picker and leaves the tool armed. The `pencilButton` handler has the same shape and is not yet fixed.
@@ -470,9 +470,11 @@ Only en has the new mapLayerFobAreas string. The other eleven locales are also s
 
 ---
 
-## §2.1–2.4, 2.6, 2.8, 2.9 — `upstream-pr/multiple-guns` — no PR yet
+## §2.1–2.4, 2.6, 2.8, 2.9 — `upstream-pr/multiple-guns` — [PR #17](https://github.com/apollyon-sys/wardogs-calculator/pull/17)
 
-**Not proposed: the user is adding screenshots first.** Branched from `integration/all-prs`, so it assumes #8–#16 are all merged. 37 files, +1778/-140.
+Branched from `integration/all-prs`, so it assumes #8–#16 are all merged. 37 files, +1778/-140.
+
+Decision recorded: the Playwright browser tests stay, on this branch and on #11 and #15. They remain in their own final commits, so the testing-convention question can still be settled on whichever lands first.
 
 The 2.1 property held exactly: **`js/core/core.js` diff is empty.** `installGunAccessors()` runs at load, seeds gun 1 from the literals core.js already holds, then replaces `S.origin` and `S.weapon` with `Object.defineProperty` accessors onto `activeGun()`. Every existing reader is untouched.
 
