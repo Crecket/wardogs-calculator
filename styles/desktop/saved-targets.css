@@ -170,6 +170,14 @@
     border-color: var(--accent-border);
 }
 
+.saved-target.active.partial {
+    border-style: dashed;
+}
+
+.saved-target.partial .saved-target-artillery.with-artillery {
+    color: #d7a452;
+}
+
 
 /* =========================
    SAVED TARGET INDEX

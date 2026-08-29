@@ -24,32 +24,84 @@ const SAVED_TARGET_MATCH_EPSILON = 1e-6;
  * target actually sits, never tracked separately, so every writer of
  * S.target keeps the highlight honest without having to know about it.
  */
-function activeSavedTargetId() {
+function savedTargetPointMatches(point, x, y) {
 
-    if (
-        !S.target ||
-        !Number.isFinite(S.target.x) ||
-        !Number.isFinite(S.target.y)
-    ) {
-        return null;
-    }
+    return (
+        Boolean(point) &&
+        Number.isFinite(point.x) &&
+        Number.isFinite(point.y) &&
+        Math.abs(
+            Number(x) -
+            point.x
+        ) < SAVED_TARGET_MATCH_EPSILON &&
+        Math.abs(
+            Number(y) -
+            point.y
+        ) < SAVED_TARGET_MATCH_EPSILON
+    );
+}
+
+function savedTargetMatchState() {
 
     const match =
         savedTargets.find(
             target =>
-                Math.abs(
-                    Number(target.x) -
-                    S.target.x
-                ) < SAVED_TARGET_MATCH_EPSILON &&
-                Math.abs(
-                    Number(target.y) -
-                    S.target.y
-                ) < SAVED_TARGET_MATCH_EPSILON
+                savedTargetPointMatches(
+                    S.target,
+                    target.x,
+                    target.y
+                )
         );
 
-    return match
-        ? match.id
-        : null;
+    if (!match) {
+        return {
+            id: null,
+            level: null
+        };
+    }
+
+    const origin =
+        match.saveArtillery
+            ? savedTargetOrigin(match)
+            : null;
+
+    const full =
+        !origin ||
+        savedTargetPointMatches(
+            S.origin,
+            origin.x,
+            origin.y
+        );
+
+    return {
+        id: match.id,
+        level:
+            full
+                ? 'full'
+                : 'partial'
+    };
+}
+
+function activeSavedTargetId() {
+    return savedTargetMatchState().id;
+}
+
+function applySavedTargetRowState(item, state) {
+
+    const isMatch =
+        item.dataset.targetId ===
+        state.id;
+
+    item.classList.toggle(
+        'active',
+        isMatch
+    );
+
+    item.classList.toggle(
+        'partial',
+        isMatch &&
+        state.level === 'partial'
+    );
 }
 
 /*
@@ -67,17 +119,16 @@ function refreshSavedTargetHighlight() {
         return;
     }
 
-    const activeId =
-        activeSavedTargetId();
+    const state =
+        savedTargetMatchState();
 
     container
         .querySelectorAll('.saved-target')
         .forEach(
             item => {
-                item.classList.toggle(
-                    'active',
-                    item.dataset.targetId ===
-                    activeId
+                applySavedTargetRowState(
+                    item,
+                    state
                 );
             }
         );
@@ -1024,8 +1075,8 @@ function renderSavedTargets() {
         return;
     }
 
-    const activeId =
-        activeSavedTargetId();
+    const state =
+        savedTargetMatchState();
 
     savedTargets.forEach(
         (target, index) => {
@@ -1040,15 +1091,6 @@ function renderSavedTargets() {
 
             item.dataset.targetId =
                 target.id;
-
-            if (
-                target.id ===
-                activeId
-            ) {
-                item.classList.add(
-                    'active'
-                );
-            }
 
             item.addEventListener(
                 'click',
@@ -1305,6 +1347,11 @@ function renderSavedTargets() {
 
             item.appendChild(
                 actions
+            );
+
+            applySavedTargetRowState(
+                item,
+                state
             );
 
             container.appendChild(
