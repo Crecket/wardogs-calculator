@@ -14,6 +14,7 @@ function normalizeMarkerAsset(
         return {
             id,
             path: asset,
+            labelKey: null,
             width: 32,
             height: 32,
             anchorX: 0.5,
@@ -36,6 +37,12 @@ function normalizeMarkerAsset(
 
         path:
             asset.path.trim(),
+
+        labelKey:
+            typeof asset.labelKey === 'string' &&
+            asset.labelKey.trim()
+                ? asset.labelKey.trim()
+                : null,
 
         width:
             typeof asset.width === 'number' &&
@@ -123,6 +130,50 @@ function getMarkerAsset(id) {
     return (
         MAP_ASSETS[id] ||
         null
+    );
+}
+
+/*
+ * Assets may name a locale key for their picker label. Without one the id
+ * itself is presentable enough ("recon" -> "Recon", "spawn_board" ->
+ * "Spawn board"), which keeps new icons usable before they are translated.
+ */
+function getMarkerAssetLabel(asset) {
+
+    if (!asset) {
+        return '';
+    }
+
+    if (asset.labelKey) {
+
+        const translated =
+            tr(asset.labelKey);
+
+        if (
+            translated &&
+            translated !== asset.labelKey
+        ) {
+            return translated;
+        }
+    }
+
+    const words =
+        asset.id
+            .split(/[_-]+/)
+            .filter(Boolean);
+
+    if (!words.length) {
+        return asset.id;
+    }
+
+    return (
+        words[0].charAt(0).toUpperCase() +
+        words[0].slice(1) +
+        (
+            words.length > 1
+                ? ' ' + words.slice(1).join(' ')
+                : ''
+        )
     );
 }
 

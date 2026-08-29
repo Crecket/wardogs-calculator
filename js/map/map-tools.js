@@ -814,13 +814,16 @@ function buildMarkerPicker() {
         button.type = 'button';
         button.className =
             'map-tool-marker-option';
+        const label =
+            getMarkerAssetLabel(asset);
+
         button.dataset.icon =
             asset.id;
         button.title =
-            asset.id;
+            label;
         button.setAttribute(
             'aria-label',
-            asset.id
+            label
         );
 
         const image =
