@@ -21,9 +21,9 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 3 | 7.1 | Positions survive a reload | [`pr` #8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | `upstream-pr/remember-positions` |
 | 4 | 3.1 | Contour layer | [`pr` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | `upstream-pr/contour-layer` |
 | 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | [`pr` #11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | `upstream-pr/terrain-range-ring` |
-| 6 | 7.2 | Saved-target highlight derived from position | `branch` | `upstream-pr/derived-highlight` |
+| 6 | 7.2 | Saved-target highlight derived from position | [`pr` #13](https://github.com/apollyon-sys/wardogs-calculator/pull/13) | `upstream-pr/derived-highlight` |
 | 7 | — | Marker tool does not turn off on a second click | [`pr` #12](https://github.com/apollyon-sys/wardogs-calculator/pull/12) | `upstream-pr/marker-tool-toggle` |
-| 8 | 5.1 | Tactical markers and labels | `todo` | — |
+| 8 | 5.1 | Tactical markers and labels | `wip` | `upstream-pr/tactical-markers` |
 | 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `todo` | — |
 | 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
 | 11 | 4.1 | Time of flight | `todo` | — |
@@ -35,7 +35,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 
 Item 7 is not an extraction at all: it is a bug that exists in `upstream/main` unchanged, found while working here. Fixed on `feat/collab-rooms` in `caa9d9a2b`; the same 12 lines apply upstream as a standalone PR. `upstream/main`'s `markerButton` handler never calls `setMapTool()`, so a second click only closes the picker and leaves the tool armed. The `pencilButton` handler has the same shape and is not yet fixed.
 
-Every branch is cut from `upstream/main` and carries only its own feature, and is pushed to `origin` (the fork). None have been proposed upstream. Ready-to-use PR bodies are at the bottom of this file.
+Every branch is cut from `upstream/main` and carries only its own feature, and is pushed to `origin` (the fork). Ready-to-use PR bodies are at the bottom of this file.
 
 Fixed along the way, on `feat/collab-rooms` rather than in any extraction branch:
 
@@ -325,7 +325,7 @@ With the heightfield forced flat, every bearing returns the declared max range t
 
 ## §7.2 — `upstream-pr/derived-highlight`
 
-Nothing outstanding.
+https://github.com/apollyon-sys/wardogs-calculator/pull/13
 
 ````markdown
 ## Derive the saved-target highlight from the target position
@@ -344,6 +344,8 @@ Note that dragging the target onto a saved target's exact coordinates now highli
 ---
 
 ## Marker tool toggle — `upstream-pr/marker-tool-toggle`
+
+https://github.com/apollyon-sys/wardogs-calculator/pull/12
 
 Not an extraction. An upstream bug found while working on the fork. One file, +12/-0.
 
