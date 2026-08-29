@@ -172,6 +172,43 @@
 
 
 /* =========================
+   SAVED TARGET INDEX
+   ========================= */
+
+.saved-target-index {
+    min-width: 18px;
+    height: 18px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 4px;
+
+    background: var(--active-bg);
+
+    border: 1px solid var(--border-light);
+
+    color: var(--muted);
+
+    font:
+            10px ui-monospace,
+            SFMono-Regular,
+            Consolas,
+            monospace;
+}
+
+.saved-target.active .saved-target-index {
+    color: var(--accent);
+
+    border-color: var(--accent-border);
+}
+
+
+/* =========================
    SAVED TARGET INFO
    ========================= */
 

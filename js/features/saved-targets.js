@@ -1009,7 +1009,7 @@ function renderSavedTargets() {
         activeSavedTargetId();
 
     savedTargets.forEach(
-        target => {
+        (target, index) => {
 
             const item =
                 document.createElement(
@@ -1039,6 +1039,17 @@ function renderSavedTargets() {
                     );
                 }
             );
+
+            const number =
+                document.createElement(
+                    'span'
+                );
+
+            number.className =
+                'saved-target-index';
+
+            number.textContent =
+                String(index + 1);
 
             const info =
                 document.createElement(
@@ -1196,6 +1207,10 @@ function renderSavedTargets() {
 
             actions.appendChild(
                 remove
+            );
+
+            item.appendChild(
+                number
             );
 
             item.appendChild(
