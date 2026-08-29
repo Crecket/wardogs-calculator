@@ -32,6 +32,9 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 14 | 2.1–2.4, 2.6, 2.8, 2.9 | Multiple guns | [`pr` #17](https://github.com/apollyon-sys/wardogs-calculator/pull/17) | `upstream-pr/multiple-guns` (on `integration/all-prs`) |
 | 15 | 7.3–7.8 | Saved-target markers and sync | `branch` | `upstream-pr/saved-target-markers` (on `upstream-pr/multiple-guns`) |
 | 16 | 1.x | Shared sessions | `todo` | — |
+| 17 | — | Parent tile drawn while the child loads | `branch` | `feat/tile-parent-fallback` |
+
+Item 17, like item 7, is not an extraction: `drawTileMap` paints a flat `#151a1d` rectangle for every tile that has not decoded yet, so each zoom step flashes black even off a warm cache, and `upstream/main` has the same code. It now draws the cached ancestor tile upscaled into the gap instead. Cut from `main` and opened as [#1](https://github.com/Crecket/wardogs-calculator/pull/1) against the fork's own `main` rather than upstream, so it still needs proposing there.
 
 Item 7 is not an extraction at all: it is a bug that exists in `upstream/main` unchanged, found while working here. Fixed on `feat/collab-rooms` in `caa9d9a2b`; the same 12 lines apply upstream as a standalone PR. `upstream/main`'s `markerButton` handler never calls `setMapTool()`, so a second click only closes the picker and leaves the tool armed. The `pencilButton` handler has the same shape and is not yet fixed.
 
