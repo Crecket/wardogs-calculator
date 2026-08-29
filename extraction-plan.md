@@ -26,8 +26,8 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 8 | 5.1 | Tactical marker icons and picker labels | `branch` | `upstream-pr/tactical-markers` |
 | 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `parked` | — |
 | 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
-| 11 | 4.1 | Time of flight | `todo` | — |
-| 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | `todo` | — |
+| 11 | 4.1 | Time of flight | `wip` | `upstream-pr/flight-time` (stacks on #11) |
+| 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | `wip` | `upstream-pr/fob-build-areas` (stacks on #9) |
 | 13 | 6.1 + 6.2 | Tiles from object storage | `todo` | — |
 | 14 | 2.1–2.3 | Multiple guns | `todo` | — |
 | 15 | 7.3–7.8 | Saved-target markers and sync | `todo` | — |
@@ -35,7 +35,14 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 
 Item 7 is not an extraction at all: it is a bug that exists in `upstream/main` unchanged, found while working here. Fixed on `feat/collab-rooms` in `caa9d9a2b`; the same 12 lines apply upstream as a standalone PR. `upstream/main`'s `markerButton` handler never calls `setMapTool()`, so a second click only closes the picker and leaves the tool armed. The `pencilButton` handler has the same shape and is not yet fixed.
 
-Every branch is cut from `upstream/main` and carries only its own feature, and is pushed to `origin` (the fork). Ready-to-use PR bodies are at the bottom of this file.
+Most branches are cut from `upstream/main` and carry only their own feature. Two are **stacked** and cannot merge before their base:
+
+- `upstream-pr/flight-time` (item 11) branches from `upstream-pr/terrain-range-ring`, because `loadProjectileModel()` and `PROJECTILE_MODEL` live in `js/map/range-ring.js`, which exists only there. It also re-adds `projectileModelArc()`, which #11 dropped as dead code with flight time as its only consumer.
+- `upstream-pr/fob-build-areas` (item 12) branches from `upstream-pr/map-visuals`, because FOB areas need a `fob` kind in `RING_SIZE_KEYS` / `getRingConfig`, and that plumbing shipped in #9 as `mainZone`-only. It may also depend on `upstream-pr/tactical-markers` for the placeable FOB icon; see that branch's notes for which way that resolved.
+
+Item 8.4 evaporated on contact: since the `fob` ring config has never shipped upstream, there is no rename to perform. The key ships as `halfSide` from the start and `radius` never exists for it.
+
+Everything is pushed to `origin` (the fork). Ready-to-use PR bodies are at the bottom of this file.
 
 Fixed along the way, on `feat/collab-rooms` rather than in any extraction branch:
 
