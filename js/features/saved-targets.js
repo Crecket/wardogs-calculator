@@ -159,6 +159,70 @@ function refreshSavedTargetHighlight() {
         );
 }
 
+function savedTargetNearest(distanceTo, threshold) {
+
+    if (!savedTargets.length) {
+        return null;
+    }
+
+    const activeId =
+        activeSavedTargetId();
+
+    let best = null;
+
+    let bestDistance = threshold;
+
+    for (const target of savedTargets) {
+
+        if (target.id === activeId) {
+            continue;
+        }
+
+        const x =
+            Number(target.x);
+
+        const y =
+            Number(target.y);
+
+        if (
+            !Number.isFinite(x) ||
+            !Number.isFinite(y)
+        ) {
+            continue;
+        }
+
+        const distance =
+            distanceTo(x, y);
+
+        if (distance <= bestDistance) {
+            best = target;
+            bestDistance = distance;
+        }
+    }
+
+    return best;
+}
+
+function savedTargetAtPoint(point, threshold) {
+    return savedTargetNearest(
+        (x, y) => Math.hypot(
+            point.x - x,
+            point.y - y
+        ),
+        threshold
+    );
+}
+
+function savedTargetAtScreen(x, y, radiusPx) {
+    return savedTargetNearest(
+        (targetX, targetY) => {
+            const at = toScreen(targetX, targetY);
+            return Math.hypot(x - at.x, y - at.y);
+        },
+        radiusPx
+    );
+}
+
 function generateTargetId() {
 
     return (
