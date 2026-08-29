@@ -1275,9 +1275,6 @@ function selectPresetMarkerAsTarget(
     S.mode =
         'target';
 
-    selectedSavedTargetId =
-        null;
-
     $('targetMode')
         ?.classList
         .add(

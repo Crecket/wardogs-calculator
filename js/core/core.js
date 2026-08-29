@@ -39,7 +39,6 @@ let drag = null;
 let pan = null;
 
 let savedTargets = [];
-let selectedSavedTargetId = null;
 
 const SAVED_TARGETS_KEY =
     'wardogs-saved-targets';
