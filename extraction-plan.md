@@ -25,7 +25,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 7 | — | Marker tool does not turn off on a second click | [`pr` #12](https://github.com/apollyon-sys/wardogs-calculator/pull/12) | `upstream-pr/marker-tool-toggle` |
 | 8 | 5.1 | Tactical marker icons and picker labels | [`pr` #14](https://github.com/apollyon-sys/wardogs-calculator/pull/14) | `upstream-pr/tactical-markers` |
 | 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `parked` | — |
-| 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
+| 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `parked` | — |
 | 11 | 4.1 | Time of flight | [`pr` #15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | `upstream-pr/flight-time` (stacks on #11) |
 | 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | [`pr` #16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | `upstream-pr/fob-build-areas` (stacks on #9) |
 | 13 | 6.1 + 6.2 | Tiles from object storage | `todo` | — |
@@ -92,7 +92,7 @@ The tiers are the reasoning; the status board at the top is the live state.
 ### Tier 1 — trivial, land today
 
 1. **5.5 Tower icon.** `assets/map-markers/tower.webp`. Binary swap, the one thing that cherry-picks clean (`dfe9ace3e`, `fc8ff00de`).
-2. **8.1 / 8.2 / 8.3 Docs.** `docs/todo.md`, `docs/ideas-research/`, and the features/terrain/maps updates. Pure prose, zero risk. `todo.md` — every value the app draws that nobody has measured in-game — is the one with real value to the maintainer. Strip the collab and deployment references on the way out.
+2. **8.1 / 8.2 / 8.3 Docs.** *Parked: fork-only working notes, not going upstream.* `docs/todo.md`, `docs/ideas-research/`, and the features/terrain/maps updates.
 
    *8.4 (`halfSide` not `radius`) is not a standalone PR: it renames a config key upstream does not have yet. Fold it into #5 so the key ships named correctly the first time.*
 
