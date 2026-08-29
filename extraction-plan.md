@@ -28,9 +28,9 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `parked` | — |
 | 11 | 4.1 | Time of flight | [`pr` #15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | `upstream-pr/flight-time` (stacks on #11) |
 | 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | [`pr` #16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | `upstream-pr/fob-build-areas` (stacks on #9) |
-| 13 | 6.1 + 6.2 | Tiles from object storage | `todo` | — |
+| 13 | 6.1 + 6.2 | Tiles from object storage | `parked` | — |
 | 14 | 2.1–2.4, 2.6, 2.8, 2.9 | Multiple guns | [`pr` #17](https://github.com/apollyon-sys/wardogs-calculator/pull/17) | `upstream-pr/multiple-guns` (on `integration/all-prs`) |
-| 15 | 7.3–7.8 | Saved-target markers and sync | `wip` | `upstream-pr/saved-target-markers` (on `upstream-pr/multiple-guns`) |
+| 15 | 7.3–7.8 | Saved-target markers and sync | `branch` | `upstream-pr/saved-target-markers` (on `upstream-pr/multiple-guns`) |
 | 16 | 1.x | Shared sessions | `todo` | — |
 
 Item 7 is not an extraction at all: it is a bug that exists in `upstream/main` unchanged, found while working here. Fixed on `feat/collab-rooms` in `caa9d9a2b`; the same 12 lines apply upstream as a standalone PR. `upstream/main`'s `markerButton` handler never calls `setMapTool()`, so a second click only closes the picker and leaves the tool armed. The `pencilButton` handler has the same shape and is not yet fixed.
@@ -494,4 +494,28 @@ Artillery becomes a list. S.origin and S.weapon become accessors onto the select
 Per-gun rings call drawMaxRangeRing from #11 with the gun passed through, so there is one terrain-aware ring implementation, not two.
 
 The last two commits are droppable: unreviewed machine-written Korean strings, and browser tests that need playwright.
+````
+
+---
+
+## §7.3–7.8 — `upstream-pr/saved-target-markers` — no PR yet
+
+Stacked on `upstream-pr/multiple-guns` (#17), which is itself on `integration/all-prs`. 28 files, +796/-145. Six commits, no droppable test commit: the fork has no Playwright tests for saved targets.
+
+7.8 **evolved** #13's code rather than duplicating it. The epsilon comparison was factored into `savedTargetPointMatches(point, x, y)`, `savedTargetMatchState()` became the single source of truth returning `{ id, level }`, and `activeSavedTargetId()` is now `return savedTargetMatchState().id`. #13's performance split survives: `refreshSavedTargetHighlight()` still walks rows already in the DOM, and both it and the full render call the same `applySavedTargetRowState` so they cannot drift.
+
+7.4 sits at the top of the `else` in the guns hit-test block, so it fires only when neither a gun nor the live target was grabbed, and returns without setting `drag`. Same 300 m threshold as the gun test. `savedTargetNearest` skips `activeSavedTargetId()`, so the marker you are standing on is never a click candidate, which matches 7.3 not drawing it.
+
+7.6 against the gun list means: restoring moves the **active** gun and leaves the others alone, because `S.origin` is the accessor onto `activeGun().position`. Saved targets persist under their own key, so the always-present `origin` and the per-target `saveArtillery` flag ride along automatically without touching 7.1's payload.
+
+Two seams the agent flagged rather than papered over. With no weapon selected, `drawGuns()` bails but `drawSavedTargets()` still skips the matched target, so nothing is drawn at that spot — the fork behaves the same way. And `styles/mobile/sheet.css` never got the new index badge, artillery toggle and sync button styling, so those render with default button chrome on mobile — also a pre-existing fork gap.
+
+It also updated the `saveArtilleryPosition` wording in all eleven static locale shells; the fork had only done three, leaving eight showing the old pre-hydration text.
+
+````markdown
+Stacks on the guns PR (#17) and assumes #8 through #16 are merged.
+
+Saved targets are drawn on the map as light orange numbered markers, and clicking or tapping one activates it. The row number and the map label come from the same list order. Every saved target now stores an artillery position, and a small button on each row decides whether restoring it also moves the gun; the existing checkbox becomes the default for new targets only. A sync button on each row updates a saved target to your current position, hidden wherever it would just duplicate what is already there.
+
+A target that carries an artillery position describes two points, so the row tells a full restore apart from being on the target with the gun elsewhere. The partial case is drawn with a dashed border and keeps its sync button so you can reconcile it. This grows the derived highlight from #13 rather than replacing it: activeSavedTargetId still exists and still derives from where the target actually sits.
 ````
