@@ -97,6 +97,7 @@
   "elevation": "Угол возвышения",
   "lowArc": "Низкая траектория",
   "highArc": "Высокая траектория",
+  "flightTime": "Время полёта",
   "noFiringSolution": "Нет решения для стрельбы",
   "copyCoordinates": "Копировать",
   "pasteCoordinates": "Вставить",

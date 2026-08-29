@@ -101,6 +101,7 @@
   "elevation": "Кут підвищення",
   "lowArc": "Низька траєкторія",
   "highArc": "Висока траєкторія",
+  "flightTime": "Час польоту",
   "noFiringSolution": "Немає рішення для стрільби",
   "copyCoordinates": "Копіювати",
   "pasteCoordinates": "Вставити",
