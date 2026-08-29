@@ -21,14 +21,19 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 3 | 7.1 | Positions survive a reload | [`pr` #8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | `upstream-pr/remember-positions` |
 | 4 | 3.1 | Contour layer | `branch` | `upstream-pr/contour-layer` |
 | 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | `branch` | `upstream-pr/terrain-range-ring` |
-| 6 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
-| 7 | 6.3 + 6.4 | `.env` config, analytics off by default | `todo` | — |
-| 8 | 5.1/5.2/5.4 + 8.4 | Tactical markers, FOB areas, drag to move | `todo` | — |
-| 9 | 4.1 | Time of flight | `todo` | — |
-| 10 | 6.1 + 6.2 | Tiles from object storage | `todo` | — |
-| 11 | 2.1–2.3 | Multiple guns | `todo` | — |
-| 12 | 7.3–7.8 | Saved-target markers and sync | `todo` | — |
-| 13 | 1.x | Shared sessions | `todo` | — |
+| 6 | 7.2 | Saved-target highlight derived from position | `wip` | `upstream-pr/derived-highlight` |
+| 7 | — | Marker tool does not turn off on a second click | `todo` | — |
+| 8 | 5.1 | Tactical markers and labels | `todo` | — |
+| 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `todo` | — |
+| 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
+| 11 | 4.1 | Time of flight | `todo` | — |
+| 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | `todo` | — |
+| 13 | 6.1 + 6.2 | Tiles from object storage | `todo` | — |
+| 14 | 2.1–2.3 | Multiple guns | `todo` | — |
+| 15 | 7.3–7.8 | Saved-target markers and sync | `todo` | — |
+| 16 | 1.x | Shared sessions | `todo` | — |
+
+Item 7 is not an extraction at all: it is a bug that exists in `upstream/main` unchanged, found while working here. Fixed on `feat/collab-rooms` in `caa9d9a2b`; the same 12 lines apply upstream as a standalone PR. `upstream/main`'s `markerButton` handler never calls `setMapTool()`, so a second click only closes the picker and leaves the tool armed. The `pencilButton` handler has the same shape and is not yet fixed.
 
 Every branch is cut from `upstream/main` and carries only its own feature, and is pushed to `origin` (the fork). None have been proposed upstream. Ready-to-use PR bodies are at the bottom of this file.
 
@@ -86,11 +91,12 @@ The tiers are the reasoning; the status board at the top is the live state.
 
 3. **5.3 Main zone circle.** *Best first real PR.* `getMainZone`, `drawMainZone`, `drawRadiusRing`, `hexToRgba` appended to `overlays.js`; one `renderer.js` hunk; `mainZone` blocks in `config/app.json` and both `maps/*.json`; the `mapLayerMainZone` key; two lines in the `map-tools.js` layer registry. ~250 lines, no collab contact anywhere.
 4. **7.1 Positions survive a reload.** `persistMapPoints` / `loadMapPoints` / `writeMapPoints` / `readStoredPoint` are contiguous at `js/features/saved-targets.js:334-519`, plus `MAP_POINTS_KEY` in `core.js`, one `main.js` call and one `inputs.js` hook. ~200 lines. Drop the `collabSyncShared` hook from the `inputs.js` hunk.
+4b. **7.2 Saved-target highlight derived from position.** `caabf2de1` computes which row is active from where the target actually sits instead of tracking `selectedSavedTargetId`. It **deletes** state: one line from `core.js`, three from `events.js`, one each from `coordinates.js` and `mobile.js`. Fixes the highlight going stale when the target moves by any path that forgot to clear the tracked id. Port the original commit, not the fork tip, which has grown the partial/sync states from 7.6–7.8.
 5. **6.3 + 6.4 `.env` config and analytics off by default.** New `scripts/lib/site-config.mjs`, the `build-pages.mjs` / `dev-server.mjs` wiring, `.env.example`, `docs/analytics.md`. Drop `collabUrl()` and leave `TILE_BASE_URL` for #9. Build-system only, no runtime risk, and it fixes a real problem: an unconfigured fork currently reports into upstream's analytics dashboard.
 
 ### Tier 3 — medium, still reviewable
 
-6. **5.1 + 5.2 + 5.4 (+ 8.4) Tactical markers, FOB build areas, drag to move.** The marker palette and artwork, `drawRadiusSquare`, rotation on the wheel. This is the big `map-tools.js` PR — roughly 600 of its 1,006 added lines — and needs careful collab-hook stripping. High player-visible value.
+6. **5.1 Tactical markers and labels.** The marker palette, the four new icons, marker labels. **Correction to an earlier estimate here:** this is not the big `map-tools.js` PR. `3eb0425ff` touches `map-tools.js` by **+77 lines**; the bulk of that file's +1,006 is collab plus the later marker work — FOB rotation is +578 (`e07538bf5`) and marker drag is +153 (`ab2892ab3`). So 5.1 stands alone at a comfortable size, and 5.2/5.4 follow separately.
 7. **3.1 Contour layer.** `js/map/contours.js` (424 lines, collab-free), `scripts/build-contours.mjs`, `scripts/lib/contours.mjs` and its test, one `renderer.js` hunk, the layer toggle. **Caveat:** +715 KB of generated `contours.json` enters the tree (bakurani 547 KB, ozeti 168 KB). Name the regeneration command in the PR so the maintainer knows it is derived.
 8. **4.1 Time of flight.** See *Corrections to `changes.md`* below — the stated dependency is wrong, and the `results.js` hunk needs unpicking first.
 
