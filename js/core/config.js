@@ -10,16 +10,24 @@ const DEFAULT_APP_CONFIG = {
         },
 
         /*
-         * PLACEHOLDER SIZE — not a measured in-game value. The radius is
-         * in metres and exists so the circle renders at a sane size until
-         * someone confirms the real number; replace it in config/app.json
-         * rather than here.
+         * PLACEHOLDER SIZES — these are not measured in-game values.
+         * Both are in metres and exist so the shapes render at a sane
+         * size until someone confirms the real numbers; replace them in
+         * config/app.json rather than here.
          *
-         * It is a fallback only. Real maps record their own centre and
-         * radius in maps/*.json, taken from the game's own control-zone
-         * values.
+         * A FOB build area is a square, so it is measured by `halfSide`:
+         * the distance from the FOB to an edge, and the buildable side is
+         * twice it. There is no circle involved and no radius to name.
+         *
+         * The main zone is a circle and `radius` means what it says —
+         * a fallback only. Real maps record their own centre and radius in
+         * maps/*.json, taken from the game's own control-zone values.
          */
         rings: {
+            fob: {
+                halfSide: 60,
+                color: '#5fa8d3'
+            },
             mainZone: {
                 radius: 500,
                 color: '#82c596'
@@ -75,6 +83,10 @@ function mergeAppConfig(base, override) {
             rings: {
                 ...base.map.rings,
                 ...(override?.map?.rings || {}),
+                fob: {
+                    ...base.map.rings.fob,
+                    ...(override?.map?.rings?.fob || {})
+                },
                 mainZone: {
                     ...base.map.rings.mainZone,
                     ...(override?.map?.rings?.mainZone || {})
@@ -140,12 +152,14 @@ function getMapToolShortcut(action) {
 }
 
 /*
- * The main zone is measured by a `radius`, which each ring kind names for
- * itself in config/app.json rather than sharing one key that would only be
- * honest about some of them. The measurement comes back as `size`, so the
- * drawing code does not have to know which kind it was handed.
+ * The two ring kinds do not measure the same thing — a FOB build area has a
+ * `halfSide`, the main zone has a `radius` — so each names its own key in
+ * config/app.json rather than sharing one that is only honest about half of
+ * them. The measurement comes back as `size`, so the drawing code does not
+ * have to know which kind it was handed.
  */
 const RING_SIZE_KEYS = {
+    fob: 'halfSide',
     mainZone: 'radius'
 };
 

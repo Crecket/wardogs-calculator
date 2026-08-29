@@ -61,6 +61,7 @@ const MAP_TOOL_STATE = {
         drawings: true,
         userMarkers: true,
         mainZone: true,
+        fobAreas: true,
         artillery: true,
         cursorCoords: true
     }
@@ -945,6 +946,7 @@ function buildMapLayers() {
         ['drawings', 'mapLayerDrawings'],
         ['userMarkers', 'mapLayerUserMarkers'],
         ['mainZone', 'mapLayerMainZone'],
+        ['fobAreas', 'mapLayerFobAreas'],
         ['artillery', 'mapLayerArtillery'],
         ['cursorCoords', 'mapLayerCursorCoordinates']
     ];
@@ -1688,6 +1690,46 @@ function placeMapToolMarker(point) {
     }
 
     draw();
+}
+
+/* =========================
+   FOB BUILD AREAS
+   ========================= */
+
+/*
+ * A FOB's build area is a square around the icon rather than a circle,
+ * and it belongs to the marker rather than being its own object: place
+ * the FOB icon and the area comes with it. That also means it needs no
+ * state, no erasing and no history of its own — the marker it hangs off
+ * already has all three.
+ */
+function drawFobBuildAreas() {
+
+    const config =
+        getRingConfig('fob');
+
+    if (!config) {
+        return;
+    }
+
+    MAP_TOOL_STATE.markers
+        .filter(
+            marker =>
+                marker.icon === 'fob' &&
+                marker.mapId ===
+                currentMapToolMapId()
+        )
+        .forEach(
+            marker => {
+
+                drawRadiusSquare(
+                    marker.x,
+                    marker.y,
+                    config.size,
+                    config.color
+                );
+            }
+        );
 }
 
 function findPencilPathAtCanvasPoint(

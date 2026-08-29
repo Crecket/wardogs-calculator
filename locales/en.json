@@ -67,6 +67,7 @@
   "mapLayerDrawings": "Drawings",
   "mapLayerUserMarkers": "User markers",
   "mapLayerMainZone": "Main zone",
+  "mapLayerFobAreas": "FOB build areas",
   "mapLayerArtillery": "Artillery overlay",
   "mapToolUndo": "Undo",
   "mapToolRedo": "Redo",

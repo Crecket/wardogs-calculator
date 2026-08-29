@@ -183,6 +183,82 @@ function drawRadiusRing(
 }
 
 
+/*
+ * A FOB's build area is a square, not a circle, so it gets its own
+ * primitive. `halfExtent` is the in-game distance from the centre to an
+ * edge — the full side is twice that. Axis-aligned, matching the way
+ * build volumes sit against the world grid.
+ */
+function drawRadiusSquare(
+    worldX,
+    worldY,
+    halfExtentMeters,
+    color
+) {
+
+    const v =
+        view();
+
+    const pos =
+        worldToLocalScreen(
+            worldX,
+            worldY
+        );
+
+    const half =
+        metersToWorldDistance(
+            halfExtentMeters
+        ) *
+        v.scale;
+
+    if (
+        !Number.isFinite(half) ||
+        half <= 0
+    ) {
+        return;
+    }
+
+    const stroke =
+        color ||
+        '#d7a452';
+
+    const side =
+        half * 2;
+
+    ctx.fillStyle =
+        hexToRgba(
+            stroke,
+            0.12
+        );
+
+    ctx.fillRect(
+        pos.x - half,
+        pos.y - half,
+        side,
+        side
+    );
+
+    ctx.strokeStyle =
+        stroke;
+
+    ctx.lineWidth =
+        2;
+
+    ctx.setLineDash([
+        7,
+        5
+    ]);
+
+    ctx.strokeRect(
+        pos.x - half,
+        pos.y - half,
+        side,
+        side
+    );
+
+    ctx.setLineDash([]);
+}
+
 /* =========================
    MAIN ZONE
    ========================= */
