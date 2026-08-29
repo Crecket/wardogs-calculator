@@ -54,6 +54,11 @@ const MAP_TOOL_STATE = {
 
     layers: {
         tiles: true,
+        /*
+         * Off by default: the contour lines are a separate few-hundred-KB
+         * download, only made when somebody actually asks for them.
+         */
+        contours: false,
         grid: true,
         zones: true,
         polygons: true,
@@ -914,6 +919,18 @@ function setMapLayerVisible(layer, visible) {
     MAP_TOOL_STATE.layers[layer] = Boolean(visible);
     saveMapToolState();
 
+    /*
+     * Start the download the moment the layer is asked for rather than
+     * waiting for the redraw, so the lines appear as soon as they can.
+     */
+    if (
+        layer === 'contours' &&
+        visible &&
+        typeof ensureContoursLoaded === 'function'
+    ) {
+        ensureContoursLoaded(currentMapToolMapId());
+    }
+
     if (
         layer === 'cursorCoords' &&
         !MAP_TOOL_STATE.layers.cursorCoords
@@ -937,6 +954,16 @@ function buildMapLayers() {
 
     const layers = [
         ['tiles', 'mapLayerMap'],
+        /*
+         * Only offered where contours were precomputed; a custom map has
+         * no heightfield to have built them from.
+         */
+        ...(
+            typeof mapHasContours === 'function' &&
+            mapHasContours(currentMapToolMapId())
+                ? [['contours', 'mapLayerContours']]
+                : []
+        ),
         ['grid', 'mapLayerGrid'],
         ['zones', 'mapLayerZones'],
         ['polygons', 'mapLayerPolygons'],

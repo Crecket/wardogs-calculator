@@ -64,6 +64,7 @@
   "mapToolSearchInvalid": "Gültige Koordinaten eingeben",
   "mapToolSearchOutOfBounds": "Koordinaten liegen außerhalb der Karte",
   "mapLayerMap": "Karte",
+  "mapLayerContours": "Höhenlinien",
   "mapLayerGrid": "Raster",
   "mapLayerZones": "Zonen",
   "mapLayerPolygons": "Polygone",

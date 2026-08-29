@@ -60,6 +60,7 @@
   "mapToolSearchInvalid": "올바른 좌표를 입력하세요",
   "mapToolSearchOutOfBounds": "좌표가 지도 범위를 벗어났습니다",
   "mapLayerMap": "지도 타일",
+  "mapLayerContours": "등고선",
   "mapLayerGrid": "격자",
   "mapLayerZones": "구역",
   "mapLayerPolygons": "다각형",

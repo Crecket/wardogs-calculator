@@ -64,6 +64,7 @@
   "mapToolSearchInvalid": "Introduce coordenadas válidas",
   "mapToolSearchOutOfBounds": "Las coordenadas están fuera del mapa",
   "mapLayerMap": "Mapa",
+  "mapLayerContours": "Curvas de nivel",
   "mapLayerGrid": "Cuadrícula",
   "mapLayerZones": "Zonas",
   "mapLayerPolygons": "Polígonos",
