@@ -24,6 +24,19 @@ function inputs() {
     $('h').value =
         S.h;
 
+    /*
+     * Origin and target are written from six different places (map drags,
+     * the coordinate inputs, saved-target restore, undo, coordinate
+     * search). They all land here, so one throttled write covers them all
+     * instead of a hook at each site.
+     */
+    if (
+        typeof persistMapPoints ===
+        'function'
+    ) {
+        persistMapPoints();
+    }
+
     result();
     draw();
 }
