@@ -186,14 +186,16 @@ function drawRadiusRing(
 /*
  * A FOB's build area is a square, not a circle, so it gets its own
  * primitive. `halfExtent` is the in-game distance from the centre to an
- * edge — the full side is twice that. Axis-aligned, matching the way
- * build volumes sit against the world grid.
+ * edge — the full side is twice that. `rotationDegrees` turns the square
+ * about its centre, because a FOB dropped in-game rarely lands square
+ * with the world grid.
  */
 function drawRadiusSquare(
     worldX,
     worldY,
     halfExtentMeters,
-    color
+    color,
+    rotationDegrees = 0
 ) {
 
     const v =
@@ -225,6 +227,22 @@ function drawRadiusSquare(
     const side =
         half * 2;
 
+    const angle =
+        (
+            Number(rotationDegrees) || 0
+        ) *
+        Math.PI /
+        180;
+
+    ctx.save();
+
+    ctx.translate(
+        pos.x,
+        pos.y
+    );
+
+    ctx.rotate(angle);
+
     ctx.fillStyle =
         hexToRgba(
             stroke,
@@ -232,8 +250,8 @@ function drawRadiusSquare(
         );
 
     ctx.fillRect(
-        pos.x - half,
-        pos.y - half,
+        -half,
+        -half,
         side,
         side
     );
@@ -250,13 +268,15 @@ function drawRadiusSquare(
     ]);
 
     ctx.strokeRect(
-        pos.x - half,
-        pos.y - half,
+        -half,
+        -half,
         side,
         side
     );
 
     ctx.setLineDash([]);
+
+    ctx.restore();
 }
 
 /* =========================
