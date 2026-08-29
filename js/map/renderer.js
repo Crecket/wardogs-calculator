@@ -177,11 +177,13 @@ function draw() {
      * every gun's range rings and target line, then the markers.
      * The per-gun loop lives in js/map/guns-overlay.js.
      */
-    if (
-        isMapLayerVisible('artillery') &&
-        currentWeapon
-    ) {
-        drawGuns();
+    if (isMapLayerVisible('artillery')) {
+
+        drawSavedTargets();
+
+        if (currentWeapon) {
+            drawGuns();
+        }
     }
 
     /*

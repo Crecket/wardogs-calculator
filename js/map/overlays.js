@@ -4,7 +4,8 @@
 
 function marker(
     p,
-    text
+    text,
+    fill
 ) {
 
     const pos =
@@ -24,9 +25,12 @@ function marker(
     );
 
     ctx.fillStyle =
-        text === 'O'
-            ? '#5fa8d3'
-            : '#d86666';
+        fill ||
+        (
+            text === 'O'
+                ? '#5fa8d3'
+                : '#d86666'
+        );
 
     ctx.fill();
 
@@ -57,6 +61,103 @@ function marker(
     );
 }
 
+
+/* =========================
+   SAVED TARGET MARKERS
+   ========================= */
+
+const SAVED_TARGET_MARKER_ALPHA = 0.7;
+
+const SAVED_TARGET_MARKER_FILL = '#efb469';
+
+function drawSavedTargets() {
+
+    if (
+        typeof savedTargets === 'undefined' ||
+        !savedTargets.length
+    ) {
+        return;
+    }
+
+    const activeId =
+        typeof activeSavedTargetId === 'function'
+            ? activeSavedTargetId()
+            : null;
+
+    ctx.save();
+
+    ctx.globalAlpha =
+        SAVED_TARGET_MARKER_ALPHA;
+
+    savedTargets.forEach(
+        (target, index) => {
+
+            if (target.id === activeId) {
+                return;
+            }
+
+            const x =
+                Number(target.x);
+
+            const y =
+                Number(target.y);
+
+            if (
+                !Number.isFinite(x) ||
+                !Number.isFinite(y)
+            ) {
+                return;
+            }
+
+            marker(
+                {
+                    x,
+                    y
+                },
+                'T',
+                SAVED_TARGET_MARKER_FILL
+            );
+
+            const at =
+                worldToLocalScreen(
+                    x,
+                    y
+                );
+
+            ctx.font =
+                'bold 11px system-ui';
+
+            ctx.textAlign =
+                'center';
+
+            ctx.textBaseline =
+                'alphabetic';
+
+            ctx.lineWidth =
+                3;
+
+            ctx.strokeStyle =
+                'rgba(0, 0, 0, .75)';
+
+            ctx.strokeText(
+                String(index + 1),
+                at.x,
+                at.y - 12
+            );
+
+            ctx.fillStyle =
+                SAVED_TARGET_MARKER_FILL;
+
+            ctx.fillText(
+                String(index + 1),
+                at.x,
+                at.y - 12
+            );
+        }
+    );
+
+    ctx.restore();
+}
 
 /* =========================
    RADIUS RINGS
