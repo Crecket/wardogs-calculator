@@ -24,7 +24,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 6 | 7.2 | Saved-target highlight derived from position | [`pr` #13](https://github.com/apollyon-sys/wardogs-calculator/pull/13) | `upstream-pr/derived-highlight` |
 | 7 | — | Marker tool does not turn off on a second click | [`pr` #12](https://github.com/apollyon-sys/wardogs-calculator/pull/12) | `upstream-pr/marker-tool-toggle` |
 | 8 | 5.1 | Tactical markers and labels | `wip` | `upstream-pr/tactical-markers` |
-| 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `todo` | — |
+| 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `parked` | — |
 | 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
 | 11 | 4.1 | Time of flight | `todo` | — |
 | 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | `todo` | — |
@@ -92,7 +92,7 @@ The tiers are the reasoning; the status board at the top is the live state.
 3. **5.3 Main zone circle.** *Best first real PR.* `getMainZone`, `drawMainZone`, `drawRadiusRing`, `hexToRgba` appended to `overlays.js`; one `renderer.js` hunk; `mainZone` blocks in `config/app.json` and both `maps/*.json`; the `mapLayerMainZone` key; two lines in the `map-tools.js` layer registry. ~250 lines, no collab contact anywhere.
 4. **7.1 Positions survive a reload.** `persistMapPoints` / `loadMapPoints` / `writeMapPoints` / `readStoredPoint` are contiguous at `js/features/saved-targets.js:334-519`, plus `MAP_POINTS_KEY` in `core.js`, one `main.js` call and one `inputs.js` hook. ~200 lines. Drop the `collabSyncShared` hook from the `inputs.js` hunk.
 4b. **7.2 Saved-target highlight derived from position.** `caabf2de1` computes which row is active from where the target actually sits instead of tracking `selectedSavedTargetId`. It **deletes** state: one line from `core.js`, three from `events.js`, one each from `coordinates.js` and `mobile.js`. Fixes the highlight going stale when the target moves by any path that forgot to clear the tracked id. Port the original commit, not the fork tip, which has grown the partial/sync states from 7.6–7.8.
-5. **6.3 + 6.4 `.env` config and analytics off by default.** New `scripts/lib/site-config.mjs`, the `build-pages.mjs` / `dev-server.mjs` wiring, `.env.example`, `docs/analytics.md`. Drop `collabUrl()` and leave `TILE_BASE_URL` for #9. Build-system only, no runtime risk, and it fixes a real problem: an unconfigured fork currently reports into upstream's analytics dashboard.
+5. **6.3 + 6.4 `.env` config and analytics off by default.** *Parked: fork-only infrastructure, not going upstream.* New `scripts/lib/site-config.mjs`, the `build-pages.mjs` / `dev-server.mjs` wiring, `.env.example`, `docs/analytics.md`. Drop `collabUrl()` and leave `TILE_BASE_URL` for #9. Build-system only, no runtime risk, and it fixes a real problem: an unconfigured fork currently reports into upstream's analytics dashboard.
 
 ### Tier 3 — medium, still reviewable
 
