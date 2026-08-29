@@ -3,12 +3,46 @@
 Companion to `changes.md`. That file says *what* is in the fork; this one says
 *in what order it can leave*, and what each piece costs to review.
 
+**This is a living document.** Update the status board as branches are cut,
+PRs open and things land. Keep the analysis below it — the structural facts
+about why cherry-picking fails do not go stale as items ship.
+
 Assessed against `upstream/main` at `29fd2bafd` ("feat: keyboard map camera
 controls"), which `fd16a725c` already merged in. **This was assessed offline —
 `git fetch upstream` before acting on any of it.**
 
-Branch state: 70 commits ahead, 21,306 insertions / 448 deletions across 128
-files, excluding the 43,700 removed tiles.
+Branch state at first assessment: 70 commits ahead, 21,306 insertions / 448
+deletions across 128 files, excluding the 43,700 removed tiles.
+
+---
+
+## Status board
+
+Statuses: `todo` · `branch` (branch cut, not yet proposed) · `pr` (open
+upstream) · `merged` · `parked`.
+
+| # | Item(s) | What | Status | Branch |
+| --- | --- | --- | --- | --- |
+| 1 | 5.5 | Tower icon | `branch` | `upstream-pr/map-visuals` |
+| 2 | 5.3 | Main zone circle | `branch` | `upstream-pr/map-visuals` |
+| 3 | 7.1 | Positions survive a reload | `branch` | `upstream-pr/remember-positions` |
+| 4 | 3.1 | Contour layer | `branch` | `upstream-pr/contour-layer` |
+| 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | `branch` | `upstream-pr/terrain-range-ring` |
+| 6 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
+| 7 | 6.3 + 6.4 | `.env` config, analytics off by default | `todo` | — |
+| 8 | 5.1/5.2/5.4 + 8.4 | Tactical markers, FOB areas, drag to move | `todo` | — |
+| 9 | 4.1 | Time of flight | `todo` | — |
+| 10 | 6.1 + 6.2 | Tiles from object storage | `todo` | — |
+| 11 | 2.1–2.3 | Multiple guns | `todo` | — |
+| 12 | 7.3–7.8 | Saved-target markers and sync | `todo` | — |
+| 13 | 1.x | Shared sessions | `todo` | — |
+
+Every branch is cut from `upstream/main` and carries only its own feature. None
+have been pushed or proposed.
+
+Fixed along the way, on `feat/collab-rooms` rather than in any extraction branch:
+
+- `24cd010d3` — the origin drag died without `guns.js`. See *Blocker* below.
 
 ---
 
@@ -55,6 +89,8 @@ Two files are the exception and gate the rest:
 ---
 
 ## The order
+
+The tiers are the reasoning; the status board at the top is the live state.
 
 ### Tier 1 — trivial, land today
 
@@ -118,7 +154,7 @@ Two files are the exception and gate the rest:
 
 ---
 
-## Blocker: the origin drag dies without `guns.js`
+## Blocker (FIXED in `24cd010d3`): the origin drag died without `guns.js`
 
 `js/events.js:530` and `js/mobile/mobile.js:50` compute the origin hit-test as:
 
@@ -134,6 +170,14 @@ drag.
 
 Consequence: **7.4 (click a saved-target marker to activate it) cannot ship
 before the guns work** unless that branch restores the plain `S.origin` fallback.
+
+`24cd010d3` fixes it at the source by distinguishing *"gun picking unavailable"*
+from *"no gun under the cursor"* — with `guns.js` loaded nothing changes, because
+a miss still yields `Infinity` and that is correct (`S.origin` *is* a gun, so
+`gunAtPoint` would have found it); without it, `S.origin` is grabbable exactly as
+it was before guns became a list. The two now-reachable `hitGun.id` dereferences
+are guarded too. Not verified at runtime: `playwright-core` is not installed and
+network is blocked here, so `test/guns-pick.mjs` could not be run.
 
 ---
 
