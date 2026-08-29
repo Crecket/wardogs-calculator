@@ -28,6 +28,12 @@
     "camera": {
       "maxZoom": 100,
       "panSpeed": 800
+    },
+    "rings": {
+      "mainZone": {
+        "radius": 500,
+        "color": "#82c596"
+      }
     }
   }
 }

@@ -60,6 +60,7 @@ const MAP_TOOL_STATE = {
         presetMarkers: true,
         drawings: true,
         userMarkers: true,
+        mainZone: true,
         artillery: true,
         cursorCoords: true
     }
@@ -943,6 +944,7 @@ function buildMapLayers() {
         ['presetMarkers', 'mapLayerPresetMarkers'],
         ['drawings', 'mapLayerDrawings'],
         ['userMarkers', 'mapLayerUserMarkers'],
+        ['mainZone', 'mapLayerMainZone'],
         ['artillery', 'mapLayerArtillery'],
         ['cursorCoords', 'mapLayerCursorCoordinates']
     ];

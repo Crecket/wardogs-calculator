@@ -142,6 +142,10 @@ function draw() {
         drawPresetPolygons(currentMap);
     }
 
+    if (isMapLayerVisible('mainZone')) {
+        drawMainZone(currentMap);
+    }
+
     /*
      * User pencil drawings are persistent
      * map annotations and live below the
