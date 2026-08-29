@@ -29,7 +29,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 11 | 4.1 | Time of flight | [`pr` #15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | `upstream-pr/flight-time` (stacks on #11) |
 | 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | [`pr` #16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | `upstream-pr/fob-build-areas` (stacks on #9) |
 | 13 | 6.1 + 6.2 | Tiles from object storage | `todo` | — |
-| 14 | 2.1–2.3 | Multiple guns | `todo` | — |
+| 14 | 2.1–2.4, 2.6, 2.8, 2.9 | Multiple guns | `branch` | `upstream-pr/multiple-guns` (on `integration/all-prs`) |
 | 15 | 7.3–7.8 | Saved-target markers and sync | `todo` | — |
 | 16 | 1.x | Shared sessions | `todo` | — |
 
@@ -71,7 +71,16 @@ The worker stays separate for a different reason: it is testable in isolation, r
 
 Still worth opening an issue before building either, to agree the shape and confirm the endpoint arrangement.
 
-**`integration/all-prs`** is a local branch merging all nine open PR branches, used as the base for Phase 2 so guns can be built against "everything landed". It is a working aid, not a thing to propose upstream. Its merge conflicts are also the only existing evidence about whether those nine PRs are mutually compatible.
+**`integration/all-prs`** is a branch merging all nine open PR branches, used as the base for Phase 2 so guns can be built against "everything landed". It is a working aid, not a thing to propose upstream.
+
+### What the integration merge found
+
+Seven of the nine merged cleanly. Two conflicted, and both predict a conflict the maintainer will hit.
+
+- **#13 derived-highlight vs #8 remember-positions, in `js/ui/inputs.js`.** Both append a hook to the same spot at the end of `inputs()`, each with its own comment. Genuine collision, both wanted. Resolved as a union with `persistMapPoints()` first so it captures the write, then `refreshSavedTargetHighlight()`. **Whichever of #8 or #13 lands second will hit this**, so it is worth warning about on the PRs.
+- **#11 terrain-range-ring vs #10 contour-layer, 13 files.** All mechanical add-adjacent collisions. `scripts/lib/terrain-source.mjs` was the predicted one-line header comment (kept #10's wording, a strict superset); `package.json` needed both script sets and a unioned `test:scripts`; `docs/terrain.md` needed both lines in the same tree block; and all ten page shells insert `contours.js` and `heightfield.js` at the same line between `tiles.js` and `overlays.js`.
+
+`js/map/renderer.js` did **not** conflict despite four branches adding draw hunks, and the layer numbering stayed coherent: 1 tiles, 2 contours, 3 grid, 4 zones, 5 polygons + mainZone + fobAreas + drawings, 6-8 artillery, 9 preset markers. `npm run build` passes on the integration base.
 
 Fixed along the way, on `feat/collab-rooms` rather than in any extraction branch:
 
@@ -458,3 +467,29 @@ Only en has the new mapLayerFobAreas string. The other eleven locales are also s
 ## Known follow-up: the layer-toggle locale gap
 
 `mapLayerMainZone` (#9) and `mapLayerFobAreas` (#16) exist in `en.json` only. The other eleven locales — `cat`, `de`, `es`, `fr`, `ko`, `pl`, `pt`, `ru`, `uk`, `zh-cn` — carry every other `mapLayer*` key but not these two. `tr()` falls back to English so nothing breaks, but the layer list reads half-translated. Worth one follow-up PR filling both keys in all eleven at once. Note `cat.json` is a deliberate joke locale ("Pawcil", "Pawkers") and must be written by hand, not machine-translated.
+
+---
+
+## §2.1–2.4, 2.6, 2.8, 2.9 — `upstream-pr/multiple-guns` — no PR yet
+
+**Not proposed: the user is adding screenshots first.** Branched from `integration/all-prs`, so it assumes #8–#16 are all merged. 37 files, +1778/-140.
+
+The 2.1 property held exactly: **`js/core/core.js` diff is empty.** `installGunAccessors()` runs at load, seeds gun 1 from the literals core.js already holds, then replaces `S.origin` and `S.weapon` with `Object.defineProperty` accessors onto `activeGun()`. Every existing reader is untouched.
+
+2.3 was re-pointed at #11's ring rather than reintroducing the fork's copy. The fork's `guns-overlay.js` carried its own `traceRangeRing` and two-outline draw; all of it was deleted, and `drawGunRangeRings` now calls `drawMaxRangeRing(at, rangePx, v.scale, gun)`. The only change to `range-ring.js` is a fourth optional `gun` parameter defaulting to the old behaviour, because #11 had already given `terrainRangeRing(gun, mapId)` a `{weapon, position}` shape that a real gun satisfies verbatim. The memo key already includes the weapon and quantised position, so per-gun caching works unchanged.
+
+2.9 turned out **not** to depend on §7.3–7.8: it is a markup move plus one CSS rule, and the `.saved-targets` chrome it borrows is upstream code.
+
+Migration on first load: a stored single origin from #8 becomes gun 1 with the position intact. `loadMapPoints()` assigns `S.target` first, deliberately, so nothing touches `S.origin` while `S.guns` is mid-replacement. Writes still emit a singular `origin` alongside `guns`, so downgrading to an older cached build does not lose the position. `S.guns.length >= 1` is never violated.
+
+Two things to look at first when screenshotting, both flagged as unexercised: `ctx.globalAlpha` interacting with the terrain ring's `fill('evenodd')` on dimmed guns, and whether the floating gun panel at `left: 14px` collides with the map-tools toolbar.
+
+````markdown
+Assumes all of #8 through #16 are merged; it is built on a local integration branch that merges all nine.
+
+Artillery becomes a list. S.origin and S.weapon become accessors onto the selected gun, so every existing reader keeps working and js/core/core.js is not touched at all. A panel over the top-left of the map adds, selects, renames, hides and removes guns, and every visible gun draws its own range rings and target line with the selected one on top. Clicking a gun picks that gun up instead of moving the selected one onto it, on mouse and touch alike. The list persists, and a single origin stored by #8 migrates into gun 1.
+
+Per-gun rings call drawMaxRangeRing from #11 with the gun passed through, so there is one terrain-aware ring implementation, not two.
+
+The last two commits are droppable: unreviewed machine-written Korean strings, and browser tests that need playwright.
+````
