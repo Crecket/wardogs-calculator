@@ -199,14 +199,35 @@ function writeMapPoints() {
             MAP_POINTS_KEY,
             JSON.stringify({
                 map: S.map,
+
+                /*
+                 * Gun 1 is still written as a singular `origin` so a user
+                 * who lands back on an older cached build keeps their
+                 * artillery position instead of losing it. Drop this after
+                 * one release.
+                 */
                 origin: {
-                    x: S.origin.x,
-                    y: S.origin.y
+                    x: S.guns[0].position.x,
+                    y: S.guns[0].position.y
                 },
+
                 target: {
                     x: S.target.x,
                     y: S.target.y
-                }
+                },
+
+                /*
+                 * visible and activeGunId are deliberately absent: they are
+                 * view state, and a reload starts from a clean view the way
+                 * zoom and pan already do.
+                 */
+                guns: S.guns.map(gun => ({
+                    id: gun.id,
+                    name: gun.name,
+                    x: gun.position.x,
+                    y: gun.position.y,
+                    weapon: gun.weapon
+                }))
             })
         );
     } catch (error) {
@@ -250,18 +271,69 @@ function loadMapPoints() {
             return;
         }
 
-        const origin =
-            readStoredPoint(parsed.origin);
-
+        /*
+         * S.target is assigned before the guns are rebuilt on purpose:
+         * S.origin's setter writes through activeGun(), so nothing here may
+         * touch S.origin while S.guns is mid-replacement.
+         */
         const target =
             readStoredPoint(parsed.target);
 
-        if (origin) {
-            S.origin = origin;
-        }
-
         if (target) {
             S.target = target;
+        }
+
+        /*
+         * A record written before guns existed carries only `origin`. It
+         * becomes gun 1 rather than being discarded — the position is the
+         * thing the user cares about, and losing it on upgrade would be a
+         * silent regression.
+         */
+        const stored = Array.isArray(parsed.guns) && parsed.guns.length
+            ? parsed.guns
+            : [{
+                ...readStoredPoint(parsed.origin),
+                name: S.guns[0].name,
+                weapon: S.guns[0].weapon
+            }];
+
+        const restored = stored
+            .slice(0, GUN_LIMIT)
+            .map(entry => {
+                const point = readStoredPoint(entry);
+
+                if (!point) {
+                    return null;
+                }
+
+                const gun = createGun({
+                    x: point.x,
+                    y: point.y,
+                    weapon: entry.weapon || null,
+                    name: entry.name
+                });
+
+                /*
+                 * Keep the stored id where it is usable, so a gun keeps its
+                 * identity across a reload. Anything unrecognisable is
+                 * replaced by the freshly minted one.
+                 */
+                if (
+                    typeof entry.id === 'string' &&
+                    /^[a-z0-9][a-z0-9_-]{0,63}$/i.test(entry.id)
+                ) {
+                    gun.id = entry.id;
+                }
+
+                clamp(gun.position);
+
+                return gun;
+            })
+            .filter(Boolean);
+
+        if (restored.length) {
+            S.guns = restored;
+            S.activeGunId = S.guns[0].id;
         }
 
     } catch (error) {
