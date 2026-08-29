@@ -41,6 +41,7 @@
   "save": "保存",
   "edit": "编辑",
   "delete": "删除",
+  "gunNamePrompt": "输入火炮名称：",
   "targetNamePrompt": "输入目标名称：",
   "lmb": "左键",
   "point": "位置",

@@ -43,6 +43,7 @@
   "save": "Guardar",
   "edit": "Editar",
   "delete": "Eliminar",
+  "gunNamePrompt": "Introduce el nombre del cañón",
   "targetNamePrompt": "Introduce el nombre del objetivo",
   "lmb": "LMB",
   "point": "punto",

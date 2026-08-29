@@ -41,6 +41,7 @@
   "save": "Save",
   "edit": "Edit",
   "delete": "Delete",
+  "gunNamePrompt": "Enter gun name:",
   "targetNamePrompt": "Enter target name:",
   "lmb": "LMB",
   "point": "point",

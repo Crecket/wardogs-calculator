@@ -43,6 +43,7 @@
   "save": "Speichern",
   "edit": "Bearbeiten",
   "delete": "Löschen",
+  "gunNamePrompt": "Geschützname eingeben",
   "targetNamePrompt": "Zielname eingeben",
   "lmb": "LMB",
   "point": "Punkt",

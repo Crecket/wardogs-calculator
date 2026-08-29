@@ -43,6 +43,7 @@
   "save": "SAVE",
   "edit": "EDIT",
   "delete": "DELETE",
+  "gunNamePrompt": "NAME THE MEOWTAR",
   "targetNamePrompt": "NAME THE MEOWGET",
   "lmb": "LMB",
   "point": "MEOWPOINT",

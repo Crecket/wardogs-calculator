@@ -43,6 +43,7 @@
   "save": "Enregistrer",
   "edit": "Modifier",
   "delete": "Supprimer",
+  "gunNamePrompt": "Entrez le nom du canon",
   "targetNamePrompt": "Entrez le nom de la cible",
   "lmb": "LMB",
   "point": "point",

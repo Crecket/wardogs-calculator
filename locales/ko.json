@@ -35,6 +35,7 @@
   "save": "저장",
   "edit": "편집",
   "delete": "삭제",
+  "gunNamePrompt": "포 이름을 입력하세요:",
   "targetNamePrompt": "목표 이름을 입력하세요:",
   "lmb": "좌클릭",
   "point": "지점",

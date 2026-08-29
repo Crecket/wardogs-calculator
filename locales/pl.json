@@ -43,6 +43,7 @@
   "save": "Zapisz",
   "edit": "Edytuj",
   "delete": "Usuń",
+  "gunNamePrompt": "Wprowadź nazwę działa",
   "targetNamePrompt": "Wprowadź nazwę celu",
   "lmb": "LMB",
   "point": "punkt",
