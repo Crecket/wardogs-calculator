@@ -21,8 +21,8 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 3 | 7.1 | Positions survive a reload | [`pr` #8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | `upstream-pr/remember-positions` |
 | 4 | 3.1 | Contour layer | `branch` | `upstream-pr/contour-layer` |
 | 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | `branch` | `upstream-pr/terrain-range-ring` |
-| 6 | 7.2 | Saved-target highlight derived from position | `wip` | `upstream-pr/derived-highlight` |
-| 7 | — | Marker tool does not turn off on a second click | `todo` | — |
+| 6 | 7.2 | Saved-target highlight derived from position | `branch` | `upstream-pr/derived-highlight` |
+| 7 | — | Marker tool does not turn off on a second click | `branch` | `upstream-pr/marker-tool-toggle` |
 | 8 | 5.1 | Tactical markers and labels | `todo` | — |
 | 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `todo` | — |
 | 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
@@ -319,4 +319,38 @@ With the heightfield forced flat, every bearing returns the declared max range t
 - No CSS. Canvas only.
 - `loadProjectileModel()` and `PROJECTILE_MODEL` are exported from `range-ring.js` and load in `init()`.
 - The last commit adds unit tests and a browser test plus a `test:scripts` entry. The project has no test setup today, so that commit is last and separable.
+````
+
+---
+
+## §7.2 — `upstream-pr/derived-highlight`
+
+Nothing outstanding.
+
+````markdown
+## Derive the saved-target highlight from the target position
+
+Which saved-target row is highlighted was tracked in a separate `selectedSavedTargetId` variable, which every writer of `S.target` had to remember to clear. Several did not, so the highlight could point at a row the target had long since moved away from.
+
+This computes it instead: a row is active when its coordinates match where the target actually sits. The variable is gone, along with the seven sites that maintained it.
+
+Coordinates are compared with an epsilon rather than `===`, because `clamp()` rounds through a float division and a saved target's stored numbers were themselves clamped before being written.
+
+`refreshSavedTargetHighlight()` is separate from `renderSavedTargets()` on purpose: `inputs()` runs on every frame of a map drag, so it toggles the class on rows already in the DOM instead of rebuilding the list. A full render still runs when the targets themselves change.
+
+Note that dragging the target onto a saved target's exact coordinates now highlights that row. That is the intended meaning of the highlight under this change: the target is at this saved position.
+````
+
+---
+
+## Marker tool toggle — `upstream-pr/marker-tool-toggle`
+
+Not an extraction. An upstream bug found while working on the fork. One file, +12/-0.
+
+````markdown
+Clicking the marker tool button a second time only closed the marker picker, leaving the tool armed.
+
+The handler never called setMapTool(), which is what performs the toggle back to null, so the ruler and eraser buttons toggled off correctly but the marker button did not.
+
+Added an early return that closes the picker and calls setMapTool('marker') when the tool is already active and the picker is open. The picker-open check keeps the case where the picker was dismissed by clicking the map: the next click reopens it instead of deselecting the tool.
 ````
