@@ -52,8 +52,11 @@ function getMobileUserMarkerAt(x, y) {
      * neighbour picks that gun up rather than teleporting the current one
      * onto it.
      */
+    const gunPicking =
+        typeof gunAtScreen === 'function';
+
     const hitGun =
-        typeof gunAtScreen === 'function'
+        gunPicking
             ? gunAtScreen(
                 x,
                 y,
@@ -61,19 +64,24 @@ function getMobileUserMarkerAt(x, y) {
             )
             : null;
 
+    const originPoint =
+        gunPicking
+            ? hitGun?.position || null
+            : S.origin;
+
     const target = toScreen(S.target.x, S.target.y);
 
-    const originDistance = hitGun
-        ? Math.hypot(
-            x - toScreen(
-                hitGun.position.x,
-                hitGun.position.y
-            ).x,
+    const origin = originPoint
+        ? toScreen(
+            originPoint.x,
+            originPoint.y
+        )
+        : null;
 
-            y - toScreen(
-                hitGun.position.x,
-                hitGun.position.y
-            ).y
+    const originDistance = origin
+        ? Math.hypot(
+            x - origin.x,
+            y - origin.y
         )
         : Infinity;
 
@@ -97,7 +105,10 @@ function getMobileUserMarkerAt(x, y) {
          * gun, so the drag that follows has to be pointed at the gun that
          * was actually tapped.
          */
-        if (hitGun.id !== S.activeGunId) {
+        if (
+            hitGun &&
+            hitGun.id !== S.activeGunId
+        ) {
             selectGun(hitGun.id);
         }
 

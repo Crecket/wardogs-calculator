@@ -533,22 +533,30 @@ function bindEvents() {
              * clicking a neighbour picks that gun up rather than
              * teleporting the current one onto it.
              */
+            const gunPicking =
+                typeof gunAtPoint === 'function';
+
             const hitGun =
-                typeof gunAtPoint === 'function'
+                gunPicking
                     ? gunAtPoint(
                         p,
                         pointHitThreshold
                     )
                     : null;
 
+            const originPoint =
+                gunPicking
+                    ? hitGun?.position || null
+                    : S.origin;
+
             const d1 =
-                hitGun
+                originPoint
                     ? Math.hypot(
                         p.x -
-                        hitGun.position.x,
+                        originPoint.x,
 
                         p.y -
-                        hitGun.position.y
+                        originPoint.y
                     )
                     : Infinity;
 
@@ -587,6 +595,7 @@ function bindEvents() {
                  */
                 if (
                     nearestPoint === 'origin' &&
+                    hitGun &&
                     hitGun.id !== S.activeGunId
                 ) {
                     selectGun(hitGun.id);
