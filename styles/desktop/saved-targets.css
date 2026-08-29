@@ -466,9 +466,10 @@
    ========================= */
 
 /*
- * The gun list lives in the left sidebar rather than floating over the map,
- * so it borrows the saved-target row vocabulary but keeps the .section
- * chrome around it.
+ * The gun list floats over the top-left of the map, opposite the saved
+ * targets, and borrows their whole vocabulary — panel chrome, rows and
+ * buttons. On mobile it stays a card in the sheet, which is what the
+ * .guns-header rules below are still for.
  */
 
 .guns-header {
@@ -485,6 +486,13 @@
 
 .guns-header h2 {
     margin: 0;
+}
+
+.saved-targets.guns-panel {
+    left: 14px;
+    right: auto;
+
+    width: 310px;
 }
 
 .guns-panel .saved-targets-list {
