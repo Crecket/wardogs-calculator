@@ -57,6 +57,19 @@ function loadProjectileModel() {
 }
 
 /*
+ * The one copy of the fit. The flight-time readout reads the same arcs, and
+ * fetching the file twice would be two copies free to disagree about which
+ * load succeeded.
+ */
+function projectileModelArc(weaponId, arc) {
+    const fit = PROJECTILE_MODEL?.weapons?.[weaponId]?.[arc];
+
+    return fit && Number.isFinite(Number(fit.muzzleVelocity))
+        ? fit
+        : null;
+}
+
+/*
  * Max range is reached at the arc crossover, so either arc's fit is valid.
  * Take the highest: that branch's own table extends furthest, so its fit is
  * the one anchored by the max-range end of the data.
