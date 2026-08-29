@@ -9,7 +9,6 @@ A lightweight, open-source artillery calculator and tactical map tool for **WARD
 
 **Live app:** https://wardogs-artillery.com/  
 **Mobile UI:** https://wardogs-artillery.com/mobile/  
-**简体中文:** https://wardogs-artillery.com/zh-cn/
 
 <table>
   <tr>
@@ -41,16 +40,7 @@ Both interfaces reuse the same calculator logic, maps, tile pyramid, configurati
 
 ## Localization
 
-The shared locale system supports English, Russian, Ukrainian, German, French, Spanish, Polish, Portuguese, **Simplified Chinese**, and the non-indexed Cat locale.
-
-Simplified Chinese is published at:
-
-```text
-Desktop: /zh-cn/
-Mobile:  /mobile/zh-cn/
-```
-
-`zh-CN` browser language is detected automatically when the user has not saved another manual language preference. The production build also publishes Chinese canonical/`hreflang`, Open Graph locale metadata, sitemap coverage, localized SEO content and FAQ structured data.
+The shared locale system supports English, Russian, Ukrainian, German, French, Spanish, Polish, Portuguese, Simplified Chinese, Korean, and the non-indexed Cat locale.
 
 ## Documentation
 
@@ -81,8 +71,6 @@ Then open:
 ```text
 Desktop:            http://localhost:8000/
 Mobile:             http://localhost:8000/mobile/
-Simplified Chinese: http://localhost:8000/zh-cn/
-Chinese mobile:     http://localhost:8000/mobile/zh-cn/
 ```
 
 ## Contributing

@@ -84,7 +84,19 @@ Desktop Map Tool shortcuts:
 | `Ctrl + Y` | Redo |
 | `Ctrl + Shift + Z` | Redo |
 
-Map Tool shortcuts can be configured in:
+Desktop camera controls:
+
+| Shortcut | Action |
+|---|---|
+| `W` `A` `S` `D` | Pan the map |
+| Arrow keys | Pan the map |
+| `Shift` + pan | Pan faster |
+| `+` | Zoom in |
+| `-` | Zoom out |
+| Right-click drag | Pan the map |
+| Mouse wheel | Zoom at the cursor |
+
+Map Tool shortcuts and the keyboard pan speed can be configured in:
 
 ```text
 config/app.json

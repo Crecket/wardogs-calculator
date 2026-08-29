@@ -5,7 +5,8 @@
 const DEFAULT_APP_CONFIG = {
     map: {
         camera: {
-            maxZoom: 100
+            maxZoom: 100,
+            panSpeed: 800
         },
 
         /*
@@ -265,6 +266,23 @@ function getRingConfig(kind) {
                 : fallback[sizeKey],
         color
     };
+}
+
+function getCameraPanSpeed() {
+    const configured =
+        Number(
+            APP_CONFIG
+                ?.map
+                ?.camera
+                ?.panSpeed
+        );
+
+    return (
+        Number.isFinite(configured) &&
+        configured > 0
+            ? configured
+            : DEFAULT_APP_CONFIG.map.camera.panSpeed
+    );
 }
 
 function getMaxCameraZoom() {

@@ -845,14 +845,43 @@ function bindEvents() {
         }
     );
 
+    const cameraKeysLoaded =
+        typeof handleCameraKeyDown ===
+        'function';
+
     window.addEventListener(
         'keydown',
         e => {
             if (handleMapToolShortcut(e)) {
                 e.preventDefault();
+                return;
+            }
+
+            if (
+                cameraKeysLoaded &&
+                handleCameraKeyDown(e)
+            ) {
+                e.preventDefault();
             }
         }
     );
+
+    if (cameraKeysLoaded) {
+
+        window.addEventListener(
+            'keyup',
+            handleCameraKeyUp
+        );
+
+        /*
+         * Held keys would otherwise stick when the window
+         * loses focus mid-pan.
+         */
+        window.addEventListener(
+            'blur',
+            stopCameraPan
+        );
+    }
 
     window.addEventListener(
         'resize',

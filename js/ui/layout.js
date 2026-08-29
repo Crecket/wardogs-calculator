@@ -249,6 +249,16 @@ const MOBILE_MENU_TEXT = {
         credits: 'Autorzy',
         legal: 'Informacja'
     },
+       ko: {
+        menu: '메뉴',
+        appearance: '테마',
+        light: '라이트',
+        dark: '다크',
+        language: '언어',
+        links: '링크',
+        credits: '제작진',
+        legal: '법적 고지'
+    },
     pt: {
         menu: 'Menu',
         appearance: 'Aparência',

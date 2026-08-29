@@ -42,6 +42,7 @@ Desktop routes:
 /pl/
 /pt/
 /zh-cn/
+/ko/
 /cat/
 ```
 
@@ -57,6 +58,7 @@ Mobile routes:
 /mobile/pl/
 /mobile/pt/
 /mobile/zh-cn/
+/mobile/ko/
 /mobile/cat/
 ```
 
