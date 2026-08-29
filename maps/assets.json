@@ -1,5 +1,41 @@
 {
   "markerIcons": {
+    "fob": {
+      "path": "assets/map-markers/fob.webp",
+      "labelKey": "markerLabelFob",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "tank": {
+      "path": "assets/map-markers/tank.webp",
+      "labelKey": "markerLabelTank",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "artillery": {
+      "path": "assets/map-markers/artillery.webp",
+      "labelKey": "markerLabelArtillery",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "spawn_vehicle": {
+      "path": "assets/map-markers/spawn_vehicle.webp",
+      "labelKey": "markerLabelSpawnVehicle",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
     "assault": {
       "path": "assets/map-markers/assault.webp",
       "width": 32,
