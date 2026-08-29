@@ -16,13 +16,13 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 
 | # | Item(s) | What | Status | Branch |
 | --- | --- | --- | --- | --- |
-| 1 | 5.5 | Tower icon | `branch` | `upstream-pr/map-visuals` |
-| 2 | 5.3 | Main zone circle | `branch` | `upstream-pr/map-visuals` |
+| 1 | 5.5 | Tower icon | [`pr` #9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | `upstream-pr/map-visuals` |
+| 2 | 5.3 | Main zone circle | [`pr` #9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | `upstream-pr/map-visuals` |
 | 3 | 7.1 | Positions survive a reload | [`pr` #8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | `upstream-pr/remember-positions` |
-| 4 | 3.1 | Contour layer | `branch` | `upstream-pr/contour-layer` |
-| 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | `branch` | `upstream-pr/terrain-range-ring` |
+| 4 | 3.1 | Contour layer | [`pr` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | `upstream-pr/contour-layer` |
+| 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | [`pr` #11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | `upstream-pr/terrain-range-ring` |
 | 6 | 7.2 | Saved-target highlight derived from position | `branch` | `upstream-pr/derived-highlight` |
-| 7 | — | Marker tool does not turn off on a second click | `branch` | `upstream-pr/marker-tool-toggle` |
+| 7 | — | Marker tool does not turn off on a second click | [`pr` #12](https://github.com/apollyon-sys/wardogs-calculator/pull/12) | `upstream-pr/marker-tool-toggle` |
 | 8 | 5.1 | Tactical markers and labels | `todo` | — |
 | 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `todo` | — |
 | 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
