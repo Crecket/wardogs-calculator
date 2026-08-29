@@ -62,6 +62,8 @@
   "mapToolRuler": "Meowsure",
   "mapToolPencil": "Pawcil",
   "mapToolMarkers": "Pawkers",
+  "mapToolTargeting": "Meowgeting",
+  "targetingModeHint": "PAW THE MEOWP TO DROP NEW MEOWGETS. YOUR AIM STAYS PUT. PURR.",
   "mapToolNoMarkerAssets": "No pawker icons found",
   "markerLabelFob": "Furward Base",
   "markerLabelTank": "Pawnzer",

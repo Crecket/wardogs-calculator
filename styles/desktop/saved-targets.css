@@ -246,6 +246,28 @@
     font-weight: 600;
 }
 
+.saved-target-name.editing {
+    outline: none;
+
+    overflow: visible;
+
+    text-overflow: clip;
+
+    white-space: pre;
+
+    padding: 1px 4px;
+
+    margin: -1px -4px;
+
+    border-radius: 4px;
+
+    background: rgba(255, 255, 255, 0.08);
+
+    box-shadow: inset 0 0 0 1px rgba(215, 164, 82, 0.8);
+
+    cursor: text;
+}
+
 .saved-target-meta {
     min-width: 0;
 

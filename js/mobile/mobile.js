@@ -287,10 +287,14 @@ function handleMobilePointerDown(event) {
         }
     }
 
-    const markerType = getMobileUserMarkerAt(
-        point.x,
-        point.y
-    );
+    const markerType =
+        typeof MAP_TOOL_STATE !== 'undefined' &&
+        MAP_TOOL_STATE.tool === 'targeting'
+            ? null
+            : getMobileUserMarkerAt(
+                point.x,
+                point.y
+            );
 
     if (markerType) {
         if (
@@ -447,6 +451,22 @@ function handleMobilePointerMove(event) {
 
 function finishMobileTap(event, gesture) {
     const point = mobileCanvasPoint(event);
+
+    if (
+        typeof MAP_TOOL_STATE !== 'undefined' &&
+        MAP_TOOL_STATE.tool === 'targeting'
+    ) {
+        const placed = toWorld(
+            point.x,
+            point.y
+        );
+
+        if (isWorldPointInsideMap(placed)) {
+            createSavedTargetAtPoint(placed);
+        }
+
+        return;
+    }
 
     if (
         typeof MAP_TOOL_STATE === 'undefined' ||

@@ -52,6 +52,8 @@
   "mapToolRuler": "Ruler",
   "mapToolPencil": "Pencil",
   "mapToolMarkers": "Markers",
+  "mapToolTargeting": "Targeting mode",
+  "targetingModeHint": "Map clicks save a new target. The active target stays where it is.",
   "mapToolNoMarkerAssets": "No marker assets",
   "markerLabelFob": "FOB",
   "markerLabelTank": "Tank",

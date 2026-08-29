@@ -19,6 +19,10 @@ const SAVED_TARGET_IMPORT_LIMIT = 500;
  */
 const SAVED_TARGET_MATCH_EPSILON = 1e-6;
 
+let savedTargetRenameId = null;
+
+let targetingHintVisible = false;
+
 /*
  * Which saved target the list highlights is derived from where the
  * target actually sits, never tracked separately. In a collab room the
@@ -1024,6 +1028,84 @@ function saveCurrentTarget() {
     renderSavedTargets();
 }
 
+function createSavedTargetAtPoint(point) {
+
+    commitPendingSavedTargetRename();
+
+    const x =
+        Number(point?.x);
+
+    const y =
+        Number(point?.y);
+
+    if (
+        !Number.isFinite(x) ||
+        !Number.isFinite(y)
+    ) {
+        return null;
+    }
+
+    const target = {
+
+        id:
+            generateTargetId(),
+
+        name:
+            createTargetName(),
+
+        x,
+
+        y,
+
+        saveArtillery:
+            false,
+
+        origin: {
+            x: Number(
+                S.origin.x
+            ),
+            y: Number(
+                S.origin.y
+            )
+        }
+    };
+
+    clamp(target);
+
+    savedTargets.push(
+        target
+    );
+
+    persistSavedTargets();
+
+    if (
+        typeof collabOnTargetAdded ===
+        'function'
+    ) {
+        collabOnTargetAdded(target);
+    }
+
+    if (
+        typeof trackAnalytics ===
+        'function'
+    ) {
+        trackAnalytics(
+            'target-placed',
+            {
+                map: S.map
+            }
+        );
+    }
+
+    savedTargetRenameId =
+        target.id;
+
+    renderSavedTargets();
+    draw();
+
+    return target;
+}
+
 function deleteTarget(id) {
 
     const index =
@@ -1083,11 +1165,33 @@ function editTargetName(id) {
         return;
     }
 
+    renameSavedTarget(
+        id,
+        trimmed
+    );
+}
+
+function renameSavedTarget(id, name) {
+
+    const target =
+        savedTargets.find(
+            item =>
+                item.id === id
+        );
+
+    if (
+        !target ||
+        target.name === name
+    ) {
+        renderSavedTargets();
+        return;
+    }
+
     const previousName =
         target.name;
 
     target.name =
-        trimmed;
+        name;
 
     persistSavedTargets();
 
@@ -1098,11 +1202,105 @@ function editTargetName(id) {
         collabOnTargetRenamed(
             id,
             previousName,
-            trimmed
+            name
         );
     }
 
     renderSavedTargets();
+}
+
+function finishSavedTargetRename(id, value) {
+
+    if (savedTargetRenameId !== id) {
+        return;
+    }
+
+    savedTargetRenameId = null;
+
+    const trimmed =
+        String(value || '').trim();
+
+    if (!trimmed) {
+        renderSavedTargets();
+        return;
+    }
+
+    renameSavedTarget(
+        id,
+        trimmed
+    );
+}
+
+function commitPendingSavedTargetRename() {
+
+    if (savedTargetRenameId === null) {
+        return;
+    }
+
+    const element =
+        $('savedTargetsList')
+            ?.querySelector(
+                `.saved-target[data-target-id="${savedTargetRenameId}"] .saved-target-name`
+            );
+
+    finishSavedTargetRename(
+        savedTargetRenameId,
+        element
+            ? element.textContent
+            : ''
+    );
+}
+
+function cancelSavedTargetRename() {
+
+    if (savedTargetRenameId === null) {
+        return;
+    }
+
+    savedTargetRenameId = null;
+
+    renderSavedTargets();
+}
+
+function focusSavedTargetRename(element) {
+
+    element.focus();
+
+    const range =
+        document.createRange();
+
+    range.selectNodeContents(element);
+
+    const selection =
+        window.getSelection();
+
+    if (!selection) {
+        return;
+    }
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function updateTargetingModeHint() {
+
+    const active =
+        typeof MAP_TOOL_STATE !== 'undefined' &&
+        MAP_TOOL_STATE.tool === 'targeting';
+
+    if (active) {
+        savedTargetTransferStatus(
+            'targetingModeHint'
+        );
+
+        targetingHintVisible = true;
+        return;
+    }
+
+    if (targetingHintVisible) {
+        savedTargetTransferStatus();
+        targetingHintVisible = false;
+    }
 }
 
 function toggleTargetArtillery(id) {
@@ -1387,6 +1585,71 @@ function renderSavedTargets() {
             name.textContent =
                 target.name;
 
+            const renaming =
+                target.id ===
+                savedTargetRenameId;
+
+            if (renaming) {
+
+                name.className =
+                    'saved-target-name editing';
+
+                name.contentEditable =
+                    'true';
+
+                name.spellcheck =
+                    false;
+
+                name.addEventListener(
+                    'mousedown',
+                    event => {
+                        event.stopPropagation();
+                    }
+                );
+
+                name.addEventListener(
+                    'click',
+                    event => {
+                        event.stopPropagation();
+                    }
+                );
+
+                name.addEventListener(
+                    'keydown',
+                    event => {
+
+                        if (event.key === 'Enter') {
+
+                            event.preventDefault();
+
+                            finishSavedTargetRename(
+                                target.id,
+                                name.textContent
+                            );
+
+                            return;
+                        }
+
+                        if (event.key === 'Escape') {
+
+                            event.preventDefault();
+
+                            cancelSavedTargetRename();
+                        }
+                    }
+                );
+
+                name.addEventListener(
+                    'blur',
+                    () => {
+                        finishSavedTargetRename(
+                            target.id,
+                            name.textContent
+                        );
+                    }
+                );
+            }
+
             const meta =
                 document.createElement(
                     'div'
@@ -1652,6 +1915,12 @@ function renderSavedTargets() {
             container.appendChild(
                 item
             );
+
+            if (renaming) {
+                focusSavedTargetRename(
+                    name
+                );
+            }
         }
     );
 }

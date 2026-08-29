@@ -868,7 +868,7 @@ function updateMapToolsUI() {
     if (c) {
         c.classList.toggle(
             'map-tool-active',
-            ['ruler', 'pencil', 'eraser', 'marker'].includes(MAP_TOOL_STATE.tool)
+            ['ruler', 'pencil', 'eraser', 'marker', 'targeting'].includes(MAP_TOOL_STATE.tool)
         );
 
         c.classList.toggle(
@@ -880,6 +880,13 @@ function updateMapToolsUI() {
             'map-tool-eraser-active',
             MAP_TOOL_STATE.tool === 'eraser'
         );
+    }
+
+    if (
+        typeof updateTargetingModeHint ===
+        'function'
+    ) {
+        updateTargetingModeHint();
     }
 }
 
@@ -1372,6 +1379,7 @@ function handleMapToolShortcut(event) {
         pencil: getMapToolShortcut('pencil'),
         eraser: getMapToolShortcut('eraser'),
         marker: getMapToolShortcut('marker'),
+        targeting: getMapToolShortcut('targeting'),
         coordinateSearch: getMapToolShortcut('coordinateSearch'),
         layers: getMapToolShortcut('layers'),
         clearTool: getMapToolShortcut('clearTool')
@@ -1409,6 +1417,12 @@ function handleMapToolShortcut(event) {
         MAP_TOOL_STATE.tool = 'marker';
         updateMapToolsUI();
         toggleMapToolMenu('markerPicker');
+        return true;
+    }
+
+    if (key === shortcuts.targeting) {
+        closeMapToolMenus();
+        setMapTool('targeting');
         return true;
     }
 
@@ -1552,6 +1566,7 @@ function updateMapToolsLocalization() {
     const pencilButton = $('mapToolPencil');
     const eraserButton = $('mapToolEraser');
     const markerButton = $('mapToolMarker');
+    const targetingButton = $('mapToolTargeting');
     const searchButton = $('mapToolCoordinateSearch');
     const layersButton = $('mapToolLayers');
     const dataTransferButton = $('mapToolDataTransfer');
@@ -1563,6 +1578,7 @@ function updateMapToolsLocalization() {
     setToolButtonLabel(pencilButton, 'mapToolPencil', 'pencil');
     setToolButtonLabel(eraserButton, 'mapToolEraser', 'eraser');
     setToolButtonLabel(markerButton, 'mapToolMarkers', 'marker');
+    setToolButtonLabel(targetingButton, 'mapToolTargeting', 'targeting');
     setToolButtonLabel(searchButton, 'mapToolCoordinateSearch', 'coordinateSearch');
     setToolButtonLabel(layersButton, 'mapToolLayers', 'layers');
     setToolButtonLabel(dataTransferButton, 'mapToolDataTransfer');
@@ -1602,6 +1618,8 @@ function initMapTools() {
         $('mapToolEraser');
     const markerButton =
         $('mapToolMarker');
+    const targetingButton =
+        $('mapToolTargeting');
     const searchButton =
         $('mapToolCoordinateSearch');
     const layersButton =
@@ -1691,6 +1709,15 @@ function initMapTools() {
             toggleMapToolMenu(
                 'markerPicker'
             );
+        }
+    );
+
+    targetingButton?.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+            closeMapToolMenus();
+            setMapTool('targeting');
         }
     );
 
@@ -2949,6 +2976,19 @@ function handleMapToolMouseDown(
         MAP_TOOL_STATE.tool === 'marker'
     ) {
         placeMapToolMarker(world);
+        return true;
+    }
+
+    if (
+        MAP_TOOL_STATE.tool === 'targeting'
+    ) {
+        if (
+            typeof createSavedTargetAtPoint ===
+            'function'
+        ) {
+            createSavedTargetAtPoint(world);
+        }
+
         return true;
     }
 
