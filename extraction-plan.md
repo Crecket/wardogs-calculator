@@ -23,7 +23,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | [`pr` #11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | `upstream-pr/terrain-range-ring` |
 | 6 | 7.2 | Saved-target highlight derived from position | [`pr` #13](https://github.com/apollyon-sys/wardogs-calculator/pull/13) | `upstream-pr/derived-highlight` |
 | 7 | — | Marker tool does not turn off on a second click | [`pr` #12](https://github.com/apollyon-sys/wardogs-calculator/pull/12) | `upstream-pr/marker-tool-toggle` |
-| 8 | 5.1 | Tactical marker icons and picker labels | `branch` | `upstream-pr/tactical-markers` |
+| 8 | 5.1 | Tactical marker icons and picker labels | [`pr` #14](https://github.com/apollyon-sys/wardogs-calculator/pull/14) | `upstream-pr/tactical-markers` |
 | 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `parked` | — |
 | 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `todo` | — |
 | 11 | 4.1 | Time of flight | [`pr` #15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | `upstream-pr/flight-time` (stacks on #11) |
