@@ -466,6 +466,32 @@ function finishMobileTap(event, gesture) {
         }
     }
 
+    const hitSavedTarget =
+        typeof savedTargetAtScreen === 'function'
+            ? savedTargetAtScreen(
+                point.x,
+                point.y,
+                MOBILE_POINT_HIT_RADIUS
+            )
+            : null;
+
+    if (hitSavedTarget) {
+
+        if (
+            isPointMapLocked(
+                'target'
+            )
+        ) {
+            return;
+        }
+
+        restoreTarget(
+            hitSavedTarget
+        );
+
+        return;
+    }
+
     const world = toWorld(
         point.x,
         point.y

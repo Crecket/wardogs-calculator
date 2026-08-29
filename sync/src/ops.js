@@ -181,24 +181,21 @@ export function validateTarget(value) {
         fail('bad-target');
     }
 
-    const saveArtillery = Boolean(
-        value.saveArtillery &&
-        value.origin &&
-        typeof value.origin === 'object'
-    );
+    const origin =
+        value.origin && typeof value.origin === 'object'
+            ? {
+                x: coordinate(value.origin.x),
+                y: coordinate(value.origin.y)
+            }
+            : null;
 
     return {
         id: id(value.id),
         name: name(value.name),
         x: coordinate(value.x),
         y: coordinate(value.y),
-        saveArtillery,
-        origin: saveArtillery
-            ? {
-                x: coordinate(value.origin.x),
-                y: coordinate(value.origin.y)
-            }
-            : null
+        saveArtillery: Boolean(value.saveArtillery && origin),
+        origin
     };
 }
 

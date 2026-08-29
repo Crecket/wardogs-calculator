@@ -875,6 +875,17 @@ function collabOnTargetRemoved(target) {
     );
 }
 
+function collabOnTargetMoved(target, previous) {
+    if (!target || !previous) {
+        return;
+    }
+
+    collabEmit(
+        { op: 'target.add', target },
+        { op: 'target.add', target: previous }
+    );
+}
+
 function collabOnTargetRenamed(id, previousName, nextName) {
     collabEmit(
         { op: 'target.rename', id, name: nextName },

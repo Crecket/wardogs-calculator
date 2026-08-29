@@ -595,6 +595,34 @@ function bindEvents() {
                 drag = nearestPoint;
 
             } else {
+
+                const hitSavedTarget =
+                    typeof savedTargetAtPoint === 'function'
+                        ? savedTargetAtPoint(
+                            p,
+                            pointHitThreshold
+                        )
+                        : null;
+
+                if (hitSavedTarget) {
+
+                    drag = null;
+
+                    if (
+                        !isPointMapLocked(
+                            'target'
+                        )
+                    ) {
+                        restoreTarget(
+                            hitSavedTarget
+                        );
+                    }
+
+                    updateCursor(e);
+
+                    return;
+                }
+
                 if (
                     isPointMapLocked(
                         S.mode

@@ -26,32 +26,109 @@ const SAVED_TARGET_MATCH_EPSILON = 1e-6;
  * clicked a row, and a tracked selection only ever knew about the
  * latter.
  */
-function activeSavedTargetId() {
+function savedTargetPointMatches(point, x, y) {
 
-    if (
-        !S.target ||
-        !Number.isFinite(S.target.x) ||
-        !Number.isFinite(S.target.y)
-    ) {
-        return null;
-    }
+    return (
+        Boolean(point) &&
+        Number.isFinite(point.x) &&
+        Number.isFinite(point.y) &&
+        Math.abs(
+            Number(x) -
+            point.x
+        ) < SAVED_TARGET_MATCH_EPSILON &&
+        Math.abs(
+            Number(y) -
+            point.y
+        ) < SAVED_TARGET_MATCH_EPSILON
+    );
+}
+
+function savedTargetMatchState() {
 
     const match =
         savedTargets.find(
             target =>
-                Math.abs(
-                    Number(target.x) -
-                    S.target.x
-                ) < SAVED_TARGET_MATCH_EPSILON &&
-                Math.abs(
-                    Number(target.y) -
-                    S.target.y
-                ) < SAVED_TARGET_MATCH_EPSILON
+                savedTargetPointMatches(
+                    S.target,
+                    target.x,
+                    target.y
+                )
         );
 
-    return match
-        ? match.id
-        : null;
+    if (!match) {
+        return {
+            id: null,
+            level: null
+        };
+    }
+
+    const origin =
+        match.saveArtillery
+            ? savedTargetOrigin(match)
+            : null;
+
+    const full =
+        !origin ||
+        savedTargetPointMatches(
+            S.origin,
+            origin.x,
+            origin.y
+        );
+
+    return {
+        id: match.id,
+        level:
+            full
+                ? 'full'
+                : 'partial'
+    };
+}
+
+function activeSavedTargetId() {
+    return savedTargetMatchState().id;
+}
+
+function savedTargetSyncHidden(id, state) {
+
+    if (!state.id) {
+        return false;
+    }
+
+    return !(
+        state.id === id &&
+        state.level === 'partial'
+    );
+}
+
+function applySavedTargetRowState(item, state) {
+
+    const isMatch =
+        item.dataset.targetId ===
+        state.id;
+
+    item.classList.toggle(
+        'active',
+        isMatch
+    );
+
+    item.classList.toggle(
+        'partial',
+        isMatch &&
+        state.level === 'partial'
+    );
+
+    const sync =
+        item.querySelector(
+            '.saved-target-sync'
+        );
+
+    if (sync) {
+        sync.hidden =
+            savedTargetSyncHidden(
+                item.dataset.targetId,
+                state
+            );
+    }
 }
 
 /*
@@ -69,20 +146,83 @@ function refreshSavedTargetHighlight() {
         return;
     }
 
-    const activeId =
-        activeSavedTargetId();
+    const state =
+        savedTargetMatchState();
 
     container
         .querySelectorAll('.saved-target')
         .forEach(
             item => {
-                item.classList.toggle(
-                    'active',
-                    item.dataset.targetId ===
-                    activeId
+                applySavedTargetRowState(
+                    item,
+                    state
                 );
             }
         );
+}
+
+function savedTargetNearest(distanceTo, threshold) {
+
+    if (!savedTargets.length) {
+        return null;
+    }
+
+    const activeId =
+        activeSavedTargetId();
+
+    let best = null;
+
+    let bestDistance = threshold;
+
+    for (const target of savedTargets) {
+
+        if (target.id === activeId) {
+            continue;
+        }
+
+        const x =
+            Number(target.x);
+
+        const y =
+            Number(target.y);
+
+        if (
+            !Number.isFinite(x) ||
+            !Number.isFinite(y)
+        ) {
+            continue;
+        }
+
+        const distance =
+            distanceTo(x, y);
+
+        if (distance <= bestDistance) {
+            best = target;
+            bestDistance = distance;
+        }
+    }
+
+    return best;
+}
+
+function savedTargetAtPoint(point, threshold) {
+    return savedTargetNearest(
+        (x, y) => Math.hypot(
+            point.x - x,
+            point.y - y
+        ),
+        threshold
+    );
+}
+
+function savedTargetAtScreen(x, y, radiusPx) {
+    return savedTargetNearest(
+        (targetX, targetY) => {
+            const at = toScreen(targetX, targetY);
+            return Math.hypot(x - at.x, y - at.y);
+        },
+        radiusPx
+    );
 }
 
 function generateTargetId() {
@@ -464,18 +604,30 @@ function savedTargetTransferStatus(
     );
 }
 
+function savedTargetOrigin(target) {
+
+    const x =
+        Number(target?.origin?.x);
+
+    const y =
+        Number(target?.origin?.y);
+
+    if (
+        !Number.isFinite(x) ||
+        !Number.isFinite(y)
+    ) {
+        return null;
+    }
+
+    return {
+        x,
+        y
+    };
+}
+
 function savedTargetForExport(target) {
-    const saveArtillery =
-        Boolean(
-            target.saveArtillery &&
-            target.origin &&
-            Number.isFinite(
-                Number(target.origin.x)
-            ) &&
-            Number.isFinite(
-                Number(target.origin.y)
-            )
-        );
+    const origin =
+        savedTargetOrigin(target);
 
     return {
         name:
@@ -485,20 +637,12 @@ function savedTargetForExport(target) {
                 : '',
         x: Number(target.x),
         y: Number(target.y),
-        saveArtillery,
-        origin:
-            saveArtillery
-                ? {
-                    x:
-                        Number(
-                            target.origin.x
-                        ),
-                    y:
-                        Number(
-                            target.origin.y
-                        )
-                }
-                : null
+        saveArtillery:
+            Boolean(
+                target.saveArtillery &&
+                origin
+            ),
+        origin
     };
 }
 
@@ -633,17 +777,8 @@ function normalizeImportedSavedTarget(
         return null;
     }
 
-    const hasOrigin =
-        Boolean(
-            target.saveArtillery &&
-            target.origin &&
-            Number.isFinite(
-                Number(target.origin.x)
-            ) &&
-            Number.isFinite(
-                Number(target.origin.y)
-            )
-        );
+    const origin =
+        savedTargetOrigin(target);
 
     return {
         id: generateTargetId(),
@@ -654,20 +789,12 @@ function normalizeImportedSavedTarget(
             ),
         x: Number(target.x),
         y: Number(target.y),
-        saveArtillery: hasOrigin,
-        origin:
-            hasOrigin
-                ? {
-                    x:
-                        Number(
-                            target.origin.x
-                        ),
-                    y:
-                        Number(
-                            target.origin.y
-                        )
-                }
-                : null
+        saveArtillery:
+            Boolean(
+                target.saveArtillery &&
+                origin
+            ),
+        origin
     };
 }
 
@@ -858,17 +985,14 @@ function saveCurrentTarget() {
 
         saveArtillery,
 
-        origin:
-            saveArtillery
-                ? {
-                    x: Number(
-                        S.origin.x
-                    ),
-                    y: Number(
-                        S.origin.y
-                    )
-                }
-                : null
+        origin: {
+            x: Number(
+                S.origin.x
+            ),
+            y: Number(
+                S.origin.y
+            )
+        }
     };
 
     savedTargets.push(
@@ -981,6 +1105,134 @@ function editTargetName(id) {
     renderSavedTargets();
 }
 
+function toggleTargetArtillery(id) {
+
+    const target =
+        savedTargets.find(
+            item =>
+                item.id === id
+        );
+
+    if (!target) {
+        return;
+    }
+
+    const previous = {
+        ...target,
+        origin:
+            target.origin
+                ? { ...target.origin }
+                : null
+    };
+
+    const next =
+        !target.saveArtillery;
+
+    if (
+        next &&
+        !savedTargetOrigin(target)
+    ) {
+
+        target.origin = {
+            x: Number(S.origin.x),
+            y: Number(S.origin.y)
+        };
+    }
+
+    target.saveArtillery = next;
+
+    persistSavedTargets();
+
+    if (
+        typeof collabOnTargetMoved ===
+        'function'
+    ) {
+        collabOnTargetMoved(
+            { ...target },
+            previous
+        );
+    }
+
+    renderSavedTargets();
+}
+
+function syncTargetToCurrent(id) {
+
+    const target =
+        savedTargets.find(
+            item =>
+                item.id === id
+        );
+
+    if (
+        !target ||
+        !S.target ||
+        !Number.isFinite(S.target.x) ||
+        !Number.isFinite(S.target.y) ||
+        savedTargetSyncHidden(
+            id,
+            savedTargetMatchState()
+        )
+    ) {
+        return;
+    }
+
+    const previous = {
+        ...target,
+        origin:
+            target.origin
+                ? { ...target.origin }
+                : null
+    };
+
+    target.x =
+        Number(S.target.x);
+
+    target.y =
+        Number(S.target.y);
+
+    if (target.saveArtillery) {
+
+        target.origin = {
+            x: Number(S.origin.x),
+            y: Number(S.origin.y)
+        };
+    }
+
+    persistSavedTargets();
+
+    if (
+        typeof collabOnTargetMoved ===
+        'function'
+    ) {
+        collabOnTargetMoved(
+            { ...target },
+            previous
+        );
+    }
+
+    if (
+        typeof trackAnalytics ===
+        'function'
+    ) {
+        trackAnalytics(
+            'target-synced',
+            {
+                withArtillery:
+                    Boolean(
+                        target.saveArtillery
+                    )
+            }
+        );
+    }
+
+    renderSavedTargets();
+
+    if (typeof draw === 'function') {
+        draw();
+    }
+}
+
 function restoreTarget(target) {
 
     if (!target) {
@@ -994,17 +1246,13 @@ function restoreTarget(target) {
         y: Number(target.y)
     };
 
-    if (
-        target.saveArtillery &&
-        target.origin &&
-        typeof target.origin.x === 'number' &&
-        typeof target.origin.y === 'number'
-    ) {
+    const origin =
+        target.saveArtillery
+            ? savedTargetOrigin(target)
+            : null;
 
-        S.origin = {
-            x: Number(target.origin.x),
-            y: Number(target.origin.y)
-        };
+    if (origin) {
+        S.origin = origin;
     }
 
     clamp(S.target);
@@ -1018,10 +1266,7 @@ function restoreTarget(target) {
             'target-restored',
             {
                 withArtillery:
-                    Boolean(
-                        target.saveArtillery &&
-                        target.origin
-                    )
+                    Boolean(origin)
             }
         );
     }
@@ -1029,6 +1274,15 @@ function restoreTarget(target) {
     inputs();
     renderSavedTargets();
 }
+
+const SAVED_TARGET_ARTILLERY_ICON =
+    '<svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13"' +
+    ' fill="none" stroke="currentColor" stroke-width="1.9"' +
+    ' stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M4 19h9"/>' +
+    '<path d="M7 19 20 6"/>' +
+    '<circle cx="6.6" cy="19" r="2"/>' +
+    '</svg>';
 
 function renderSavedTargets() {
 
@@ -1077,11 +1331,11 @@ function renderSavedTargets() {
         return;
     }
 
-    const activeId =
-        activeSavedTargetId();
+    const state =
+        savedTargetMatchState();
 
     savedTargets.forEach(
-        target => {
+        (target, index) => {
 
             const item =
                 document.createElement(
@@ -1094,15 +1348,6 @@ function renderSavedTargets() {
             item.dataset.targetId =
                 target.id;
 
-            if (
-                target.id ===
-                activeId
-            ) {
-                item.classList.add(
-                    'active'
-                );
-            }
-
             item.addEventListener(
                 'click',
                 () => {
@@ -1111,6 +1356,17 @@ function renderSavedTargets() {
                     );
                 }
             );
+
+            const number =
+                document.createElement(
+                    'span'
+                );
+
+            number.className =
+                'saved-target-index';
+
+            number.textContent =
+                String(index + 1);
 
             const info =
                 document.createElement(
@@ -1131,6 +1387,14 @@ function renderSavedTargets() {
             name.textContent =
                 target.name;
 
+            const meta =
+                document.createElement(
+                    'div'
+                );
+
+            meta.className =
+                'saved-target-meta';
+
             const coords =
                 document.createElement(
                     'span'
@@ -1142,12 +1406,71 @@ function renderSavedTargets() {
             coords.textContent =
                 `X ${formatGameCoordinate(target.x)} · Y ${formatGameCoordinate(target.y)}`;
 
+            const carriesArtillery =
+                Boolean(
+                    target.saveArtillery &&
+                    savedTargetOrigin(target)
+                );
+
+            const artillery =
+                document.createElement(
+                    'button'
+                );
+
+            artillery.type =
+                'button';
+
+            artillery.className =
+                carriesArtillery
+                    ? 'saved-target-artillery with-artillery'
+                    : 'saved-target-artillery target-only';
+
+            artillery.innerHTML =
+                SAVED_TARGET_ARTILLERY_ICON;
+
+            artillery.title =
+                carriesArtillery
+                    ? tr('targetWithArtilleryHint')
+                    : tr('targetOnlyHint');
+
+            artillery.setAttribute(
+                'aria-pressed',
+                String(carriesArtillery)
+            );
+
+            artillery.setAttribute(
+                'aria-label',
+                carriesArtillery
+                    ? tr('targetWithArtillery')
+                    : tr('targetOnly')
+            );
+
+            artillery.addEventListener(
+                'click',
+                event => {
+
+                    event.stopPropagation();
+
+                    toggleTargetArtillery(
+                        target.id
+                    );
+                }
+            );
+
+            meta.appendChild(
+                coords
+            );
+
+            meta.appendChild(
+                artillery
+            );
+
             info.appendChild(
                 name
             );
 
             info.appendChild(
-                coords
+                meta
             );
 
             const actions =
@@ -1157,6 +1480,41 @@ function renderSavedTargets() {
 
             actions.className =
                 'saved-target-actions-inline';
+
+            const sync =
+                document.createElement(
+                    'button'
+                );
+
+            sync.type =
+                'button';
+
+            sync.className =
+                'saved-target-icon-button saved-target-sync';
+
+            sync.textContent =
+                '\u27f3';
+
+            sync.title =
+                tr('syncTarget');
+
+            sync.setAttribute(
+                'aria-label',
+                tr('syncTarget')
+            );
+
+
+            sync.addEventListener(
+                'click',
+                event => {
+
+                    event.stopPropagation();
+
+                    syncTargetToCurrent(
+                        target.id
+                    );
+                }
+            );
 
             const exportButton =
                 document.createElement(
@@ -1259,6 +1617,10 @@ function renderSavedTargets() {
             );
 
             actions.appendChild(
+                sync
+            );
+
+            actions.appendChild(
                 exportButton
             );
 
@@ -1271,11 +1633,20 @@ function renderSavedTargets() {
             );
 
             item.appendChild(
+                number
+            );
+
+            item.appendChild(
                 info
             );
 
             item.appendChild(
                 actions
+            );
+
+            applySavedTargetRowState(
+                item,
+                state
             );
 
             container.appendChild(

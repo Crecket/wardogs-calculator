@@ -150,7 +150,36 @@ function renameGun(id, name) {
         collabSendGunAdd(gun);
     }
 
+    if (typeof persistMapPoints === 'function') {
+        persistMapPoints();
+    }
+
     renderGuns();
+}
+
+function editGunName(id) {
+    const gun = gunById(id);
+
+    if (!gun) {
+        return;
+    }
+
+    const name = window.prompt(
+        tr('gunNamePrompt'),
+        gun.name
+    );
+
+    if (name === null) {
+        return;
+    }
+
+    const trimmed = name.trim();
+
+    if (!trimmed) {
+        return;
+    }
+
+    renameGun(id, trimmed);
 }
 
 function setGunVisible(id, visible) {
@@ -337,6 +366,21 @@ function renderGuns() {
         });
 
         actions.appendChild(visibility);
+
+        const edit = document.createElement('button');
+
+        edit.type = 'button';
+        edit.className = 'saved-target-icon-button gun-edit';
+        edit.textContent = '\u270e';
+        edit.title = tr('edit');
+        edit.setAttribute('aria-label', tr('edit'));
+
+        edit.addEventListener('click', event => {
+            event.stopPropagation();
+            editGunName(gun.id);
+        });
+
+        actions.appendChild(edit);
 
         /*
          * No remove button on the last gun rather than a disabled one:

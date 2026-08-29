@@ -8,7 +8,7 @@
     top: 14px;
     right: 14px;
 
-    width: 300px;
+    width: 340px;
 
     max-width: calc(100% - 28px);
 
@@ -170,6 +170,51 @@
     border-color: var(--accent-border);
 }
 
+.saved-target.active.partial {
+    border-style: dashed;
+}
+
+.saved-target.partial .saved-target-artillery.with-artillery {
+    color: #d7a452;
+}
+
+
+/* =========================
+   SAVED TARGET INDEX
+   ========================= */
+
+.saved-target-index {
+    min-width: 18px;
+    height: 18px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 4px;
+
+    background: var(--active-bg);
+
+    border: 1px solid var(--border-light);
+
+    color: var(--muted);
+
+    font:
+            10px ui-monospace,
+            SFMono-Regular,
+            Consolas,
+            monospace;
+}
+
+.saved-target.active .saved-target-index {
+    color: var(--accent);
+
+    border-color: var(--accent-border);
+}
+
 
 /* =========================
    SAVED TARGET INFO
@@ -201,6 +246,16 @@
     font-weight: 600;
 }
 
+.saved-target-meta {
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+}
+
 .saved-target-coords {
     color: var(--muted);
 
@@ -215,6 +270,48 @@
     overflow: hidden;
 
     text-overflow: ellipsis;
+}
+
+.saved-target-artillery {
+    width: 18px;
+    min-width: 18px;
+
+    height: 18px;
+    min-height: 18px;
+
+    margin: 0;
+    padding: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border: 1px solid transparent;
+
+    border-radius: 4px;
+
+    background: none;
+
+    cursor: pointer;
+}
+
+.saved-target-artillery:hover {
+    border-color: var(--accent-border);
+
+    background: var(--input-hover-bg);
+}
+
+.saved-target-artillery.with-artillery {
+    color: var(--accent);
+}
+
+.saved-target-artillery.target-only {
+    color: var(--muted);
+
+    opacity: .45;
 }
 
 
@@ -411,6 +508,14 @@
     color: var(--accent);
 }
 
+.saved-target-actions-inline .saved-target-sync {
+    color: var(--accent);
+}
+
+.saved-target-actions-inline .saved-target-sync[hidden] {
+    display: none;
+}
+
 .saved-target-transfer-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -466,9 +571,9 @@
    ========================= */
 
 /*
- * The gun list lives in the left sidebar rather than floating over the map,
- * so it borrows the saved-target row vocabulary but keeps the .section
- * chrome around it.
+ * The gun list floats over the top-left of the map, opposite the saved
+ * targets, and borrows their whole vocabulary — panel chrome, rows and
+ * buttons.
  */
 
 .guns-header {
@@ -485,6 +590,13 @@
 
 .guns-header h2 {
     margin: 0;
+}
+
+.saved-targets.guns-panel {
+    left: 14px;
+    right: auto;
+
+    width: 310px;
 }
 
 .guns-panel .saved-targets-list {
