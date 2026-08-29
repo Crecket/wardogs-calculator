@@ -345,9 +345,9 @@ function traceRangeRing(at, radii, scale, clampMetres) {
  * With no heightfield this falls back to the circle it replaced, which is
  * what fallbackRadiusPx carries.
  */
-function drawMaxRangeRing(at, fallbackRadiusPx, scale) {
+function drawMaxRangeRing(at, fallbackRadiusPx, scale, gun) {
     const ring = terrainRangeRing(
-        {
+        gun || {
             weapon: S.weapon,
             position: S.origin
         },
