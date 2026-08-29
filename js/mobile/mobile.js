@@ -463,6 +463,10 @@ function finishMobileTap(event, gesture) {
 
         if (isWorldPointInsideMap(placed)) {
             createSavedTargetAtPoint(placed);
+
+            if (typeof setMapTool === 'function') {
+                setMapTool(null);
+            }
         }
 
         return;

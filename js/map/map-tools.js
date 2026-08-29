@@ -2989,6 +2989,8 @@ function handleMapToolMouseDown(
             createSavedTargetAtPoint(world);
         }
 
+        setMapTool(null);
+
         return true;
     }
 
