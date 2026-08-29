@@ -64,6 +64,7 @@
   "mapToolSearchInvalid": "Enter valid coordinates",
   "mapToolSearchOutOfBounds": "Coordinates are outside the map",
   "mapLayerMap": "Map tiles",
+  "mapLayerContours": "Contours",
   "mapLayerGrid": "Grid",
   "mapLayerZones": "Zones",
   "mapLayerPolygons": "Polygons",

@@ -68,6 +68,7 @@
   "mapToolSearchInvalid": "Wprowadź prawidłowe współrzędne",
   "mapToolSearchOutOfBounds": "Współrzędne są poza mapą",
   "mapLayerMap": "Mapa",
+  "mapLayerContours": "Poziomice",
   "mapLayerGrid": "Siatka",
   "mapLayerZones": "Strefy",
   "mapLayerPolygons": "Wielokąty",

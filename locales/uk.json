@@ -68,6 +68,7 @@
   "mapToolSearchInvalid": "Введіть коректні координати",
   "mapToolSearchOutOfBounds": "Координати за межами карти",
   "mapLayerMap": "Карта",
+  "mapLayerContours": "Ізолінії",
   "mapLayerGrid": "Сітка",
   "mapLayerZones": "Зони",
   "mapLayerPolygons": "Полігони",

@@ -64,6 +64,7 @@
   "mapToolSearchInvalid": "请输入有效坐标",
   "mapToolSearchOutOfBounds": "坐标超出地图范围",
   "mapLayerMap": "地图图块",
+  "mapLayerContours": "等高线",
   "mapLayerGrid": "网格",
   "mapLayerZones": "区域",
   "mapLayerPolygons": "多边形",
