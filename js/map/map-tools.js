@@ -49,6 +49,7 @@ const MAP_TOOL_STATE = {
 
     rotationDrag: null,
     wheelRotation: null,
+    moveDrag: null,
 
     searchPoint: null,
 
@@ -182,6 +183,7 @@ function restoreMapToolContent(snapshot) {
     MAP_TOOL_STATE.hoverDeletePoint = null;
     MAP_TOOL_STATE.hoverMarkerId = null;
     MAP_TOOL_STATE.rotationDrag = null;
+    MAP_TOOL_STATE.moveDrag = null;
 
     saveMapToolState();
     inputs();
@@ -543,9 +545,10 @@ async function importMapToolChanges() {
 }
 
 function setMapTool(tool) {
-    /* Leaving the marker tool ends any rotation still in progress. */
+    /* Leaving the marker tool ends any gesture still in progress. */
     flushMarkerWheelRotation();
     finishMarkerRotationDrag();
+    finishMarkerMoveDrag();
 
     MAP_TOOL_STATE.tool =
         MAP_TOOL_STATE.tool === tool
@@ -2748,6 +2751,110 @@ function resetMarkerRotation(item) {
     draw();
 }
 
+/* =========================
+   MARKER MOVING
+   ========================= */
+
+/*
+ * Pressing on a marker that is already on the map picks it up instead of
+ * dropping a second one at the same spot. Like rotation, a move is one
+ * gesture: history is taken on the first pixel that actually moves it,
+ * and the save happens once on release. A press that never moves
+ * therefore changes nothing at all.
+ */
+function beginMarkerMoveDrag(item, world) {
+    MAP_TOOL_STATE.moveDrag = {
+        id: item.id,
+        start: {
+            x: item.x,
+            y: item.y
+        },
+        offset: {
+            x: item.x - world.x,
+            y: item.y - world.y
+        },
+        historyPushed: false
+    };
+
+    draw();
+}
+
+function updateMarkerMoveDrag(world) {
+    const gesture =
+        MAP_TOOL_STATE.moveDrag;
+
+    if (!gesture) {
+        return false;
+    }
+
+    const item =
+        findMarkerById(gesture.id);
+
+    if (!item) {
+        MAP_TOOL_STATE.moveDrag = null;
+        return false;
+    }
+
+    const next = {
+        x: world.x + gesture.offset.x,
+        y: world.y + gesture.offset.y
+    };
+
+    /*
+     * Dragging past the edge leaves the marker at the last good spot
+     * rather than following the cursor off the map.
+     */
+    if (
+        !isWorldPointInsideMap(next) ||
+        (
+            next.x === item.x &&
+            next.y === item.y
+        )
+    ) {
+        return true;
+    }
+
+    if (!gesture.historyPushed) {
+        gesture.historyPushed = true;
+        pushMapToolHistory();
+    }
+
+    item.x = next.x;
+    item.y = next.y;
+
+    draw();
+
+    return true;
+}
+
+function finishMarkerMoveDrag() {
+    const gesture =
+        MAP_TOOL_STATE.moveDrag;
+
+    if (!gesture) {
+        return false;
+    }
+
+    MAP_TOOL_STATE.moveDrag = null;
+
+    const item =
+        findMarkerById(gesture.id);
+
+    if (
+        item &&
+        (
+            item.x !== gesture.start.x ||
+            item.y !== gesture.start.y
+        )
+    ) {
+        saveMapToolState();
+    }
+
+    draw();
+
+    return true;
+}
+
 /*
  * Wheel ticks arrive one at a time, so a burst is stitched into a single
  * gesture: the first tick takes the history snapshot, and a short idle
@@ -2919,6 +3026,24 @@ function handleMapToolMouseDown(
 
                 return true;
             }
+
+            const bodyHit =
+                findMapToolMarkerAtCanvasPoint(
+                    mouseX,
+                    mouseY
+                );
+
+            if (
+                bodyHit &&
+                bodyHit.id === item.id
+            ) {
+                beginMarkerMoveDrag(
+                    item,
+                    world
+                );
+
+                return true;
+            }
         }
     }
 
@@ -2982,6 +3107,10 @@ function handleMapToolMouseMove(
 
     if (MAP_TOOL_STATE.rotationDrag) {
         return updateMarkerRotationDrag(event);
+    }
+
+    if (MAP_TOOL_STATE.moveDrag) {
+        return updateMarkerMoveDrag(world);
     }
 
     if (
@@ -3074,6 +3203,10 @@ function handleMapToolMouseMove(
 
 function handleMapToolMouseUp() {
     if (finishMarkerRotationDrag()) {
+        return true;
+    }
+
+    if (finishMarkerMoveDrag()) {
         return true;
     }
 
