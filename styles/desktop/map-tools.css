@@ -86,6 +86,54 @@
     color: var(--accent);
 }
 
+.map-tool-button.map-tool-primary {
+    width: 48px;
+    height: 44px;
+
+    border-color: var(--border-light);
+
+    background:
+            color-mix(
+                    in srgb,
+                    var(--accent) 10%,
+                    transparent
+            );
+
+    color: var(--accent);
+
+    font-size: 21px;
+}
+
+.map-tool-button.map-tool-primary:hover {
+    background:
+            color-mix(
+                    in srgb,
+                    var(--accent) 18%,
+                    transparent
+            );
+}
+
+.map-tool-button.map-tool-primary.active {
+    border-color: var(--accent);
+
+    background:
+            color-mix(
+                    in srgb,
+                    var(--accent) 28%,
+                    transparent
+            );
+}
+
+.map-tools-divider {
+    align-self: stretch;
+
+    width: 1px;
+
+    margin: 2px 3px;
+
+    background: var(--border-light);
+}
+
 .map-tool-fullscreen-icon {
     display: block;
 

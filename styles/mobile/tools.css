@@ -74,6 +74,21 @@
     border-radius: 7px;
 }
 
+.mobile-app .map-tool-button.map-tool-primary {
+    width: 52px;
+    height: 52px;
+    min-height: 52px;
+}
+
+.mobile-app .map-tools-divider {
+    align-self: stretch;
+
+    width: auto;
+    height: 1px;
+
+    margin: 3px 2px;
+}
+
 .mobile-app .map-tool-popover {
     position: absolute;
     top: 0;
