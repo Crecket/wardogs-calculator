@@ -1668,6 +1668,18 @@ function initMapTools() {
             event.stopPropagation();
 
             if (
+                MAP_TOOL_STATE.tool ===
+                'marker' &&
+                isMapToolMenuOpen(
+                    'markerPicker'
+                )
+            ) {
+                closeMapToolMenus();
+                setMapTool('marker');
+                return;
+            }
+
+            if (
                 MAP_TOOL_STATE.tool !==
                 'marker'
             ) {
