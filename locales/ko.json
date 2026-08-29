@@ -102,6 +102,7 @@
   "elevation": "고도",
   "lowArc": "저각 사격",
   "highArc": "고각 사격",
+  "flightTime": "비행 시간",
   "noFiringSolution": "사격 제원 없음",
   "copyCoordinates": "복사",
   "pasteCoordinates": "붙여넣기",

@@ -102,6 +102,7 @@
   "elevation": "高程",
   "lowArc": "LOW 低弹道",
   "highArc": "HIGH 高弹道",
+  "flightTime": "飞行时间",
   "noFiringSolution": "没有可用射击解算",
   "copyCoordinates": "复制",
   "pasteCoordinates": "粘贴",

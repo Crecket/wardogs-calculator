@@ -106,6 +106,7 @@
   "elevation": "Elevation",
   "lowArc": "Flache Flugbahn",
   "highArc": "Steile Flugbahn",
+  "flightTime": "Flugzeit",
   "noFiringSolution": "Keine Feuerlösung",
   "copyCoordinates": "Kopieren",
   "pasteCoordinates": "Einfügen",
