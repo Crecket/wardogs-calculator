@@ -56,6 +56,8 @@
   "mapToolRuler": "Règle",
   "mapToolPencil": "Crayon",
   "mapToolMarkers": "Marqueurs",
+  "mapToolTargeting": "Mode marquage",
+  "targetingModeHint": "Les clics sur la carte enregistrent une nouvelle cible. La cible active ne bouge pas.",
   "mapToolNoMarkerAssets": "Aucune icône de marqueur disponible",
   "markerLabelFob": "FOB",
   "markerLabelTank": "Char",

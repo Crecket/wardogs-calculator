@@ -52,6 +52,8 @@
   "mapToolRuler": "Линейка",
   "mapToolPencil": "Карандаш",
   "mapToolMarkers": "Метки",
+  "mapToolTargeting": "Режим целеуказания",
+  "targetingModeHint": "Клики по карте сохраняют новую цель. Активная цель остаётся на месте.",
   "mapToolNoMarkerAssets": "Нет доступных иконок",
   "markerLabelFob": "FOB",
   "markerLabelTank": "Танк",

@@ -56,6 +56,8 @@
   "mapToolRuler": "Linijka",
   "mapToolPencil": "Ołówek",
   "mapToolMarkers": "Znaczniki",
+  "mapToolTargeting": "Tryb celowania",
+  "targetingModeHint": "Kliknięcia na mapie zapisują nowy cel. Aktywny cel pozostaje na miejscu.",
   "mapToolNoMarkerAssets": "Brak dostępnych ikon znaczników",
   "markerLabelFob": "FOB",
   "markerLabelTank": "Czołg",

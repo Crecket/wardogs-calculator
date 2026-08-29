@@ -56,6 +56,8 @@
   "mapToolRuler": "Régua",
   "mapToolPencil": "Lápis",
   "mapToolMarkers": "Marcadores",
+  "mapToolTargeting": "Modo de marcação",
+  "targetingModeHint": "Os cliques no mapa guardam um novo alvo. O alvo ativo permanece onde está.",
   "mapToolNoMarkerAssets": "Não há ícones de marcador disponíveis",
   "markerLabelFob": "FOB",
   "markerLabelTank": "Tanque",

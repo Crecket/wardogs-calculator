@@ -56,6 +56,8 @@
   "mapToolRuler": "Lineal",
   "mapToolPencil": "Stift",
   "mapToolMarkers": "Marker",
+  "mapToolTargeting": "Zielmodus",
+  "targetingModeHint": "Klicks auf der Karte speichern ein neues Ziel. Das aktive Ziel bleibt, wo es ist.",
   "mapToolNoMarkerAssets": "Keine Marker-Symbole verfügbar",
   "markerLabelFob": "FOB",
   "markerLabelTank": "Panzer",
