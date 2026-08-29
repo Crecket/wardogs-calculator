@@ -84,8 +84,7 @@ function snapshotMapToolContent() {
         markers: structuredClone(MAP_TOOL_STATE.markers),
         origin: structuredClone(S.origin),
         target: structuredClone(S.target),
-        mode: S.mode,
-        selectedSavedTargetId
+        mode: S.mode
     };
 }
 
@@ -142,9 +141,6 @@ function restoreMapToolContent(snapshot) {
     ) {
         S.mode = snapshot.mode;
     }
-
-    selectedSavedTargetId =
-        snapshot.selectedSavedTargetId || null;
 
     $('originMode')?.classList.toggle(
         'active',
