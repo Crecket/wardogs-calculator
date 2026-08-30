@@ -62,7 +62,33 @@ function getViewBounds() {
    VIEW
    ========================= */
 
+/*
+ * view() is called nine times or more per draw — every layer wants it —
+ * and each call reads clientWidth, which forces a layout whenever anything
+ * has written to the DOM since. The result is pure given the camera and
+ * the viewport, so it is memoised for the rest of the current task: a
+ * microtask clears it, which cannot run part-way through a draw.
+ */
+let viewCache = null;
+
+function viewCacheKey() {
+    return (
+        S.zoom + '|' +
+        S.panX + '|' +
+        S.panY + '|' +
+        S.map + '|' +
+        S.w + '|' +
+        S.h
+    );
+}
+
 function view() {
+
+    const key = viewCacheKey();
+
+    if (viewCache && viewCache.key === key) {
+        return viewCache.value;
+    }
 
     const W =
         wrap.clientWidth;
@@ -120,7 +146,7 @@ function view() {
         worldHeight *
         scale;
 
-    return {
+    const value = {
         scale,
 
         bounds,
@@ -147,6 +173,19 @@ function view() {
         mw,
         mh
     };
+
+    viewCache = {
+        key,
+        value
+    };
+
+    queueMicrotask(
+        () => {
+            viewCache = null;
+        }
+    );
+
+    return value;
 }
 
 

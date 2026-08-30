@@ -185,11 +185,19 @@ function renderElevationResult(weapon, distanceMeters) {
         resolved.terrainMeta
     );
 
-    value.textContent = primary;
+    setText(
+        value,
+        primary
+    );
 
     if (detail) {
-        detail.textContent = secondary;
-        detail.hidden = !secondary;
+        setText(
+            detail,
+            secondary
+        );
+        if (detail.hidden !== !secondary) {
+            detail.hidden = !secondary;
+        }
     }
 }
 
@@ -237,26 +245,33 @@ function result() {
             360;
     }
 
-    $('angle').textContent =
+    setText(
+        $('angle'),
         a.toFixed(
             1
         ) +
-        '°';
+        '°'
+    );
 
-    $('dist').textContent =
+    setText(
+        $('dist'),
         d.toFixed(
             2
         ) +
-        ' km';
+        ' km'
+    );
 
-    $('distm').textContent =
+    setText(
+        $('distm'),
         Math.round(
             d *
             1000
         ) +
-        ' m';
+        ' m'
+    );
 
-    $('dx').textContent =
+    setText(
+        $('dx'),
         (
             dx >=
             0
@@ -268,9 +283,11 @@ function result() {
                 worldDistanceToMeters(dx)
             )
         ) +
-        ' m';
+        ' m'
+    );
 
-    $('dy').textContent =
+    setText(
+        $('dy'),
         (
             dy >=
             0
@@ -282,7 +299,8 @@ function result() {
                 worldDistanceToMeters(dy)
             )
         ) +
-        ' m';
+        ' m'
+    );
 
     renderElevationResult(
         weapon,
@@ -308,20 +326,27 @@ function result() {
         d + 1e-9 >= minRange &&
         d <= maxRange + 1e-9;
 
-    $('range').textContent =
+    setText(
+        $('range'),
         minRange > 0
             ? `${Math.round(minRange * 1000)}–${Math.round(maxRange * 1000)} m`
-            : `${Math.round(maxRange * 1000)} m`;
+            : `${Math.round(maxRange * 1000)} m`
+    );
 
-    $('rangeStatus').textContent =
+    setText(
+        $('rangeStatus'),
         inRange
             ? tr('inRange')
-            : tr('outRange');
+            : tr('outRange')
+    );
 
-    $('rangeStatus').style.color =
+    setStyle(
+        $('rangeStatus'),
+        'color',
         inRange
             ? '#82c596'
-            : '#d86666';
+            : '#d86666'
+    );
 
     const mapName =
         S.map ===
@@ -330,7 +355,8 @@ function result() {
             : MAPS[S.map]?.name ||
             S.map;
 
-    $('status').textContent =
+    setText(
+        $('status'),
         `${getWeaponName(weapon)} · ` +
         `${mapName} · ` +
         `${tr('artillery')}: ` +
@@ -338,7 +364,8 @@ function result() {
         `${formatGameCoordinate(S.origin.y)} · ` +
         `${tr('target')}: ` +
         `${formatGameCoordinate(S.target.x)}, ` +
-        `${formatGameCoordinate(S.target.y)}`;
+        `${formatGameCoordinate(S.target.y)}`
+    );
 
     if (
         typeof trackCalculationState ===
@@ -348,4 +375,571 @@ function result() {
             inRange
         );
     }
+}
+
+
+/* =========================
+   SAVED TARGET FIRING INFO
+   ========================= */
+
+let savedTargetSummaryRefreshTimer = null;
+let savedTargetSummaryState = '';
+
+function getSavedTargetEffectiveOrigin(target) {
+    const hasSavedOrigin =
+        Boolean(
+            target?.saveArtillery &&
+            target?.origin &&
+            Number.isFinite(
+                Number(target.origin.x)
+            ) &&
+            Number.isFinite(
+                Number(target.origin.y)
+            )
+        );
+
+    if (hasSavedOrigin) {
+        return {
+            x: Number(target.origin.x),
+            y: Number(target.origin.y)
+        };
+    }
+
+    return {
+        x: Number(S.origin.x),
+        y: Number(S.origin.y)
+    };
+}
+
+function getSavedTargetElevationSummary(
+    weapon,
+    distanceMeters,
+    origin,
+    targetPoint
+) {
+    const flatSolutions =
+        getWeaponElevationSolutions(
+            weapon,
+            distanceMeters
+        );
+
+    let solutions =
+        flatSolutions;
+
+    if (
+        typeof getTerrainBallisticSolutions ===
+        'function'
+    ) {
+        try {
+            const resolved =
+                getTerrainBallisticSolutions({
+                    weapon,
+                    distanceMeters,
+                    solutions:
+                        flatSolutions,
+                    mapId:
+                        S.map,
+                    origin,
+                    target:
+                        targetPoint
+                });
+
+            solutions =
+                resolved?.solutions ??
+                flatSolutions;
+        } catch (error) {
+            /*
+             * Saved-target cards are a convenience view.
+             * A terrain resolver failure must never make
+             * the target list unusable; flat-table values
+             * remain the fallback just like the main result.
+             */
+            solutions =
+                flatSolutions;
+        }
+    }
+
+    let primary =
+        '—';
+
+    let secondary =
+        '';
+
+    if (solutions.single) {
+        primary =
+            formatMilSolution(
+                solutions.single
+            );
+
+    } else if (
+        solutions.low &&
+        solutions.high
+    ) {
+        primary =
+            `${formatMilSolution(solutions.low)} / ` +
+            `${formatMilSolution(solutions.high)}`;
+
+        secondary =
+            `${tr('lowArc')} / ${tr('highArc')}`;
+
+    } else if (solutions.low) {
+        primary =
+            formatMilSolution(
+                solutions.low
+            );
+
+        secondary =
+            tr('lowArc');
+
+    } else if (solutions.high) {
+        primary =
+            formatMilSolution(
+                solutions.high
+            );
+
+        secondary =
+            tr('highArc');
+
+    } else if (solutions.inRange) {
+        secondary =
+            tr('noFiringSolution');
+
+    } else {
+        secondary =
+            tr('outRange');
+    }
+
+    return {
+        primary,
+        secondary,
+        inRange:
+            Boolean(
+                solutions.inRange
+            )
+    };
+}
+
+function getSavedTargetFiringInfo(target) {
+    const weapon =
+        WEAPONS[S.weapon];
+
+    if (
+        !weapon ||
+        !target ||
+        !Number.isFinite(
+            Number(target.x)
+        ) ||
+        !Number.isFinite(
+            Number(target.y)
+        )
+    ) {
+        return null;
+    }
+
+    const origin =
+        getSavedTargetEffectiveOrigin(
+            target
+        );
+
+    const targetPoint = {
+        x: Number(target.x),
+        y: Number(target.y)
+    };
+
+    const dx =
+        targetPoint.x -
+        origin.x;
+
+    const dy =
+        targetPoint.y -
+        origin.y;
+
+    const distanceMeters =
+        worldDistanceToMeters(
+            Math.hypot(
+                dx,
+                dy
+            )
+        );
+
+    let azimuth =
+        Math.atan2(
+            dx,
+            dy
+        ) *
+        180 /
+        Math.PI;
+
+    if (azimuth < 0) {
+        azimuth += 360;
+    }
+
+    const elevation =
+        getSavedTargetElevationSummary(
+            weapon,
+            distanceMeters,
+            origin,
+            targetPoint
+        );
+
+    return {
+        origin,
+        target:
+            targetPoint,
+        distanceMeters,
+        distanceKm:
+            distanceMeters /
+            1000,
+        azimuth,
+        dxMeters:
+            worldDistanceToMeters(
+                dx
+            ),
+        dyMeters:
+            worldDistanceToMeters(
+                dy
+            ),
+        mil:
+            elevation.primary,
+        milDetail:
+            elevation.secondary,
+        inRange:
+            elevation.inRange
+    };
+}
+
+function formatSavedTargetSignedMeters(value) {
+    return (
+        (
+            value >= 0
+                ? '+'
+                : '-'
+        ) +
+        Math.round(
+            Math.abs(value)
+        ) +
+        ' m'
+    );
+}
+
+function createSavedTargetMetric(
+    label,
+    value,
+    detail = '',
+    extraClass = ''
+) {
+    const metric =
+        document.createElement(
+            'div'
+        );
+
+    metric.className =
+        `saved-target-metric ${extraClass}`
+            .trim();
+
+    const labelElement =
+        document.createElement(
+            'span'
+        );
+
+    labelElement.className =
+        'saved-target-metric-label';
+
+    labelElement.textContent =
+        label;
+
+    const valueElement =
+        document.createElement(
+            'strong'
+        );
+
+    valueElement.className =
+        'saved-target-metric-value';
+
+    valueElement.textContent =
+        value;
+
+    metric.append(
+        labelElement,
+        valueElement
+    );
+
+    if (detail) {
+        const detailElement =
+            document.createElement(
+                'span'
+            );
+
+        detailElement.className =
+            'saved-target-metric-detail';
+
+        detailElement.textContent =
+            detail;
+
+        metric.appendChild(
+            detailElement
+        );
+    }
+
+    return metric;
+}
+
+function renderSavedTargetFiringInfo(
+    item,
+    target
+) {
+    const info =
+        item.querySelector(
+            '.saved-target-info'
+        );
+
+    if (!info) {
+        return;
+    }
+
+    info
+        .querySelector(
+            '.saved-target-origin'
+        )
+        ?.remove();
+
+    info
+        .querySelector(
+            '.saved-target-solution'
+        )
+        ?.remove();
+
+    const targetCoords =
+        info.querySelector(
+            '.saved-target-coords'
+        );
+
+    if (targetCoords) {
+        targetCoords.textContent =
+            `${tr('target')}: ` +
+            `X ${formatGameCoordinate(target.x)} · ` +
+            `Y ${formatGameCoordinate(target.y)}`;
+    }
+
+    const firingInfo =
+        getSavedTargetFiringInfo(
+            target
+        );
+
+    if (!firingInfo) {
+        return;
+    }
+
+    const originCoords =
+        document.createElement(
+            'span'
+        );
+
+    originCoords.className =
+        'saved-target-origin';
+
+    originCoords.textContent =
+        `${tr('artillery')}: ` +
+        `X ${formatGameCoordinate(firingInfo.origin.x)} · ` +
+        `Y ${formatGameCoordinate(firingInfo.origin.y)}`;
+
+    const solution =
+        document.createElement(
+            'div'
+        );
+
+    solution.className =
+        'saved-target-solution';
+
+    const distanceMetric =
+        createSavedTargetMetric(
+            tr('distance'),
+            `${Math.round(firingInfo.distanceMeters)} m`,
+            `${firingInfo.distanceKm.toFixed(2)} km`
+        );
+
+    const azimuthMetric =
+        createSavedTargetMetric(
+            tr('azimuth'),
+            `${firingInfo.azimuth.toFixed(1)}°`
+        );
+
+    const milMetric =
+        createSavedTargetMetric(
+            tr('mil'),
+            firingInfo.mil,
+            firingInfo.milDetail,
+            'saved-target-metric-mil'
+        );
+
+    const delta =
+        document.createElement(
+            'div'
+        );
+
+    delta.className =
+        'saved-target-delta';
+
+    delta.textContent =
+        `ΔX ${formatSavedTargetSignedMeters(firingInfo.dxMeters)} · ` +
+        `ΔY ${formatSavedTargetSignedMeters(firingInfo.dyMeters)}`;
+
+    solution.append(
+        distanceMetric,
+        azimuthMetric,
+        milMetric,
+        delta
+    );
+
+    info.append(
+        originCoords,
+        solution
+    );
+
+    item.classList.toggle(
+        'out-of-range',
+        !firingInfo.inRange
+    );
+}
+
+function refreshSavedTargetFiringInfo() {
+    const container =
+        $('savedTargetsList');
+
+    if (
+        !container ||
+        !Array.isArray(savedTargets)
+    ) {
+        return;
+    }
+
+    const rows =
+        new Map();
+
+    container
+        .querySelectorAll(
+            '.saved-target'
+        )
+        .forEach(
+            item => {
+                rows.set(
+                    item.dataset.targetId,
+                    item
+                );
+            }
+        );
+
+    savedTargets.forEach(
+        target => {
+            const item =
+                rows.get(
+                    String(target.id)
+                );
+
+            if (item) {
+                renderSavedTargetFiringInfo(
+                    item,
+                    target
+                );
+            }
+        }
+    );
+}
+
+function getSavedTargetSummaryState() {
+    return [
+        S.map,
+        S.weapon,
+        S.origin?.x,
+        S.origin?.y,
+        LANG,
+        Boolean(
+            WEAPONS[S.weapon]
+        )
+    ].join('|');
+}
+
+function scheduleSavedTargetFiringInfoRefresh() {
+    const nextState =
+        getSavedTargetSummaryState();
+
+    if (
+        nextState ===
+        savedTargetSummaryState
+    ) {
+        return;
+    }
+
+    if (
+        savedTargetSummaryRefreshTimer
+    ) {
+        clearTimeout(
+            savedTargetSummaryRefreshTimer
+        );
+    }
+
+    savedTargetSummaryRefreshTimer =
+        setTimeout(
+            () => {
+                savedTargetSummaryRefreshTimer =
+                    null;
+
+                savedTargetSummaryState =
+                    getSavedTargetSummaryState();
+
+                refreshSavedTargetFiringInfo();
+            },
+            80
+        );
+}
+
+/*
+ * saved-targets.js is loaded before results.js.
+ * Wrap its two public render/update functions here
+ * so the existing target-list behavior stays intact
+ * while every row gains a live firing solution.
+ */
+if (
+    typeof renderSavedTargets ===
+    'function'
+) {
+    const renderSavedTargetsBase =
+        renderSavedTargets;
+
+    renderSavedTargets =
+        function (...args) {
+            const result =
+                renderSavedTargetsBase.apply(
+                    this,
+                    args
+                );
+
+            savedTargetSummaryState =
+                getSavedTargetSummaryState();
+
+            refreshSavedTargetFiringInfo();
+
+            return result;
+        };
+}
+
+if (
+    typeof refreshSavedTargetHighlight ===
+    'function'
+) {
+    const refreshSavedTargetHighlightBase =
+        refreshSavedTargetHighlight;
+
+    refreshSavedTargetHighlight =
+        function (...args) {
+            const result =
+                refreshSavedTargetHighlightBase.apply(
+                    this,
+                    args
+                );
+
+            scheduleSavedTargetFiringInfoRefresh();
+
+            return result;
+        };
 }

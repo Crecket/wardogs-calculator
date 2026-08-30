@@ -4,7 +4,8 @@
  *
  * Mirrors locateTerrainPoint / decodeRawHeight in
  * js/features/terrain-ballistics.js. The three must agree: if they drift,
- * the range ring and the elevation readout describe different ground.
+ * the contours, the range ring, and the elevation readout describe
+ * different ground.
  *
  * Heights are metres on the map's own offset datum, roughly 900 m below
  * anything a player would call an altitude. Only differences are meaningful.

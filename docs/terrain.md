@@ -44,6 +44,23 @@ MIL      -> existing weapon firing table
 
 Automatic terrain, ΔZ, or vehicle-attitude MIL correction is **not enabled**.
 
+### The elevation datum is offset
+
+Decoded heights are not altitudes. Sampled across its playable bounds,
+Bakurani runs about -1007 m to +75 m and Ozeti about -1008 m to -620 m, so
+the height field sits roughly 900 m below anything a player would recognise
+as an altitude.
+
+The field is internally consistent — chunk seams agree to 0.21 m — so every
+**difference** is trustworthy, which is all the ΔZ readout and the contour
+layer use. No absolute height should ever be displayed. `worldZOffsetMeters`
+is 0.5 on Bakurani and 0.04 on Ozeti and does not encode this correction;
+nothing in the repository currently records where the datum went.
+
+Calibrating it needs one known in-game altitude readout per map. Until then,
+contour lines are drawn unlabelled and coloured by height *relative to the
+map's own lowest sample*.
+
 ---
 
 ## Data layout
@@ -55,6 +72,7 @@ data/terrain/<map-id>/
 ├── manifest.json
 ├── heightfield.json
 ├── heightfield.bin
+├── contours.json
 └── chunks/
     ├── ...
     └── *.bin
@@ -90,6 +108,17 @@ data/terrain/ozeti/
 `manifest.json` describes the terrain grid, verified coordinate coverage, coordinate-to-Landscape mapping, elevation conversion, and integrity metadata used by the runtime.
 
 The binary terrain chunks contain only elevation samples. They are not map-image tiles and should not be placed under `maps/tiles/`.
+
+`contours.json` is generated, not extracted. `npm run build-contours` samples
+the chunks on a 4 m grid across the map's playable bounds and writes 20 m
+contour lines as delta-encoded vectors — a few hundred KB, against 129 MB of
+chunks. It is committed, and regenerating it is the correct response to any
+change in the heightfield or in a map's `bounds`.
+
+The runtime cannot build these itself: `js/features/terrain-ballistics.js`
+loads chunks lazily, two per firing solution, while a contour layer needs the
+whole map at once. `js/map/contours.js` fetches the generated file only when
+somebody turns the Contours layer on.
 
 ---
 
@@ -328,3 +357,26 @@ drawn as an unlabelled advisory band and is never turned into a number.
 Regenerate the model with `npm run fit-ballistics`; it is a least-squares
 vacuum fit to `data/weapons.json`, marked `source: "vacuum-fit"`, and is meant
 to be replaced by pak extraction rather than refined.
+
+### The dead-ground layer
+
+The ring says how far a gun reaches on each bearing. The **Dead ground** layer
+says where inside that reach a crest gets in the way.
+
+For every bearing the terrain is sampled outward in 25 m steps, the same march
+the ring uses. A sample at range `R` is dead ground when the flattest
+trajectory that would land on it — the low root of the same vacuum model —
+passes below the ground at some closer distance. Adjacent dead samples merge
+into intervals and are drawn as dark radial wedges inside the ring.
+
+It is computed for the **flattest arc the weapon has**, and only that arc:
+SPG-2 `low`, mortar `single`. Where a weapon has a second, steeper arc it will
+reach much of what is shaded here, so the shading is the flat arc's problem,
+not the weapon's.
+
+The layer is **default off**, and it is solved only while it is on. It inherits
+every caveat the ring does and adds none of its own confidence:
+`projectile-model.json` is a `source: "vacuum-fit"` to our own tables that has
+never been checked against the game, the grid is 32 m, and the trajectory is
+drag-free. Treat a shaded patch as "expect trouble here", not as a statement
+that a shell cannot land there.
