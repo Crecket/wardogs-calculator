@@ -1,21 +1,21 @@
 export const ZH_CN_SEO = {
     title: 'WARDOGS 炮兵计算器 | 迫击炮、SPH-2 与战术地图',
     mobileTitle: 'WARDOGS 炮兵计算器 — 移动版',
-    description: '免费的 WARDOGS 炮兵与迫击炮计算器，支持 Mortar 和 SPH-2，提供 Bakurani、Ozeti 互动地图、Terrain3D 高程信息及战术地图工具。',
+    description: '免费的 WARDOGS 炮兵与迫击炮计算器，支持 Mortar 和 SPH-2，提供 Bakurani、Ozeti 地图、等高线及实验性 Terrain3D MIL 修正。',
     featureList: [
         'WARDOGS 迫击炮射击解算',
-        'SPH-2 LOW / HIGH 射表解算',
-        'Bakurani 互动战术地图',
-        'Ozeti 互动战术地图',
-        'Terrain3D 高程与高度差信息',
-        '保存目标',
+        'SPH-2 LOW / HIGH 射击解算',
+        'SPH-2 实验性 Terrain3D MIL 修正',
+        'Bakurani 互动战术地图与等高线',
+        'Ozeti 互动战术地图与等高线',
+        '保存目标的完整射击信息',
         '测距尺与绘图工具',
         '战术地图标记'
     ],
     cluster: {
         heading: 'WARDOGS 炮兵计算器',
         navLabel: '计算器与地图指南',
-        intro: 'WARDOGS 炮兵计算器是一款免费、开源的社区工具，可根据手动设置的炮位与目标位置计算距离、方位角和 MIL。迫击炮与 SPH-2 共用同一套战术地图工作区，便于在游戏过程中快速切换目标并查看射击解算。',
+        intro: 'WARDOGS 炮兵计算器是一款免费、开源的社区工具，可根据手动设置的炮位与目标位置计算距离、方位角和 MIL。迫击炮与 SPH-2 共用同一套战术地图工作区，并提供保存目标、等高线、绘图和战术标记等规划工具。',
         sections: [
             {
                 id: 'wardogs-mortar-calculator',
@@ -40,7 +40,7 @@ export const ZH_CN_SEO = {
             {
                 id: 'how-to-use',
                 heading: '使用方法',
-                body: '选择 Bakurani、Ozeti 或自定义地图，再选择 Mortar 或 SPH-2，设置炮位和目标，即可读取距离、方位角与 MIL。还可以保存常用目标，或使用测距尺、绘图和标记工具进行小队战术规划。'
+                body: '选择 Bakurani、Ozeti 或自定义地图，再选择 Mortar 或 SPH-2，设置炮位和目标，即可读取距离、方位角与 MIL。对于支持 Terrain3D 的 SPH-2 射击，可手动开启实验性修正，在 SAFE Terrain3D 候选和标准射表值之间进行直接比较。'
             }
         ]
     },
@@ -53,7 +53,7 @@ export const ZH_CN_SEO = {
         },
         {
             question: 'WARDOGS 炮兵计算器支持 SPH-2 吗？',
-            answer: '支持。SPH-2 解算包括距离、方位角以及可用的 LOW / HIGH 射表方案。'
+            answer: '支持。SPH-2 解算包括距离、方位角、LOW / HIGH 射击方案，以及在受支持地形上的可选实验性 Terrain3D MIL 修正。'
         },
         {
             question: '支持哪些 WARDOGS 地图？',
@@ -62,6 +62,10 @@ export const ZH_CN_SEO = {
         {
             question: 'Terrain3D 会自动修正地形或车体倾斜造成的 SPH-2 MIL 吗？',
             answer: '地形高度会自动修正，车体倾斜不会。在已支持的地图（目前为 Bakurani）上，炮位与目标之间的高度差（ΔZ）会自动应用到 MIL，迫击炮和 SPH-2 的两条弹道都包含在内。该修正是一个差值，平地上为零，因此现有射表在平地上保持不变；当某条弹道无法修正或地图不受支持时，面板会给出提示。车体倾斜不做修正，SPH-2 射击前仍需调平。'
+        },
+        {
+            question: 'WARDOGS 地图可以显示地形等高线吗？',
+            answer: '可以。受支持的 WARDOGS 地图提供可切换的地形等高线图层，可在 Layers 菜单中与其他战术图层一起开启或关闭。'
         }
     ]
 };

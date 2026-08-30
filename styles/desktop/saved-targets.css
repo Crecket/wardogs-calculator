@@ -654,3 +654,196 @@
 
     cursor: not-allowed;
 }
+
+/* =========================
+   SAVED TARGET FULL FIRING INFO
+   ========================= */
+
+.saved-targets {
+    width: 390px;
+}
+
+.saved-targets-list {
+    max-height:
+        min(
+            520px,
+            calc(100vh - 260px)
+        );
+
+    gap: 7px;
+}
+
+.saved-target {
+    min-height: 118px;
+
+    padding: 9px 10px;
+
+    align-items: flex-start;
+}
+
+.saved-target-info {
+    gap: 5px;
+}
+
+.saved-target-origin {
+    color: var(--muted);
+
+    font:
+        10px ui-monospace,
+        SFMono-Regular,
+        Consolas,
+        monospace;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+.saved-target-solution {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+
+    gap: 5px;
+
+    margin-top: 2px;
+}
+
+.saved-target-metric {
+    min-width: 0;
+
+    padding: 6px 7px;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 2px;
+
+    border: 1px solid var(--border-light);
+    border-radius: 5px;
+
+    background:
+        color-mix(
+            in srgb,
+            var(--header-bg) 54%,
+            transparent
+        );
+}
+
+.saved-target-metric-label {
+    overflow: hidden;
+
+    color: var(--muted);
+
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1;
+
+    letter-spacing: .05em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.saved-target-metric-value {
+    overflow: hidden;
+
+    color: var(--text);
+
+    font:
+        600 12px ui-monospace,
+        SFMono-Regular,
+        Consolas,
+        monospace;
+
+    line-height: 1.15;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.saved-target-metric-detail {
+    overflow: hidden;
+
+    min-height: 9px;
+
+    color: var(--muted);
+
+    font-size: 8px;
+    line-height: 1.1;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.saved-target-metric-mil
+.saved-target-metric-value {
+    color: var(--accent);
+}
+
+.saved-target-delta {
+    grid-column: 1 / -1;
+
+    padding: 1px 2px 0;
+
+    color: var(--muted);
+
+    font:
+        9px ui-monospace,
+        SFMono-Regular,
+        Consolas,
+        monospace;
+
+    line-height: 1.2;
+}
+
+.saved-target.out-of-range
+.saved-target-metric-mil
+.saved-target-metric-value {
+    color: #d86666;
+}
+
+.saved-target.out-of-range {
+    border-color:
+        color-mix(
+            in srgb,
+            #d86666 46%,
+            var(--border)
+        );
+}
+
+.saved-target-actions-inline {
+    padding-top: 1px;
+}
+
+@media (max-width: 520px) {
+    .saved-targets {
+        top: 10px;
+        right: 10px;
+
+        width:
+            calc(100% - 20px);
+
+        max-width:
+            calc(100% - 20px);
+    }
+
+    .saved-target-solution {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+    .saved-target-metric-mil {
+        grid-column:
+            1 / -1;
+    }
+}

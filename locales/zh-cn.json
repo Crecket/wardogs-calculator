@@ -151,5 +151,9 @@
   "weaponNames": {
     "mortar": "迫击炮",
     "spg": "SPH-2"
-  }
+  },
+  "markerLabelSpawnVehicle": "重生载具",
+  "markerLabelFob": "FOB",
+  "markerLabelTank": "坦克",
+  "markerLabelArtillery": "炮兵"
 }

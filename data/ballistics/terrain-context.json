@@ -1,10 +1,10 @@
 {
   "schema": "wardogs-terrain-ballistics-v1",
-  "status": "SAFE_RELEASE_CANDIDATE_2026-08-24",
+  "status": "SAFE_RELEASE_CANDIDATE_2026-08-24__PLUS_EXPERIMENTAL_OPT_IN_TERRAIN_CORRECTION_2026-08-30",
   "mapId": "bakurani",
   "weaponId": "spg",
   "ammo": "155MM HE SHELL",
-  "arc": "high",
+  "arc": "full-range",
   "terrainManifest": "data/terrain/bakurani/manifest.json",
   "terrainMaps": {
     "bakurani": {
@@ -23,6 +23,29 @@
       "bakurani"
     ],
     "reason": "Height correction is on for every arc on the maps in correctedMaps. spg.low was enabled on 2026-08-27: a sweep of 1652 (arc, range, deltaZ) cells found no case where correcting is worse than ignoring, and on the low arc it is the difference between roughly 600 m of miss and 25 m against a model perturbed 2% in muzzle velocity. Still off for maps outside correctedMaps: Bakurani's coordinate alignment was validated by visual overlay after the Y-flip fix in 5c462a173, Ozeti's never was. The projectile model remains a vacuum fit to our own tables and has never been checked against the game; see docs/superpowers/specs/2026-08-26-elevation-correction-design.md section 8."
+  },
+  "experimentalCorrection": {
+    "available": true,
+    "defaultEnabled": false,
+    "storageKey": "wardogs-experimental-terrain-correction",
+    "weaponId": "spg",
+    "ammo": "155MM HE SHELL",
+    "safeStatus": "SAFE_CONSENSUS",
+    "platformCorrection": false,
+    "payloads": {
+      "lowMain": {
+        "url": "data/ballistics/terrain-correction/low-main.json",
+        "sha256": "6f2370ee6df320cf539dac00322d70713a81dac917e67adfd112757ec8a0e58e"
+      },
+      "lowExtension": {
+        "url": "data/ballistics/terrain-correction/low-tail-apex.json",
+        "sha256": "6d72cf23ccb8d33c4a8dd9434d8bb653012a163b3993962e68e0611be9a88f71"
+      },
+      "highV2": {
+        "url": "data/ballistics/terrain-correction/high-v2.json",
+        "sha256": "42eb2bb6a5b2f24aeb04ef4f8fcbba65f3aca22ada0f4af9486101f119a39034"
+      }
+    }
   },
   "calibration": {
     "ready": false

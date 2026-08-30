@@ -9,27 +9,9 @@
       "anchorY": 0.5,
       "placeable": true
     },
-    "tank": {
-      "path": "assets/map-markers/tank.webp",
-      "labelKey": "markerLabelTank",
-      "width": 32,
-      "height": 32,
-      "anchorX": 0.5,
-      "anchorY": 0.5,
-      "placeable": true
-    },
     "artillery": {
       "path": "assets/map-markers/artillery.webp",
       "labelKey": "markerLabelArtillery",
-      "width": 32,
-      "height": 32,
-      "anchorX": 0.5,
-      "anchorY": 0.5,
-      "placeable": true
-    },
-    "spawn_vehicle": {
-      "path": "assets/map-markers/spawn_vehicle.webp",
-      "labelKey": "markerLabelSpawnVehicle",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
@@ -140,9 +122,8 @@
       "anchorY": 0.5,
       "placeable": false
     },
-    "vendor": {
-      "path": "assets/map-markers/vendor.webp",
-      "labelKey": "markerLabelVendor",
+    "spawn_board": {
+      "path": "assets/map-markers/spawn_board.webp",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,
@@ -157,8 +138,115 @@
       "anchorY": 0.5,
       "placeable": false
     },
-    "spawn_board": {
-      "path": "assets/map-markers/spawn_board.webp",
+    "like": {
+      "path": "assets/map-markers/like.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "warning": {
+      "path": "assets/map-markers/warning.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "hill_warning": {
+      "path": "assets/map-markers/hill_warning.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "lasthit": {
+      "path": "assets/map-markers/lasthit.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "spotted": {
+      "path": "assets/map-markers/spotted.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "quad": {
+      "path": "assets/map-markers/quad.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "kodiak": {
+      "path": "assets/map-markers/kodiak.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "dune": {
+      "path": "assets/map-markers/dune.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "ural": {
+      "path": "assets/map-markers/ural.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "tank": {
+      "path": "assets/map-markers/tank.webp",
+      "labelKey": "markerLabelTank",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "havoc": {
+      "path": "assets/map-markers/havoc.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "heli": {
+      "path": "assets/map-markers/heli.webp",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "spawn_vehicle": {
+      "path": "assets/map-markers/spawn_vehicle.webp",
+      "labelKey": "markerLabelSpawnVehicle",
+      "width": 32,
+      "height": 32,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "placeable": true
+    },
+    "vendor": {
+      "path": "assets/map-markers/vendor.webp",
+      "labelKey": "markerLabelVendor",
       "width": 32,
       "height": 32,
       "anchorX": 0.5,

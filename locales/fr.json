@@ -62,7 +62,7 @@
   "markerLabelFob": "FOB",
   "markerLabelTank": "Char",
   "markerLabelArtillery": "Artillerie",
-  "markerLabelSpawnVehicle": "Spawn de véhicule",
+  "markerLabelSpawnVehicle": "Véhicule de réapparition",
   "markerLabelVendor": "Vendeur",
   "mapToolColorDanger": "Danger / Ennemi",
   "mapToolColorWarning": "Avertissement / Contesté",
