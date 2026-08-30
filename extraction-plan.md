@@ -33,7 +33,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 15 | 7.3–7.8 | Saved-target markers and sync | `branch` | `upstream-pr/saved-target-markers` (on `upstream-pr/multiple-guns`) |
 | 16 | 1.x | Shared sessions | `todo` | — |
 | 17 | — | Parent tile drawn while the child loads | [`pr` #18](https://github.com/apollyon-sys/wardogs-calculator/pull/18) | `feat/tile-parent-fallback` |
-| 18 | — | Forced layout and no-op DOM writes on every pointer move | folded into [`pr` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | `upstream-pr/interaction-cost` (merged into `upstream-pr/contour-layer`) |
+| 18 | — | Forced layout and no-op DOM writes on every pointer move | folded into [`pr` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | carried on `upstream-pr/contour-layer` as `4e4eac156` |
 
 The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
 
