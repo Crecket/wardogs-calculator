@@ -706,13 +706,17 @@
 
     grid-template-columns:
         repeat(
-            3,
+            2,
             minmax(0, 1fr)
         );
 
     gap: 5px;
 
     margin-top: 2px;
+}
+
+.saved-target-metric-mil {
+    grid-column: 1 / -1;
 }
 
 .saved-target-metric {
@@ -832,18 +836,5 @@
 
         max-width:
             calc(100% - 20px);
-    }
-
-    .saved-target-solution {
-        grid-template-columns:
-            repeat(
-                2,
-                minmax(0, 1fr)
-            );
-    }
-
-    .saved-target-metric-mil {
-        grid-column:
-            1 / -1;
     }
 }
