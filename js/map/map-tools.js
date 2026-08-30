@@ -54,6 +54,11 @@ const MAP_TOOL_STATE = {
 
     layers: {
         tiles: true,
+        /*
+         * Off by default: the contour lines are a separate few-hundred-KB
+         * download, only made when somebody actually asks for them.
+         */
+        contours: false,
         grid: true,
         zones: true,
         polygons: true,
@@ -84,8 +89,7 @@ function snapshotMapToolContent() {
         markers: structuredClone(MAP_TOOL_STATE.markers),
         origin: structuredClone(S.origin),
         target: structuredClone(S.target),
-        mode: S.mode,
-        selectedSavedTargetId
+        mode: S.mode
     };
 }
 
@@ -142,9 +146,6 @@ function restoreMapToolContent(snapshot) {
     ) {
         S.mode = snapshot.mode;
     }
-
-    selectedSavedTargetId =
-        snapshot.selectedSavedTargetId || null;
 
     $('originMode')?.classList.toggle(
         'active',
@@ -814,13 +815,16 @@ function buildMarkerPicker() {
         button.type = 'button';
         button.className =
             'map-tool-marker-option';
+        const label =
+            getMarkerAssetLabel(asset);
+
         button.dataset.icon =
             asset.id;
         button.title =
-            asset.id;
+            label;
         button.setAttribute(
             'aria-label',
-            asset.id
+            label
         );
 
         const image =
@@ -914,9 +918,58 @@ function setMapLayerVisible(layer, visible) {
     MAP_TOOL_STATE.layers[layer] = Boolean(visible);
     saveMapToolState();
 
+    /*
+     * Start the download the moment the layer is asked for rather than
+     * waiting for the redraw, so the lines appear as soon as they can.
+     */
+    if (
+        layer === 'contours' &&
+        visible &&
+        typeof ensureContoursLoaded === 'function'
+    ) {
+        ensureContoursLoaded(currentMapToolMapId());
+    }
+
     if (
         layer === 'cursorCoords' &&
         !MAP_TOOL_STATE.layers.cursorCoords
+    ) {
+        const cursor = $('cursorCoords');
+
+        if (cursor) {
+            cursor.style.display = 'none';
+        }
+    }
+
+    draw();
+}
+
+
+function setMapLayerGroupVisible(layerIds, visible) {
+    const nextVisible = Boolean(visible);
+
+    layerIds.forEach(layer => {
+        if (layer in MAP_TOOL_STATE.layers) {
+            MAP_TOOL_STATE.layers[layer] =
+                nextVisible;
+        }
+    });
+
+    saveMapToolState();
+
+    if (
+        nextVisible &&
+        layerIds.includes('contours') &&
+        typeof ensureContoursLoaded === 'function'
+    ) {
+        ensureContoursLoaded(
+            currentMapToolMapId()
+        );
+    }
+
+    if (
+        !nextVisible &&
+        layerIds.includes('cursorCoords')
     ) {
         const cursor = $('cursorCoords');
 
@@ -935,95 +988,265 @@ function buildMapLayers() {
         return;
     }
 
-    const layers = [
-        ['tiles', 'mapLayerMap'],
-        ['grid', 'mapLayerGrid'],
-        ['zones', 'mapLayerZones'],
-        ['polygons', 'mapLayerPolygons'],
-        ['presetMarkers', 'mapLayerPresetMarkers'],
-        ['drawings', 'mapLayerDrawings'],
-        ['userMarkers', 'mapLayerUserMarkers'],
-        ['artillery', 'mapLayerArtillery'],
-        ['cursorCoords', 'mapLayerCursorCoordinates']
+    const contourLayer = (
+        typeof mapHasContours === 'function' &&
+        mapHasContours(
+            currentMapToolMapId()
+        )
+    )
+        ? [['contours', 'mapLayerContours']]
+        : [];
+
+    const groups = [
+        {
+            id: 'base',
+            titleKey: 'map',
+            items: [
+                ['tiles', 'mapLayerMap'],
+                ...contourLayer,
+                ['grid', 'mapLayerGrid']
+            ]
+        },
+        {
+            id: 'tactical',
+            titleKey: 'mapToolMarkers',
+            items: [
+                ['zones', 'mapLayerZones'],
+                ['polygons', 'mapLayerPolygons'],
+                ['presetMarkers', 'mapLayerPresetMarkers'],
+                ['artillery', 'mapLayerArtillery']
+            ]
+        },
+        {
+            id: 'personal',
+            titleKey: 'mapToolsToggle',
+            items: [
+                ['drawings', 'mapLayerDrawings'],
+                ['userMarkers', 'mapLayerUserMarkers'],
+                ['cursorCoords', 'mapLayerCursorCoordinates']
+            ]
+        }
     ];
+
+    const icons = {
+        tiles: `
+            <path d="M4 5h7v6H4zM13 5h7v6h-7zM4 13h7v6H4zM13 13h7v6h-7z"/>
+        `,
+        contours: `
+            <path d="M3 7c3-2 5 2 8 0s5-2 10 0"/>
+            <path d="M3 12c3-2 5 2 8 0s5-2 10 0"/>
+            <path d="M3 17c3-2 5 2 8 0s5-2 10 0"/>
+        `,
+        grid: `
+            <path d="M4 4h16v16H4z"/>
+            <path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/>
+        `,
+        zones: `
+            <circle cx="12" cy="12" r="7"/>
+            <path d="M12 5v14M5 12h14"/>
+        `,
+        polygons: `
+            <path d="m5 17 2-10 9-3 4 8-5 8Z"/>
+        `,
+        presetMarkers: `
+            <path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z"/>
+            <circle cx="12" cy="10" r="2"/>
+        `,
+        drawings: `
+            <path d="M4 18.5 5.5 14 15 4.5l4.5 4.5-9.5 9.5Z"/>
+            <path d="m13.5 6 4.5 4.5"/>
+        `,
+        userMarkers: `
+            <path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z"/>
+            <path d="m12 7 .9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3Z"/>
+        `,
+        artillery: `
+            <circle cx="12" cy="12" r="6"/>
+            <circle cx="12" cy="12" r="2"/>
+            <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+        `,
+        cursorCoords: `
+            <path d="m5 3 13 9-6 1.5L9.5 19Z"/>
+        `
+    };
+
+    const createLayerIcon = id => {
+        const icon =
+            document.createElement('span');
+
+        icon.className =
+            'map-layer-icon';
+
+        icon.setAttribute(
+            'aria-hidden',
+            'true'
+        );
+
+        icon.innerHTML = `
+            <svg
+                viewBox="0 0 24 24"
+                width="17"
+                height="17"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                ${icons[id] || ''}
+            </svg>
+        `;
+
+        return icon;
+    };
 
     container.innerHTML = '';
 
-    const title = document.createElement('div');
-    title.className = 'map-tool-popover-title';
-    title.textContent = tr('mapToolLayers');
-    container.appendChild(title);
-
-    const shortcutHint = document.createElement('div');
-    shortcutHint.className = 'map-tool-shortcuts-hint';
-    shortcutHint.textContent = tr('mapToolUndoRedoHint')
-        .replace('{undo}', formatShortcut('undo'))
-        .replace('{redo}', formatShortcut('redo'));
-    shortcutHint.title = `${tr('mapToolUndo')} / ${tr('mapToolRedo')}`;
-    container.appendChild(shortcutHint);
-
-    const historyActions =
+    const title =
         document.createElement('div');
 
-    historyActions.className =
-        'map-tool-history-actions';
+    title.className =
+        'map-tool-popover-title';
 
-    const undoButton =
-        document.createElement('button');
+    title.textContent =
+        tr('mapToolLayers');
 
-    undoButton.type = 'button';
-    undoButton.id = 'mapToolUndoButton';
-    undoButton.textContent = tr('mapToolUndo');
-    undoButton.title = `${tr('mapToolUndo')} (${formatShortcut('undo')})`;
-    undoButton.addEventListener(
-        'click',
-        event => {
-            event.stopPropagation();
-            undoMapToolAction();
-        }
-    );
+    container.appendChild(title);
 
-    const redoButton =
-        document.createElement('button');
+    groups.forEach(group => {
+        const section =
+            document.createElement('section');
 
-    redoButton.type = 'button';
-    redoButton.id = 'mapToolRedoButton';
-    redoButton.textContent = tr('mapToolRedo');
-    redoButton.title = `${tr('mapToolRedo')} (${formatShortcut('redo')})`;
-    redoButton.addEventListener(
-        'click',
-        event => {
-            event.stopPropagation();
-            redoMapToolAction();
-        }
-    );
+        section.className =
+            'map-layer-group';
 
-    historyActions.append(
-        undoButton,
-        redoButton
-    );
+        section.dataset.layerGroup =
+            group.id;
 
-    container.appendChild(
-        historyActions
-    );
+        const groupToggle =
+            document.createElement('label');
 
-    layers.forEach(([id, key]) => {
-        const label = document.createElement('label');
-        label.className = 'map-layer-toggle';
+        groupToggle.className =
+            'map-layer-group-toggle';
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = isMapLayerVisible(id);
-        checkbox.addEventListener('change', () => {
-            setMapLayerVisible(id, checkbox.checked);
-        });
+        const groupTitle =
+            document.createElement('span');
 
-        const text = document.createElement('span');
-        text.textContent = tr(key);
+        groupTitle.className =
+            'map-layer-group-title';
 
-        label.appendChild(checkbox);
-        label.appendChild(text);
-        container.appendChild(label);
+        groupTitle.textContent =
+            tr(group.titleKey);
+
+        const groupCheckbox =
+            document.createElement('input');
+
+        groupCheckbox.type =
+            'checkbox';
+
+        const visibility =
+            group.items.map(
+                ([id]) =>
+                    isMapLayerVisible(id)
+            );
+
+        const allVisible =
+            visibility.every(Boolean);
+
+        const anyVisible =
+            visibility.some(Boolean);
+
+        groupCheckbox.checked =
+            allVisible;
+
+        groupCheckbox.indeterminate =
+            anyVisible &&
+            !allVisible;
+
+        groupCheckbox.addEventListener(
+            'change',
+            event => {
+                event.stopPropagation();
+
+                setMapLayerGroupVisible(
+                    group.items.map(
+                        ([id]) => id
+                    ),
+                    groupCheckbox.checked
+                );
+
+                buildMapLayers();
+            }
+        );
+
+        groupToggle.append(
+            groupTitle,
+            groupCheckbox
+        );
+
+        section.appendChild(
+            groupToggle
+        );
+
+        const items =
+            document.createElement('div');
+
+        items.className =
+            'map-layer-group-items';
+
+        group.items.forEach(
+            ([id, key]) => {
+                const label =
+                    document.createElement('label');
+
+                label.className =
+                    'map-layer-toggle';
+
+                const icon =
+                    createLayerIcon(id);
+
+                const text =
+                    document.createElement('span');
+
+                text.className =
+                    'map-layer-label';
+
+                text.textContent =
+                    tr(key);
+
+                const checkbox =
+                    document.createElement('input');
+
+                checkbox.type =
+                    'checkbox';
+
+                checkbox.checked =
+                    isMapLayerVisible(id);
+
+                checkbox.addEventListener(
+                    'change',
+                    () => {
+                        setMapLayerVisible(
+                            id,
+                            checkbox.checked
+                        );
+
+                        buildMapLayers();
+                    }
+                );
+
+                label.append(
+                    icon,
+                    text,
+                    checkbox
+                );
+
+                items.appendChild(label);
+            }
+        );
+
+        section.appendChild(items);
+        container.appendChild(section);
     });
 
     updateMapToolHistoryUI();
@@ -1362,7 +1585,147 @@ async function toggleMapFullscreen() {
     }
 }
 
+function ensureMapHistoryTools() {
+    const bar =
+        document.querySelector(
+            '.map-tools-bar'
+        );
+
+    if (!bar) {
+        return;
+    }
+
+    const createButton =
+        (id, direction) => {
+            const button =
+                document.createElement(
+                    'button'
+                );
+
+            button.type = 'button';
+            button.id = id;
+            button.className =
+                `map-tool-button map-tool-history-button map-tool-history-${direction}`;
+
+            button.innerHTML =
+                direction === 'undo'
+                    ? `
+                        <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            width="18"
+                            height="18"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M9 8 5 12l4 4"/>
+                            <path d="M5 12h7.5a5.5 5.5 0 0 1 5.5 5.5"/>
+                        </svg>
+                    `
+                    : `
+                        <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            width="18"
+                            height="18"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="m15 8 4 4-4 4"/>
+                            <path d="M19 12h-7.5A5.5 5.5 0 0 0 6 17.5"/>
+                        </svg>
+                    `;
+
+            button.addEventListener(
+                'click',
+                event => {
+                    event.stopPropagation();
+
+                    if (
+                        direction ===
+                        'undo'
+                    ) {
+                        undoMapToolAction();
+                    } else {
+                        redoMapToolAction();
+                    }
+                }
+            );
+
+            return button;
+        };
+
+    let undoButton =
+        $('mapToolUndoButton');
+
+    let redoButton =
+        $('mapToolRedoButton');
+
+    if (!undoButton) {
+        undoButton =
+            createButton(
+                'mapToolUndoButton',
+                'undo'
+            );
+    }
+
+    if (!redoButton) {
+        redoButton =
+            createButton(
+                'mapToolRedoButton',
+                'redo'
+            );
+    }
+
+    const layersButton =
+        $('mapToolLayers');
+
+    if (layersButton) {
+        if (!undoButton.isConnected) {
+            bar.insertBefore(
+                undoButton,
+                layersButton
+            );
+        }
+
+        if (!redoButton.isConnected) {
+            bar.insertBefore(
+                redoButton,
+                layersButton
+            );
+        }
+    } else {
+        if (!undoButton.isConnected) {
+            bar.appendChild(
+                undoButton
+            );
+        }
+
+        if (!redoButton.isConnected) {
+            bar.appendChild(
+                redoButton
+            );
+        }
+    }
+
+    updateMapToolHistoryUI();
+}
+
 function updateMapToolsLocalization() {
+    ensureMapHistoryTools();
+
+    const undoButton =
+        $('mapToolUndoButton');
+
+    const redoButton =
+        $('mapToolRedoButton');
+
     const rulerButton = $('mapToolRuler');
     const pencilButton = $('mapToolPencil');
     const eraserButton = $('mapToolEraser');
@@ -1372,6 +1735,18 @@ function updateMapToolsLocalization() {
     const dataTransferButton = $('mapToolDataTransfer');
     const fullscreenButton = $('mapToolFullscreen');
     const mobileToolsToggle = $('mobileMapToolsToggle');
+
+    setToolButtonLabel(
+        undoButton,
+        'mapToolUndo',
+        'undo'
+    );
+
+    setToolButtonLabel(
+        redoButton,
+        'mapToolRedo',
+        'redo'
+    );
 
     setToolButtonLabel(rulerButton, 'mapToolRuler', 'ruler');
     setToolButtonLabel(pencilButton, 'mapToolPencil', 'pencil');
@@ -1472,6 +1847,18 @@ function initMapTools() {
         'click',
         event => {
             event.stopPropagation();
+
+            if (
+                MAP_TOOL_STATE.tool ===
+                'marker' &&
+                isMapToolMenuOpen(
+                    'markerPicker'
+                )
+            ) {
+                closeMapToolMenus();
+                setMapTool('marker');
+                return;
+            }
 
             if (
                 MAP_TOOL_STATE.tool !==

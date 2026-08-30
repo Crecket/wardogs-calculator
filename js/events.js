@@ -383,9 +383,6 @@ function bindEvents() {
                 bounds.minY
             };
 
-            selectedSavedTargetId =
-                null;
-
             inputs();
 
             renderSavedTargets();
@@ -600,19 +597,25 @@ function bindEvents() {
                 return;
             }
 
-            updateCursor(
-                e
-            );
-
-            const toolRect =
+            /*
+             * One rect for the whole event. Reading it back after the
+             * cursor readout has been written forces a layout, and this
+             * handler used to read it twice.
+             */
+            const rect =
                 c.getBoundingClientRect();
+
+            updateCursor(
+                e,
+                rect
+            );
 
             const toolWorld =
                 toWorld(
                     e.clientX -
-                    toolRect.left,
+                    rect.left,
                     e.clientY -
-                    toolRect.top
+                    rect.top
                 );
 
             if (
@@ -633,9 +636,6 @@ function bindEvents() {
                 return;
             }
 
-            const rect =
-                c.getBoundingClientRect();
-
             const world =
                 toWorld(
                     e.clientX -
@@ -655,7 +655,8 @@ function bindEvents() {
             inputs();
 
             updateCursor(
-                e
+                e,
+                rect
             );
         }
     );
