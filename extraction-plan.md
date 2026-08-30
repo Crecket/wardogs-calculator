@@ -33,7 +33,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 15 | 7.3–7.8 | Saved-target markers and sync | `branch` | `upstream-pr/saved-target-markers` (on `upstream-pr/multiple-guns`) |
 | 16 | 1.x | Shared sessions | `todo` | — |
 | 17 | — | Parent tile drawn while the child loads | [`pr` #18](https://github.com/apollyon-sys/wardogs-calculator/pull/18) | `feat/tile-parent-fallback` |
-| 18 | — | Forced layout and no-op DOM writes on every pointer move | `branch` | `upstream-pr/interaction-cost` |
+| 18 | — | Forced layout and no-op DOM writes on every pointer move | folded into [`pr` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | `upstream-pr/interaction-cost` (merged into `upstream-pr/contour-layer`) |
 
 Item 18 is not an extraction either. It came out of profiling #10: the contour layer was blamed for zoom stutter, but a Chrome trace showed `set textContent` as the largest JS self-time **with contours off**, and a counting harness put `upstream/main` at 676 forced layout reads per wheel event and 20 readout writes per pointer move. `view()` is called from inside per-tile and per-marker loops and reads `clientWidth` every time, and `result()` rewrites all ten readouts unconditionally. Measured on the same map and zoom, 300 synthetic events each:
 
@@ -46,7 +46,7 @@ Item 18 is not an extraction either. It came out of profiling #10: the contour l
 | Readout, text writes | 6,000 | 782 | 7.7x |
 | Pointer move, layout reads | 8,100 | 600 | 13.5x |
 
-Cut from `upstream/main` so it stands alone; it touches nothing #10 touches.
+Cut from `upstream/main` so it stands alone, then **folded into #10 as a deliberate choice** rather than proposed separately: it reframes that PR from "the contour layer was slow" to "here is what was actually slow". The cost is that #10 now mixes a feature with an app-wide fix, so a hold on either half stalls both.
 
 Item 17, like item 7, is not an extraction: `drawTileMap` paints a flat `#151a1d` rectangle for every tile that has not decoded yet, so each zoom step flashes black even off a warm cache, and `upstream/main` has the same code. It now draws the cached ancestor tile upscaled into the gap instead. Cut from `main`, proposed upstream as #18, and merged into `feat/collab-rooms` so the fork has it too.
 
@@ -67,7 +67,7 @@ All eleven open PRs were reviewed by the maintainer on 2026-08-30. Not one drew 
 | [#16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | FOB build areas | `blocked` | Needs confirmed FOB dimensions; also carries #9's commits |
 | [#11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | Terrain range ring | `blocked` | Built on the superseded vacuum-fit projectile model |
 | [#15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | Flight time | `blocked` | Same projectile model as #11; stacks on it |
-| [#10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | Contour layer | `blocked` | Rendering cost while zooming — clearable without the maintainer |
+| [#10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | Contour layer + render cost | `modified` | Rebuilt for cost in `db9a45377`–`4e4eac156`; awaiting re-review |
 | [#17](https://github.com/apollyon-sys/wardogs-calculator/pull/17) | Multiple guns | `blocked` | Wants a rebase onto a base without the held PRs |
 
 **Approved, awaiting merge.** #12 (marker tool toggle) and #18 (parent-tile fallback) — "no blockers" on both.
