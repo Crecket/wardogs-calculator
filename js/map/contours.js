@@ -486,18 +486,41 @@ const CONTOUR_MAX_STRETCH_OUT = 0.8;
 
 let contourRebuildTimer = null;
 
-function scheduleContourRebuild() {
-    if (contourRebuildTimer !== null) {
-        clearTimeout(contourRebuildTimer);
+let contourRebuildAt = 0;
+
+/*
+ * One timer that re-arms itself against a moving deadline, rather than a
+ * clear and a fresh timer per zoom step. A profile of a zoom put 81 ms of
+ * main-thread time in clearTimeout alone.
+ */
+function contourRebuildTick() {
+    if (!contourRebuildAt) {
+        contourRebuildTimer = null;
+        return;
     }
 
-    contourRebuildTimer = setTimeout(
-        () => {
-            contourRebuildTimer = null;
-            draw();
-        },
-        CONTOUR_REBUILD_DELAY
-    );
+    const remaining = contourRebuildAt - performance.now();
+
+    if (remaining > 0) {
+        contourRebuildTimer = setTimeout(contourRebuildTick, remaining);
+        return;
+    }
+
+    contourRebuildTimer = null;
+    contourRebuildAt = 0;
+
+    draw();
+}
+
+function scheduleContourRebuild() {
+    contourRebuildAt = performance.now() + CONTOUR_REBUILD_DELAY;
+
+    if (contourRebuildTimer === null) {
+        contourRebuildTimer = setTimeout(
+            contourRebuildTick,
+            CONTOUR_REBUILD_DELAY
+        );
+    }
 }
 
 function drawContours(currentMap) {
@@ -587,10 +610,7 @@ function drawContours(currentMap) {
         );
 
     if (rebuild) {
-        if (contourRebuildTimer !== null) {
-            clearTimeout(contourRebuildTimer);
-            contourRebuildTimer = null;
-        }
+        contourRebuildAt = 0;
 
         if (!raster) {
             raster = { canvas: document.createElement('canvas') };
