@@ -216,6 +216,10 @@ produce. Nobody has checked a shaded patch in game.
 inside a wedge, one on the flat arc and one on the steep. The layer predicts
 the first misses short into the crest and the second lands.
 
+### 12. Shaded relief under the contour layer
+
+Idea 3 shipped contours as vector paths, which is the right architecture. What is still missing is *shading* — hillshade under the lines, which is most of what makes a topo layer read as terrain instead of as a wiring diagram. wardogs.zone bakes hillshade and 10 m contours into one 2048² raster per map; that is 8 m/px, frozen at one interval, and soft on zoom. Our chunks are the game's own Terrain3D data at 2 m spacing, so a hillshade built from `data/terrain/` beats their raster fourfold while our contours stay vector on top. New build script, no new data source. Z-exaggeration has to be per-map — Bakurani spans 1077 m of relief, Ozeti 388 m — and the datum offset is irrelevant because shading only ever consumes differences. See [12-shaded-relief.md](12-shaded-relief.md).
+
 ---
 
 ## Probably not
