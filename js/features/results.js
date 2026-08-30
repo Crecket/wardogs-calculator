@@ -130,11 +130,19 @@ function renderElevationResult(weapon, distanceMeters) {
             : terrainDetail;
     }
 
-    value.textContent = primary;
+    setText(
+        value,
+        primary
+    );
 
     if (detail) {
-        detail.textContent = secondary;
-        detail.hidden = !secondary;
+        setText(
+            detail,
+            secondary
+        );
+        if (detail.hidden !== !secondary) {
+            detail.hidden = !secondary;
+        }
     }
 }
 
@@ -182,26 +190,33 @@ function result() {
             360;
     }
 
-    $('angle').textContent =
+    setText(
+        $('angle'),
         a.toFixed(
             1
         ) +
-        '°';
+        '°'
+    );
 
-    $('dist').textContent =
+    setText(
+        $('dist'),
         d.toFixed(
             2
         ) +
-        ' km';
+        ' km'
+    );
 
-    $('distm').textContent =
+    setText(
+        $('distm'),
         Math.round(
             d *
             1000
         ) +
-        ' m';
+        ' m'
+    );
 
-    $('dx').textContent =
+    setText(
+        $('dx'),
         (
             dx >=
             0
@@ -213,9 +228,11 @@ function result() {
                 worldDistanceToMeters(dx)
             )
         ) +
-        ' m';
+        ' m'
+    );
 
-    $('dy').textContent =
+    setText(
+        $('dy'),
         (
             dy >=
             0
@@ -227,7 +244,8 @@ function result() {
                 worldDistanceToMeters(dy)
             )
         ) +
-        ' m';
+        ' m'
+    );
 
     renderElevationResult(
         weapon,
@@ -253,20 +271,27 @@ function result() {
         d + 1e-9 >= minRange &&
         d <= maxRange + 1e-9;
 
-    $('range').textContent =
+    setText(
+        $('range'),
         minRange > 0
             ? `${Math.round(minRange * 1000)}–${Math.round(maxRange * 1000)} m`
-            : `${Math.round(maxRange * 1000)} m`;
+            : `${Math.round(maxRange * 1000)} m`
+    );
 
-    $('rangeStatus').textContent =
+    setText(
+        $('rangeStatus'),
         inRange
             ? tr('inRange')
-            : tr('outRange');
+            : tr('outRange')
+    );
 
-    $('rangeStatus').style.color =
+    setStyle(
+        $('rangeStatus'),
+        'color',
         inRange
             ? '#82c596'
-            : '#d86666';
+            : '#d86666'
+    );
 
     const mapName =
         S.map ===
@@ -275,7 +300,8 @@ function result() {
             : MAPS[S.map]?.name ||
             S.map;
 
-    $('status').textContent =
+    setText(
+        $('status'),
         `${getWeaponName(weapon)} · ` +
         `${mapName} · ` +
         `${tr('artillery')}: ` +
@@ -283,7 +309,8 @@ function result() {
         `${formatGameCoordinate(S.origin.y)} · ` +
         `${tr('target')}: ` +
         `${formatGameCoordinate(S.target.x)}, ` +
-        `${formatGameCoordinate(S.target.y)}`;
+        `${formatGameCoordinate(S.target.y)}`
+    );
 
     if (
         typeof trackCalculationState ===
