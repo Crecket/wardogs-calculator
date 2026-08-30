@@ -94,9 +94,9 @@ function persistSavedTargets() {
  * to a gun laid on the wrong side of the map means placing it again every
  * single time.
  *
- * The map id rides along because the coordinates are meaningless on a
- * different map, and a mismatch drops them rather than dropping the gun
- * somewhere arbitrary.
+ * Every map keeps its own entry, keyed by map id, because the coordinates
+ * are meaningless on a different map. Switching maps restores that map's
+ * pair and leaves the others untouched.
  */
 const MAP_POINTS_WRITE_DELAY_MS = 300;
 
@@ -121,22 +121,72 @@ function persistMapPoints() {
     );
 }
 
+function readMapPointsStore() {
+
+    const raw =
+        localStorage.getItem(
+            MAP_POINTS_KEY
+        );
+
+    if (!raw) {
+        return {};
+    }
+
+    let parsed = null;
+
+    try {
+        parsed =
+            JSON.parse(raw);
+    } catch (error) {
+        return {};
+    }
+
+    if (
+        !parsed ||
+        typeof parsed !== 'object'
+    ) {
+        return {};
+    }
+
+    /*
+     * The first release stored a single { map, origin, target } object;
+     * fold that lone map into the keyed shape instead of dropping it.
+     */
+    if (
+        typeof parsed.map === 'string'
+    ) {
+
+        return {
+            [parsed.map]: {
+                origin: parsed.origin,
+                target: parsed.target
+            }
+        };
+    }
+
+    return parsed;
+}
+
 function writeMapPoints() {
 
     try {
+        const store =
+            readMapPointsStore();
+
+        store[S.map] = {
+            origin: {
+                x: S.origin.x,
+                y: S.origin.y
+            },
+            target: {
+                x: S.target.x,
+                y: S.target.y
+            }
+        };
+
         localStorage.setItem(
             MAP_POINTS_KEY,
-            JSON.stringify({
-                map: S.map,
-                origin: {
-                    x: S.origin.x,
-                    y: S.origin.y
-                },
-                target: {
-                    x: S.target.x,
-                    y: S.target.y
-                }
-            })
+            JSON.stringify(store)
         );
     } catch (error) {
         console.warn(
@@ -163,27 +213,18 @@ function readStoredPoint(value) {
 function loadMapPoints() {
 
     try {
-        const raw =
-            localStorage.getItem(
-                MAP_POINTS_KEY
-            );
+        const stored =
+            readMapPointsStore()[S.map];
 
-        if (!raw) {
-            return;
-        }
-
-        const parsed =
-            JSON.parse(raw);
-
-        if (parsed?.map !== S.map) {
+        if (!stored) {
             return;
         }
 
         const origin =
-            readStoredPoint(parsed.origin);
+            readStoredPoint(stored.origin);
 
         const target =
-            readStoredPoint(parsed.target);
+            readStoredPoint(stored.target);
 
         if (origin) {
             S.origin = origin;
