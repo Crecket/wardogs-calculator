@@ -25,6 +25,7 @@ wardogs-calculator/
 ├── maps/
 ├── scripts/
 │   ├── build-pages.mjs
+│   ├── build-contours.mjs
 │   ├── sync-locales.mjs
 │   ├── zh-cn-seo.mjs
 │   ├── version-assets.mjs

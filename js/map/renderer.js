@@ -119,6 +119,15 @@ function draw() {
 
     /*
      * Layer 2:
+     * terrain contours, above the tiles they describe and below
+     * everything drawn on top of the ground.
+     */
+    if (isMapLayerVisible('contours')) {
+        drawContours(currentMap);
+    }
+
+    /*
+     * Layer 3:
      * coordinate grid.
      */
     if (isMapLayerVisible('grid')) {
@@ -127,7 +136,7 @@ function draw() {
     }
 
     /*
-     * Layer 3:
+     * Layer 4:
      * circular zones.
      */
     if (isMapLayerVisible('zones')) {
@@ -135,7 +144,7 @@ function draw() {
     }
 
     /*
-     * Layer 4:
+     * Layer 5:
      * arbitrary polygons.
      */
     if (isMapLayerVisible('polygons')) {
@@ -197,7 +206,7 @@ function draw() {
             v.scale;
 
         /*
-         * Layer 5:
+         * Layer 6:
          * artillery range.
          */
         drawMaxRangeRing(
@@ -233,7 +242,7 @@ function draw() {
         }
 
         /*
-         * Layer 6:
+         * Layer 7:
          * origin -> target line.
          */
         ctx.strokeStyle =
@@ -264,7 +273,7 @@ function draw() {
         ctx.setLineDash([]);
 
         /*
-         * Layer 7:
+         * Layer 8:
          * artillery / target markers.
          */
         marker(
@@ -280,7 +289,7 @@ function draw() {
     }
 
     /*
-     * Layer 8:
+     * Layer 9:
      * preset icons are ALWAYS drawn last.
      *
      * This prevents tiles, grid, zones,

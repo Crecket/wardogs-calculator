@@ -45,57 +45,96 @@ function versionRuntimeAsset(url) {
     }
 }
 
-async function loadTerrainBallisticsRuntime() {
-    try {
-        await new Promise((resolve, reject) => {
-            const existing = document.querySelector(
-                'script[data-terrain-ballistics]'
+async function loadRuntimeScript({
+    selector,
+    dataAttribute,
+    url,
+    ready
+}) {
+    await new Promise((resolve, reject) => {
+        const existing =
+            document.querySelector(
+                selector
             );
 
-            if (existing) {
-                if (
-                    typeof initTerrainBallistics ===
-                    'function'
-                ) {
-                    resolve();
-                    return;
-                }
-
-                existing.addEventListener(
-                    'load',
-                    resolve,
-                    { once: true }
-                );
-                existing.addEventListener(
-                    'error',
-                    () => reject(
-                        new Error(
-                            'Failed to load terrain ballistics runtime'
-                        )
-                    ),
-                    { once: true }
-                );
+        if (existing) {
+            if (
+                typeof ready ===
+                    'function' &&
+                ready()
+            ) {
+                resolve();
                 return;
             }
 
-            const script =
-                document.createElement('script');
+            existing.addEventListener(
+                'load',
+                resolve,
+                {
+                    once: true
+                }
+            );
 
-            script.src =
-                versionRuntimeAsset(
-                    'js/features/terrain-ballistics.js'
-                );
+            existing.addEventListener(
+                'error',
+                () => reject(
+                    new Error(
+                        `Failed to load runtime ${url}`
+                    )
+                ),
+                {
+                    once: true
+                }
+            );
 
-            script.async = false;
-            script.dataset.terrainBallistics = '1';
-            script.onload = resolve;
-            script.onerror = () => reject(
+            return;
+        }
+
+        const script =
+            document.createElement(
+                'script'
+            );
+
+        script.src =
+            versionRuntimeAsset(
+                url
+            );
+
+        script.async = false;
+
+        script.dataset[
+            dataAttribute
+        ] = '1';
+
+        script.onload =
+            resolve;
+
+        script.onerror =
+            () => reject(
                 new Error(
-                    'Failed to load terrain ballistics runtime'
+                    `Failed to load runtime ${url}`
                 )
             );
 
-            document.head.appendChild(script);
+        document.head.appendChild(
+            script
+        );
+    });
+}
+
+async function loadTerrainBallisticsRuntime() {
+    try {
+        await loadRuntimeScript({
+            selector:
+                'script[data-terrain-ballistics]',
+            dataAttribute:
+                'terrainBallistics',
+            url:
+                'js/features/terrain-ballistics.js',
+            ready:
+                () =>
+                    typeof initTerrainBallistics ===
+                    'function'
         });
 
         if (
@@ -104,6 +143,32 @@ async function loadTerrainBallisticsRuntime() {
         ) {
             await initTerrainBallistics();
         }
+
+        /*
+         * The experimental layer wraps the verified Terrain3D endpoint
+         * runtime. It is safe-by-default: disabled unless the user opts in,
+         * and it keeps the flat-table solution for every non-SAFE arc.
+         */
+        await loadRuntimeScript({
+            selector:
+                'script[data-experimental-terrain-correction]',
+            dataAttribute:
+                'experimentalTerrainCorrection',
+            url:
+                'js/features/experimental-terrain-correction.js',
+            ready:
+                () =>
+                    typeof initExperimentalTerrainCorrection ===
+                    'function'
+        });
+
+        if (
+            typeof initExperimentalTerrainCorrection ===
+            'function'
+        ) {
+            await initExperimentalTerrainCorrection();
+        }
+
     } catch (error) {
         console.warn(
             '[terrain-ballistics] Runtime unavailable; flat-table fallback remains active.',
