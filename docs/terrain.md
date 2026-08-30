@@ -328,3 +328,26 @@ drawn as an unlabelled advisory band and is never turned into a number.
 Regenerate the model with `npm run fit-ballistics`; it is a least-squares
 vacuum fit to `data/weapons.json`, marked `source: "vacuum-fit"`, and is meant
 to be replaced by pak extraction rather than refined.
+
+### The dead-ground layer
+
+The ring says how far a gun reaches on each bearing. The **Dead ground** layer
+says where inside that reach a crest gets in the way.
+
+For every bearing the terrain is sampled outward in 25 m steps, the same march
+the ring uses. A sample at range `R` is dead ground when the flattest
+trajectory that would land on it — the low root of the same vacuum model —
+passes below the ground at some closer distance. Adjacent dead samples merge
+into intervals and are drawn as dark radial wedges inside the ring.
+
+It is computed for the **flattest arc the weapon has**, and only that arc:
+SPG-2 `low`, mortar `single`. Where a weapon has a second, steeper arc it will
+reach much of what is shaded here, so the shading is the flat arc's problem,
+not the weapon's.
+
+The layer is **default off**, and it is solved only while it is on. It inherits
+every caveat the ring does and adds none of its own confidence:
+`projectile-model.json` is a `source: "vacuum-fit"` to our own tables that has
+never been checked against the game, the grid is 32 m, and the trajectory is
+drag-free. Treat a shaded patch as "expect trouble here", not as a statement
+that a shell cannot land there.
