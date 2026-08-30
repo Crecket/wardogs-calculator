@@ -35,6 +35,19 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 17 | — | Parent tile drawn while the child loads | [`pr` #18](https://github.com/apollyon-sys/wardogs-calculator/pull/18) | `feat/tile-parent-fallback` |
 | 18 | — | Forced layout and no-op DOM writes on every pointer move | folded into [`pr` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | `upstream-pr/interaction-cost` (merged into `upstream-pr/contour-layer`) |
 
+The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
+
+| | before | after | change |
+| --- | --- | --- | --- |
+| Zoom phase, total ms | 18,612 | 1,197 | 15.6x |
+| Inside `drawContours` | 18,203 | 1,017 | 17.9x |
+| — rasterising | 594 | 45 | 13x |
+| — realloc + blit | 17,609 | 972 | 18.1x |
+| Raster rebuilds | 300 | 102 | 2.9x |
+| Per zoom step | 62.0 ms | 4.0 ms | 15.6x |
+
+**The result did not come from where the effort went.** Cached paths, culling and LOD bought 4.4x per rebuild. The 18x came from not reallocating a 26 MP canvas on every rebuild and not rebuilding at all mid-zoom. Rasterising was never more than 3% of the cost — which is why the earlier `renderContourRaster` instrumentation read a healthy 0.84 ms and missed the problem entirely.
+
 Item 18 is not an extraction either. It came out of profiling #10: the contour layer was blamed for zoom stutter, but a Chrome trace showed `set textContent` as the largest JS self-time **with contours off**, and a counting harness put `upstream/main` at 676 forced layout reads per wheel event and 20 readout writes per pointer move. `view()` is called from inside per-tile and per-marker loops and reads `clientWidth` every time, and `result()` rewrites all ten readouts unconditionally. Measured on the same map and zoom, 300 synthetic events each:
 
 | | `upstream/main` | branch | change |
