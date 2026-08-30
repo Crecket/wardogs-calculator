@@ -95,8 +95,11 @@ function renderTerrainNote(meta, text) {
         return;
     }
 
-    note.textContent = text;
-    note.hidden = !text;
+    setText(note, text);
+
+    if (note.hidden !== !text) {
+        note.hidden = !text;
+    }
 
     if (text) {
         note.dataset.state = terrainNoteState(meta);
