@@ -26,7 +26,8 @@
   },
   "map": {
     "camera": {
-      "maxZoom": 100
+      "maxZoom": 100,
+      "panSpeed": 800
     }
   }
 }
