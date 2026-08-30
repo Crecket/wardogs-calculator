@@ -52,6 +52,29 @@ All seven open PRs and both fork branches were merged onto `upstream/main` at `3
 
 ---
 
+## The v1.7.0 ballistics do not lift the #11 and #15 holds
+
+Checked against `upstream/main` at `353f14cef` on 2026-08-30 — still the v1.7.0 tip, nothing newer has landed. The full schema of all three correction payloads was dumped and measured, and neither held PR can be rebuilt on them.
+
+**#15 flight time gets nothing.** The payloads publish only terminal Δz-versus-command boundaries. There is no time-of-flight, apex height, muzzle velocity, drag coefficient or per-x profile in any of the three files, nor anywhere else in the tree. `low-main.json` records `source.integrationDtSeconds: 0.02` and `high-v2.json` records `generation.integrationDtSeconds: 0.02`, so trajectories *were* integrated to produce this data — but only the endpoints were published. (`regions.apex` in `low-tail-apex.json` is a distance band, 2606–2629 m, not an apex height.) #15 still rests on a self-derived model, and no amount of wiring changes that.
+
+**#11's range ring is served for under half the shots that matter.** `modelMaxRange(v, Δz)` is used as a differential — `reaches()` tests `metres <= declaredMax + (modelled - levelMax)` — and the surfaces do supply that shift more honestly than the vacuum fit, from integrated drag trajectories. But their Δz domain is ±40 m (low) and ±80 m (high), while the ring sweeps real relief. Sampling the baked heightfields at 400 gun positions × 60 bearings inside a 2.5 km radius:
+
+| | median \|Δz\| | p90 | p99 | max | within ±40 m | within ±80 m |
+| --- | --- | --- | --- | --- | --- | --- |
+| Bakurani | 106.7 m | 320.5 m | 551.8 m | 817.3 m | 22.9% | 40.5% |
+| Ozeti | 43.2 m | 117.0 m | 198.6 m | 330.2 m | 47.0% | 75.5% |
+
+On Bakurani — the only map with validated coordinate alignment, and the only height-corrected one — the median shot is already outside the HIGH domain. The vacuum fit would still have to answer 59% of the ring, and it would answer precisely the steep-relief bearings where the ring departs from a plain circle, which is the entire point of the feature.
+
+Three further blockers even where the domain does cover: both files are `spg` / `155MM HE SHELL` only, so `mortar` stays on `projectile-model.json` and the branch would ship two models; both are stamped `DISABLED_..._HELD_OUT_REQUIRED` with `experimentalCorrection.defaultEnabled: false`, so a default-on always-visible ring would put held-out research data on the always-visible path; and `js/features/experimental-terrain-correction.js` is an IIFE that monkey-patches its own `baseResolver`/`baseFormatter` and exports nothing, so a consumable API has to be extracted first.
+
+**The dead-ground solver is not served at all**, on any map. `js/map/dead-ground.js` needs in-flight height `z(x)` at every intermediate x plus a grazing-tangent solve against the terrain profile; nothing in these files carries intermediate geometry.
+
+Both holds therefore stand where they were. Lifting them needs the maintainer to publish trajectory profiles — or at minimum apex and descent-branch parameters and a wider Δz domain — not just the command surfaces.
+
+---
+
 ## Status board
 
 Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed) · `pr` (open upstream) · `held` (reviewed, blocked on something upstream wants first) · `merged` · `absorbed` (closed unmerged, content shipped in v1.7.0) · `parked`.
