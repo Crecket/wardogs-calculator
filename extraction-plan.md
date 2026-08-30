@@ -33,6 +33,20 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 15 | 7.3–7.8 | Saved-target markers and sync | `branch` | `upstream-pr/saved-target-markers` (on `upstream-pr/multiple-guns`) |
 | 16 | 1.x | Shared sessions | `todo` | — |
 | 17 | — | Parent tile drawn while the child loads | [`pr` #18](https://github.com/apollyon-sys/wardogs-calculator/pull/18) | `feat/tile-parent-fallback` |
+| 18 | — | Forced layout and no-op DOM writes on every pointer move | `branch` | `upstream-pr/interaction-cost` |
+
+Item 18 is not an extraction either. It came out of profiling #10: the contour layer was blamed for zoom stutter, but a Chrome trace showed `set textContent` as the largest JS self-time **with contours off**, and a counting harness put `upstream/main` at 676 forced layout reads per wheel event and 20 readout writes per pointer move. `view()` is called from inside per-tile and per-marker loops and reads `clientWidth` every time, and `result()` rewrites all ten readouts unconditionally. Measured on the same map and zoom, 300 synthetic events each:
+
+| | `upstream/main` | branch | change |
+| --- | --- | --- | --- |
+| Zoom, layout reads | 202,680 | 2,844 | 71x |
+| Zoom, text writes | 3,000 | 0 | gone |
+| Zoom, ms | 169.6 | 48.5 | 3.5x |
+| Readout, layout reads | 183,000 | 1,200 | 152x |
+| Readout, text writes | 6,000 | 782 | 7.7x |
+| Pointer move, layout reads | 8,100 | 600 | 13.5x |
+
+Cut from `upstream/main` so it stands alone; it touches nothing #10 touches.
 
 Item 17, like item 7, is not an extraction: `drawTileMap` paints a flat `#151a1d` rectangle for every tile that has not decoded yet, so each zoom step flashes black even off a warm cache, and `upstream/main` has the same code. It now draws the cached ancestor tile upscaled into the gap instead. Cut from `main`, proposed upstream as #18, and merged into `feat/collab-rooms` so the fork has it too.
 
