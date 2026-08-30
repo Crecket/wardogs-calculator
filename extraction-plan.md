@@ -10,30 +10,73 @@ Branch state at first assessment: 70 commits ahead, 21,306 insertions / 448 dele
 
 ---
 
+## Upstream v1.7.0 absorbed five PRs without merging them
+
+On 2026-08-30 the maintainer closed #10, #12, #13, #14 and #18 between 17:19 and 17:21, and at 19:54 committed `5acbf5982` "feat: release v1.7.0" — a single squashed commit under his own authorship, with no merge commits and no co-author trailers. That commit contains those five PRs' work. This was verified by reverse-applying each branch's patch onto `upstream/main`: #12, #13 and #18 reverse-apply whole, and the contour layer's files — `js/map/contours.js`, `scripts/build-contours.mjs`, `scripts/lib/contours.mjs`, `scripts/lib/contours.test.mjs`, `scripts/lib/terrain-source.mjs` and both `data/terrain/*/contours.json` — are **byte-identical** to the branch tip, carrying the `db9a45377`–`4e4eac156` render-cost rebuild and the `docs/terrain.md` datum-offset section verbatim. #14 is in as its four SVG sources plus the `js/map/assets.js` and `js/map/map-tools.js` hunks; the webp binaries were re-encoded and the KO/ZH strings he asked to have dropped were reinstated in his own wording.
+
+The five local branches were deleted, their content having shipped. Nothing about the remaining PRs' review state changed.
+
+The release also added an **opt-in experimental Terrain3D correction** — `js/features/experimental-terrain-correction.js` and `data/ballistics/terrain-correction/{low-main,low-tail-apex,high-v2}.json`, sha256-pinned from a new `experimentalCorrection` block in `terrain-context.json`, default off, applied only on `SAFE_CONSENSUS` with flat-table fallback. This is the superseding ballistics model the #11 and #15 holds were waiting on. It bears on the two holds unevenly: the payloads carry reachable ΔZ per command mrad with explicit `minDeltaZMetersByBoundary`/`maxDeltaZMetersByBoundary`, which is what **#11's** range ring and dead-ground solver need in place of the vacuum fit — but they carry **no time-of-flight, apex-time or muzzle-velocity field anywhere**, so **#15 gains nothing** and still rests on a self-derived model. The module is also an IIFE that monkey-patches its own `baseResolver`/`baseFormatter` and exports nothing, so consuming it from a map layer needs an API extracted first.
+
+Note for the fork: `terrain-context.json` now carries both correction regimes. The fork's `releasePolicy.automaticMilCorrection` is `true` while upstream's `experimentalCorrection` is opt-in and off, and the two are read by different consumers over disjoint fields — but a user who opts in gets both layers applied.
+
+---
+
+## Every live branch now carries v1.7.0
+
+All seven open PRs and both fork branches were merged onto `upstream/main` at `353f14cef` on 2026-08-30 and pushed. Merge, not rebase, so nothing was rewritten and each merge commit records when his version was taken.
+
+| Branch | PR | Merge | Conflicts | Verification |
+| --- | --- | --- | --- | --- |
+| `feat/collab-rooms` | — | `44cac7ac8` | 36 | build green; 45/46 script tests (the failure is the known `dev-env` case) |
+| `feat/force-placement-mode` | #3 | `79d153208` | 0 textual, 3 semantic gaps | build green; 13/13 |
+| `upstream-pr/remember-positions` | #8 | `9fe109f50` | 1 | build green; 13/13 |
+| `upstream-pr/map-visuals` | #9 | `e29af08ac` | 1 | build green; 13/13 |
+| `upstream-pr/terrain-range-ring` | #11 | `81961b849` | 17 | build green; 49/49 |
+| `upstream-pr/flight-time` | #15 | `bba2bba64` | 1 | build green; 49/49 node, 34/34 browser |
+| `upstream-pr/fob-build-areas` | #16 | `3dc7e4545` | 1 | build green; 13/13 |
+| `upstream-pr/multiple-guns` | #17 | `19356071d` | 34 | build green; 38/38 node, 106/106 browser |
+
+`upstream-pr/saved-target-markers` and `integration/all-prs` were left alone — neither is an open PR.
+
+**How much of that was the copying's fault.** Measurable, and only partly. Building a counterfactual commit with the same v1.7.0 tree but the five branch tips as real parents, and merging each into the pre-merge fork, gives 21 conflicting files against the 36 that actually occurred. The 15 that exist *only* because he copied rather than merged: `.gitignore`, `package.json`, `docs/terrain.md`, `js/features/results.js`, `js/map/renderer.js` and all ten page shells — git could not see that his content and the fork's were the same commits, so the fork's own contour layer and `setText` guards came back as "both sides added this independently". The other 21 are genuine new work of his landing on top: the `buildMapLayers()` restructure from a flat array into `base`/`tactical`/`personal` groups (which hit four branches), the saved-target firing-info panel, the rewritten SEO copy, the new marker set.
+
+`buildMapLayers()` was resolved the same way everywhere: adopt his grouped structure, re-insert the branch's own layers into `tactical`, and add matching `icons` entries so they do not render as empty SVGs.
+
+**Two things found while merging, both left alone as out of scope.**
+
+- `js/features/saved-targets.js` on `feat/collab-rooms` has regressed on both halves of #13. `savedTargetMatchState()` uses `savedTargets.find()`, so duplicate coordinates highlight only the first row — the exact bug the maintainer asked about — and there is no `String(target.id)` coercion anywhere in the file, so a numeric id from the import path silently fails `item.dataset.targetId === state.id`. The fork's version is an evolution of the *pre*-#13 code (it adds `full`/`partial` levels and the sync button, which upstream has no equivalent of), so keeping it through the merge was right; it needs the `Set` and the `String()` ported back into it.
+- The flight-time badges still do `host.textContent = ''` plus `createElement` on every `result()`, on the same pointer-move path the `setText` guards protect. Needs node reuse rather than a guard.
+
+**One thing found and fixed.** The #3 merge added machine-written `forcePlacementHint` / `forcePlacementHintActive` strings to `ko.json` and `zh-cn.json` — the same objection the maintainer raised on #14. Both were removed before the branch was pushed; `tr()` resolves `language?.[key] ?? fallback?.[key] ?? key` with `DEFAULT_LANG` of `en`, and both keys exist in `en.json`, so they fall back to English. Note also that upstream ships `ko.json` and `zh-cn.json` with CRLF endings while the rest of the repo is LF, and one line in `ko.json` is `\r\r\n`; leave those alone or every future merge re-conflicts on them.
+
+---
+
 ## Status board
 
-Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed) · `pr` (open upstream) · `held` (reviewed, blocked on something upstream wants first) · `merged` · `parked`.
+Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed) · `pr` (open upstream) · `held` (reviewed, blocked on something upstream wants first) · `merged` · `absorbed` (closed unmerged, content shipped in v1.7.0) · `parked`.
 
 | # | Item(s) | What | Status | Branch |
 | --- | --- | --- | --- | --- |
-| 1 | 5.5 | Tower icon | [`pr` #9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | `upstream-pr/map-visuals` |
-| 2 | 5.3 | Main zone circle | [`pr` #9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | `upstream-pr/map-visuals` |
-| 3 | 7.1 | Positions survive a reload | [`pr` #8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | `upstream-pr/remember-positions` |
-| 4 | 3.1 | Contour layer | [`pr` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | `upstream-pr/contour-layer` |
-| 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring + dead ground | [`pr` #11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | `upstream-pr/terrain-range-ring` |
-| 6 | 7.2 | Saved-target highlight derived from position | [`pr` #13](https://github.com/apollyon-sys/wardogs-calculator/pull/13) | `upstream-pr/derived-highlight` |
-| 7 | — | Marker tool does not turn off on a second click | [`pr` #12](https://github.com/apollyon-sys/wardogs-calculator/pull/12) | `upstream-pr/marker-tool-toggle` |
-| 8 | 5.1 | Tactical marker icons and picker labels | [`pr` #14](https://github.com/apollyon-sys/wardogs-calculator/pull/14) | `upstream-pr/tactical-markers` |
+| 1 | 5.5 | Tower icon | [`pr` #9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | `upstream-pr/map-visuals`, carries v1.7.0 |
+| 2 | 5.3 | Main zone circle | [`pr` #9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | `upstream-pr/map-visuals`, carries v1.7.0 |
+| 3 | 7.1 | Positions survive a reload | [`pr` #8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | `upstream-pr/remember-positions`, carries v1.7.0 |
+| 4 | 3.1 | Contour layer | [`absorbed` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | branch deleted |
+| 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring + dead ground | [`pr` #11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | `upstream-pr/terrain-range-ring`, carries v1.7.0 |
+| 6 | 7.2 | Saved-target highlight derived from position | [`absorbed` #13](https://github.com/apollyon-sys/wardogs-calculator/pull/13) | branch deleted |
+| 7 | — | Marker tool does not turn off on a second click | [`absorbed` #12](https://github.com/apollyon-sys/wardogs-calculator/pull/12) | branch deleted |
+| 8 | 5.1 | Tactical marker icons and picker labels | [`absorbed` #14](https://github.com/apollyon-sys/wardogs-calculator/pull/14) | branch deleted |
 | 9 | 6.3 + 6.4 | `.env` config, analytics off by default | `parked` | — |
 | 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `parked` | — |
-| 11 | 4.1 | Time of flight | [`pr` #15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | `upstream-pr/flight-time` (stacks on #11) |
-| 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | [`pr` #16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | `upstream-pr/fob-build-areas` (stacks on #9) |
+| 11 | 4.1 | Time of flight | [`pr` #15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | `upstream-pr/flight-time` (stacks on #11), carries v1.7.0 |
+| 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | [`pr` #16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | `upstream-pr/fob-build-areas` (stacks on #9), carries v1.7.0 |
 | 13 | 6.1 + 6.2 | Tiles from object storage | `parked` | — |
-| 14 | 2.1–2.4, 2.6, 2.8, 2.9 | Multiple guns | [`pr` #17](https://github.com/apollyon-sys/wardogs-calculator/pull/17) | `upstream-pr/multiple-guns` (on `integration/all-prs`) |
+| 14 | 2.1–2.4, 2.6, 2.8, 2.9 | Multiple guns | [`pr` #17](https://github.com/apollyon-sys/wardogs-calculator/pull/17) | `upstream-pr/multiple-guns` (on `integration/all-prs`), carries v1.7.0 |
 | 15 | 7.3–7.8 | Saved-target markers and sync | `branch` | `upstream-pr/saved-target-markers` (on `upstream-pr/multiple-guns`) |
 | 16 | 1.x | Shared sessions | `todo` | — |
-| 17 | — | Parent tile drawn while the child loads | [`pr` #18](https://github.com/apollyon-sys/wardogs-calculator/pull/18) | `feat/tile-parent-fallback` |
-| 18 | — | Forced layout and no-op DOM writes on every pointer move | folded into [`pr` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | carried on `upstream-pr/contour-layer` as `4e4eac156` |
+| 19 | — | Force placement mode on the per-point lock icons | [`pr` #3](https://github.com/apollyon-sys/wardogs-calculator/pull/3) | `feat/force-placement-mode`, carries v1.7.0 |
+| 17 | — | Parent tile drawn while the child loads | [`absorbed` #18](https://github.com/apollyon-sys/wardogs-calculator/pull/18) | branch deleted |
+| 18 | — | Forced layout and no-op DOM writes on every pointer move | [`absorbed`](https://github.com/apollyon-sys/wardogs-calculator/pull/10) via #10 | branch deleted |
 
 The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
 
