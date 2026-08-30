@@ -731,7 +731,7 @@ function renderSavedTargetFiringInfo(
         )
         ?.remove();
 
-    info
+    item
         .querySelector(
             '.saved-target-solution'
         )
@@ -782,8 +782,7 @@ function renderSavedTargetFiringInfo(
     const distanceMetric =
         createSavedTargetMetric(
             tr('distance'),
-            `${Math.round(firingInfo.distanceMeters)} m`,
-            `${firingInfo.distanceKm.toFixed(2)} km`
+            `${Math.round(firingInfo.distanceMeters)} m`
         );
 
     const azimuthMetric =
@@ -820,7 +819,10 @@ function renderSavedTargetFiringInfo(
     );
 
     info.append(
-        originCoords,
+        originCoords
+    );
+
+    item.append(
         solution
     );
 

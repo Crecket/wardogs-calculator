@@ -132,6 +132,8 @@
 
     display: flex;
 
+    flex-wrap: wrap;
+
     align-items: center;
 
     justify-content: space-between;
@@ -704,19 +706,17 @@
 .saved-target-solution {
     display: grid;
 
+    flex: 0 0 100%;
+
     grid-template-columns:
         repeat(
-            2,
+            3,
             minmax(0, 1fr)
         );
 
     gap: 5px;
 
     margin-top: 2px;
-}
-
-.saved-target-metric-mil {
-    grid-column: 1 / -1;
 }
 
 .saved-target-metric {
