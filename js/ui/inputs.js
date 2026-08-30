@@ -24,6 +24,17 @@ function inputs() {
     $('h').value =
         S.h;
 
+    /*
+     * The saved-target highlight is derived from where the target sits,
+     * so every writer of S.target refreshes it by arriving here.
+     */
+    if (
+        typeof refreshSavedTargetHighlight ===
+        'function'
+    ) {
+        refreshSavedTargetHighlight();
+    }
+
     result();
     draw();
 }

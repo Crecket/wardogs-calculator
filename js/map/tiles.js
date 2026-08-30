@@ -216,6 +216,77 @@ function loadTile(
     return tile;
 }
 
+function findCachedTileAncestor(
+    map,
+    tiles,
+    zoom,
+    x,
+    y
+) {
+
+    for (
+        let levels = 1;
+        zoom - levels >= tiles.minZoom;
+        levels++
+    ) {
+
+        const scale =
+            Math.pow(
+                2,
+                levels
+            );
+
+        const sourceSize =
+            tiles.tileSize /
+            scale;
+
+        if (
+            sourceSize < 1
+        ) {
+            return null;
+        }
+
+        const ancestor =
+            TILE_CACHE.get(
+                tileKey(
+                    map.id,
+                    zoom - levels,
+                    Math.floor(
+                        x / scale
+                    ),
+                    Math.floor(
+                        y / scale
+                    )
+                )
+            );
+
+        if (
+            !ancestor ||
+            !ancestor.loaded ||
+            ancestor.failed
+        ) {
+            continue;
+        }
+
+        return {
+            image: ancestor.image,
+            sourceX:
+                (
+                    x % scale
+                ) *
+                sourceSize,
+            sourceY:
+                (
+                    y % scale
+                ) *
+                sourceSize,
+            sourceSize
+        };
+    }
+
+    return null;
+}
+
 
 /* =========================
    DRAW TILE MAP
@@ -477,15 +548,45 @@ function drawTileMap(map) {
 
             } else {
 
-                ctx.fillStyle =
-                    '#151a1d';
+                const ancestor =
+                    tile.failed
+                        ? null
+                        : findCachedTileAncestor(
+                            map,
+                            tiles,
+                            zoom,
+                            tileX,
+                            tileY
+                        );
 
-                ctx.fillRect(
-                    screen.x,
-                    screen.y,
-                    tileScreenWidth + 0.5,
-                    tileScreenHeight + 0.5
-                );
+                if (
+                    ancestor
+                ) {
+
+                    ctx.drawImage(
+                        ancestor.image,
+                        ancestor.sourceX,
+                        ancestor.sourceY,
+                        ancestor.sourceSize,
+                        ancestor.sourceSize,
+                        screen.x,
+                        screen.y,
+                        tileScreenWidth + 0.5,
+                        tileScreenHeight + 0.5
+                    );
+
+                } else {
+
+                    ctx.fillStyle =
+                        '#151a1d';
+
+                    ctx.fillRect(
+                        screen.x,
+                        screen.y,
+                        tileScreenWidth + 0.5,
+                        tileScreenHeight + 0.5
+                    );
+                }
             }
         }
     }

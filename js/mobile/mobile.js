@@ -461,7 +461,6 @@ function finishMobileTap(event, gesture) {
     };
 
     clamp(S[pointType]);
-    selectedSavedTargetId = null;
 
     if (
         typeof trackAnalytics ===

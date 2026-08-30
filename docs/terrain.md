@@ -44,6 +44,23 @@ MIL      -> existing weapon firing table
 
 Automatic terrain, ΔZ, or vehicle-attitude MIL correction is **not enabled**.
 
+### The elevation datum is offset
+
+Decoded heights are not altitudes. Sampled across its playable bounds,
+Bakurani runs about -1007 m to +75 m and Ozeti about -1008 m to -620 m, so
+the height field sits roughly 900 m below anything a player would recognise
+as an altitude.
+
+The field is internally consistent — chunk seams agree to 0.21 m — so every
+**difference** is trustworthy, which is all the ΔZ readout and the contour
+layer use. No absolute height should ever be displayed. `worldZOffsetMeters`
+is 0.5 on Bakurani and 0.04 on Ozeti and does not encode this correction;
+nothing in the repository currently records where the datum went.
+
+Calibrating it needs one known in-game altitude readout per map. Until then,
+contour lines are drawn unlabelled and coloured by height *relative to the
+map's own lowest sample*.
+
 ---
 
 ## Data layout
@@ -53,6 +70,7 @@ Each supported map stores its elevation dataset under its own directory:
 ```text
 data/terrain/<map-id>/
 ├── manifest.json
+├── contours.json
 └── chunks/
     ├── ...
     └── *.bin
@@ -68,6 +86,17 @@ data/terrain/ozeti/
 `manifest.json` describes the terrain grid, verified coordinate coverage, coordinate-to-Landscape mapping, elevation conversion, and integrity metadata used by the runtime.
 
 The binary terrain chunks contain only elevation samples. They are not map-image tiles and should not be placed under `maps/tiles/`.
+
+`contours.json` is generated, not extracted. `npm run build-contours` samples
+the chunks on a 4 m grid across the map's playable bounds and writes 20 m
+contour lines as delta-encoded vectors — a few hundred KB, against 129 MB of
+chunks. It is committed, and regenerating it is the correct response to any
+change in the heightfield or in a map's `bounds`.
+
+The runtime cannot build these itself: `js/features/terrain-ballistics.js`
+loads chunks lazily, two per firing solution, while a contour layer needs the
+whole map at once. `js/map/contours.js` fetches the generated file only when
+somebody turns the Contours layer on.
 
 ---
 
