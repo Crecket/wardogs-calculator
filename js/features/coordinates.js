@@ -209,7 +209,6 @@ function applySharedCoordinates(
 
     inputPoint(type);
 
-    selectedSavedTargetId = null;
     renderSavedTargets();
 
     return true;
