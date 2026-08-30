@@ -60,7 +60,7 @@
   "markerLabelFob": "FOB",
   "markerLabelTank": "Panzer",
   "markerLabelArtillery": "Artillerie",
-  "markerLabelSpawnVehicle": "Fahrzeug-Spawn",
+  "markerLabelSpawnVehicle": "Respawn-Fahrzeug",
   "mapToolColorDanger": "Gefahr / Feind",
   "mapToolColorWarning": "Warnung / Umkämpft",
   "mapToolColorObjective": "Ziel",
