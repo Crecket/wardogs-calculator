@@ -478,6 +478,28 @@ function renderContourRaster(data, v, raster) {
     target.globalAlpha = 1;
 }
 
+const CONTOUR_REBUILD_DELAY = 140;
+
+const CONTOUR_MAX_STRETCH_IN = 1.8;
+
+const CONTOUR_MAX_STRETCH_OUT = 0.8;
+
+let contourRebuildTimer = null;
+
+function scheduleContourRebuild() {
+    if (contourRebuildTimer !== null) {
+        clearTimeout(contourRebuildTimer);
+    }
+
+    contourRebuildTimer = setTimeout(
+        () => {
+            contourRebuildTimer = null;
+            draw();
+        },
+        CONTOUR_REBUILD_DELAY
+    );
+}
+
 function drawContours(currentMap) {
     const mapId = currentMap?.id;
 
@@ -513,19 +535,63 @@ function drawContours(currentMap) {
 
     let raster = data.raster;
 
-    const stale =
+    /*
+     * Coverage is tested in game coordinates, not in the local screen space
+     * the raster was drawn in, because that space moves with the zoom and a
+     * raster from a different scale still has to be placeable.
+     */
+    const viewMinX = v.bounds.minX + visibleX / v.scale;
+    const viewMaxY = v.bounds.maxY - visibleY / v.scale;
+    const viewMaxX = viewMinX + visibleWidth / v.scale;
+    const viewMinY = viewMaxY - visibleHeight / v.scale;
+
+    const covers =
+        raster &&
+        viewMinX >= raster.gameMinX &&
+        viewMaxX <= raster.gameMaxX &&
+        viewMinY >= raster.gameMinY &&
+        viewMaxY <= raster.gameMaxY;
+
+    const stretch = raster
+        ? v.scale / raster.scale
+        : 1;
+
+    const zoomed =
+        raster &&
+        (
+            raster.scale !== v.scale ||
+            raster.minors !== minors
+        );
+
+    /*
+     * A zoom step alone does not rebuild. The existing raster is stretched
+     * to the new scale and the rebuild waits until the zoom stops, because
+     * stroking the layer is GPU work that does not show up on the main
+     * thread and doing it per wheel event is what makes a zoom stutter.
+     * Anything the stretch cannot cover rebuilds at once: a new size, a pan
+     * off the margin, a zoom in far enough that the stretch turns to mush,
+     * or a zoom out far enough to pull ground in from beyond the margin.
+     */
+    const rebuild =
         !raster ||
-        raster.scale !== v.scale ||
         raster.ratio !== ratio ||
         raster.width !== width ||
         raster.height !== height ||
-        raster.minors !== minors ||
-        visibleX < raster.originX ||
-        visibleY < raster.originY ||
-        visibleX + visibleWidth > raster.originX + raster.width ||
-        visibleY + visibleHeight > raster.originY + raster.height;
+        (
+            zoomed
+                ? (
+                    stretch > CONTOUR_MAX_STRETCH_IN ||
+                    stretch < CONTOUR_MAX_STRETCH_OUT
+                )
+                : !covers
+        );
 
-    if (stale) {
+    if (rebuild) {
+        if (contourRebuildTimer !== null) {
+            clearTimeout(contourRebuildTimer);
+            contourRebuildTimer = null;
+        }
+
         if (!raster) {
             raster = { canvas: document.createElement('canvas') };
             data.raster = raster;
@@ -539,6 +605,15 @@ function drawContours(currentMap) {
         raster.originX = visibleX - CONTOUR_RASTER_MARGIN;
         raster.originY = visibleY - CONTOUR_RASTER_MARGIN;
 
+        raster.gameMinX = v.bounds.minX + raster.originX / v.scale;
+        raster.gameMaxY = v.bounds.maxY - raster.originY / v.scale;
+        raster.gameMaxX = raster.gameMinX + width / v.scale;
+        raster.gameMinY = raster.gameMaxY - height / v.scale;
+
+        /*
+         * Assigning to width or height reallocates and zeroes the backing
+         * store, which the size almost never needs.
+         */
         const pixelWidth = Math.round(width * ratio);
         const pixelHeight = Math.round(height * ratio);
 
@@ -551,13 +626,19 @@ function drawContours(currentMap) {
         }
 
         renderContourRaster(data, v, raster);
+    } else if (zoomed) {
+        scheduleContourRebuild();
     }
 
+    /*
+     * Placed from the game rectangle it was drawn for, so a raster built at
+     * another scale lands where the ground it describes now sits.
+     */
     ctx.drawImage(
         raster.canvas,
-        raster.originX,
-        raster.originY,
-        raster.width,
-        raster.height
+        (raster.gameMinX - v.bounds.minX) * v.scale,
+        (v.bounds.maxY - raster.gameMaxY) * v.scale,
+        (raster.gameMaxX - raster.gameMinX) * v.scale,
+        (raster.gameMaxY - raster.gameMinY) * v.scale
     );
 }
