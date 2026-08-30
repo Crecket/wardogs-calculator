@@ -42,6 +42,20 @@ Item 7 is not an extraction at all: it is a bug that exists in `upstream/main` u
 
 All eleven open PRs were reviewed by the maintainer on 2026-08-30. Not one drew an implementation objection; the holds are about data he does not want to publish yet, and one about rendering cost.
 
+| PR | Item | State | Why |
+| --- | --- | --- | --- |
+| [#12](https://github.com/apollyon-sys/wardogs-calculator/pull/12) | Marker tool toggle | `approved` | "No issues with this one" — awaiting merge |
+| [#18](https://github.com/apollyon-sys/wardogs-calculator/pull/18) | Parent-tile fallback | `approved` | "I don't see any blockers" — awaiting merge |
+| [#8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | Remember positions | `modified` | Keyed by map id in `463d30088`; awaiting re-review |
+| [#13](https://github.com/apollyon-sys/wardogs-calculator/pull/13) | Derived highlight | `modified` | Highlights every coordinate match in `380f8882f`; awaiting re-review |
+| [#14](https://github.com/apollyon-sys/wardogs-calculator/pull/14) | Tactical markers | `modified` | KO/ZH machine strings dropped in `0387012cd`; awaiting re-review |
+| [#9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | Main zone circle | `blocked` | Needs confirmed main-zone radii/positions from game data |
+| [#16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | FOB build areas | `blocked` | Needs confirmed FOB dimensions; also carries #9's commits |
+| [#11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | Terrain range ring | `blocked` | Built on the superseded vacuum-fit projectile model |
+| [#15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | Flight time | `blocked` | Same projectile model as #11; stacks on it |
+| [#10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | Contour layer | `blocked` | Rendering cost while zooming — clearable without the maintainer |
+| [#17](https://github.com/apollyon-sys/wardogs-calculator/pull/17) | Multiple guns | `blocked` | Wants a rebase onto a base without the held PRs |
+
 **Approved, awaiting merge.** #12 (marker tool toggle) and #18 (parent-tile fallback) — "no blockers" on both.
 
 **Feedback addressed and pushed, awaiting re-review.**
