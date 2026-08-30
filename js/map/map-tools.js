@@ -61,6 +61,7 @@ const MAP_TOOL_STATE = {
         drawings: true,
         userMarkers: true,
         artillery: true,
+        deadGround: false,
         cursorCoords: true
     }
 };
@@ -944,6 +945,7 @@ function buildMapLayers() {
         ['drawings', 'mapLayerDrawings'],
         ['userMarkers', 'mapLayerUserMarkers'],
         ['artillery', 'mapLayerArtillery'],
+        ['deadGround', 'mapLayerDeadGround'],
         ['cursorCoords', 'mapLayerCursorCoordinates']
     ];
 

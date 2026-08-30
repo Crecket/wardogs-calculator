@@ -152,6 +152,19 @@ function draw() {
     }
 
     if (
+        isMapLayerVisible('deadGround') &&
+        currentWeapon
+    ) {
+        drawDeadGround(
+            worldToLocalScreen(
+                S.origin.x,
+                S.origin.y
+            ),
+            v.scale
+        );
+    }
+
+    if (
         isMapLayerVisible('artillery') &&
         currentWeapon
     ) {
