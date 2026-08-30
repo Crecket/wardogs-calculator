@@ -20,23 +20,26 @@ const SAVED_TARGET_IMPORT_LIMIT = 500;
 const SAVED_TARGET_MATCH_EPSILON = 1e-6;
 
 /*
- * Which saved target the list highlights is derived from where the
+ * Which saved targets the list highlights is derived from where the
  * target actually sits, never tracked separately, so every writer of
  * S.target keeps the highlight honest without having to know about it.
  */
-function activeSavedTargetId() {
+function activeSavedTargetIds() {
+
+    const active = new Set();
 
     if (
         !S.target ||
         !Number.isFinite(S.target.x) ||
         !Number.isFinite(S.target.y)
     ) {
-        return null;
+        return active;
     }
 
-    const match =
-        savedTargets.find(
-            target =>
+    savedTargets.forEach(
+        target => {
+
+            if (
                 Math.abs(
                     Number(target.x) -
                     S.target.x
@@ -45,11 +48,15 @@ function activeSavedTargetId() {
                     Number(target.y) -
                     S.target.y
                 ) < SAVED_TARGET_MATCH_EPSILON
-        );
+            ) {
+                active.add(
+                    String(target.id)
+                );
+            }
+        }
+    );
 
-    return match
-        ? match.id
-        : null;
+    return active;
 }
 
 /*
@@ -67,8 +74,8 @@ function refreshSavedTargetHighlight() {
         return;
     }
 
-    const activeId =
-        activeSavedTargetId();
+    const activeIds =
+        activeSavedTargetIds();
 
     container
         .querySelectorAll('.saved-target')
@@ -76,8 +83,9 @@ function refreshSavedTargetHighlight() {
             item => {
                 item.classList.toggle(
                     'active',
-                    item.dataset.targetId ===
-                    activeId
+                    activeIds.has(
+                        item.dataset.targetId
+                    )
                 );
             }
         );
@@ -817,8 +825,8 @@ function renderSavedTargets() {
         return;
     }
 
-    const activeId =
-        activeSavedTargetId();
+    const activeIds =
+        activeSavedTargetIds();
 
     savedTargets.forEach(
         target => {
@@ -835,8 +843,9 @@ function renderSavedTargets() {
                 target.id;
 
             if (
-                target.id ===
-                activeId
+                activeIds.has(
+                    String(target.id)
+                )
             ) {
                 item.classList.add(
                     'active'
