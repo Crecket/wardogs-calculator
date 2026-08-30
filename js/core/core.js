@@ -39,7 +39,6 @@ let drag = null;
 let pan = null;
 
 let savedTargets = [];
-let selectedSavedTargetId = null;
 
 const SAVED_TARGETS_KEY =
     'wardogs-saved-targets';
@@ -87,6 +86,22 @@ const MARKER_IMAGE_CACHE =
 
 const $ = id =>
     document.getElementById(id);
+
+/*
+ * Writing the same string back still dirties layout, and the readouts are
+ * rewritten on every pointer move while barely changing between frames.
+ */
+const setText = (el, value) => {
+    if (el && el.textContent !== value) {
+        el.textContent = value;
+    }
+};
+
+const setStyle = (el, prop, value) => {
+    if (el && el.style[prop] !== value) {
+        el.style[prop] = value;
+    }
+};
 
 const c =
     $('canvas');

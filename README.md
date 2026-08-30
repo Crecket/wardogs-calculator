@@ -8,7 +8,7 @@
 A lightweight, open-source artillery calculator and tactical map tool for **WARDOGS**.
 
 **Live app:** https://wardogs-artillery.com/  
-**Mobile UI:** https://wardogs-artillery.com/mobile/
+**Mobile UI:** https://wardogs-artillery.com/mobile/  
 
 <table>
   <tr>
@@ -38,6 +38,10 @@ Phones are automatically routed from the desktop entry pages to the matching mob
 
 Both interfaces reuse the same calculator logic, maps, tile pyramid, configuration, translations, saved targets, drawings, and browser storage.
 
+## Localization
+
+The shared locale system supports English, Russian, Ukrainian, German, French, Spanish, Polish, Portuguese, Simplified Chinese, Korean, and the non-indexed Cat locale.
+
 ## Documentation
 
 Detailed documentation is split into focused files to keep this README concise.
@@ -45,10 +49,10 @@ Detailed documentation is split into focused files to keep this README concise.
 - [Features & weapons](docs/features.md) — calculator features, Map Tools, weapons, touch controls, and coordinate system
 - [Maps](docs/maps.md) — map configuration, tile structure, bounds, marker zoom visibility, and adding new maps
 - [Mobile interface](docs/mobile.md) — mobile routes, automatic routing, touch controls, and deployment architecture
-- [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, and localized URLs
+- [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, localized URLs, and SEO metadata
 - [Development](docs/development.md) — project structure, local development, unified build process, and GitHub Pages deployment
 - [Analytics](docs/analytics.md) — Umami custom events, event payloads, debouncing, and privacy considerations
-- [Message of the Day](docs/motd.md) — MOTD configuration and behavior
+- [Message of the Day](docs/motd.md) — MOTD configuration, localization, and behavior
 - [Contributing](docs/contributing.md) — contribution guidelines
 - [License & Disclaimer](docs/legal.md) — MIT scope, third-party assets, and project disclaimer
 
@@ -63,8 +67,8 @@ python -m http.server 8000
 Then open:
 
 ```text
-Desktop: http://localhost:8000/
-Mobile:  http://localhost:8000/mobile/
+Desktop:            http://localhost:8000/
+Mobile:             http://localhost:8000/mobile/
 ```
 
 ## Contributing

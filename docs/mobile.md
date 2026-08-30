@@ -41,6 +41,8 @@ Desktop routes:
 /es/
 /pl/
 /pt/
+/zh-cn/
+/ko/
 /cat/
 ```
 
@@ -55,10 +57,12 @@ Mobile routes:
 /mobile/es/
 /mobile/pl/
 /mobile/pt/
+/mobile/zh-cn/
+/mobile/ko/
 /mobile/cat/
 ```
 
-Mobile pages are marked `noindex` and use the corresponding desktop page as their canonical URL.
+Normal mobile locale pages use the matching desktop locale as their canonical URL. The Cat localization remains excluded from normal search indexing.
 
 ## Automatic Mobile Routing
 
@@ -72,11 +76,14 @@ A device is routed to `/mobile/` when either:
 The current explicit language route is preserved. For example:
 
 ```text
-/ru/  ->  /mobile/ru/
-/de/  ->  /mobile/de/
+/ru/     -> /mobile/ru/
+/de/     -> /mobile/de/
+/zh-cn/  -> /mobile/zh-cn/
 ```
 
 Query parameters and the URL hash are also preserved.
+
+A browser reporting `zh-CN` can select the Simplified Chinese locale automatically when no manual language preference has already been saved.
 
 ### Requesting the desktop UI on a phone
 
@@ -124,7 +131,10 @@ Open:
 
 ```text
 http://localhost:8000/mobile/
+http://localhost:8000/mobile/zh-cn/
 ```
+
+The generated Simplified Chinese desktop/mobile routes are production-build outputs, so use `npm run build` when validating locale routing and SEO metadata.
 
 Useful test viewports include:
 
@@ -137,6 +147,8 @@ Useful test viewports include:
 768x1024
 ```
 
+Chinese mobile QA should include at least one narrow-phone viewport because analytics show that Chinese traffic is strongly mobile-weighted.
+
 ## Deployment
 
 The mobile interface requires no separate hosting configuration.
@@ -147,7 +159,9 @@ GitHub Actions runs:
 npm run build
 ```
 
-and deploys the single `dist/` directory. The build produces both desktop and mobile entry pages while copying large shared resources such as map tiles only once.
+and deploys the single `dist/` directory. The build produces desktop and mobile entry pages while copying large shared resources such as map tiles only once.
+
+The locale synchronization step then publishes `/zh-cn/` and `/mobile/zh-cn/`, synchronizes Chinese SEO metadata and sitemap coverage, and the asset-versioning step fingerprints the final JS/CSS references.
 
 The only Pages custom domain remains:
 
@@ -163,17 +177,16 @@ The mobile Saved Targets panel supports exporting a single target, exporting the
 
 On mobile, Map Tools are collapsed behind a single floating button by default. Tapping it expands the vertical tool list; tapping it again collapses the list and closes any open Map Tool popover. This keeps the map clear on small phone screens while preserving the full touch toolset.
 
-
 ### Coordinate sharing
 
 The mobile point controls include compact Copy and Paste actions for both Artillery and Target. Paste accepts the same shareable coordinate format as desktop and falls back to a manual paste prompt when the mobile browser does not expose clipboard read access.
-
 
 ### Artillery / Target locks
 
 Each point has a compact Lock action. Locking a point prevents touch taps and dragging from changing it on the map; the corresponding map mode shows a lock indicator. Manual X/Y entry and coordinate Paste still work while locked.
 
-
 ### Firing-solution HUD
 
-The map HUD now prioritizes Distance, MIL, and Azimuth equally in a compact three-column solution panel. Range status remains visible below the primary values, while ΔX/ΔY stay in the expanded Result sheet as secondary details.
+The map HUD prioritizes Distance, MIL, and Azimuth equally in a compact three-column solution panel. Range status remains visible below the primary values, while ΔX/ΔY stay in the expanded Result sheet as secondary details.
+
+The SPH-2 leveling warning is localized in Simplified Chinese and remains informational only. Terrain3D elevation context does not automatically change MIL in this release.

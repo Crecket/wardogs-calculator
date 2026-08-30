@@ -7,7 +7,9 @@
       "name": "English",
       "nativeName": "English",
       "flag": "🇬🇧",
-      "flagAsset": "assets/flags/gb.svg"
+      "flagAsset": "assets/flags/gb.svg",
+      "hreflang": "en",
+      "ogLocale": "en_GB"
     },
     {
       "id": "ru",
@@ -15,7 +17,9 @@
       "name": "Russian",
       "nativeName": "Русский",
       "flag": "🇷🇺",
-      "flagAsset": "assets/flags/ru.svg"
+      "flagAsset": "assets/flags/ru.svg",
+      "hreflang": "ru",
+      "ogLocale": "ru_RU"
     },
     {
       "id": "uk",
@@ -23,7 +27,9 @@
       "name": "Ukrainian",
       "nativeName": "Українська",
       "flag": "🇺🇦",
-      "flagAsset": "assets/flags/ua.svg"
+      "flagAsset": "assets/flags/ua.svg",
+      "hreflang": "uk",
+      "ogLocale": "uk_UA"
     },
     {
       "id": "de",
@@ -31,7 +37,9 @@
       "name": "German",
       "nativeName": "Deutsch",
       "flag": "🇩🇪",
-      "flagAsset": "assets/flags/de.svg"
+      "flagAsset": "assets/flags/de.svg",
+      "hreflang": "de",
+      "ogLocale": "de_DE"
     },
     {
       "id": "fr",
@@ -39,7 +47,9 @@
       "name": "French",
       "nativeName": "Français",
       "flag": "🇫🇷",
-      "flagAsset": "assets/flags/fr.svg"
+      "flagAsset": "assets/flags/fr.svg",
+      "hreflang": "fr",
+      "ogLocale": "fr_FR"
     },
     {
       "id": "es",
@@ -47,7 +57,9 @@
       "name": "Spanish",
       "nativeName": "Español",
       "flag": "🇪🇸",
-      "flagAsset": "assets/flags/es.svg"
+      "flagAsset": "assets/flags/es.svg",
+      "hreflang": "es",
+      "ogLocale": "es_ES"
     },
     {
       "id": "pl",
@@ -55,7 +67,9 @@
       "name": "Polish",
       "nativeName": "Polski",
       "flag": "🇵🇱",
-      "flagAsset": "assets/flags/pl.svg"
+      "flagAsset": "assets/flags/pl.svg",
+      "hreflang": "pl",
+      "ogLocale": "pl_PL"
     },
     {
       "id": "pt",
@@ -63,7 +77,29 @@
       "name": "Portuguese",
       "nativeName": "Português",
       "flag": "🇵🇹",
-      "flagAsset": "assets/flags/pt.svg"
+      "flagAsset": "assets/flags/pt.svg",
+      "hreflang": "pt",
+      "ogLocale": "pt_PT"
+    },
+    {
+      "id": "zh-cn",
+      "file": "zh-cn.json",
+      "name": "Simplified Chinese",
+      "nativeName": "简体中文",
+      "flag": "🇨🇳",
+      "flagAsset": "assets/flags/cn.svg",
+      "hreflang": "zh-CN",
+      "ogLocale": "zh_CN"
+    },
+    {
+      "id": "ko",
+      "file": "ko.json",
+      "name": "Korean",
+      "nativeName": "한국어",
+      "flag": "🇰🇷",
+      "flagAsset": "assets/flags/kr.svg",
+      "hreflang": "ko",
+      "ogLocale": "ko_KR"
     },
     {
       "id": "cat",
@@ -71,7 +107,8 @@
       "name": "Cat",
       "nativeName": "Meow",
       "flag": "🐱",
-      "shortLabel": "🐱"
+      "shortLabel": "🐱",
+      "indexable": false
     }
   ]
 }
