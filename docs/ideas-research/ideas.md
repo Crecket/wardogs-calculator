@@ -182,6 +182,40 @@ outer boundary, not the whole reachable set. And these are Bakurani numbers:
 Ozeti's relief is 388 m against Bakurani's 1082 m, so expect roughly a third of
 the payoff there, on top of the alignment check Ozeti has not had.
 
+### 11. Dead ground behind the crests
+
+**Added to `upstream-pr/terrain-range-ring` (#11) as an optional layer after
+that PR was opened, and not yet on the fork's own line. Nothing in the survey
+does it.** SquadCalc,
+SquadMC, the Foxhole planner and the HLL calculators all draw reach — a circle,
+or in our case a terrain-solved outline — and none of them draws *masking*. The
+question "my target is inside the ring, so why does nothing land on it" is
+answered nowhere.
+
+**We do it now.** `js/map/dead-ground.js` marches each of the ring's bearings
+outward in the same 25 m steps and marks a range dead when the flattest
+trajectory that would land there passes below the ground somewhere closer. The
+dead runs draw as dark radial wedges inside the ring, on the `deadGround` layer,
+**off by default**.
+
+**Only the flattest arc.** SPG-2 `low`, mortar `single`. A weapon with a
+steeper arc reaches much of what is shaded, so a wedge means the flat arc
+cannot get there, not that the weapon cannot.
+
+**What is unverified: more than for idea 10.** The ring is a *difference* on the
+vacuum fit and is exactly zero on flat ground; this is the first drawing that
+uses the fit *absolutely*, so none of that safety carries over. On top of the
+same unmeasured muzzle velocities it adds a drag-free arc shape and a 32 m grid
+that rounds off exactly the sharp crests the answer turns on. Against the
+shipped Bakurani heightfield, 30 random SPG-2 positions, 97 % of bearings carry
+some dead ground — plausible for a 160 m/s flat arc at 2.6 km over that relief,
+and also exactly what a too-coarse grid or a too-flat modelled arc would
+produce. Nobody has checked a shaded patch in game.
+
+**Cheap next check, if anyone wants one:** two spotting rounds at a target
+inside a wedge, one on the flat arc and one on the steep. The layer predicts
+the first misses short into the crest and the second lands.
+
 ---
 
 ## Probably not

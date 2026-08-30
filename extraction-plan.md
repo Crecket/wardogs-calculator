@@ -20,7 +20,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 2 | 5.3 | Main zone circle | [`pr` #9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | `upstream-pr/map-visuals` |
 | 3 | 7.1 | Positions survive a reload | [`pr` #8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | `upstream-pr/remember-positions` |
 | 4 | 3.1 | Contour layer | [`pr` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | `upstream-pr/contour-layer` |
-| 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring | [`pr` #11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | `upstream-pr/terrain-range-ring` |
+| 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring + dead ground | [`pr` #11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | `upstream-pr/terrain-range-ring` |
 | 6 | 7.2 | Saved-target highlight derived from position | [`pr` #13](https://github.com/apollyon-sys/wardogs-calculator/pull/13) | `upstream-pr/derived-highlight` |
 | 7 | — | Marker tool does not turn off on a second click | [`pr` #12](https://github.com/apollyon-sys/wardogs-calculator/pull/12) | `upstream-pr/marker-tool-toggle` |
 | 8 | 5.1 | Tactical marker icons and picker labels | [`pr` #14](https://github.com/apollyon-sys/wardogs-calculator/pull/14) | `upstream-pr/tactical-markers` |
@@ -435,11 +435,39 @@ With the heightfield forced flat, every bearing returns the declared max range t
 
 ### Review notes
 
-- No new user-facing strings. The gain band is unlabelled.
+- No new user-facing strings for the ring; the gain band is unlabelled. The dead-ground layer below adds one, `mapLayerDeadGround`.
 - No CSS. Canvas only.
 - `loadProjectileModel()` and `PROJECTILE_MODEL` are exported from `range-ring.js` and load in `init()`.
 - The last commit adds unit tests and a browser test plus a `test:scripts` entry. The project has no test setup today, so that commit is last and separable.
+
+## Shade the dead ground behind the crests
+
+A second, optional layer over the same heightfield. The ring says how far the gun reaches on each bearing; this says where inside that reach a crest is in the way.
+
+Each bearing is marched outward at the same 25 m step the ring already uses. A point is dead ground when the flattest trajectory that would land on it passes below the ground somewhere closer. Runs of dead samples merge into intervals and draw as dark radial wedges under the artillery overlays.
+
+Only the flattest arc a weapon has is shaded — SPG-2 `low`, mortar `single` — because the steeper arc reaches much of what the flat one cannot.
+
+The layer is off by default and solved only while it is on. Unlike the ring, it reads the fitted vacuum model *absolutely* rather than as a difference from it, so nothing here inherits the ring's flat-ground-is-exactly-zero property. It is guidance about where to expect trouble, not a statement that a shell cannot land there, and `docs/terrain.md` says so in those words.
+
+With no heightfield, no fitted model, an unsupported map or a gun off the grid, it draws nothing and logs nothing. The ring is untouched either way.
 ````
+
+### Dead-ground shading, added after the PR was opened
+
+Five further commits (`8539f139a` … `cf2a30814`) landed on the branch after #11 was proposed. They are additive: nothing the PR already carried was changed, apart from the layer list, the layer defaults, one block in `draw()`, and the `test:scripts` line. The PR body above carries its own `## Shade the dead ground behind the crests` section for it.
+
+The ring answers *how far*. This answers *where inside that reach a crest is in the way*. Per bearing, the terrain is marched outward in the same 25 m steps the ring already uses; a sample at range `R` is dead when the low-root trajectory that lands on it passes below the ground somewhere closer. Adjacent dead samples merge into intervals and draw as dark radial wedges.
+
+Three things worth reviewing rather than trusting:
+
+- **It is the same unvalidated fit.** `projectile-model.json` is `source: "vacuum-fit"`, never checked against the game, and this layer is the first drawing that uses it *absolutely* rather than as a difference. The ring's honesty property — zero correction on flat ground — does not transfer. That is the reason the layer ships default-off and the docs say so out loud.
+- **Flattest arc only.** SPG-2 `low`, mortar `single`. A weapon with a steeper arc will reach much of what is shaded, so a wedge means "the flat arc cannot", not "the weapon cannot".
+- **The O(N²) inner loop is not needed.** For fixed `x` the trajectory height is monotone in `tan θ` over the whole domain the low root occupies (`t ≤ v²/gx`), so "is any closer sample above the arc" collapses to one running maximum of the grazing tangent. Measured against the shipped Bakurani heightfield, 30 random SPG-2 positions, 360 bearings: **35 ms median** (31–45 ms) per solve, against 100 ms for the literal double loop and 33 ms for the ring itself — most of what is left is the terrain sampling, not the ballistics. Solved lazily, only while the layer is on, and memoised beside the ring under the same 8 m key and 256-entry bound.
+
+`scripts/lib/dead-ground.mjs` holds the solver the way `ballistics.mjs` holds the ring's; `js/map/dead-ground.js` mirrors it for the browser, and a test asserts the fast form and the direct predicate agree on 60 random profiles. On those 30 Bakurani positions, 97 % of bearings carry some dead ground — which is either the terrain being genuinely rough for a 160 m/s flat arc at 2.6 km, or the first thing a screenshot should question.
+
+**This one does not widen the locale gap below.** `mapLayerDeadGround` was written into all twelve locale files, `cat.json` by hand.
 
 ---
 
