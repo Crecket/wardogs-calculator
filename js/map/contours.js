@@ -144,15 +144,45 @@ function decodeContours(payload) {
             let x = 0;
             let y = 0;
 
+            let minPointX = Infinity;
+            let maxPointX = -Infinity;
+            let minPointY = Infinity;
+            let maxPointY = -Infinity;
+
             for (let i = 0; i < flat.length; i += 2) {
                 x += flat[i];
                 y += flat[i + 1];
 
-                points[i] = originX + (x / quantisation) * stepX;
-                points[i + 1] = originY - (y / quantisation) * stepY;
+                const pointX = originX + (x / quantisation) * stepX;
+                const pointY = originY - (y / quantisation) * stepY;
+
+                points[i] = pointX;
+                points[i + 1] = pointY;
+
+                if (pointX < minPointX) {
+                    minPointX = pointX;
+                }
+
+                if (pointX > maxPointX) {
+                    maxPointX = pointX;
+                }
+
+                if (pointY < minPointY) {
+                    minPointY = pointY;
+                }
+
+                if (pointY > maxPointY) {
+                    maxPointY = pointY;
+                }
             }
 
-            lines.push(points);
+            lines.push({
+                points,
+                minX: minPointX,
+                maxX: maxPointX,
+                minY: minPointY,
+                maxY: maxPointY
+            });
         }
 
         levels.push({
@@ -170,6 +200,7 @@ function decodeContours(payload) {
         intervalMeters: Number(payload.intervalMeters),
         reliefMeters: relief,
         levels,
+        paths: null,
         /*
          * Offscreen raster of the drawn layer, created on first draw and
          * reused until the zoom changes or a pan runs off its margin.
@@ -273,31 +304,43 @@ function ensureContoursLoaded(mapId) {
 const CONTOUR_RASTER_MARGIN = 320;
 
 /*
- * Path2D per level in the raster's own coordinates. Each level has its own
- * ramp colour, so they cannot be merged into one path.
+ * Path2D per polyline, in game coordinates. Building a path is the
+ * expensive part — Bakurani is 79,615 points across 861 polylines — so it
+ * is done once per map and never again. The raster transform carries the
+ * scale and the pan instead, which is what makes a zoom step cost nothing
+ * to prepare.
+ *
+ * Each polyline keeps the bounding box computed at decode time so the
+ * renderer can skip whatever is nowhere near the raster.
  */
-function buildContourPaths(data, v, originX, originY) {
-    return data.levels.map(level => {
-        const path = new Path2D();
+function ensureContourPaths(data) {
+    if (data.paths) {
+        return data.paths;
+    }
 
-        for (const points of level.lines) {
-            for (let i = 0; i < points.length; i += 2) {
-                const x =
-                    (points[i] - v.bounds.minX) * v.scale - originX;
+    data.paths = data.levels.map(level => {
+        const lines = level.lines.map(line => {
+            const path = new Path2D();
+            const points = line.points;
 
-                const y =
-                    (v.bounds.maxY - points[i + 1]) * v.scale - originY;
+            path.moveTo(points[0], points[1]);
 
-                if (i === 0) {
-                    path.moveTo(x, y);
-                } else {
-                    path.lineTo(x, y);
-                }
+            for (let i = 2; i < points.length; i += 2) {
+                path.lineTo(points[i], points[i + 1]);
             }
-        }
+
+            return {
+                path,
+                minX: line.minX,
+                maxX: line.maxX,
+                minY: line.minY,
+                maxY: line.maxY
+            };
+        });
 
         return {
-            path,
+            lines,
+            major: level.major,
             color: level.color,
             width: level.major
                 ? CONTOUR_STYLE.majorWidth
@@ -307,44 +350,128 @@ function buildContourPaths(data, v, originX, originY) {
                 : CONTOUR_STYLE.minorAlpha
         };
     });
+
+    return data.paths;
+}
+
+const CONTOUR_MINOR_MAX_SPAN = 0.55;
+
+function contourMinorsVisible(v) {
+    const visibleSpan =
+        wrap.clientWidth /
+        v.scale /
+        v.worldWidth;
+
+    return visibleSpan <= CONTOUR_MINOR_MAX_SPAN;
 }
 
 /*
  * Renders the layer into `raster`, which covers the local-screen rectangle
  * starting at (originX, originY).
+ *
+ * Game coordinates go in and the transform does the projection, so the
+ * paths never have to be rebuilt. A stroke width has to be divided by the
+ * scale to come out the same thickness on screen at any zoom.
  */
 function renderContourRaster(data, v, raster) {
     const target = raster.canvas.getContext('2d');
     const ratio = raster.ratio;
+    const scale = v.scale;
 
-    target.setTransform(ratio, 0, 0, ratio, 0, 0);
-    target.clearRect(0, 0, raster.width, raster.height);
+    target.setTransform(1, 0, 0, 1, 0, 0);
 
-    const paths = buildContourPaths(
-        data,
-        v,
-        raster.originX,
-        raster.originY
+    target.clearRect(
+        0,
+        0,
+        raster.canvas.width,
+        raster.canvas.height
     );
+
+    target.setTransform(
+        scale * ratio,
+        0,
+        0,
+        -scale * ratio,
+        (-v.bounds.minX * scale - raster.originX) * ratio,
+        (v.bounds.maxY * scale - raster.originY) * ratio
+    );
+
+    const paths = ensureContourPaths(data);
+
+    const pad = 4 / scale;
+
+    const cullMinX = v.bounds.minX + raster.originX / scale - pad;
+    const cullMaxX = cullMinX + raster.width / scale + pad * 2;
+    const cullMaxY = v.bounds.maxY - raster.originY / scale + pad;
+    const cullMinY = cullMaxY - raster.height / scale - pad * 2;
+
+    const majorCasing = new Path2D();
+    const minorCasing = new Path2D();
+
+    const drawn = [];
+
+    for (const level of paths) {
+        if (!level.major && !raster.minors) {
+            continue;
+        }
+
+        const merged = new Path2D();
+
+        let any = false;
+
+        for (const line of level.lines) {
+            if (
+                line.maxX < cullMinX ||
+                line.minX > cullMaxX ||
+                line.maxY < cullMinY ||
+                line.minY > cullMaxY
+            ) {
+                continue;
+            }
+
+            merged.addPath(line.path);
+            any = true;
+        }
+
+        if (!any) {
+            continue;
+        }
+
+        (level.major ? majorCasing : minorCasing).addPath(merged);
+
+        drawn.push({
+            path: merged,
+            color: level.color,
+            width: level.width,
+            alpha: level.alpha
+        });
+    }
 
     target.lineJoin = 'round';
     target.lineCap = 'round';
 
     /*
      * Every casing first, so one level's casing never cuts a dark notch
-     * through a neighbouring line that runs alongside it.
+     * through a neighbouring line that runs alongside it. The casing is one
+     * colour for the whole layer, so the levels merge into two strokes —
+     * one per width — instead of one stroke each.
      */
     target.strokeStyle = CONTOUR_STYLE.casing;
 
-    for (const level of paths) {
-        target.lineWidth = level.width + CONTOUR_STYLE.casingExtra;
-        target.stroke(level.path);
-    }
+    target.lineWidth =
+        (CONTOUR_STYLE.minorWidth + CONTOUR_STYLE.casingExtra) / scale;
 
-    for (const level of paths) {
+    target.stroke(minorCasing);
+
+    target.lineWidth =
+        (CONTOUR_STYLE.majorWidth + CONTOUR_STYLE.casingExtra) / scale;
+
+    target.stroke(majorCasing);
+
+    for (const level of drawn) {
         target.globalAlpha = level.alpha;
         target.strokeStyle = level.color;
-        target.lineWidth = level.width;
+        target.lineWidth = level.width / scale;
         target.stroke(level.path);
     }
 
@@ -382,6 +509,8 @@ function drawContours(currentMap) {
     const width = visibleWidth + CONTOUR_RASTER_MARGIN * 2;
     const height = visibleHeight + CONTOUR_RASTER_MARGIN * 2;
 
+    const minors = contourMinorsVisible(v);
+
     let raster = data.raster;
 
     const stale =
@@ -390,6 +519,7 @@ function drawContours(currentMap) {
         raster.ratio !== ratio ||
         raster.width !== width ||
         raster.height !== height ||
+        raster.minors !== minors ||
         visibleX < raster.originX ||
         visibleY < raster.originY ||
         visibleX + visibleWidth > raster.originX + raster.width ||
@@ -405,11 +535,20 @@ function drawContours(currentMap) {
         raster.ratio = ratio;
         raster.width = width;
         raster.height = height;
+        raster.minors = minors;
         raster.originX = visibleX - CONTOUR_RASTER_MARGIN;
         raster.originY = visibleY - CONTOUR_RASTER_MARGIN;
 
-        raster.canvas.width = Math.round(width * ratio);
-        raster.canvas.height = Math.round(height * ratio);
+        const pixelWidth = Math.round(width * ratio);
+        const pixelHeight = Math.round(height * ratio);
+
+        if (
+            raster.canvas.width !== pixelWidth ||
+            raster.canvas.height !== pixelHeight
+        ) {
+            raster.canvas.width = pixelWidth;
+            raster.canvas.height = pixelHeight;
+        }
 
         renderContourRaster(data, v, raster);
     }
