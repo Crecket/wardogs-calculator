@@ -6,6 +6,6 @@
     "dev": "node scripts/dev-server.mjs",
     "build-heightfield": "node scripts/build-heightfield.mjs",
     "fit-ballistics": "node scripts/fit-ballistics.mjs",
-    "test:scripts": "node --test scripts/lib/ballistics.test.mjs scripts/lib/heightfield.test.mjs"
+    "test:scripts": "node --test scripts/lib/ballistics.test.mjs scripts/lib/dead-ground.test.mjs scripts/lib/heightfield.test.mjs"
   }
 }
