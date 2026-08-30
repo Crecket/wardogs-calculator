@@ -2,7 +2,7 @@
    CURSOR
    ========================= */
 
-function updateCursor(e) {
+function updateCursor(e, canvasRect) {
 
     const cursor =
         $('cursorCoords');
@@ -12,13 +12,14 @@ function updateCursor(e) {
         !isMapLayerVisible('cursorCoords')
     ) {
         if (cursor) {
-            cursor.style.display = 'none';
+            setStyle(cursor, 'display', 'none');
         }
 
         return;
     }
 
     const rect =
+        canvasRect ||
         c.getBoundingClientRect();
 
     const x =
@@ -49,9 +50,11 @@ function updateCursor(e) {
         bounds.maxY
     ) {
 
-        $('cursorCoords')
-            .style.display =
-            'none';
+        setStyle(
+            $('cursorCoords'),
+            'display',
+            'none'
+        );
 
         return;
     }
@@ -60,22 +63,35 @@ function updateCursor(e) {
         return;
     }
 
-    cursor.style.display =
-        'block';
+    setStyle(
+        cursor,
+        'display',
+        'block'
+    );
 
-    cursor.style.left =
-        `${x + 14}px`;
+    setStyle(
+        cursor,
+        'left',
+        `${x + 14}px`
+    );
 
-    cursor.style.top =
-        `${y + 14}px`;
+    setStyle(
+        cursor,
+        'top',
+        `${y + 14}px`
+    );
 
-    cursor.querySelector(
-        '.cursor-x'
-    ).textContent =
-        `x${formatGameCoordinate(world.x)}`;
+    setText(
+        cursor.querySelector(
+            '.cursor-x'
+        ),
+        `x${formatGameCoordinate(world.x)}`
+    );
 
-    cursor.querySelector(
-        '.cursor-y'
-    ).textContent =
-        `y${formatGameCoordinate(world.y)}`;
+    setText(
+        cursor.querySelector(
+            '.cursor-y'
+        ),
+        `y${formatGameCoordinate(world.y)}`
+    );
 }

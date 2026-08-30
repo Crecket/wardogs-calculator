@@ -5,3 +5,4 @@ dist-mobile/
 .wrangler/
 node_modules/
 maps/tiles/
+Trace-*.json
