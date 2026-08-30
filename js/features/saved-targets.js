@@ -49,76 +49,78 @@ function savedTargetPointMatches(point, x, y) {
 
 function savedTargetMatchState() {
 
-    const match =
-        savedTargets.find(
-            target =>
-                savedTargetPointMatches(
+    const levels = new Map();
+
+    savedTargets.forEach(
+        target => {
+
+            if (
+                !savedTargetPointMatches(
                     S.target,
                     target.x,
                     target.y
                 )
-        );
+            ) {
+                return;
+            }
 
-    if (!match) {
-        return {
-            id: null,
-            level: null
-        };
-    }
+            const origin =
+                target.saveArtillery
+                    ? savedTargetOrigin(target)
+                    : null;
 
-    const origin =
-        match.saveArtillery
-            ? savedTargetOrigin(match)
-            : null;
+            const full =
+                !origin ||
+                savedTargetPointMatches(
+                    S.origin,
+                    origin.x,
+                    origin.y
+                );
 
-    const full =
-        !origin ||
-        savedTargetPointMatches(
-            S.origin,
-            origin.x,
-            origin.y
-        );
+            levels.set(
+                String(target.id),
+                full
+                    ? 'full'
+                    : 'partial'
+            );
+        }
+    );
 
-    return {
-        id: match.id,
-        level:
-            full
-                ? 'full'
-                : 'partial'
-    };
+    return levels;
 }
 
-function activeSavedTargetId() {
-    return savedTargetMatchState().id;
+function activeSavedTargetIds() {
+    return new Set(
+        savedTargetMatchState().keys()
+    );
 }
 
 function savedTargetSyncHidden(id, state) {
 
-    if (!state.id) {
+    if (!state.size) {
         return false;
     }
 
-    return !(
-        state.id === id &&
-        state.level === 'partial'
-    );
+    return state.get(
+        String(id)
+    ) !== 'partial';
 }
 
 function applySavedTargetRowState(item, state) {
 
-    const isMatch =
-        item.dataset.targetId ===
-        state.id;
+    const level =
+        state.get(
+            item.dataset.targetId
+        );
 
     item.classList.toggle(
         'active',
-        isMatch
+        level !== undefined
     );
 
     item.classList.toggle(
         'partial',
-        isMatch &&
-        state.level === 'partial'
+        level === 'partial'
     );
 
     const sync =
@@ -171,8 +173,8 @@ function savedTargetNearest(distanceTo, threshold) {
         return null;
     }
 
-    const activeId =
-        activeSavedTargetId();
+    const activeIds =
+        activeSavedTargetIds();
 
     let best = null;
 
@@ -180,7 +182,11 @@ function savedTargetNearest(distanceTo, threshold) {
 
     for (const target of savedTargets) {
 
-        if (target.id === activeId) {
+        if (
+            activeIds.has(
+                String(target.id)
+            )
+        ) {
             continue;
         }
 

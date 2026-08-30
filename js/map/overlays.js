@@ -79,9 +79,9 @@ function drawSavedTargets() {
         return;
     }
 
-    const activeId =
-        typeof activeSavedTargetId === 'function'
-            ? activeSavedTargetId()
+    const activeIds =
+        typeof activeSavedTargetIds === 'function'
+            ? activeSavedTargetIds()
             : null;
 
     ctx.save();
@@ -92,7 +92,12 @@ function drawSavedTargets() {
     savedTargets.forEach(
         (target, index) => {
 
-            if (target.id === activeId) {
+            if (
+                activeIds &&
+                activeIds.has(
+                    String(target.id)
+                )
+            ) {
                 return;
             }
 
