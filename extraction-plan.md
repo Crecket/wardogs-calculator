@@ -12,7 +12,7 @@ Branch state at first assessment: 70 commits ahead, 21,306 insertions / 448 dele
 
 ## Status board
 
-Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed) · `pr` (open upstream) · `merged` · `parked`.
+Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed) · `pr` (open upstream) · `held` (reviewed, blocked on something upstream wants first) · `merged` · `parked`.
 
 | # | Item(s) | What | Status | Branch |
 | --- | --- | --- | --- | --- |
@@ -38,6 +38,31 @@ Item 17, like item 7, is not an extraction: `drawTileMap` paints a flat `#151a1d
 
 Item 7 is not an extraction at all: it is a bug that exists in `upstream/main` unchanged, found while working here. Fixed on `feat/collab-rooms` in `caa9d9a2b`; the same 12 lines apply upstream as a standalone PR. `upstream/main`'s `markerButton` handler never calls `setMapTool()`, so a second click only closes the picker and leaves the tool armed. The `pencilButton` handler has the same shape and is not yet fixed.
 
+## Review outcomes
+
+All eleven open PRs were reviewed by the maintainer on 2026-08-30. Not one drew an implementation objection; the holds are about data he does not want to publish yet, and one about rendering cost.
+
+**Approved, awaiting merge.** #12 (marker tool toggle) and #18 (parent-tile fallback) — "no blockers" on both.
+
+**Feedback addressed and pushed, awaiting re-review.**
+
+- **#8** — `wardogs-map-points` stored one map at a time, so switching maps overwrote the previous map's positions. Now keyed by map id (`463d30088`). The legacy single-map value migrates into its own key rather than being discarded, and `js/events.js` calls `loadMapPoints()` on map switch before the `clamp()` calls, so restoring works on switch and not only on reload. The 300ms write throttle means a drag in the last 300ms before a switch is lost; it cannot write coordinates under the wrong map id, so it is not a return of the reported bug, and it was left alone.
+- **#13** — `activeSavedTargetId()` used `find()`, so duplicate coordinates highlighted the first entry whichever was restored. Now `activeSavedTargetIds()` returning a `Set` (`380f8882f`). Highlighting every match is the honest fix rather than merely the smaller one: `restoreTarget()` writes only `S.target.x/y`, so no identity from the saved entry survives into app state, and preserving identity would reintroduce exactly the state this PR removes. The same change fixes a second latent bug — `dataset.targetId` is always a string, so the old `===` silently failed to match numeric ids arriving via the import path.
+- **#14** — the machine-written KO/ZH marker labels are dropped (`0387012cd`), four keys each from `locales/ko.json` and `locales/zh-cn.json`, no other locale touched. English fallback verified in both layers: `tr()` resolves `language?.[key] ?? fallback?.[key] ?? key` with `DEFAULT_LANG` of `en`, and `getMarkerAssetLabel` additionally guards against rendering a bare key. **The same objection applies to `bf79c953b` on `feat/collab-rooms`,** which added unreviewed machine-written height-correction strings for every remaining locale.
+
+**Held on confirmed game data.** He will not merge eyeballed values as authoritative measurements.
+
+- **#9** main zone circle — radii and positions must come from game files or another reliable source. He also wants maps with no known data to draw nothing rather than fall back to a guessed centre circle; that half is a small code change, but pointless before the data question is settled. #9 is the base of #16.
+- **#16** FOB build areas — the 60 m half-side is eyeballed from footage. The interaction work (move, rotate, snap, undo) was praised specifically. Needs a rebase once #9 resolves.
+
+**Held on ballistics.** #11 and #15 both derive from the vacuum-fit projectile model, which he says his private research has superseded, and automatic terrain ballistics is deliberately disabled pending held-out validation. Nothing to fix in either; they wait on the new model. #15 stacks on #11 regardless.
+
+**Held on performance.** #10 contour layer — he tested it and found the cost too high while zooming, diagnosing the rebuild/rasterise of contour paths on every zoom-scale change. His suggestions: cache the paths, defer the raster rebuild until zooming stops, add LOD for minor contours. This is real, self-contained work, not a data blocker, and it is the one hold that can be cleared without him.
+
+**Rebase requested.** #17 multiple guns — the feature is wanted ("absolutely something I want"), but the PR carries #8–#16 with it, including changes he will not merge. He asked for a rebase onto a cleaned-up base once the others resolve.
+
+**Verification limitation.** Branches cut from `upstream/main` have no test suite at all — `test/` and `test:scripts` exist only on the later branches. `npm run build` passes on all three fixes but exercises none of the changed logic; each was checked instead in a throwaway harness, which is not committed. Any of these three that the maintainer merges will be merged without a regression test.
+
 Most branches are cut from `upstream/main` and carry only their own feature. Two are **stacked** and cannot merge before their base:
 
 - `upstream-pr/flight-time` (item 11) branches from `upstream-pr/terrain-range-ring`, because `loadProjectileModel()` and `PROJECTILE_MODEL` live in `js/map/range-ring.js`, which exists only there. It also re-adds `projectileModelArc()`, which #11 dropped as dead code with flight time as its only consumer.
@@ -55,7 +80,7 @@ Everything is pushed to `origin` (the fork). Ready-to-use PR bodies are at the b
 
 Items 1 through 12 were extracted opportunistically, smallest and cleanest first. What remains is ordered by dependency instead, because each phase is what the next one is built on.
 
-**Phase 1 — let #8 through #16 land.** Nothing new stacked on them while they are in review. Nine open PRs is already a lot in front of one maintainer, and #15 and #16 cannot collapse to their real diffs until #11 and #9 merge.
+**Phase 1 — land what can land.** After review this is a much smaller set than "#8 through #16": #12 and #18 are approved, and #8, #13 and #14 are waiting on re-review. #9, #10, #11, #15 and #16 are all held on things outside the diffs, so the phase now ends with five PRs merged and five parked indefinitely. Nothing new stacks on any of them meanwhile.
 
 **Phase 2 — multiple guns (§2.1, then §2.2/2.3).** Before collaboration, not after. Collab's op families include `gun.add` / `gun.remove` and its client syncs the gun list, so landing guns first means collab ships once, complete. The other way round means shipping collab without gun sync and then reopening the worker's validation and op dispatch to add it, touching the riskiest file twice. §2.1 is the keystone: it makes `S.origin` and `S.weapon` accessors onto the selected gun so every existing reader is untouched and `js/core/core.js` never conflicts on an upstream merge. That property is the thing to protect.
 
@@ -74,7 +99,7 @@ The worker stays separate for a different reason: it is testable in isolation, r
 
 Still worth opening an issue before building either, to agree the shape and confirm the endpoint arrangement.
 
-**`integration/all-prs`** is a branch merging all nine open PR branches, used as the base for Phase 2 so guns can be built against "everything landed". It is a working aid, not a thing to propose upstream.
+**`integration/all-prs`** is a branch merging all nine open PR branches, used as the base for Phase 2 so guns can be built against "everything landed". **The review invalidated it as the base for #17's rebase:** it contains #9, #10, #11, #15 and #16, all now held. The real base is `upstream/main` plus #8, #12, #13, #14 and #18 once those merge. It is a working aid, not a thing to propose upstream.
 
 ### What the integration merge found
 
