@@ -135,6 +135,8 @@
   "unlockPosition": "Desbloquear",
   "lockPositionHint": "Bloquear esta posición frente a clics y arrastres en el mapa",
   "unlockPositionHint": "Permitir volver a cambiar esta posición en el mapa",
+  "forcePlacementHint": "Forzar clics aquí",
+  "forcePlacementHintActive": "Forzado — clic para soltar",
   "mil": "MIL",
   "collabTitle": "Sesión compartida",
   "collabHint": "Cualquiera con el enlace puede editar este mapa. La sala se cierra 2 semanas después del último cambio.",

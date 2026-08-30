@@ -248,6 +248,7 @@ async function init() {
 
         updatePresetLock();
         updatePointLocksUI();
+        updateForcePlacementUI();
 
         applyLanguage();
 

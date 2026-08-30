@@ -135,6 +135,8 @@
   "unlockPosition": "Entsperren",
   "lockPositionHint": "Diese Position gegen Kartenklicks und Ziehen sperren",
   "unlockPositionHint": "Diese Position wieder auf der Karte änderbar machen",
+  "forcePlacementHint": "Klicks hierher zwingen",
+  "forcePlacementHintActive": "Erzwungen — klicken zum Lösen",
   "mil": "MIL",
   "collabTitle": "Gemeinsame Sitzung",
   "collabHint": "Alle mit dem Link können diese Karte bearbeiten. Der Raum schließt 2 Wochen nach der letzten Änderung.",
