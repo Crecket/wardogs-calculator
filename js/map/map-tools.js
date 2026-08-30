@@ -72,6 +72,7 @@ const MAP_TOOL_STATE = {
         mainZone: true,
         fobAreas: true,
         artillery: true,
+        deadGround: false,
         cursorCoords: true
     }
 };
@@ -1180,7 +1181,8 @@ function buildMapLayers() {
                 ['presetMarkers', 'mapLayerPresetMarkers'],
                 ['mainZone', 'mapLayerMainZone'],
                 ['fobAreas', 'mapLayerFobAreas'],
-                ['artillery', 'mapLayerArtillery']
+                ['artillery', 'mapLayerArtillery'],
+                ['deadGround', 'mapLayerDeadGround']
             ]
         },
         {
@@ -1233,6 +1235,11 @@ function buildMapLayers() {
         fobAreas: `
             <path d="M5 19V9l7-4 7 4v10Z"/>
             <path d="M9.5 19v-5h5v5"/>
+        `,
+        deadGround: `
+            <path d="M3 17c3 0 4.5-6 7.5-6s4.5 6 7.5 6"/>
+            <path d="M3 20h18"/>
+            <path d="M14 8h5v4"/>
         `,
         artillery: `
             <circle cx="12" cy="12" r="6"/>

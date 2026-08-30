@@ -74,6 +74,8 @@ Each supported map stores its elevation dataset under its own directory:
 ```text
 data/terrain/<map-id>/
 ├── manifest.json
+├── heightfield.json
+├── heightfield.bin
 ├── contours.json
 ├── heightfield.json
 ├── heightfield.bin
@@ -92,6 +94,10 @@ They exist because the range ring needs the whole map at once. The chunk
 streamer above loads two chunks per firing solution; a 2.6 km ring sweeps
 about 36 of them, roughly 19 MB. At 32 m the ring is reproduced to 0.7 m
 median error against the full 2 m data.
+
+Samples are row-major `uint16` little-endian, rows running south to north, and
+decode as `minZMeters + (v / 65535) * (maxZMeters - minZMeters)`. Regenerating
+is the correct response to any change in a map's `bounds` or terrain chunks.
 
 Same datum caveat as everything else here: heights are offset by roughly
 900 m and only differences are used.
@@ -389,3 +395,43 @@ Regenerate both files with:
 
     npm run fit-ballistics
     npm run build-height-correction
+
+### The terrain-aware range ring
+
+The max range ring is the one drawing that reads the heightfield. It stays
+inside the same boundary: the radius on a bearing is
+`weapon.maxRange + [ modelMax(ΔZ) − modelMax(0) ]`, a **difference** from the
+vacuum model in `data/ballistics/projectile-model.json`, which is exactly zero
+at ΔZ = 0. On flat ground the ring is pixel-identical to the circle it
+replaced, and `data/weapons.json` stays authoritative everywhere.
+
+The solid ring is additionally clamped to `weapon.maxRange`, because past that
+the shipped tables cannot produce a MIL. Terrain reach beyond the clamp is
+drawn as an unlabelled advisory band and is never turned into a number.
+
+Regenerate the model with `npm run fit-ballistics`; it is a least-squares
+vacuum fit to `data/weapons.json`, marked `source: "vacuum-fit"`, and is meant
+to be replaced by pak extraction rather than refined.
+
+### The dead-ground layer
+
+The ring says how far a gun reaches on each bearing. The **Dead ground** layer
+says where inside that reach a crest gets in the way.
+
+For every bearing the terrain is sampled outward in 25 m steps, the same march
+the ring uses. A sample at range `R` is dead ground when the flattest
+trajectory that would land on it — the low root of the same vacuum model —
+passes below the ground at some closer distance. Adjacent dead samples merge
+into intervals and are drawn as dark radial wedges inside the ring.
+
+It is computed for the **flattest arc the weapon has**, and only that arc:
+SPG-2 `low`, mortar `single`. Where a weapon has a second, steeper arc it will
+reach much of what is shaded here, so the shading is the flat arc's problem,
+not the weapon's.
+
+The layer is **default off**, and it is solved only while it is on. It inherits
+every caveat the ring does and adds none of its own confidence:
+`projectile-model.json` is a `source: "vacuum-fit"` to our own tables that has
+never been checked against the game, the grid is 32 m, and the trajectory is
+drag-free. Treat a shaded patch as "expect trouble here", not as a statement
+that a shell cannot land there.

@@ -172,13 +172,25 @@ function draw() {
         drawMapToolDrawings();
     }
 
+    if (
+        isMapLayerVisible('deadGround') &&
+        currentWeapon
+    ) {
+        drawDeadGround(
+            worldToLocalScreen(
+                S.origin.x,
+                S.origin.y
+            ),
+            v.scale
+        );
+    }
+
     /*
      * Layers 6-8:
      * every gun's range rings and target line, then the markers.
      * The per-gun loop lives in js/map/guns-overlay.js.
      */
     if (isMapLayerVisible('artillery')) {
-
         drawSavedTargets();
 
         if (currentWeapon) {

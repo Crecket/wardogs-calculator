@@ -84,6 +84,7 @@
   "mapLayerMainZone": "Main zone",
   "mapLayerFobAreas": "FOB build areas",
   "mapLayerArtillery": "Artillery overlay",
+  "mapLayerDeadGround": "Dead ground",
   "mapToolUndo": "Undo",
   "mapToolRedo": "Redo",
   "mapToolUndoRedoHint": "Undo: {undo} · Redo: {redo}",
