@@ -121,6 +121,17 @@ npx playwright install chromium
 
 ## Design notes
 
+**The roster is derived, never stored.** `{"type":"peers"}` carries `count` as
+it always did, plus a `roster` of `{id, name}` built from `getWebSockets()` at
+the moment of the broadcast. There is no parallel Map of members to fall out of
+step with the sockets that actually exist, so a peer that has gone cannot be
+left behind in it. A client names itself with `{"type":"name", "name": "..."}`,
+which the room keeps on the socket's hibernation attachment — no storage write,
+and it survives hibernation. Colour never travels: each client derives it from
+the peer id, so a roster row and that peer's cursor always agree. Both
+directions degrade: a client that ignores `roster` reads `count`, and a client
+that sends no `name` is listed with a null one.
+
 **Ops, not documents.** Peers exchange small ops (`drawing.add`, `marker.remove`,
 `point.set`, …) rather than whole-document broadcasts. The DO holds the
 authoritative copy, validates each op, and rebroadcasts the canonical form it

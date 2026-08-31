@@ -4,6 +4,7 @@ import {
     LIMITS,
     isOpError,
     validateCursor,
+    validateName,
     validateOp
 } from './ops.js';
 
@@ -269,10 +270,13 @@ export class Room extends DurableObject {
      * be allowed to drift into two different shapes.
      */
     snapshotMessage(clientId) {
+        const roster = this.roster();
+
         return {
             type: 'snapshot',
             you: clientId,
-            peers: this.ctx.getWebSockets().length,
+            peers: roster.length,
+            roster,
             limits: {
                 drawings: LIMITS.drawings,
                 markers: LIMITS.markers,
@@ -505,16 +509,13 @@ export class Room extends DurableObject {
         const clientId = crypto.randomUUID();
 
         this.ctx.acceptWebSocket(server);
-        server.serializeAttachment({ clientId });
+        server.serializeAttachment({ clientId, name: null });
 
         await this.touch();
 
         this.send(server, this.snapshotMessage(clientId));
 
-        this.broadcastPeers(
-            this.ctx.getWebSockets().length,
-            server
-        );
+        this.broadcastPeers(null, server);
 
         return new Response(null, {
             status: 101,
@@ -546,17 +547,44 @@ export class Room extends DurableObject {
         }
     }
 
+    roster(omit = null) {
+        const entries = [];
+
+        for (const socket of this.ctx.getWebSockets()) {
+            if (socket === omit) {
+                continue;
+            }
+
+            const attachment = socket.deserializeAttachment();
+
+            if (!attachment?.clientId) {
+                continue;
+            }
+
+            entries.push({
+                id: attachment.clientId,
+                name: typeof attachment.name === 'string'
+                    ? attachment.name
+                    : null
+            });
+        }
+
+        return entries;
+    }
+
     /*
-     * The count is passed in rather than derived, because the two callers
-     * disagree about whether `except` is present: a joining socket is
-     * already in getWebSockets() and should be counted, while a closing
-     * one is still in getWebSockets() and must not be.
+     * `except` is who not to tell, `omit` is who not to list: a joining
+     * socket is already in getWebSockets() and should be counted, while a
+     * closing one is still in getWebSockets() and must not be.
      */
-    broadcastPeers(count, except = null) {
+    broadcastPeers(omit = null, except = null) {
+        const roster = this.roster(omit);
+
         this.broadcast(
             {
                 type: 'peers',
-                count
+                count: roster.length,
+                roster
             },
             except
         );
@@ -676,6 +704,16 @@ export class Room extends DurableObject {
             return;
         }
 
+        if (raw?.type === 'name') {
+            socket.serializeAttachment({
+                clientId,
+                name: validateName(raw.name)
+            });
+
+            this.broadcastPeers();
+            return;
+        }
+
         /*
          * Re-send the authoritative document. A client asks for this after
          * an op is rejected, so a local edit the room never accepted does
@@ -762,13 +800,7 @@ export class Room extends DurableObject {
             this.cursorBuckets.delete(clientId);
         }
 
-        this.broadcastPeers(
-            this.ctx
-                .getWebSockets()
-                .filter(open => open !== socket)
-                .length,
-            socket
-        );
+        this.broadcastPeers(socket, socket);
     }
 
     async webSocketError(socket) {
