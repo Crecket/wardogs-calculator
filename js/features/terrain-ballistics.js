@@ -221,6 +221,36 @@
                 font-size: 10px;
                 line-height: 1.45;
             }
+
+            body:not(.mobile-app) button.sph-level-warning-title {
+                width: 100%;
+                min-height: 0;
+                margin: 0;
+                padding: 0;
+                border: 0;
+                border-radius: 0;
+                background: none;
+                text-align: left;
+                cursor: pointer;
+            }
+
+            body:not(.mobile-app)
+            .sph-level-warning:not(.is-open)
+            .sph-level-warning-body {
+                display: none;
+            }
+
+            .sph-level-warning-caret {
+                margin-left: auto;
+                flex: 0 0 auto;
+                font-size: 10px;
+                line-height: 1;
+                transition: transform .15s ease;
+            }
+
+            .sph-level-warning.is-open .sph-level-warning-caret {
+                transform: rotate(180deg);
+            }
         `;
         document.head.appendChild(style);
     }
@@ -266,8 +296,16 @@
         root.className = 'sph-level-warning';
         root.setAttribute('role', 'note');
 
-        const title = document.createElement('div');
+        const title = document.createElement(
+            isMobile ? 'div' : 'button'
+        );
+
         title.className = 'sph-level-warning-title';
+
+        if (!isMobile) {
+            title.type = 'button';
+            title.setAttribute('aria-expanded', 'false');
+        }
 
         const icon = document.createElement('span');
         icon.className = 'sph-level-warning-icon';
@@ -281,6 +319,29 @@
         body.className = 'sph-level-warning-body';
 
         title.append(icon, titleText);
+
+        if (!isMobile) {
+
+            const caret = document.createElement('span');
+
+            caret.className = 'sph-level-warning-caret';
+            caret.setAttribute('aria-hidden', 'true');
+            caret.textContent = '▾';
+
+            title.append(caret);
+
+            title.addEventListener('click', () => {
+
+                const open =
+                    root.classList.toggle('is-open');
+
+                title.setAttribute(
+                    'aria-expanded',
+                    String(open)
+                );
+            });
+        }
+
         root.append(title, body);
 
         fallbackCard.insertAdjacentElement('afterend', root);

@@ -2606,12 +2606,10 @@
             }
 
             .experimental-terrain-value small {
-                overflow: hidden;
                 color: var(--muted, #9aa4ab);
                 font-size: 8px;
-                line-height: 1.15;
-                text-overflow: ellipsis;
-                white-space: nowrap;
+                line-height: 1.3;
+                overflow-wrap: anywhere;
             }
 
             .experimental-terrain-value.is-safe strong {
@@ -2677,7 +2675,6 @@
         root.innerHTML = `
             <div class="experimental-terrain-correction-header">
                 <div class="experimental-terrain-correction-title"></div>
-                <span class="experimental-terrain-correction-badge">EXPERIMENTAL</span>
             </div>
             <label class="experimental-terrain-correction-toggle">
                 <input id="experimentalTerrainCorrectionToggle" type="checkbox">
