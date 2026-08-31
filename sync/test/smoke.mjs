@@ -121,6 +121,47 @@ await next(b, m => m.type === 'snapshot');
 const peers = await next(a, m => m.type === 'peers');
 check('peer count broadcast', peers.count === 2, peers.count);
 
+console.log('\n== roster ==');
+check('snapshot lists the joiner itself',
+    Array.isArray(snapA.roster) &&
+    snapA.roster.length === 1 &&
+    snapA.roster[0].id === snapA.you &&
+    snapA.roster[0].name === null,
+    JSON.stringify(snapA.roster));
+check('peers frame carries a roster',
+    Array.isArray(peers.roster) &&
+    peers.roster.length === peers.count &&
+    peers.roster.some(entry => entry.id === snapA.you),
+    JSON.stringify(peers.roster));
+
+drain(a);
+b.send(JSON.stringify({ type: 'name', name: `Gunner\u0007${'x'.repeat(60)}` }));
+const named = await next(a, m => m.type === 'peers');
+const bEntry = named.roster.find(entry => entry.id !== snapA.you);
+check('a rename reaches the roster', bEntry.name.startsWith('Gunner'), JSON.stringify(named.roster));
+check('roster name is cleaned and capped',
+    bEntry.name.length <= 24 && !/[\u0000-\u001f\u007f]/.test(bEntry.name),
+    JSON.stringify(bEntry.name));
+check('a name frame is not acked', !a.inbox.some(m => m.type === 'ack'), JSON.stringify(a.inbox));
+
+drain(a);
+const ghost = await open(room.code);
+const snapGhost = await next(ghost, m => m.type === 'snapshot');
+const joined = await next(a, m => m.type === 'peers');
+check('a third peer is listed', joined.roster.some(entry => entry.id === snapGhost.you), JSON.stringify(joined.roster));
+
+drain(a);
+ghost.close();
+const left = await next(a, m => m.type === 'peers');
+check('a departed peer leaves the roster',
+    left.count === 2 &&
+    left.roster.length === 2 &&
+    !left.roster.some(entry => entry.id === snapGhost.you),
+    JSON.stringify(left));
+
+drain(a);
+drain(b);
+
 a.send(JSON.stringify({ op: 'drawing.add', drawing: drawing('d1') }));
 const relayed = await next(b, m => m.type === 'op');
 check('drawing relayed to peer', relayed.op.op === 'drawing.add' && relayed.op.drawing.id === 'd1');

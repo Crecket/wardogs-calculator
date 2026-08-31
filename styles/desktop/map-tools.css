@@ -732,6 +732,72 @@ input[type="checkbox"] {
     text-align: center;
 }
 
+.collab-roster {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    max-height: 132px;
+    margin: 0;
+    padding: 0;
+
+    overflow-y: auto;
+
+    list-style: none;
+}
+
+.collab-peer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 4px 6px;
+
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+
+    background: var(--input-bg);
+
+    font-size: 10px;
+    line-height: 1.35;
+}
+
+.collab-peer-swatch {
+    flex: 0 0 auto;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.collab-peer-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.collab-peer-you {
+    color: var(--muted);
+    font-size: 9px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.collab-peer-health {
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #7ddc7d;
+}
+
+.collab-peer-health.stale {
+    background: var(--muted);
+    opacity: .6;
+}
+
 .collab-name-row {
     display: grid;
     grid-template-columns: auto 1fr;

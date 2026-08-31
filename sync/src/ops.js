@@ -138,6 +138,10 @@ function cursorName(value) {
     return cleaned || null;
 }
 
+export function validateName(value) {
+    return cursorName(value);
+}
+
 export function validateCursor(raw) {
     if (!raw || typeof raw !== 'object') {
         fail('bad-cursor');

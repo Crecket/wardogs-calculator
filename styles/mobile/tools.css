@@ -202,6 +202,11 @@
 .mobile-app .collab-hint,
 .mobile-app .collab-include,
 .mobile-app .collab-peers,
+.mobile-app .collab-peer,
 .mobile-app .collab-status {
     font-size: 11px;
+}
+
+.mobile-app .collab-roster {
+    max-height: 160px;
 }

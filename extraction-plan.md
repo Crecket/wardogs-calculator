@@ -169,6 +169,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 20 | — | rAF-coalesced redraws, cached CSS custom properties, `createImageBitmap` tile decode with a bounded LRU, `devicePixelRatio` clamped to 2 | `branch` | `upstream-pr/render-perf`, cut from v1.7.0 |
 | 21 | 1.x | Live peer cursors, named and coloured | `branch` | `feat/collab-rooms` (fork only, extends item 16) |
 | 22 | 3.7 | Terrain-solved minimum range ring, dead ground shaded where the low arc is masked | `branch` | `feat/collab-rooms` (fork only, extends item 5) |
+| 23 | 1.x | Peer roster in the session panel, from a server-side roster | `branch` | `feat/ux-peer-roster` (fork only, extends items 16 and 21) |
 
 The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
 

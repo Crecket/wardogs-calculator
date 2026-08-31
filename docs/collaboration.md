@@ -48,6 +48,10 @@ The Shared Session tool appears in the Map Tools toolbar once configured.
 - Both actions offer **Bring my drawings and targets**, which pushes your
   current content into the room. Leave it unchecked to join a room clean.
 - **Leave session** disconnects and restores the map you had before joining.
+- The panel lists **who is in the room**: one row per peer with the name they
+  typed, the colour their live cursor draws in, and a health dot. Your own row
+  is marked `you`. The list comes from the server, so an idle peer who has not
+  touched their mouse is still listed.
 
 There are no accounts. Anyone holding the code can edit everything, so treat the
 link the way you would treat the room itself.
@@ -78,6 +82,20 @@ replaced by a per-op, per-user history: undo reverses your last op and tells the
 other peers, rather than restoring a whole document snapshot that would revert
 their work too. Consecutive moves of the same point collapse into one undo step,
 so undo steps back over a whole drag. Bulk imports and clears are not undoable.
+
+**The roster is who the room is holding a socket for**, not who has moved
+recently. Names travel as their own message, so a peer who joins and then sits
+still is listed the whole time. Health is only what the client honestly knows:
+every row reads connected, because the room lists nothing else, and the moment
+your own link drops the whole list is greyed as last-known rather than going on
+claiming everyone is live. There is no per-peer heartbeat — a peer's own client
+is the only thing that can tell that a peer's own link died, and it has no way
+to say so once it has.
+
+**A roster is optional in the protocol.** A client talking to a server that
+predates it sees only the peer count it always did, and never sends the name
+message that server would reject. A server that keeps one still sends `count`,
+so an older client is unaffected.
 
 **Dropped connections retry** with backoff, then reload a fresh snapshot.
 Anything you did while disconnected is discarded — the snapshot is authoritative.
