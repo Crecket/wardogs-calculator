@@ -52,6 +52,9 @@ The Shared Session tool appears in the Map Tools toolbar once configured.
   typed, the colour their live cursor draws in, and a health dot. Your own row
   is marked `you`. The list comes from the server, so an idle peer who has not
   touched their mouse is still listed.
+- **Click a peer's row to follow their camera.** Your view glides to theirs and
+  keeps tracking it, a banner across the top of the map names who you are
+  following, and any pan, zoom or camera key of your own releases it at once.
 
 There are no accounts. Anyone holding the code can edit everything, so treat the
 link the way you would treat the room itself.
@@ -92,10 +95,37 @@ claiming everyone is live. There is no per-peer heartbeat — a peer's own clien
 is the only thing that can tell that a peer's own link died, and it has no way
 to say so once it has.
 
+**Following is a camera, not a cursor.** A peer's cursor is where their mouse
+is; what a follower needs is where their map is. Peers broadcast the world
+point at the centre of their viewport and their zoom level as an ephemeral
+`view` frame — throttled, rebroadcast by the room, never written into the
+snapshot — and a follower eases towards the last one it received. Zoom is
+matched, not just the centre, because `S.zoom` is a multiplier over a
+fit-the-map-to-your-viewport scale: zoom 2 means "twice as close as fitting the
+whole map", which means the same thing on a laptop and on an ultrawide. It is
+clamped to the follower's own limits, so a peer zoomed past what your map
+allows leaves you as close as you can get rather than out of range.
+
+**The follow releases on the first thing you do.** Every camera write in the
+app goes through `S.panX`, `S.panY` and `S.zoom`, so the follow loop compares
+the camera against the values it wrote last frame: anything that does not match
+was somebody else, which covers a drag, the wheel, the zoom buttons, WASD, the
+mobile pinch and a tool that recentres the map, with no hook in any of them. The
+banner says so for a couple of seconds afterwards. A followed peer who leaves
+releases it the same way, on the roster frame that drops them.
+
 **A roster is optional in the protocol.** A client talking to a server that
 predates it sees only the peer count it always did, and never sends the name
 message that server would reject. A server that keeps one still sends `count`,
 so an older client is unaffected.
+
+**So is the `view` frame.** The snapshot names the ephemeral frames the room
+understands. A client that finds `view` missing — an older server, which would
+answer the frame with a bare `bad-op` that names no frame — never sends one and
+never offers a follow, so the roster reads exactly as it did before. A server
+that supports it only ever relays what a peer sent, so a client that predates
+the frame sends nothing, receives nothing it did not ask for, and ignores the
+`view` messages it does not recognise.
 
 **Dropped connections retry** with backoff, then reload a fresh snapshot.
 Anything you did while disconnected is discarded — the snapshot is authoritative.

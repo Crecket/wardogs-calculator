@@ -210,3 +210,8 @@
 .mobile-app .collab-roster {
     max-height: 160px;
 }
+
+.mobile-app .collab-follow-banner {
+    top: 6px;
+    font-size: 10px;
+}

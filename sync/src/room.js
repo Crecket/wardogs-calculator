@@ -5,7 +5,8 @@ import {
     isOpError,
     validateCursor,
     validateName,
-    validateOp
+    validateOp,
+    validateView
 } from './ops.js';
 
 /*
@@ -17,6 +18,8 @@ const TOUCH_GRANULARITY_MS = 5 * 60 * 1000;
 
 /* Reused rather than reallocated: every inbound message is measured. */
 const ENCODER = new TextEncoder();
+
+const FEATURES = ['view'];
 
 /*
  * One Durable Object per room, addressed by its room code.
@@ -41,6 +44,8 @@ export class Room extends DurableObject {
         this.buckets = new Map();
 
         this.cursorBuckets = new Map();
+
+        this.viewBuckets = new Map();
 
         /*
          * Mirrors the stored idle deadline so the common op does not read
@@ -277,6 +282,7 @@ export class Room extends DurableObject {
             you: clientId,
             peers: roster.length,
             roster,
+            features: FEATURES,
             limits: {
                 drawings: LIMITS.drawings,
                 markers: LIMITS.markers,
@@ -618,6 +624,15 @@ export class Room extends DurableObject {
         );
     }
 
+    allowView(clientId) {
+        return this.spend(
+            this.viewBuckets,
+            clientId,
+            LIMITS.viewsPerSecond,
+            LIMITS.viewBurst
+        );
+    }
+
     spend(buckets, clientId, rate, burst) {
         const now = Date.now();
 
@@ -684,9 +699,14 @@ export class Room extends DurableObject {
         }
 
         const isCursor = raw?.type === 'cursor';
+        const isView = raw?.type === 'view';
 
         if (isCursor) {
             if (!this.allowCursor(clientId)) {
+                return;
+            }
+        } else if (isView) {
+            if (!this.allowView(clientId)) {
                 return;
             }
         } else if (!this.allow(clientId)) {
@@ -751,6 +771,33 @@ export class Room extends DurableObject {
             return;
         }
 
+        if (isView) {
+            let frame;
+
+            try {
+                frame = validateView(raw);
+            } catch (error) {
+                this.send(socket, {
+                    type: 'error',
+                    code: isOpError(error)
+                        ? error.code
+                        : 'bad-view'
+                });
+                return;
+            }
+
+            this.broadcast(
+                {
+                    type: 'view',
+                    from: clientId,
+                    ...frame
+                },
+                socket
+            );
+
+            return;
+        }
+
         let op;
 
         try {
@@ -798,6 +845,7 @@ export class Room extends DurableObject {
         if (clientId) {
             this.buckets.delete(clientId);
             this.cursorBuckets.delete(clientId);
+            this.viewBuckets.delete(clientId);
         }
 
         this.broadcastPeers(socket, socket);

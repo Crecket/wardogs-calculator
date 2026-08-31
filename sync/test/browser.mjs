@@ -351,6 +351,130 @@ await A.mouse.move(ccx, cursorBox.y - 8);
 await B.waitForFunction(() => COLLAB.cursors.size === 0, null, { timeout: 10000 });
 check('leaving the canvas clears the peer cursor', true);
 
+console.log('\n== follow a peer ==');
+await openCollab(A);
+
+const followRows = await A.evaluate(() => Array.from(
+    document.querySelectorAll('#collabPopover .collab-peer')
+).map(row => ({
+    followable: row.classList.contains('followable'),
+    you: Boolean(row.querySelector('.collab-peer-you')),
+    label: row.querySelector('.collab-peer-follow')?.textContent || null
+})));
+
+check('only the other peer offers a follow',
+    followRows.filter(row => row.followable).length === 1 &&
+    followRows.every(row => row.followable !== row.you),
+    JSON.stringify(followRows));
+check('the follow affordance is labelled',
+    followRows.some(row => row.label === 'Follow'), JSON.stringify(followRows));
+
+await A.evaluate(() =>
+    document.querySelector('#collabPopover .collab-peer.followable').click());
+
+check('A is following B', await A.evaluate(() => COLLAB.follow !== null));
+check('the banner names the peer being followed',
+    (await A.textContent('#collabFollowBanner .collab-follow-banner-label')).includes('Bravo'),
+    await A.textContent('#collabFollowBanner .collab-follow-banner-label'));
+
+await B.evaluate(() => {
+    S.zoom = 2.4;
+    S.panX = -120;
+    S.panY = 80;
+    draw();
+});
+
+const bView = await B.evaluate(() => collabViewCentre());
+
+await A.waitForFunction(target => {
+    const mine = collabViewCentre();
+
+    return Math.abs(mine.x - target.x) < 0.5 &&
+        Math.abs(mine.y - target.y) < 0.5 &&
+        Math.abs(mine.zoom - target.zoom) < 0.01;
+}, bView, { timeout: 10000 });
+check("A's camera converged on B's centre and zoom", true);
+
+check('following stays out of undo history',
+    await A.evaluate(() => !JSON.stringify(COLLAB.ownOps).includes('view')));
+check('views stay out of the document',
+    await A.evaluate(() => !JSON.stringify({
+        drawings: MAP_TOOL_STATE.drawings,
+        markers: MAP_TOOL_STATE.markers,
+        targets: savedTargets
+    }).includes('zoom')));
+
+await A.evaluate(() => {
+    S.panX += 60;
+    draw();
+});
+
+await A.waitForFunction(() => COLLAB.follow === null, null, { timeout: 5000 });
+check('a manual pan releases the follow', true);
+check('no camera frame is left running',
+    await A.evaluate(() => COLLAB.followFrame === null));
+check('the release is announced',
+    (await A.textContent('#collabFollowBanner .collab-follow-banner-label')) === 'Follow released');
+
+console.log('\n== a followed peer leaving releases the camera ==');
+const cContext = await browser.newContext({ reducedMotion: 'reduce' });
+const C = await newPage(cContext);
+await C.goto(`http://localhost:${SITE_PORT}/#room=${code}`);
+await ready(C);
+await C.waitForFunction(() => COLLAB.status === 'online', null, { timeout: 15000 });
+await C.evaluate(() => collabSetName('Charlie'));
+
+await A.waitForFunction(
+    () => (COLLAB.roster || []).some(entry => entry.name === 'Charlie'),
+    null, { timeout: 10000 }
+);
+
+await openCollab(A);
+await A.evaluate(() => {
+    const row = Array.from(
+        document.querySelectorAll('#collabPopover .collab-peer')
+    ).find(item => item.querySelector('.collab-peer-name').textContent === 'Charlie');
+
+    row.click();
+});
+check('A is following Charlie', await A.evaluate(() => COLLAB.follow !== null));
+
+await A.waitForFunction(() => COLLAB.views.size > 0, null, { timeout: 10000 });
+check('Charlie announced a view without touching the camera', true);
+
+check('reduced motion is honoured by dropping the interpolation',
+    await C.evaluate(() => {
+        const eased = collabEaseView(
+            { x: 0, y: 0, zoom: 1 },
+            { x: 60, y: 40, zoom: 3 },
+            16
+        );
+
+        return collabReducedMotion() &&
+            eased.x === 60 && eased.y === 40 && eased.zoom === 3;
+    }));
+
+const charlieId = await C.evaluate(() => COLLAB.clientId);
+
+await cContext.close();
+
+await A.waitForFunction(() => COLLAB.follow === null, null, { timeout: 10000 });
+check('a departed peer releases the follow', true);
+check('their view is forgotten',
+    await A.evaluate(id => !COLLAB.views.has(id), charlieId));
+check('no timer or frame is left behind',
+    await A.evaluate(() =>
+        COLLAB.followFrame === null &&
+        COLLAB.followTarget === null &&
+        COLLAB.followEased === null));
+
+await A.evaluate(() => {
+    S.zoom = 1;
+    S.panX = 0;
+    S.panY = 0;
+    draw();
+});
+
 console.log('\n== undo only undoes your own ops ==');
 /* Undo pops A's newest own op, so make a marker the newest thing A did. */
 await A.evaluate(() => {
