@@ -211,6 +211,15 @@
     max-height: 160px;
 }
 
+.mobile-app .map-tool-collab .collab-peer-follow,
+.mobile-app .collab-peer-you {
+    height: 22px;
+}
+
+.mobile-app .map-tool-collab .collab-peer-follow {
+    font-size: 10px;
+}
+
 .mobile-app .collab-follow-banner {
     top: 6px;
     font-size: 10px;

@@ -70,6 +70,22 @@ const COLLAB_CURSOR_COLORS = [
     '#ff7ab8'
 ];
 
+const COLLAB_PEER_SELF_ICON =
+    '<svg aria-hidden="true" viewBox="0 0 24 24" width="11" height="11"' +
+    ' fill="none" stroke="currentColor" stroke-width="1.9"' +
+    ' stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="12" cy="8.2" r="3.4"/>' +
+    '<path d="M5.6 19.4a6.4 6.4 0 0 1 12.8 0"/>' +
+    '</svg>';
+
+const COLLAB_FOLLOW_ICON =
+    '<svg aria-hidden="true" viewBox="0 0 24 24" width="11" height="11"' +
+    ' fill="none" stroke="currentColor" stroke-width="1.8"' +
+    ' stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/>' +
+    '<circle cx="12" cy="12" r="2.6"/>' +
+    '</svg>';
+
 const COLLAB_RECONNECT_BASE = 1000;
 const COLLAB_RECONNECT_MAX = 15000;
 const COLLAB_RECONNECT_ATTEMPTS = 8;
@@ -2917,7 +2933,10 @@ function collabBuildRosterRow(entry) {
     if (isYou) {
         const you = document.createElement('span');
         you.className = 'collab-peer-you';
-        you.textContent = tr('collabPeerYou');
+        you.innerHTML = COLLAB_PEER_SELF_ICON;
+        you.title = tr('collabPeerYou');
+        you.setAttribute('role', 'img');
+        you.setAttribute('aria-label', tr('collabPeerYou'));
         row.append(you);
     }
 
@@ -2932,29 +2951,28 @@ function collabBuildRosterRow(entry) {
 
         row.classList.add('followable');
         row.classList.toggle('following', following);
-        row.tabIndex = 0;
-        row.setAttribute('role', 'button');
-        row.setAttribute('aria-pressed', String(following));
-        row.title = label;
 
-        row.addEventListener('click', event => {
-            event.stopPropagation();
-            collabToggleFollow(entry.id);
-        });
+        const follow = document.createElement('button');
 
-        row.addEventListener('keydown', event => {
-            if (event.key !== 'Enter' && event.key !== ' ') {
-                return;
-            }
-
-            event.preventDefault();
-            event.stopPropagation();
-            collabToggleFollow(entry.id);
-        });
-
-        const follow = document.createElement('span');
+        follow.type = 'button';
         follow.className = 'collab-peer-follow';
-        follow.textContent = label;
+        follow.classList.toggle('active', following);
+        follow.innerHTML = COLLAB_FOLLOW_ICON;
+        follow.setAttribute('role', 'button');
+        follow.setAttribute('aria-pressed', String(following));
+        follow.title = label;
+        follow.setAttribute('aria-label', label);
+
+        const text = document.createElement('span');
+        text.className = 'collab-peer-follow-label';
+        text.textContent = label;
+
+        follow.append(text);
+
+        follow.addEventListener('click', event => {
+            event.stopPropagation();
+            collabToggleFollow(entry.id);
+        });
 
         row.append(follow);
     }

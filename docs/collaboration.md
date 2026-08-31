@@ -50,11 +50,13 @@ The Shared Session tool appears in the Map Tools toolbar once configured.
 - **Leave session** disconnects and restores the map you had before joining.
 - The panel lists **who is in the room**: one row per peer with the name they
   typed, the colour their live cursor draws in, and a health dot. Your own row
-  is marked `you`. The list comes from the server, so an idle peer who has not
+  carries a person icon in place of the follow button, labelled `you` for a
+  screen reader. The list comes from the server, so an idle peer who has not
   touched their mouse is still listed.
-- **Click a peer's row to follow their camera.** Your view glides to theirs and
-  keeps tracking it, a banner across the top of the map names who you are
-  following, and any pan, zoom or camera key of your own releases it at once.
+- Every other row carries a **Follow** button. Press it and your view glides to
+  that peer's and keeps tracking it: the button fills in and reads `Following`,
+  a banner across the top of the map names who you are following, and any pan,
+  zoom or camera key of your own releases it at once.
 
 There are no accounts. Anyone holding the code can edit everything, so treat the
 link the way you would treat the room itself.
