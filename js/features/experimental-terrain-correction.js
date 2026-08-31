@@ -2440,8 +2440,7 @@
                         )
                         : null;
 
-                let status =
-                    text().statusOff;
+                let status = null;
 
                 if (
                     experimental.loading
@@ -2462,6 +2461,12 @@
                     status =
                         text()
                             .statusFallback;
+                }
+
+                if (status === null) {
+                    return deltaZ === null
+                        ? ''
+                        : `ΔZ ${deltaZ} m`;
                 }
 
                 return deltaZ === null
