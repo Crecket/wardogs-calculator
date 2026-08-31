@@ -779,39 +779,72 @@ input[type="checkbox"] {
 }
 
 .collab-peer-you {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+
+    width: 18px;
+    height: 18px;
+
     color: var(--muted);
-    font-size: 9px;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-}
-
-.collab-peer.followable {
-    cursor: pointer;
-}
-
-.collab-peer.followable:hover,
-.collab-peer.followable:focus-visible {
-    border-color: var(--accent);
-    outline: none;
 }
 
 .collab-peer.following {
-    border-color: var(--accent);
-    box-shadow: inset 0 0 0 1px var(--accent);
+    border-color: var(--accent-border);
+    background: var(--active-bg);
 }
 
-.collab-peer-follow {
+.map-tool-collab .collab-peer-follow {
+    display: inline-flex;
     flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
 
-    color: var(--muted);
+    width: auto;
+    height: 18px;
+    min-height: 0;
+    padding: 0 6px;
 
+    border: 1px solid var(--border);
+    border-radius: 999px;
+
+    background: var(--input-bg);
+
+    color: var(--text);
+
+    font-family: inherit;
     font-size: 9px;
     letter-spacing: .06em;
+    line-height: 1;
     text-transform: uppercase;
+
+    cursor: pointer;
 }
 
-.collab-peer.following .collab-peer-follow {
+.map-tool-collab .collab-peer-follow svg {
+    flex: 0 0 auto;
+}
+
+.map-tool-collab .collab-peer-follow:hover {
+    border-color: var(--border-light);
+    background: var(--input-hover-bg);
     color: var(--accent);
+}
+
+.map-tool-collab .collab-peer-follow:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.map-tool-collab .collab-peer-follow.active {
+    border-color: var(--accent-border);
+    background: var(--primary-bg);
+    color: var(--text);
+}
+
+.map-tool-collab .collab-peer-follow.active:hover {
+    background: var(--primary-border);
 }
 
 .collab-follow-banner {
@@ -849,6 +882,8 @@ input[type="checkbox"] {
 }
 
 .collab-follow-banner-stop {
+    width: auto;
+    min-height: 0;
     padding: 2px 8px;
 
     border: 1px solid var(--border-light);

@@ -356,21 +356,49 @@ await openCollab(A);
 
 const followRows = await A.evaluate(() => Array.from(
     document.querySelectorAll('#collabPopover .collab-peer')
-).map(row => ({
-    followable: row.classList.contains('followable'),
-    you: Boolean(row.querySelector('.collab-peer-you')),
-    label: row.querySelector('.collab-peer-follow')?.textContent || null
-})));
+).map(row => {
+    const button = row.querySelector('button.collab-peer-follow');
+
+    return {
+        followable: row.classList.contains('followable'),
+        you: Boolean(row.querySelector('.collab-peer-you')),
+        youIcon: Boolean(row.querySelector('.collab-peer-you svg')),
+        youLabel: row.querySelector('.collab-peer-you')?.getAttribute('aria-label') || null,
+        youText: row.querySelector('.collab-peer-you')?.textContent.trim() || '',
+        button: Boolean(button),
+        buttonIcon: Boolean(button?.querySelector('svg')),
+        label: button?.textContent.trim() || null,
+        pressed: button?.getAttribute('aria-pressed') || null,
+        active: Boolean(button?.classList.contains('active'))
+    };
+}));
 
 check('only the other peer offers a follow',
     followRows.filter(row => row.followable).length === 1 &&
     followRows.every(row => row.followable !== row.you),
     JSON.stringify(followRows));
-check('the follow affordance is labelled',
-    followRows.some(row => row.label === 'Follow'), JSON.stringify(followRows));
+check('the follow affordance is a real button with an icon and a label',
+    followRows.some(row =>
+        row.button && row.buttonIcon && row.label === 'Follow' && row.pressed === 'false'),
+    JSON.stringify(followRows));
+check('your own row is marked with an icon, not the word',
+    followRows.some(row => row.you && row.youIcon && row.youText === '' && row.youLabel === 'you'),
+    JSON.stringify(followRows));
+check('your own row offers no follow button',
+    followRows.every(row => !row.you || !row.button), JSON.stringify(followRows));
 
 await A.evaluate(() =>
-    document.querySelector('#collabPopover .collab-peer.followable').click());
+    document.querySelector('#collabPopover button.collab-peer-follow').click());
+
+check('the followed row reads as pressed',
+    await A.evaluate(() => {
+        const button = document.querySelector('#collabPopover button.collab-peer-follow');
+
+        return button.classList.contains('active') &&
+            button.getAttribute('aria-pressed') === 'true' &&
+            button.textContent.trim() === 'Following' &&
+            button.closest('.collab-peer').classList.contains('following');
+    }));
 
 check('A is following B', await A.evaluate(() => COLLAB.follow !== null));
 check('the banner names the peer being followed',
@@ -435,7 +463,7 @@ await A.evaluate(() => {
         document.querySelectorAll('#collabPopover .collab-peer')
     ).find(item => item.querySelector('.collab-peer-name').textContent === 'Charlie');
 
-    row.click();
+    row.querySelector('button.collab-peer-follow').click();
 });
 check('A is following Charlie', await A.evaluate(() => COLLAB.follow !== null));
 
