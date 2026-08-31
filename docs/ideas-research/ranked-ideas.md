@@ -79,14 +79,11 @@ Performance sits at the top for the same reason: panning smoothness is felt by e
 
 These were not in the original survey. Where one would displace something above, it says so.
 
-**Would rank in Tier 1 if the list were rebuilt:**
-
-- [ ] **A text annotation tool.** Markers are icons only; there is no way to write a word on the map. "Sniper", "mines", "rally here", "2nd wave" — every whiteboard tool in existence has this and its absence is the most surprising gap in Map Tools. Would sit around item 6.
-
 **Would rank in Tier 2:**
 
 - [ ] **Second-monitor pop-out.** Open the results panel in its own window so the map keeps the main screen. Cheap, and a lot of this audience plays on two monitors.
 - [ ] **Saved-target search, tags and folders.** The list is flat and unfiltered; once someone has 40 targets it stops being usable.
+
 ---
 
 ## Won't do
@@ -133,3 +130,4 @@ Considered and declined. Not a backlog — nothing here is waiting for capacity,
 - **Print stylesheet** for the plan and the range card.
 - **Weapon comparison view** — both weapons' envelopes against the same target.
 - **Auto-detect the map** from a pasted coordinate pair that only falls inside one map's bounds.
+- **A text annotation tool.** Markers are icons only; there is no way to write a word on the map. "Sniper", "mines", "rally here", "2nd wave" — every whiteboard tool in existence has this and its absence is the most surprising gap in Map Tools.
