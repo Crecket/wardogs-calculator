@@ -1950,8 +1950,8 @@ function syncSavedTargetsVisibility() {
 
     const visible = savedTargetsVisible();
 
-    button.innerHTML =
-        GUN_EYE_ICON[visible ? 'on' : 'off'];
+    button.textContent =
+        visible ? '▴' : '▾';
 
     button.setAttribute(
         'aria-pressed',
