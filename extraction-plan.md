@@ -73,6 +73,33 @@ Three further blockers even where the domain does cover: both files are `spg` / 
 
 Both holds therefore stand where they were. Lifting them needs the maintainer to publish trajectory profiles — or at minimum apex and descent-branch parameters and a wider Δz domain — not just the command surfaces.
 
+
+---
+
+## Render path measured on `upstream-pr/render-perf`
+
+Four items from [ranked-ideas.md](docs/ideas-research/ranked-ideas.md) — rAF coalescing, a CSS custom-property cache, `createImageBitmap` tile decode with a `close()`-ing LRU, and a `devicePixelRatio` clamp of 2 — cut as one branch from `upstream/main` at `353f14cef` and merged into `feat/collab-rooms` at `a85a9fccc`.
+
+Measured with a Playwright harness against both worktrees, real Bakurani webp tiles served from loopback, median of 5 alternating trials per checkout, headless Chromium, 1440x900:
+
+| Scenario | Metric | Baseline | Branch | Change |
+| --- | --- | --- | --- | --- |
+| Pan, 600 moves at 5 per frame | painter calls | 600 | 120 | 5x fewer |
+| | ms in painter | 154.1 | 62.1 | −59.7% |
+| | `getComputedStyle` calls | 1200 | 0 | −100% |
+| Wheel, 300 events | painter calls | 419 | 60 | 7x fewer |
+| | ms in painter | 126.8 | 47.5 | −62.5% |
+| Cold tile pan, zoom 6 | ms in painter | 141.4 | 51.8 | −63.4% |
+| | long tasks | 0 | 0 | no signal |
+| Pan at DPR 3 | backing-store pixels | 7,539,840 | 3,351,040 | −55.6% |
+| | ms in painter | 176.1 | 68.1 | −61.3% |
+
+**The coalescing owns the win.** The style cache is total as a call count but its share of the milliseconds cannot be separated from the coalescing with a main-thread harness. **The tile-decode change is unproven, not disproven**: long tasks were zero on both sides even against 262 KB incompressible noise tiles at 8x the decode bytes, because both `new Image()` and `createImageBitmap()` decode off the main thread and this harness measures the main thread. The DPR clamp does exactly what it claims on pixel count, but baseline painter time rises only 14% for a 9x backing store — the painter is dominated by per-primitive JS, not fill rate, and headless never rasterises those pixels anyway.
+
+Per-call painter time rises 80–170% on the branch in every scenario. That is one coalesced paint absorbing five to seven baseline paints, not a regression, but quoting that row alone inverts the result.
+
+**One bug the fork found and upstream could not.** `createImageBitmap` was reached through `fetch`, which is subject to CORS where an `<img>` load is not. Upstream's `maps/bakurani.json` points at a relative `maps/tiles/` path, so upstream tiles are same-origin and it never fires; the fork's `TILE_BASE_URL` object storage sends no `Access-Control-Allow-Origin`, so every tile paid a CORS-blocked fetch before falling back to the image path — tiles still rendered, and `sync/test/browser.mjs` went 44/1 on console errors. `createImageBitmap` is now used only for same-origin tiles; cross-origin ones take `new Image()` plus `img.decode()`, which is off-thread everywhere and CORS-free. Setting `crossOrigin='anonymous'` would not have helped (the bucket sends no header) and neither would `createImageBitmap(imageElement)` (it rejects on a non-origin-clean image).
+
 ---
 
 ## Status board
@@ -96,10 +123,12 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 13 | 6.1 + 6.2 | Tiles from object storage | `parked` | — |
 | 14 | 2.1–2.4, 2.6, 2.8, 2.9 | Multiple guns | [`pr` #17](https://github.com/apollyon-sys/wardogs-calculator/pull/17) | `upstream-pr/multiple-guns` (on `integration/all-prs`), carries v1.7.0 |
 | 15 | 7.3–7.8 | Saved-target markers and sync | `branch` | `upstream-pr/saved-target-markers` (on `upstream-pr/multiple-guns`) |
-| 16 | 1.x | Shared sessions | `todo` | — |
+| 16 | 1.x | Shared sessions | `todo` | — (fork carries it on `feat/collab-rooms`; presence work tracked as item 21) |
 | 19 | — | Force placement mode on the per-point lock icons | [`pr` #3](https://github.com/apollyon-sys/wardogs-calculator/pull/3) | `feat/force-placement-mode`, carries v1.7.0 |
 | 17 | — | Parent tile drawn while the child loads | [`absorbed` #18](https://github.com/apollyon-sys/wardogs-calculator/pull/18) | branch deleted |
 | 18 | — | Forced layout and no-op DOM writes on every pointer move | [`absorbed`](https://github.com/apollyon-sys/wardogs-calculator/pull/10) via #10 | branch deleted |
+| 20 | — | rAF-coalesced redraws, cached CSS custom properties, `createImageBitmap` tile decode with a bounded LRU, `devicePixelRatio` clamped to 2 | `branch` | `upstream-pr/render-perf`, cut from v1.7.0 |
+| 21 | 1.x | Live peer cursors, named and coloured | `branch` | `feat/collab-rooms` (fork only, extends item 16) |
 
 The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
 
