@@ -155,7 +155,24 @@ function decodeTileElement(url) {
                 'async';
 
             image.onload =
-                () => resolve(image);
+                () => {
+
+                    if (
+                        typeof image.decode !== 'function'
+                    ) {
+
+                        resolve(image);
+
+                        return;
+                    }
+
+                    image
+                        .decode()
+                        .then(
+                            () => resolve(image),
+                            () => resolve(image)
+                        );
+                };
 
             image.onerror =
                 () => reject(
@@ -168,11 +185,28 @@ function decodeTileElement(url) {
     );
 }
 
+function tileIsSameOrigin(url) {
+
+    try {
+
+        return new URL(
+            url,
+            location.href
+        ).origin === location.origin;
+
+    } catch (error) {
+
+        return false;
+    }
+}
+
+
 async function decodeTile(url) {
 
     if (
         typeof createImageBitmap !== 'function' ||
-        typeof fetch !== 'function'
+        typeof fetch !== 'function' ||
+        !tileIsSameOrigin(url)
     ) {
         return decodeTileElement(url);
     }
