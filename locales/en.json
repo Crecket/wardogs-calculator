@@ -144,7 +144,7 @@
   "crossSectionOver": "overshoots, inside the minimum range",
   "crossSectionPasses": "passes over the target and lands beyond it",
   "crossSectionNoModel": "No ballistics model for this weapon",
-  "crossSectionCompressed": "scale compressed above",
+  "crossSectionApexAbove": "apex +{metres} m ↑",
   "crossSectionLoadingTerrain": "Loading terrain…",
   "crossSectionNoDistance": "Move the target away from the gun",
   "crossSectionNoTerrain": "No terrain profile for this map",

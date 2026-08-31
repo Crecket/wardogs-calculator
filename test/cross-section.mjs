@@ -170,6 +170,134 @@ check(
     short
 );
 
+/*
+ * The vertical axis is linear across the whole plot. A ballistic arc that
+ * does not draw as a parabola makes the panel untrustworthy, so the terrain
+ * gets its space from the scale being fitted to the flat arc, never from
+ * compressing the air above it.
+ */
+const geometry = await page.evaluate(() => {
+    S.weapon = 'spg';
+    S.origin.x = 29.83;
+    S.origin.y = 45.34;
+
+    const a = 255 * Math.PI / 180;
+
+    S.target.x = S.origin.x + Math.cos(a) * metersToWorldDistance(1500);
+    S.target.y = S.origin.y + Math.sin(a) * metersToWorldDistance(1500);
+
+    clamp(S.target);
+    result();
+
+    const canvas = document.getElementById('crossSectionCanvas');
+    const left = 6;
+    const right = canvas.width - 6;
+    const top = 8;
+    const bottom = canvas.height - 13;
+
+    const distance = worldDistanceToMeters(
+        Math.hypot(S.target.x - S.origin.x, S.target.y - S.origin.y)
+    );
+
+    const model = crossSectionModel(WEAPONS[S.weapon], distance);
+    const range = crossSectionVerticalRange(model);
+    const ground = model.profile.ground;
+
+    const toY = z =>
+        top +
+        (range.top - z) / (range.top - range.base) * (bottom - top);
+
+    const toX = i =>
+        left + (i / (ground.length - 1)) * (right - left);
+
+    const flat = model.shots.find(shot => shot.arc !== 'high');
+    const first = model.profile.gunIndex;
+    const last = flat.endIndex;
+    const mid = Math.round((first + last) / 2);
+
+    const px = [toX(first), toX(mid), toX(last)];
+    const py = [
+        toY(flat.heights[first]),
+        toY(flat.heights[mid]),
+        toY(flat.heights[last])
+    ];
+
+    const den = (px[0] - px[1]) * (px[0] - px[2]) * (px[1] - px[2]);
+
+    const qa =
+        (px[2] * (py[1] - py[0]) +
+        px[1] * (py[0] - py[2]) +
+        px[0] * (py[2] - py[1])) / den;
+
+    const qb =
+        (px[2] * px[2] * (py[0] - py[1]) +
+        px[1] * px[1] * (py[2] - py[0]) +
+        px[0] * px[0] * (py[1] - py[2])) / den;
+
+    const qc =
+        (px[1] * px[2] * (px[1] - px[2]) * py[0] +
+        px[2] * px[0] * (px[2] - px[0]) * py[1] +
+        px[0] * px[1] * (px[0] - px[1]) * py[2]) / den;
+
+    let error = 0;
+
+    for (let i = first; i <= last; i += 1) {
+        const x = toX(i);
+
+        error = Math.max(
+            error,
+            Math.abs(toY(flat.heights[i]) - (qa * x * x + qb * x + qc))
+        );
+    }
+
+    let low = Infinity;
+    let high = -Infinity;
+
+    for (let i = 0; i < ground.length; i += 1) {
+        if (ground[i] < low) {
+            low = ground[i];
+        }
+
+        if (ground[i] > high) {
+            high = ground[i];
+        }
+    }
+
+    return {
+        error,
+        clipped: range.clipped,
+        apexAboveTop: range.apex > range.top,
+        flatInsideTop: range.top > flat.heights[
+            crossSectionApexIndex(flat, first)
+        ],
+        reliefShare: (toY(low) - toY(high)) / (bottom - top)
+    };
+});
+
+check(
+    'the flat arc draws as a parabola, not a compressed polyline',
+    geometry.error < 0.5,
+    String(geometry.error)
+);
+
+check(
+    'a high arc taller than the plot is clipped at the frame',
+    geometry.clipped && geometry.apexAboveTop,
+    JSON.stringify(geometry)
+);
+
+check(
+    'the plot still contains the whole flat arc',
+    geometry.flatInsideTop,
+    JSON.stringify(geometry)
+);
+
+check(
+    'and the terrain relief gets real vertical space',
+    geometry.reliefShare > 0.3,
+    String(geometry.reliefShare)
+);
+
 const surfaces = () => page.evaluate(() => ({
     mil: document.getElementById('mil').textContent,
     milDetail: document.getElementById('milAlt').textContent,
