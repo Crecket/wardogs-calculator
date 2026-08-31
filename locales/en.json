@@ -203,5 +203,9 @@
   "reachReachable": "Reachable",
   "reachOutOfRange": "Out of range",
   "reachTooClose": "Too close — inside minimum range",
-  "reachMasked": "Masked by terrain"
+  "reachMasked": "Masked by terrain",
+  "reachPending": "Still solving",
+  "reachAll": "All {total} guns can reach this",
+  "reachSome": "{reachable} of {total} guns can reach this",
+  "reachNone": "No gun can reach this"
 }

@@ -11,6 +11,7 @@
  */
 
 const GUN_INACTIVE_ALPHA = 0.45;
+const GUN_INACTIVE_RANGE_ALPHA = 0.15;
 
 /*
  * The active gun ignores its own eye toggle. Selecting a hidden gun would
@@ -229,10 +230,13 @@ function drawGuns() {
             worldToLocalScreen(gun.position.x, gun.position.y);
 
         ctx.save();
-        ctx.globalAlpha = GUN_INACTIVE_ALPHA;
+        ctx.globalAlpha = GUN_INACTIVE_RANGE_ALPHA;
 
         drawGunRangeRings(gun, at);
         drawGunToTargetLine(at, target);
+
+        ctx.globalAlpha = GUN_INACTIVE_ALPHA;
+
         marker(gun.position, 'O');
 
         ctx.restore();

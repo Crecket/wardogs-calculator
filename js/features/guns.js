@@ -75,6 +75,10 @@ function selectGun(id) {
 
     S.activeGunId = id;
 
+    if (typeof collabSendView === 'function') {
+        collabSendView();
+    }
+
     renderGuns();
     inputs();
     draw();

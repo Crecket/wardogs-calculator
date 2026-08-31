@@ -23,6 +23,8 @@ const OBS = {
     active: false,
     options: null,
     gunId: null,
+    selectedBy: new Map(),
+    pendingGunId: null,
     signatures: new Map(),
     view: null,
     target: null,
@@ -141,6 +143,29 @@ function obsReducedMotion() {
 }
 
 
+function obsNoteGunSelection(from, gunId) {
+    if (!isObsMode()) {
+        return;
+    }
+
+    if (OBS.selectedBy.get(from) === gunId) {
+        return;
+    }
+
+    OBS.selectedBy.set(from, gunId);
+
+    if (gunById(gunId)) {
+        OBS.gunId = gunId;
+        OBS.pendingGunId = null;
+
+        obsSync();
+
+        return;
+    }
+
+    OBS.pendingGunId = gunId;
+}
+
 function obsGunSignature(gun) {
     return `${gun.position.x}|${gun.position.y}|${gun.weapon || ''}`;
 }
@@ -169,6 +194,12 @@ function obsTrackGuns() {
 
     if (moved) {
         OBS.gunId = moved;
+        OBS.pendingGunId = null;
+    }
+
+    if (OBS.pendingGunId && gunById(OBS.pendingGunId)) {
+        OBS.gunId = OBS.pendingGunId;
+        OBS.pendingGunId = null;
     }
 
     if (!OBS.gunId || !gunById(OBS.gunId)) {

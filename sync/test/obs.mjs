@@ -503,6 +503,57 @@ check('the camera move settled', settled.animating === false);
 check('the readout followed the room', settled.range !== '500 m', settled.range);
 check('code still absent from the overlay DOM', !(await codeInDom(overlay)));
 
+console.log('\n== the overlay follows the room\'s gun selection ==');
+
+const gunIds = await editor.evaluate(() => {
+    const second = addGun();
+
+    return { first: S.guns[0].id, second: second.id };
+});
+
+await overlay.waitForFunction(
+    () => S.guns.length === 2, null, { timeout: 10000 }
+);
+
+await editor.evaluate(id => selectGun(id), gunIds.first);
+
+await overlay.waitForFunction(
+    id => OBS.gunId === id && S.activeGunId === id,
+    gunIds.first, { timeout: 10000 }
+);
+
+check('selecting the first gun reaches the overlay', true);
+
+await editor.evaluate(id => selectGun(id), gunIds.second);
+
+await overlay.waitForFunction(
+    id => OBS.gunId === id && S.activeGunId === id,
+    gunIds.second, { timeout: 10000 }
+);
+
+check('selecting the second gun reaches the overlay', true);
+
+const namedGun = await overlay.evaluate(
+    () => document.getElementById('obsGun').textContent
+);
+
+check('the readout names the selected gun', /2\/2/.test(namedGun), namedGun);
+
+const panBefore = await overlay.evaluate(() => OBS.gunId);
+
+await editor.evaluate(() => {
+    S.panX += 40;
+    draw();
+    collabTrackView();
+    collabFlushView();
+});
+
+await overlay.waitForTimeout(1200);
+
+check('a plain pan does not move the overlay off that gun',
+    await overlay.evaluate(() => OBS.gunId) === panBefore,
+    await overlay.evaluate(() => OBS.gunId));
+
 console.log('\n== peer cursors still render ==');
 
 await editor.evaluate(() => {

@@ -187,12 +187,27 @@ check('a claimed id and extra fields are stripped',
     cleanView.name === undefined,
     JSON.stringify(cleanView));
 
+drain(b);
+a.send(JSON.stringify({
+    type: 'view', x: 1, y: 2, zoom: 1, gun: 'gun-abc123'
+}));
+const gunView = await next(b, m => m.type === 'view');
+check('a view frame carries the sender\'s selected gun',
+    gunView.gun === 'gun-abc123', JSON.stringify(gunView));
+
+drain(b);
+a.send(JSON.stringify({ type: 'view', x: 1, y: 3, zoom: 1 }));
+const bareView = await next(b, m => m.type === 'view');
+check('a view frame without a gun still passes',
+    bareView.gun === undefined, JSON.stringify(bareView));
+
 drain(a);
 const viewRejects = [
     ['view without a zoom', { type: 'view', x: 1, y: 1 }, 'bad-zoom'],
     ['zero zoom', { type: 'view', x: 1, y: 1, zoom: 0 }, 'bad-zoom'],
     ['absurd zoom', { type: 'view', x: 1, y: 1, zoom: 1e9 }, 'bad-zoom'],
-    ['NaN view coordinate', { type: 'view', x: 'abc', y: 1, zoom: 1 }, 'bad-coordinate']
+    ['NaN view coordinate', { type: 'view', x: 'abc', y: 1, zoom: 1 }, 'bad-coordinate'],
+    ['a malformed gun id', { type: 'view', x: 1, y: 1, zoom: 1, gun: '../etc' }, 'bad-id']
 ];
 
 for (const [label, frame, expected] of viewRejects) {

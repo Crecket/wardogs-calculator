@@ -166,11 +166,17 @@ export function validateView(raw) {
         fail('bad-view');
     }
 
-    return {
+    const frame = {
         x: coordinate(raw.x),
         y: coordinate(raw.y),
         zoom: zoomLevel(raw.zoom)
     };
+
+    if (raw.gun !== null && raw.gun !== undefined) {
+        frame.gun = id(raw.gun);
+    }
+
+    return frame;
 }
 
 export function validateCursor(raw) {

@@ -2245,11 +2245,16 @@ function collabFlushView() {
 
     COLLAB.viewSentAt = Date.now();
 
+    const gun = typeof activeGun === 'function'
+        ? activeGun()
+        : null;
+
     collabSend({
         type: 'view',
         x: centre.x,
         y: centre.y,
-        zoom: centre.zoom
+        zoom: centre.zoom,
+        gun: gun ? gun.id : null
     });
 }
 
@@ -2279,6 +2284,14 @@ function collabReceiveView(message) {
         zoom: message.zoom,
         at: Date.now()
     });
+
+    if (
+        typeof message.gun === 'string' &&
+        message.gun &&
+        typeof obsNoteGunSelection === 'function'
+    ) {
+        obsNoteGunSelection(from, message.gun);
+    }
 
     if (COLLAB.follow === from) {
         collabAimFollow();

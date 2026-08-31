@@ -1,22 +1,30 @@
-const REACH_STATE_CLASS = {
-    reachable: 'reach-ok',
-    masked: 'reach-masked',
-    out: 'reach-out',
-    close: 'reach-close'
-};
-
-const REACH_STATE_GLYPH = {
-    reachable: '✓',
-    masked: '▲',
-    out: '✕',
-    close: '✕'
-};
-
 const REACH_STATE_LABEL = {
+    pending: 'reachPending',
     reachable: 'reachReachable',
     masked: 'reachMasked',
     out: 'reachOutOfRange',
     close: 'reachTooClose'
+};
+
+const REACH_SUMMARY_CLASS = {
+    pending: 'reach-pending',
+    all: 'reach-ok',
+    some: 'reach-partial',
+    none: 'reach-out'
+};
+
+const REACH_SUMMARY_GLYPH = {
+    pending: '·',
+    all: '✓',
+    some: '◐',
+    none: '✕'
+};
+
+const REACH_SUMMARY_LABEL = {
+    pending: 'reachPending',
+    all: 'reachAll',
+    some: 'reachSome',
+    none: 'reachNone'
 };
 
 const REACH_UNAVAILABLE = new Set();
@@ -54,6 +62,10 @@ function reachClassify(solved, target) {
         return null;
     }
 
+    if (!solved.ring) {
+        return 'pending';
+    }
+
     const ring = solved.ring;
 
     const dx = x - solved.gun.position.x;
@@ -78,23 +90,32 @@ function reachClassify(solved, target) {
         return 'close';
     }
 
+    if (!solved.dead) {
+        return 'reachable';
+    }
+
     return reachIntervalHit(solved.dead.bearings[bearing], metres)
         ? 'masked'
         : 'reachable';
 }
 
-function reachGunSolved(key) {
-    return (
-        RANGE_RING_CACHE.has(key) &&
-        DEAD_GROUND_CACHE.has(key)
-    );
+function reachGunSolved(gun, key) {
+    if (!RANGE_RING_CACHE.has(key)) {
+        return false;
+    }
+
+    if (!deadGroundArcs(gun.weapon)) {
+        return true;
+    }
+
+    return DEAD_GROUND_CACHE.has(key);
 }
 
 function reachUnsolvedGun() {
     for (const gun of S.guns) {
         const key = rangeRingMemoKey(gun, S.map);
 
-        if (!reachGunSolved(key) && !REACH_UNAVAILABLE.has(key)) {
+        if (!reachGunSolved(gun, key) && !REACH_UNAVAILABLE.has(key)) {
             return gun;
         }
     }
@@ -112,7 +133,9 @@ function reachSolveGun(gun) {
         return;
     }
 
-    if (terrainDeadGround(gun, mapId)) {
+    terrainDeadGround(gun, mapId);
+
+    if (reachGunSolved(gun, key)) {
         return;
     }
 
@@ -151,7 +174,7 @@ function reachScheduleSolve() {
 
         const key = rangeRingMemoKey(gun, S.map);
 
-        if (reachGunSolved(key) || REACH_UNAVAILABLE.has(key)) {
+        if (reachGunSolved(gun, key) || REACH_UNAVAILABLE.has(key)) {
             renderSavedTargetReachBadges(true);
             reachScheduleSolve();
 
@@ -181,7 +204,7 @@ function reachSignatureNow() {
     ].join('|');
 }
 
-function reachBadgeHost(item) {
+function reachBadgeHead(item) {
     const info =
         item.querySelector('.saved-target-info');
 
@@ -189,8 +212,36 @@ function reachBadgeHost(item) {
         return null;
     }
 
+    const name =
+        info.querySelector('.saved-target-name');
+
+    if (!name) {
+        return null;
+    }
+
+    let head = name.parentElement;
+
+    if (!head.classList.contains('saved-target-head')) {
+        head = document.createElement('div');
+
+        head.className = 'saved-target-head';
+
+        info.insertBefore(head, name);
+        head.appendChild(name);
+    }
+
+    return head;
+}
+
+function reachBadgeHost(item) {
+    const head = reachBadgeHead(item);
+
+    if (!head) {
+        return null;
+    }
+
     let host =
-        info.querySelector('.saved-target-reach');
+        head.parentElement.querySelector('.saved-target-reach');
 
     if (!host) {
         host = document.createElement('div');
@@ -199,19 +250,17 @@ function reachBadgeHost(item) {
 
         host.setAttribute('role', 'group');
         host.setAttribute('aria-label', tr('reachBadges'));
-
-        info.appendChild(host);
     }
 
-    if (info.lastElementChild !== host) {
-        info.appendChild(host);
+    if (head.lastElementChild !== host) {
+        head.appendChild(host);
     }
 
     return host;
 }
 
-function reachBadgeNode(host, index) {
-    let badge = host.children[index];
+function reachBadgeNode(host) {
+    let badge = host.firstElementChild;
 
     if (!badge) {
         badge = document.createElement('span');
@@ -224,11 +273,11 @@ function reachBadgeNode(host, index) {
 
         glyph.className = 'reach-glyph';
 
-        const gun = document.createElement('span');
+        const count = document.createElement('span');
 
-        gun.className = 'reach-gun';
+        count.className = 'reach-count';
 
-        badge.append(glyph, gun);
+        badge.append(glyph, count);
 
         host.appendChild(badge);
     }
@@ -236,26 +285,74 @@ function reachBadgeNode(host, index) {
     return badge;
 }
 
-function reachApplyBadge(badge, gun, index, state, numbered) {
+function reachSummarise(guns, target) {
+    let reachable = 0;
+    let counted = 0;
+    let pending = 0;
+
+    const detail = [];
+
+    guns.forEach(entry => {
+        const state = reachClassify(entry, target);
+
+        if (!state) {
+            return;
+        }
+
+        if (state === 'pending') {
+            pending += 1;
+        } else {
+            counted += 1;
+
+            if (state === 'reachable') {
+                reachable += 1;
+            }
+        }
+
+        detail.push(
+            `${entry.gun.name} · ${tr(REACH_STATE_LABEL[state])}`
+        );
+    });
+
+    if (!counted && !pending) {
+        return null;
+    }
+
+    if (!counted) {
+        return { state: 'pending', reachable: 0, total: pending, detail };
+    }
+
+    const total = counted + pending;
+
+    const state =
+        reachable === 0
+            ? 'none'
+            : reachable === total
+                ? 'all'
+                : 'some';
+
+    return { state, reachable, total, detail };
+}
+
+function reachApplyBadge(badge, summary) {
     const className =
         'saved-target-reach-badge ' +
-        REACH_STATE_CLASS[state] +
-        (gun.id === S.activeGunId ? ' active' : '');
+        REACH_SUMMARY_CLASS[summary.state];
 
     if (badge.className !== className) {
         badge.className = className;
     }
 
-    if (badge.dataset.gunId !== gun.id) {
-        badge.dataset.gunId = gun.id;
+    if (badge.dataset.reach !== summary.state) {
+        badge.dataset.reach = summary.state;
     }
 
-    if (badge.dataset.reach !== state) {
-        badge.dataset.reach = state;
-    }
-
-    const label =
-        `${gun.name} · ${tr(REACH_STATE_LABEL[state])}`;
+    const label = [
+        tr(REACH_SUMMARY_LABEL[summary.state])
+            .replace('{reachable}', String(summary.reachable))
+            .replace('{total}', String(summary.total)),
+        ...summary.detail
+    ].join('\n');
 
     if (badge.title !== label) {
         badge.title = label;
@@ -265,69 +362,69 @@ function reachApplyBadge(badge, gun, index, state, numbered) {
 
     setText(
         badge.firstElementChild,
-        REACH_STATE_GLYPH[state]
+        REACH_SUMMARY_GLYPH[summary.state]
     );
 
     setText(
         badge.lastElementChild,
-        numbered ? String(index + 1) : ''
+        summary.total > 1
+            ? `${summary.reachable}/${summary.total}`
+            : ''
     );
 }
 
 function reachSolvedGuns() {
     const mapId = S.map;
 
-    const solved = [];
+    if (!mapHasHeightfield(mapId)) {
+        return [];
+    }
+
+    const entries = [];
 
     S.guns.forEach((gun, index) => {
-        if (!reachGunSolved(rangeRingMemoKey(gun, mapId))) {
+        const key = rangeRingMemoKey(gun, mapId);
+
+        if (REACH_UNAVAILABLE.has(key)) {
             return;
         }
 
-        const ring = terrainRangeRing(gun, mapId);
-        const dead = terrainDeadGround(gun, mapId);
+        if (!reachGunSolved(gun, key)) {
+            entries.push({ gun, index, ring: null, dead: null });
 
-        if (ring && dead) {
-            solved.push({ gun, index, ring, dead });
+            return;
         }
+
+        entries.push({
+            gun,
+            index,
+            ring: terrainRangeRing(gun, mapId),
+            dead: DEAD_GROUND_CACHE.get(key) || null
+        });
     });
 
-    return solved;
+    return entries;
 }
 
-function renderSavedTargetItemReach(item, target, guns, numbered) {
+function renderSavedTargetItemReach(item, target, guns) {
     const host = reachBadgeHost(item);
 
     if (!host) {
         return;
     }
 
-    let shown = 0;
+    const summary = reachSummarise(guns, target);
 
-    guns.forEach(entry => {
-        const state = reachClassify(entry, target);
-
-        if (!state) {
-            return;
-        }
-
-        reachApplyBadge(
-            reachBadgeNode(host, shown),
-            entry.gun,
-            entry.index,
-            state,
-            numbered
-        );
-
-        shown += 1;
-    });
-
-    while (host.children.length > shown) {
+    while (host.children.length > 1) {
         host.lastElementChild.remove();
     }
 
-    if (host.hidden !== (shown === 0)) {
-        host.hidden = shown === 0;
+    if (summary) {
+        reachApplyBadge(reachBadgeNode(host), summary);
+    }
+
+    if (host.hidden !== !summary) {
+        host.hidden = !summary;
     }
 }
 
@@ -361,18 +458,12 @@ function renderSavedTargetReachBadges(force) {
     }
 
     const guns = reachSolvedGuns();
-    const numbered = S.guns.length > 1;
 
     savedTargets.forEach(target => {
         const item = rows.get(String(target.id));
 
         if (item) {
-            renderSavedTargetItemReach(
-                item,
-                target,
-                guns,
-                numbered
-            );
+            renderSavedTargetItemReach(item, target, guns);
         }
     });
 }
@@ -385,6 +476,19 @@ if (typeof renderSavedTargets === 'function') {
             renderSavedTargetsBase.apply(this, args);
 
         renderSavedTargetReachBadges(true);
+
+        return result;
+    };
+}
+
+if (typeof renderGuns === 'function') {
+    const renderGunsBase = renderGuns;
+
+    renderGuns = function (...args) {
+        const result =
+            renderGunsBase.apply(this, args);
+
+        renderSavedTargetReachBadges(false);
 
         return result;
     };

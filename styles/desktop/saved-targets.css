@@ -866,16 +866,36 @@
    REACH BADGES
    ========================= */
 
-.saved-target-reach {
+.saved-target-head {
+    min-width: 0;
+
     display: flex;
 
-    flex-wrap: wrap;
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 8px;
+}
+
+.saved-target-head .saved-target-name {
+    min-width: 0;
+
+    flex: 1 1 auto;
+}
+
+.saved-target-reach[hidden] {
+    display: none;
+}
+
+.saved-target-reach {
+    flex: 0 0 auto;
+
+    display: flex;
 
     align-items: center;
 
     gap: 3px;
-
-    padding-top: 1px;
 }
 
 .saved-target-reach-badge {
@@ -908,12 +928,16 @@
     font-size: 10px;
 }
 
-.saved-target-reach-badge .reach-gun {
-    opacity: .75;
+.saved-target-reach-badge .reach-count {
+    opacity: .85;
 }
 
-.saved-target-reach-badge.active {
-    background: var(--active-bg);
+.saved-target-reach-badge.reach-pending {
+    border-radius: 8px;
+
+    border-color: var(--border);
+
+    color: var(--muted);
 }
 
 .saved-target-reach-badge.reach-ok {
@@ -929,23 +953,20 @@
     color: #6fbf7a;
 }
 
-.saved-target-reach-badge.reach-masked {
-    border-radius: 3px;
-
-    border-style: dashed;
+.saved-target-reach-badge.reach-partial {
+    border-radius: 8px;
 
     border-color:
         color-mix(
             in srgb,
-            var(--accent) 60%,
+            #e09b4a 55%,
             var(--border)
         );
 
-    color: var(--accent);
+    color: #e09b4a;
 }
 
-.saved-target-reach-badge.reach-out,
-.saved-target-reach-badge.reach-close {
+.saved-target-reach-badge.reach-out {
     border-radius: 2px;
 
     border-color:
@@ -956,10 +977,6 @@
         );
 
     color: #d86666;
-}
-
-.saved-target-reach-badge.reach-close {
-    border-style: dotted;
 }
 
 @media (max-width: 520px) {

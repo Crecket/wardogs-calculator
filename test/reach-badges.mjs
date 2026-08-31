@@ -115,44 +115,40 @@ const badges = await page.evaluate(() =>
 );
 
 check(
-    'a target inside the ring and clear of dead ground reads reachable',
-    badges.reachable?.[0]?.reach === 'reachable',
+    'a target every gun can reach reads all',
+    badges.reachable?.[0]?.reach === 'all',
     JSON.stringify(badges.reachable)
 );
 
 check(
-    'a target beyond the terrain ring reads out of range',
-    badges.out?.[0]?.reach === 'out',
+    'a target beyond the terrain ring reads none',
+    badges.out?.[0]?.reach === 'none',
     JSON.stringify(badges.out)
 );
 
 check(
-    'a target inside a dead-ground wedge reads masked',
-    badges.masked?.[0]?.reach === 'masked',
+    'a target masked from the only gun also reads none',
+    badges.masked?.[0]?.reach === 'none',
     JSON.stringify(badges.masked)
 );
 
 check(
-    'masked is not collapsed into out of range',
-    badges.masked?.[0]?.reach !== badges.out?.[0]?.reach
+    'reachable and unreachable do not share a glyph',
+    badges.reachable?.[0]?.glyph !== badges.out?.[0]?.glyph,
+    JSON.stringify([badges.reachable?.[0]?.glyph, badges.out?.[0]?.glyph])
 );
 
 check(
-    'each state has its own glyph',
-    badges.reachable?.[0]?.glyph !== badges.masked?.[0]?.glyph &&
-    badges.masked?.[0]?.glyph !== badges.out?.[0]?.glyph
+    'the tooltip breaks the verdict down per gun',
+    /Gun 1/.test(badges.masked?.[0]?.title || '') &&
+    /Masked by terrain/.test(badges.masked?.[0]?.title || '') &&
+    badges.masked?.[0]?.label === badges.masked?.[0]?.title,
+    badges.masked?.[0]?.title
 );
 
-check(
-    'the badge names the gun and the state',
-    /Gun 1/.test(badges.reachable?.[0]?.title || '') &&
-    badges.reachable?.[0]?.label === badges.reachable?.[0]?.title,
-    badges.reachable?.[0]?.title
-);
+/* --- one badge per target, counting the guns that can reach --- */
 
-/* --- one badge per gun, in gun order --- */
-
-const perGun = await page.evaluate(async () => {
+const summary = await page.evaluate(async () => {
     while (S.guns.length < 4) {
         addGun();
     }
@@ -163,45 +159,105 @@ const perGun = await page.evaluate(async () => {
 
     renderSavedTargets();
 
-    for (let i = 0; i < 40; i += 1) {
-        await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 2500));
 
-        const row = document.querySelector(
-            '#savedTargetsList .saved-target'
-        );
-
-        if (
-            row?.querySelectorAll('.saved-target-reach-badge').length ===
-            S.guns.length
-        ) {
-            break;
-        }
-    }
-
-    const row = document.querySelector('#savedTargetsList .saved-target');
-
-    return {
-        guns: S.guns.length,
-        ids: Array.from(
-            row.querySelectorAll('.saved-target-reach-badge')
-        ).map(badge => badge.dataset.gunId),
-        numbers: Array.from(
-            row.querySelectorAll('.saved-target-reach-badge .reach-gun')
-        ).map(node => node.textContent)
-    };
+    return Object.fromEntries(
+        Array.from(
+            document.querySelectorAll('#savedTargetsList .saved-target')
+        ).map(item => [
+            item.querySelector('.saved-target-name').textContent,
+            {
+                guns: S.guns.length,
+                badges: item.querySelectorAll('.saved-target-reach-badge').length,
+                reach: item.querySelector('.saved-target-reach-badge')?.dataset.reach,
+                count: item.querySelector('.reach-count')?.textContent,
+                lines: (item.querySelector('.saved-target-reach-badge')?.title || '')
+                    .split('\n').length
+            }
+        ])
+    );
 });
 
 check(
-    'every gun gets its own badge',
-    perGun.ids.length === perGun.guns,
-    JSON.stringify(perGun)
+    'four guns still leave one badge on the row',
+    Object.values(summary).every(row => row.badges === 1),
+    JSON.stringify(summary)
 );
 
 check(
-    'the badges follow the gun list order',
-    perGun.numbers.join('') === '1234',
-    JSON.stringify(perGun.numbers)
+    'the badge counts the guns that can reach out of the total',
+    Object.values(summary).every(
+        row => /^\d+\/4$/.test(row.count || '')
+    ),
+    JSON.stringify(summary)
 );
+
+check(
+    'the count agrees with the verdict',
+    Object.values(summary).every(row => {
+        const [reachable, total] = (row.count || '').split('/').map(Number);
+
+        return row.reach === 'all'
+            ? reachable === total
+            : row.reach === 'none'
+                ? reachable === 0
+                : reachable > 0 && reachable < total;
+    }),
+    JSON.stringify(summary)
+);
+
+check(
+    'the tooltip lists every gun',
+    Object.values(summary).every(row => row.lines === row.guns + 1),
+    JSON.stringify(summary)
+);
+
+/* --- the badge tracks the gun list, whatever changes --- */
+
+const badgeRow = () => page.evaluate(() => {
+    const row = document.querySelector('#savedTargetsList .saved-target');
+
+    return {
+        hosts: row.querySelectorAll('.saved-target-reach').length,
+        badges: row.querySelectorAll('.saved-target-reach-badge').length,
+        count: row.querySelector('.reach-count')?.textContent
+    };
+});
+
+await page.evaluate(() => {
+    while (S.guns.length > 1) {
+        removeGun(S.guns[S.guns.length - 1].id);
+    }
+});
+
+await page.waitForTimeout(900);
+
+const single = await badgeRow();
+
+check(
+    'one gun drops the count and leaves the verdict',
+    single.badges === 1 && single.count === '',
+    JSON.stringify(single)
+);
+
+check('one badge host per row', single.hosts === 1, JSON.stringify(single));
+
+await page.evaluate(() => {
+    addGun();
+    addGun();
+});
+
+await page.waitForTimeout(1500);
+
+const three = await badgeRow();
+
+check(
+    'adding guns widens the count instead of adding badges',
+    three.badges === 1 && /^\d+\/3$/.test(three.count || ''),
+    JSON.stringify(three)
+);
+
+check('still one badge host per row', three.hosts === 1, JSON.stringify(three));
 
 /* --- nodes are reused, not rebuilt --- */
 
