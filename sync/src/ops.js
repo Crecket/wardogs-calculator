@@ -26,6 +26,11 @@ export const LIMITS = {
     opsPerSecond: 20,
     opsBurst: 40,
 
+    cursorsPerSecond: 20,
+    cursorBurst: 30,
+
+    cursorNameLength: 24,
+
     idleMs: 14 * 24 * 60 * 60 * 1000
 };
 
@@ -35,6 +40,8 @@ const SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
 
 const COORDINATE_BOUND = 1e6;
 const NAME_LENGTH = 120;
+
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/g;
 
 class OpError extends Error {
     constructor(code) {
@@ -116,6 +123,35 @@ function name(value) {
     }
 
     return trimmed;
+}
+
+function cursorName(value) {
+    if (typeof value !== 'string') {
+        return null;
+    }
+
+    const cleaned = value
+        .replace(CONTROL_CHARACTERS, '')
+        .trim()
+        .slice(0, LIMITS.cursorNameLength);
+
+    return cleaned || null;
+}
+
+export function validateCursor(raw) {
+    if (!raw || typeof raw !== 'object') {
+        fail('bad-cursor');
+    }
+
+    if (raw.gone === true) {
+        return { gone: true };
+    }
+
+    return {
+        x: coordinate(raw.x),
+        y: coordinate(raw.y),
+        name: cursorName(raw.name)
+    };
 }
 
 export function validateDrawing(value, mapId) {

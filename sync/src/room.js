@@ -3,6 +3,7 @@ import { DurableObject } from 'cloudflare:workers';
 import {
     LIMITS,
     isOpError,
+    validateCursor,
     validateOp
 } from './ops.js';
 
@@ -37,6 +38,8 @@ export class Room extends DurableObject {
          * bucket that comes back full has already served its purpose.
          */
         this.buckets = new Map();
+
+        this.cursorBuckets = new Map();
 
         /*
          * Mirrors the stored idle deadline so the common op does not read
@@ -570,30 +573,48 @@ export class Room extends DurableObject {
      * series of eraser clicks are both legitimately spiky.
      */
     allow(clientId) {
+        return this.spend(
+            this.buckets,
+            clientId,
+            LIMITS.opsPerSecond,
+            LIMITS.opsBurst
+        );
+    }
+
+    allowCursor(clientId) {
+        return this.spend(
+            this.cursorBuckets,
+            clientId,
+            LIMITS.cursorsPerSecond,
+            LIMITS.cursorBurst
+        );
+    }
+
+    spend(buckets, clientId, rate, burst) {
         const now = Date.now();
 
-        const bucket = this.buckets.get(clientId) ?? {
-            tokens: LIMITS.opsBurst,
+        const bucket = buckets.get(clientId) ?? {
+            tokens: burst,
             last: now
         };
 
         const refill =
-            ((now - bucket.last) / 1000) * LIMITS.opsPerSecond;
+            ((now - bucket.last) / 1000) * rate;
 
         bucket.tokens = Math.min(
-            LIMITS.opsBurst,
+            burst,
             bucket.tokens + refill
         );
 
         bucket.last = now;
 
         if (bucket.tokens < 1) {
-            this.buckets.set(clientId, bucket);
+            buckets.set(clientId, bucket);
             return false;
         }
 
         bucket.tokens -= 1;
-        this.buckets.set(clientId, bucket);
+        buckets.set(clientId, bucket);
 
         return true;
     }
@@ -624,17 +645,24 @@ export class Room extends DurableObject {
             return;
         }
 
-        if (!this.allow(clientId)) {
-            this.send(socket, { type: 'error', code: 'rate-limited' });
-            return;
-        }
-
         let raw;
 
         try {
             raw = JSON.parse(message);
         } catch {
+            this.allow(clientId);
             this.send(socket, { type: 'error', code: 'bad-json' });
+            return;
+        }
+
+        const isCursor = raw?.type === 'cursor';
+
+        if (isCursor) {
+            if (!this.allowCursor(clientId)) {
+                return;
+            }
+        } else if (!this.allow(clientId)) {
+            this.send(socket, { type: 'error', code: 'rate-limited' });
             return;
         }
 
@@ -655,6 +683,33 @@ export class Room extends DurableObject {
          */
         if (raw?.type === 'sync') {
             this.send(socket, this.snapshotMessage(clientId));
+            return;
+        }
+
+        if (isCursor) {
+            let frame;
+
+            try {
+                frame = validateCursor(raw);
+            } catch (error) {
+                this.send(socket, {
+                    type: 'error',
+                    code: isOpError(error)
+                        ? error.code
+                        : 'bad-cursor'
+                });
+                return;
+            }
+
+            this.broadcast(
+                {
+                    type: 'cursor',
+                    from: clientId,
+                    ...frame
+                },
+                socket
+            );
+
             return;
         }
 
@@ -704,6 +759,7 @@ export class Room extends DurableObject {
 
         if (clientId) {
             this.buckets.delete(clientId);
+            this.cursorBuckets.delete(clientId);
         }
 
         this.broadcastPeers(
