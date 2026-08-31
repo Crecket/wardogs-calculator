@@ -226,7 +226,7 @@
     }
 
     function ensureSphLevelWarning() {
-        let root = document.getElementById('sphLevelWarning');
+        let root = $('sphLevelWarning');
 
         if (root) {
             return root;
@@ -239,19 +239,19 @@
 
         const resultCard =
             isMobile
-                ? document.querySelector(
+                ? $q(
                     '.mobile-result-details'
                 )
-                : document.querySelector(
+                : $q(
                     '.solution-result'
                 );
 
         const fallbackCard =
             resultCard ||
-            document.querySelector(
+            $q(
                 '.mobile-result-details'
             ) ||
-            document.querySelector(
+            $q(
                 '.solution-result'
             );
 

@@ -240,3 +240,14 @@ Artillery and Target can be locked independently against direct map interaction.
 ## Firing-solution result hierarchy
 
 Distance, MIL, and azimuth are treated as the three primary firing-solution values and are shown together in a high-contrast metric grid. Distance keeps meters as the primary value and kilometers as secondary context; MIL shows trajectory labels only as secondary information; ΔX and ΔY are visually de-emphasized below the main solution.
+
+
+## Second-monitor pop-out
+
+The firing solution can be popped out of the sidebar into a small floating window that stays above every other window, including a fullscreen game. The **Pop out** control sits in the top-right corner of the Result section.
+
+It is built on Document Picture-in-Picture, the only web API that gives a genuinely always-on-top window holding live, interactive DOM. That makes it **Chromium-only** — Chrome and Edge 116+. Firefox and Safari have no equivalent, and a plain `window.open` popup drops behind a fullscreen game the moment it loses focus, so on browsers without Document PiP the control is not rendered at all rather than opening a window that only looks like the feature.
+
+The panel node itself is moved into the second document rather than copied, so there is one firing solution, not two: `result()` keeps writing into the same elements, and the SPH-2 leveling warning and the experimental terrain-correction panel travel with it. The window is sized for a solution readout, remembers the size you left it at in `wardogs-solution-popout-size`, and scales its type with the window so the numbers stay readable when it is shrunk into a corner.
+
+**Getting the panel back:** close the pop-out window, or press **Return to page** — either the button on the placeholder card left in the sidebar, or the one in the pop-out itself. The panel also returns automatically when the main page is closed or reloaded. It always lands back in its original slot in the sidebar.

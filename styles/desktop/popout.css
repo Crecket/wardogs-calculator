@@ -1,0 +1,115 @@
+/* =========================
+   SOLUTION POP-OUT
+   ========================= */
+
+.section.has-panel-popout {
+    position: relative;
+}
+
+.panel-popout-button {
+    position: absolute;
+    top: -3px;
+    right: 0;
+
+    width: auto;
+    min-height: 0;
+
+    padding: 3px 8px;
+
+    border-radius: 5px;
+
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.panel-popout-button:hover {
+    color: var(--text);
+}
+
+.panel-popout-placeholder .hint {
+    margin: 0 0 9px;
+}
+
+.panel-popout-return {
+    width: 100%;
+}
+
+
+/* =========================
+   POP-OUT WINDOW
+   ========================= */
+
+/*
+ * The pop-out is dragged into a corner of a second monitor, so everything
+ * inside it scales with the window: at 240 px wide the numbers still have to
+ * be readable across a desk.
+ */
+body.solution-popout-body {
+    min-height: 100vh;
+
+    margin: 0;
+
+    padding: 8px;
+
+    background: var(--body-bg);
+    color: var(--text);
+
+    font-family:
+            "Segoe UI",
+            system-ui,
+            -apple-system,
+            sans-serif;
+}
+
+body.solution-popout-body .section {
+    margin-bottom: 0;
+}
+
+body.solution-popout-body .section h2,
+body.solution-popout-body .hint,
+body.solution-popout-body .panel-popout-button {
+    display: none;
+}
+
+body.solution-popout-body .solution-result {
+    padding: clamp(5px, 1.8vw, 10px);
+}
+
+body.solution-popout-body .solution-primary-grid {
+    gap: clamp(4px, 1.4vw, 8px);
+}
+
+body.solution-popout-body .solution-metric {
+    min-height: clamp(52px, 22vh, 96px);
+    padding: clamp(4px, 1.4vw, 9px) 4px;
+}
+
+body.solution-popout-body .solution-metric-label {
+    font-size: clamp(8px, 2.2vw, 13px);
+}
+
+body.solution-popout-body .solution-metric-value,
+body.solution-popout-body
+.solution-metric-highlight
+.solution-metric-value {
+    font-size: clamp(16px, 6.2vw, 42px);
+}
+
+body.solution-popout-body .solution-metric-sub {
+    font-size: clamp(8px, 2vw, 12px);
+}
+
+body.solution-popout-body .solution-flight-label,
+body.solution-popout-body .flight-badge-arc,
+body.solution-popout-body .flight-badge-value {
+    font-size: clamp(9px, 2.4vw, 14px);
+}
+
+body.solution-popout-body .solution-secondary-item,
+body.solution-popout-body .solution-secondary-item b {
+    font-size: clamp(9px, 2.4vw, 14px);
+}

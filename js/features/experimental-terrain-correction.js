@@ -2636,7 +2636,7 @@
 
     function ensurePanel() {
         let root =
-            document.getElementById(
+            $(
                 'experimentalTerrainCorrection'
             );
 
@@ -2645,10 +2645,10 @@
         }
 
         const resultCard =
-            document.querySelector(
+            $q(
                 '.solution-result'
             ) ||
-            document.querySelector(
+            $q(
                 '.mobile-result-details'
             );
 
@@ -2684,7 +2684,7 @@
         `;
 
         const warning =
-            document.getElementById(
+            $(
                 'sphLevelWarning'
             );
 
