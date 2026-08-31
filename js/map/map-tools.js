@@ -72,6 +72,7 @@ const MAP_TOOL_STATE = {
         mainZone: true,
         fobAreas: true,
         artillery: true,
+        savedTargets: true,
         deadGround: false,
         crossSection: false,
         cursorCoords: true
@@ -1187,6 +1188,7 @@ function buildMapLayers() {
                 ['mainZone', 'mapLayerMainZone'],
                 ['fobAreas', 'mapLayerFobAreas'],
                 ['artillery', 'mapLayerArtillery'],
+                ['savedTargets', 'mapLayerSavedTargets'],
                 ['deadGround', 'mapLayerDeadGround'],
                 ...crossSectionLayer
             ]
@@ -1241,6 +1243,11 @@ function buildMapLayers() {
         fobAreas: `
             <path d="M5 19V9l7-4 7 4v10Z"/>
             <path d="M9.5 19v-5h5v5"/>
+        `,
+        savedTargets: `
+            <circle cx="12" cy="12" r="7"/>
+            <circle cx="12" cy="12" r="2"/>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
         `,
         deadGround: `
             <path d="M3 17c3 0 4.5-6 7.5-6s4.5 6 7.5 6"/>

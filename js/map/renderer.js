@@ -214,7 +214,10 @@ function drawNow() {
      * The per-gun loop lives in js/map/guns-overlay.js.
      */
     if (isMapLayerVisible('artillery')) {
-        drawSavedTargets();
+
+        if (isMapLayerVisible('savedTargets')) {
+            drawSavedTargets();
+        }
 
         if (currentWeapon) {
             drawGuns();
