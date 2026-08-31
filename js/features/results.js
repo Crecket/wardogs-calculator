@@ -164,14 +164,37 @@ function renderTerrainNote(meta, text) {
     }
 }
 
+function flightBadgeNode(host, index) {
+    const existing = host.children[index];
+
+    if (existing) {
+        return existing;
+    }
+
+    const pill = document.createElement('span');
+    pill.className = 'flight-badge';
+
+    const label = document.createElement('span');
+    label.className = 'flight-badge-arc';
+    pill.appendChild(label);
+
+    const value = document.createElement('strong');
+    value.className = 'flight-badge-value';
+    pill.appendChild(value);
+
+    host.appendChild(pill);
+
+    return pill;
+}
+
 /*
  * One badge per arc, below the metric grid rather than inside the MIL card:
  * at the sub-line's 8 px the seconds were unreadable, and this is a value in
  * its own right rather than a footnote to the MIL.
  *
  * Built with the DOM rather than innerHTML — the arc labels are translated
- * strings and the numbers are computed, but the row is rebuilt on every
- * pointer move, so there is no reason to parse markup that often either.
+ * strings and the numbers are computed. The row re-runs on every pointer
+ * move, so the pills are reused and only their text is rewritten.
  */
 function renderFlightTime(weapon, solutions, terrainMeta) {
     const row = $('flightTimes');
@@ -190,26 +213,43 @@ function renderFlightTime(weapon, solutions, terrainMeta) {
             )
             : [];
 
-    row.hidden = !badges.length;
-    host.textContent = '';
+    if (row.hidden !== !badges.length) {
+        row.hidden = !badges.length;
+    }
 
-    badges.forEach(badge => {
-        const pill = document.createElement('span');
-        pill.className = 'flight-badge';
+    const heading = row.querySelector('.solution-flight-label');
 
-        if (badge.labelKey) {
-            const label = document.createElement('span');
-            label.className = 'flight-badge-arc';
-            label.textContent = tr(badge.labelKey);
-            pill.appendChild(label);
+    if (heading) {
+        setText(
+            heading,
+            badges.length > 1
+                ? tr('flightTimePerArc')
+                : tr('flightTime')
+        );
+    }
+
+    const arcs = String(badges.length);
+
+    if (host.dataset.arcs !== arcs) {
+        host.dataset.arcs = arcs;
+    }
+
+    while (host.children.length > badges.length) {
+        host.lastElementChild.remove();
+    }
+
+    badges.forEach((badge, index) => {
+        const pill = flightBadgeNode(host, index);
+        const label = pill.firstElementChild;
+        const value = pill.lastElementChild;
+
+        setText(label, badge.labelKey ? tr(badge.labelKey) : '');
+
+        if (label.hidden !== !badge.labelKey) {
+            label.hidden = !badge.labelKey;
         }
 
-        const value = document.createElement('strong');
-        value.className = 'flight-badge-value';
-        value.textContent = formatFlightTime(badge.seconds);
-        pill.appendChild(value);
-
-        host.appendChild(pill);
+        setText(value, formatFlightTime(badge.seconds));
     });
 }
 

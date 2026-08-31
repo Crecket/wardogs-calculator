@@ -136,8 +136,8 @@ function formatFlightTime(seconds) {
  * badge under the row's own heading.
  */
 const FLIGHT_TIME_ARC_LABELS = {
-    low: 'lowArc',
-    high: 'highArc',
+    low: 'lowArcShort',
+    high: 'highArcShort',
     single: null
 };
 

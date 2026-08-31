@@ -199,8 +199,95 @@ const size = await page.evaluate(() => {
 check('the value is set at a readable size', size.fontPx >= 12, size.fontPx);
 check('and is not truncated', size.clipped === false, size.width);
 
+/* --- the row keeps its shape whatever the numbers are --- */
+
+const shapes = await page.evaluate(() => {
+    const read = () => {
+        const host = document.getElementById('flightTimeBadges');
+        const box = host.getBoundingClientRect();
+
+        return {
+            arcs: host.dataset.arcs,
+            height: Math.round(box.height),
+            columns: Array.from(host.children)
+                .map(pill => Math.round(
+                    pill.getBoundingClientRect().left - box.left
+                ))
+                .join(','),
+            widths: Array.from(host.children)
+                .map(pill => Math.round(pill.getBoundingClientRect().width))
+                .join(','),
+            values: Array.from(
+                host.querySelectorAll('.flight-badge-value')
+            ).map(node => node.textContent).join(' / ')
+        };
+    };
+
+    const at = metres => {
+        S.weapon = 'spg';
+        S.origin = { x: 50, y: 50 };
+        S.target = { x: 50 + metres / 100, y: 50 };
+
+        result();
+
+        return read();
+    };
+
+    const pills = () =>
+        document.getElementById('flightTimeBadges').children.length;
+
+    const near = at(1600);
+    const far = at(2600);
+
+    S.weapon = 'mortar';
+    S.origin = { x: 50, y: 50 };
+    S.target = { x: 54, y: 50 };
+    result();
+
+    const mortarShape = read();
+    const mortarPills = pills();
+
+    at(2600);
+
+    return {
+        near,
+        far,
+        mortar: mortarShape,
+        mortarPills,
+        reusedPills: pills()
+    };
+});
+
+check(
+    'the two-arc row keeps one shape as the numbers change width',
+    shapes.near.columns === shapes.far.columns &&
+        shapes.near.widths === shapes.far.widths &&
+        shapes.near.height === shapes.far.height,
+    JSON.stringify([shapes.near, shapes.far])
+);
+
+check(
+    'both arcs stay side by side rather than stacking',
+    shapes.far.arcs === '2' &&
+        shapes.far.columns.split(',').length === 2 &&
+        shapes.far.columns.split(',')[0] !== shapes.far.columns.split(',')[1],
+    JSON.stringify(shapes.far)
+);
+
+check(
+    'the mortar is a single full-width column',
+    shapes.mortar.arcs === '1' && shapes.mortarPills === 1,
+    JSON.stringify(shapes.mortar)
+);
+
+check(
+    'the pills are reused rather than rebuilt',
+    shapes.reusedPills === 2,
+    String(shapes.reusedPills)
+);
+
 /*
- * --- the arc labels follow the language ---
+ * --- the localized shells carry the badges ---
  *
  * Switching language navigates to that locale's own page, so this is also
  * the check that the badge markup made it into all ten shells rather than
@@ -226,6 +313,8 @@ const translated = await page.evaluate(() => {
             .querySelector('.solution-flight-label')
             .textContent,
 
+        milArcs: document.getElementById('milAlt').textContent,
+
         clipped: Array.from(
             document.querySelectorAll('#flightTimeBadges .flight-badge-value')
         ).some(node => node.scrollWidth > node.clientWidth + 1)
@@ -233,15 +322,16 @@ const translated = await page.evaluate(() => {
 });
 
 check(
-    'the badges speak the page language',
-    translated.arcs[0].toLowerCase().includes('trayectoria'),
+    'the localized shell renders both badges',
+    translated.arcs.length === 2 &&
+        translated.arcs.every(name => name.trim().length > 0),
     translated.arcs.join(' / ')
 );
 
 check(
-    'and so does the row label',
-    translated.label.toLowerCase().includes('vuelo'),
-    translated.label
+    'the translated arc names still reach the MIL sub-line',
+    translated.milArcs.toLowerCase().includes('trayectoria'),
+    translated.milArcs
 );
 
 check(
