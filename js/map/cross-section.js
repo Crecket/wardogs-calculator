@@ -48,21 +48,41 @@ function crossSectionProfile(field, origin, target, distanceMeters) {
     };
 }
 
-function crossSectionBranch(weaponId, arc) {
-    const fit =
-        typeof projectileModelArc === 'function'
-            ? projectileModelArc(weaponId, arc)
-            : null;
-
-    return fit?.branch === 'low' ? 'low' : 'high';
+function crossSectionFit(weaponId, arc) {
+    return typeof projectileModelArc === 'function'
+        ? projectileModelArc(weaponId, arc)
+        : null;
 }
 
-function crossSectionLaunch(weaponId, arc, distanceMeters, deltaZMeters) {
-    const fit =
-        typeof projectileModelArc === 'function'
-            ? projectileModelArc(weaponId, arc)
-            : null;
+function crossSectionElevationLimits(weapon, fit) {
+    const offset = Number(fit?.angleOffsetDeg);
+    const perMil = Number(fit?.anglePerMilDeg);
+    const minMil = Number(weapon?.minElevationMil);
+    const maxMil = Number(weapon?.maxElevationMil);
 
+    if (
+        !Number.isFinite(offset) ||
+        !Number.isFinite(perMil) ||
+        !Number.isFinite(minMil) ||
+        !Number.isFinite(maxMil)
+    ) {
+        return null;
+    }
+
+    const shallow = offset + perMil * minMil;
+    const steep = offset + perMil * maxMil;
+
+    if (!(shallow > 0) || !(steep < 90) || shallow >= steep) {
+        return null;
+    }
+
+    return {
+        minTan: Math.tan(shallow * Math.PI / 180),
+        maxTan: Math.tan(steep * Math.PI / 180)
+    };
+}
+
+function crossSectionReachTan(fit, distanceMeters, deltaZMeters) {
     const muzzleVelocity = Number(fit?.muzzleVelocity);
 
     if (
@@ -90,30 +110,33 @@ function crossSectionLaunch(weaponId, arc, distanceMeters, deltaZMeters) {
     const root = Math.sqrt(discriminant);
 
     const tan =
-        crossSectionBranch(weaponId, arc) === 'low'
-            ? (vSquared - root) /
-                (CROSS_SECTION_GRAVITY * distanceMeters)
-            : (vSquared + root) /
-                (CROSS_SECTION_GRAVITY * distanceMeters);
+        fit.branch === 'low'
+            ? (vSquared - root) / (CROSS_SECTION_GRAVITY * distanceMeters)
+            : (vSquared + root) / (CROSS_SECTION_GRAVITY * distanceMeters);
 
-    if (!Number.isFinite(tan) || tan <= 0) {
+    return Number.isFinite(tan) && tan > 0 ? tan : null;
+}
+
+function crossSectionMaxRangeTan(muzzleVelocity, deltaZMeters) {
+    const inner =
+        muzzleVelocity * muzzleVelocity -
+        2 * CROSS_SECTION_GRAVITY * deltaZMeters;
+
+    if (inner <= 0) {
         return null;
     }
 
-    return {
-        tan,
-        muzzleVelocity
-    };
+    return muzzleVelocity / Math.sqrt(inner);
 }
 
-function crossSectionShellHeight(launch, xMeters) {
+function crossSectionShellHeight(tan, muzzleVelocity, xMeters) {
     return (
-        xMeters * launch.tan -
+        xMeters * tan -
         CROSS_SECTION_GRAVITY *
         xMeters *
         xMeters *
-        (1 + launch.tan * launch.tan) /
-        (2 * launch.muzzleVelocity * launch.muzzleVelocity)
+        (1 + tan * tan) /
+        (2 * muzzleVelocity * muzzleVelocity)
     );
 }
 
@@ -148,59 +171,157 @@ function crossSectionFirstIndex(profile) {
     );
 }
 
-function crossSectionShot(weaponId, arc, profile) {
-    const launch = crossSectionLaunch(
-        weaponId,
-        arc,
-        profile.distanceMeters,
-        profile.ground[profile.ground.length - 1] - profile.ground[0]
-    );
-
-    if (!launch) {
-        return null;
-    }
-
+function crossSectionMarch(profile, tan, muzzleVelocity, firstIndex) {
     const zGun = profile.ground[0];
     const heights = new Float64Array(CROSS_SECTION_SAMPLES);
 
-    const firstIndex = crossSectionFirstIndex(profile);
-    const crestIndex = crossSectionCrestIndex(profile, firstIndex);
-
-    let blockedIndex = -1;
+    let impactIndex = -1;
 
     for (let i = 0; i < CROSS_SECTION_SAMPLES; i += 1) {
-        const x = i * profile.stepMeters;
-
-        heights[i] = zGun + crossSectionShellHeight(launch, x);
-
-        if (i < firstIndex || i === CROSS_SECTION_SAMPLES - 1) {
-            continue;
-        }
+        heights[i] =
+            zGun +
+            crossSectionShellHeight(
+                tan,
+                muzzleVelocity,
+                i * profile.stepMeters
+            );
 
         if (
-            blockedIndex < 0 &&
+            impactIndex < 0 &&
+            i >= firstIndex &&
+            i < CROSS_SECTION_SAMPLES - 1 &&
             heights[i] < profile.ground[i]
         ) {
-            blockedIndex = i;
+            impactIndex = i;
         }
     }
 
     return {
+        heights,
+        impactIndex
+    };
+}
+
+function crossSectionShot(weapon, arc, profile) {
+    const fit = crossSectionFit(weapon.id, arc);
+    const muzzleVelocity = Number(fit?.muzzleVelocity);
+
+    if (!fit || !Number.isFinite(muzzleVelocity) || muzzleVelocity <= 0) {
+        return null;
+    }
+
+    const last = CROSS_SECTION_SAMPLES - 1;
+    const firstIndex = crossSectionFirstIndex(profile);
+    const crestIndex = crossSectionCrestIndex(profile, firstIndex);
+    const limits = crossSectionElevationLimits(weapon, fit);
+
+    const deltaZ = profile.ground[last] - profile.ground[0];
+
+    const reachTan = crossSectionReachTan(
+        fit,
+        profile.distanceMeters,
+        deltaZ
+    );
+
+    let reaches = reachTan !== null;
+    let clampedTo = null;
+
+    let tan = reachTan === null
+        ? crossSectionMaxRangeTan(muzzleVelocity, deltaZ)
+        : reachTan;
+
+    if (tan === null) {
+        return null;
+    }
+
+    if (limits && tan < limits.minTan) {
+        reaches = false;
+        clampedTo = 'min';
+        tan = limits.minTan;
+    } else if (limits && tan > limits.maxTan) {
+        reaches = false;
+        clampedTo = 'max';
+        tan = limits.maxTan;
+    }
+
+    let march = crossSectionMarch(profile, tan, muzzleVelocity, firstIndex);
+
+    if (!reaches && march.impactIndex > firstIndex) {
+        const landing =
+            profile.ground[march.impactIndex] - profile.ground[0];
+
+        let refined = crossSectionMaxRangeTan(muzzleVelocity, landing);
+
+        if (refined !== null && limits) {
+            refined = Math.min(
+                limits.maxTan,
+                Math.max(limits.minTan, refined)
+            );
+        }
+
+        if (refined !== null) {
+            march = crossSectionMarch(
+                profile,
+                refined,
+                muzzleVelocity,
+                firstIndex
+            );
+        }
+    }
+
+    const heights = march.heights;
+
+    let kind = 'hit';
+    let impactIndex = march.impactIndex;
+
+    if (impactIndex >= 0) {
+        kind = reaches ? 'blocked' : 'short';
+    } else {
+        impactIndex = last;
+
+        if (!reaches) {
+            kind = 'over';
+        }
+    }
+
+    const impactMeters = impactIndex * profile.stepMeters;
+
+    return {
         arc,
         heights,
-        blockedIndex,
+        kind,
         crestIndex,
-        clearance:
-            heights[crestIndex] - profile.ground[crestIndex],
-        impactIndex:
-            blockedIndex < 0
-                ? CROSS_SECTION_SAMPLES - 1
-                : blockedIndex,
-        impactMeters:
-            blockedIndex < 0
-                ? profile.distanceMeters
-                : blockedIndex * profile.stepMeters
+        impactIndex,
+        impactMeters,
+        clampedTo,
+        shortfallMeters: profile.distanceMeters - impactMeters,
+        clearance: heights[crestIndex] - profile.ground[crestIndex],
+        tabulated: false
     };
+}
+
+function crossSectionMergeShots(shots) {
+    if (shots.length < 2) {
+        return shots;
+    }
+
+    const identical = shots.every(shot =>
+        shot.kind === shots[0].kind &&
+        shot.kind !== 'hit' &&
+        Math.abs(shot.impactIndex - shots[0].impactIndex) <= 1
+    );
+
+    if (!identical) {
+        return shots;
+    }
+
+    const merged = shots.reduce((best, shot) =>
+        shot.impactMeters > best.impactMeters ? shot : best
+    );
+
+    merged.merged = true;
+
+    return [merged];
 }
 
 function crossSectionModel(weapon, distanceMeters, solutions) {
@@ -208,15 +329,28 @@ function crossSectionModel(weapon, distanceMeters, solutions) {
         ensureHeightfieldLoaded(S.map);
     }
 
+    if (!(distanceMeters > 0)) {
+        return {
+            profile: null,
+            shots: [],
+            reason: 'distance'
+        };
+    }
+
     const field =
         typeof cachedHeightfield === 'function'
             ? cachedHeightfield(S.map)
             : null;
 
-    if (!field || !(distanceMeters > 0)) {
+    if (!field) {
         return {
             profile: null,
-            shots: []
+            shots: [],
+            reason:
+                typeof mapHasHeightfield === 'function' &&
+                mapHasHeightfield(S.map)
+                    ? 'loading'
+                    : 'terrain'
         };
     }
 
@@ -230,20 +364,24 @@ function crossSectionModel(weapon, distanceMeters, solutions) {
     if (!profile) {
         return {
             profile: null,
-            shots: []
+            shots: [],
+            reason: 'terrain'
         };
     }
 
-    const shots = CROSS_SECTION_ARC_ORDER
-        .filter(arc => solutions?.[arc])
-        .map(arc =>
-            crossSectionShot(
-                weapon.id,
-                arc,
-                profile
-            )
-        )
-        .filter(Boolean);
+    const shots = crossSectionMergeShots(
+        CROSS_SECTION_ARC_ORDER
+            .map(arc => {
+                const shot = crossSectionShot(weapon, arc, profile);
+
+                if (shot) {
+                    shot.tabulated = Boolean(solutions?.[arc]);
+                }
+
+                return shot;
+            })
+            .filter(Boolean)
+    );
 
     return {
         profile,
@@ -251,39 +389,91 @@ function crossSectionModel(weapon, distanceMeters, solutions) {
             profile,
             crossSectionFirstIndex(profile)
         ),
-        shots
+        shots,
+        reason: shots.length ? null : 'model'
     };
+}
+
+function crossSectionShotCaption(shot) {
+    if (shot.kind === 'blocked') {
+        return tr('crossSectionBlocked')
+            .replace('{metres}', Math.round(shot.impactMeters))
+            .replace('{short}', Math.round(shot.shortfallMeters));
+    }
+
+    if (shot.kind === 'short') {
+        return tr('crossSectionShort')
+            .replace('{metres}', Math.round(shot.impactMeters))
+            .replace('{short}', Math.round(shot.shortfallMeters));
+    }
+
+    if (shot.kind === 'over') {
+        return shot.clampedTo === 'min'
+            ? tr('crossSectionOver')
+            : tr('crossSectionPasses');
+    }
+
+    return null;
+}
+
+function crossSectionArcLabel(shot) {
+    return shot.merged
+        ? null
+        : CROSS_SECTION_ARC_LABELS[shot.arc];
 }
 
 function crossSectionCaption(model) {
     if (!model.profile) {
+        if (model.reason === 'loading') {
+            return tr('crossSectionLoadingTerrain');
+        }
+
+        if (model.reason === 'distance') {
+            return tr('crossSectionNoDistance');
+        }
+
         return tr('crossSectionNoTerrain');
     }
 
     if (!model.shots.length) {
-        return tr('noFiringSolution');
+        return tr('crossSectionNoModel');
     }
 
-    return model.shots
-        .map(shot => {
-            const state =
-                shot.blockedIndex < 0
-                    ? tr('crossSectionClears').replace(
-                        '{metres}',
-                        Math.max(0, Math.round(shot.clearance))
-                    )
-                    : tr('crossSectionBlocked').replace(
-                        '{metres}',
-                        Math.round(shot.impactMeters)
-                    );
+    let marked = false;
 
-            const labelKey = CROSS_SECTION_ARC_LABELS[shot.arc];
+    const clauses = [];
 
-            return labelKey
-                ? `${tr(labelKey)}: ${state}`
-                : state;
-        })
-        .join(' · ');
+    model.shots.forEach(shot => {
+        const state = crossSectionShotCaption(shot);
+
+        if (!state) {
+            return;
+        }
+
+        const labelKey = crossSectionArcLabel(shot);
+
+        if (!labelKey) {
+            clauses.push(state);
+
+            return;
+        }
+
+        if (!shot.tabulated) {
+            marked = true;
+        }
+
+        clauses.push(
+            `${tr(labelKey)}${shot.tabulated ? '' : '*'}: ${state}`
+        );
+    });
+
+    if (model.shots.some(shot => !shot.tabulated)) {
+        clauses.push(
+            `${marked ? '* ' : ''}${tr('crossSectionNoTable')}`
+        );
+    }
+
+    return clauses.join(' · ');
 }
 
 function crossSectionSurface(canvas) {
@@ -345,17 +535,36 @@ function crossSectionVerticalRange(model) {
         }
     });
 
-    const span = Math.max(high - low, 20);
-
-    const top = Math.min(
-        apex + span * 0.1,
-        high + Math.max(span * 1.6, 60)
-    );
+    const span = Math.max(apex - low, 30);
 
     return {
-        base: low - span * 0.1,
-        top: Math.max(top, high + span * 0.1)
+        base: low - span * 0.06,
+        top: apex + span * 0.12
     };
+}
+
+function crossSectionApexIndex(shot) {
+    let apex = 0;
+
+    for (let i = 1; i <= shot.impactIndex; i += 1) {
+        if (shot.heights[i] > shot.heights[apex]) {
+            apex = i;
+        }
+    }
+
+    return apex;
+}
+
+function crossSectionRangeLabel(metres) {
+    return metres >= 1000
+        ? `${(metres / 1000).toFixed(2)} km`
+        : `${Math.round(metres)} m`;
+}
+
+function crossSectionArcColor(missed) {
+    return missed
+        ? 'rgba(216,102,102,.95)'
+        : 'rgba(130,197,150,.95)';
 }
 
 function crossSectionTracePath(g, shot, project, upTo) {
@@ -374,37 +583,8 @@ function crossSectionTracePath(g, shot, project, upTo) {
     g.stroke();
 }
 
-function drawCrossSection(surface, model) {
-    const { g, width, height } = surface;
-
-    const left = 8;
-    const right = width - 8;
-    const top = 6;
-    const bottom = height - 6;
-
-    const plotWidth = right - left;
-    const plotHeight = bottom - top;
-
-    if (plotWidth <= 0 || plotHeight <= 0) {
-        return;
-    }
-
+function drawCrossSectionGround(g, model, project, left, right, bottom) {
     const ground = model.profile.ground;
-    const range = crossSectionVerticalRange(model);
-
-    const project = (index, z) => ({
-        x: left + (index / (ground.length - 1)) * plotWidth,
-        y:
-            top +
-            (range.top - z) /
-            (range.top - range.base) *
-            plotHeight
-    });
-
-    g.save();
-    g.beginPath();
-    g.rect(left - 4, top - 2, plotWidth + 8, plotHeight + 4);
-    g.clip();
 
     g.beginPath();
     g.moveTo(left, bottom);
@@ -433,9 +613,141 @@ function drawCrossSection(surface, model) {
         }
     }
 
-    g.lineWidth = 1.2;
+    g.lineWidth = 1.3;
     g.strokeStyle = 'rgba(196,206,196,.8)';
     g.stroke();
+}
+
+function drawCrossSectionShots(g, model, project, left, right) {
+    const ground = model.profile.ground;
+
+    model.shots.forEach(shot => {
+        const missed = shot.kind !== 'hit';
+        const color = crossSectionArcColor(missed);
+
+        g.lineWidth = 1.7;
+        g.setLineDash(shot.arc === 'high' ? [5, 4] : []);
+        g.strokeStyle = color;
+
+        crossSectionTracePath(g, shot, project, shot.impactIndex);
+
+        g.setLineDash([]);
+
+        const impact = project(
+            shot.impactIndex,
+            shot.kind === 'blocked' || shot.kind === 'short'
+                ? ground[shot.impactIndex]
+                : shot.heights[shot.impactIndex]
+        );
+
+        g.beginPath();
+        g.arc(impact.x, impact.y, 3, 0, Math.PI * 2);
+        g.fillStyle = color;
+        g.fill();
+
+        const labelKey = crossSectionArcLabel(shot);
+
+        if (!labelKey) {
+            return;
+        }
+
+        const apex = crossSectionApexIndex(shot);
+        const at = project(apex, shot.heights[apex]);
+
+        g.font = '10px system-ui';
+        g.textAlign = 'center';
+        g.textBaseline = 'bottom';
+        g.fillStyle = color;
+
+        g.fillText(
+            tr(labelKey),
+            Math.min(right - 30, Math.max(left + 30, at.x)),
+            at.y - 5
+        );
+    });
+}
+
+function drawCrossSectionScale(g, model, toY, left, right, top, bottom) {
+    const zGun = model.profile.ground[0];
+    const gunLine = toY(zGun);
+
+    g.setLineDash([2, 4]);
+    g.lineWidth = 1;
+    g.strokeStyle = 'rgba(210,218,210,.28)';
+
+    g.beginPath();
+    g.moveTo(left, gunLine);
+    g.lineTo(right, gunLine);
+    g.stroke();
+
+    g.setLineDash([]);
+
+    g.font = '10px system-ui';
+    g.fillStyle = cssVar('--muted', '#89959e');
+    g.textAlign = 'right';
+    g.textBaseline = 'middle';
+
+    g.fillText(
+        `+${Math.round(model.range.top - zGun)} m`,
+        left - 6,
+        top + 5
+    );
+
+    if (gunLine - top > 18) {
+        g.fillText('0 m', left - 6, gunLine);
+    }
+
+    g.textBaseline = 'top';
+    g.textAlign = 'left';
+    g.fillText('0', left, bottom + 4);
+
+    g.textAlign = 'right';
+
+    g.fillText(
+        crossSectionRangeLabel(model.profile.distanceMeters),
+        right,
+        bottom + 4
+    );
+}
+
+function drawCrossSection(surface, model) {
+    const { g, width, height } = surface;
+
+    const left = 58;
+    const right = width - 14;
+    const top = 14;
+    const bottom = height - 18;
+
+    const plotWidth = right - left;
+    const plotHeight = bottom - top;
+
+    if (plotWidth <= 0 || plotHeight <= 0) {
+        return;
+    }
+
+    const ground = model.profile.ground;
+
+    model.range = crossSectionVerticalRange(model);
+
+    const toY = z =>
+        top +
+        (model.range.top - z) /
+        (model.range.top - model.range.base) *
+        plotHeight;
+
+    const project = (index, z) => ({
+        x: left + (index / (ground.length - 1)) * plotWidth,
+        y: toY(z)
+    });
+
+    drawCrossSectionScale(g, model, toY, left, right, top, bottom);
+
+    g.save();
+    g.beginPath();
+    g.rect(left, top - 8, plotWidth, plotHeight + 8);
+    g.clip();
+
+    drawCrossSectionGround(g, model, project, left, right, bottom);
 
     const crest = project(
         model.crestIndex,
@@ -453,33 +765,7 @@ function drawCrossSection(surface, model) {
 
     g.setLineDash([]);
 
-    model.shots.forEach(shot => {
-        const blocked = shot.blockedIndex >= 0;
-
-        g.lineWidth = 1.5;
-        g.setLineDash(shot.arc === 'high' ? [4, 3] : []);
-        g.strokeStyle = blocked
-            ? 'rgba(216,102,102,.95)'
-            : 'rgba(130,197,150,.95)';
-
-        crossSectionTracePath(g, shot, project, shot.impactIndex);
-
-        g.setLineDash([]);
-
-        const impact = project(
-            shot.impactIndex,
-            blocked
-                ? ground[shot.impactIndex]
-                : shot.heights[shot.impactIndex]
-        );
-
-        g.beginPath();
-        g.arc(impact.x, impact.y, 2.6, 0, Math.PI * 2);
-        g.fillStyle = blocked
-            ? 'rgba(216,102,102,.95)'
-            : 'rgba(130,197,150,.95)';
-        g.fill();
-    });
+    drawCrossSectionShots(g, model, project, left, right);
 
     const gun = project(0, ground[0]);
     const target = project(
@@ -487,16 +773,16 @@ function drawCrossSection(surface, model) {
         ground[ground.length - 1]
     );
 
-    g.lineWidth = 1.2;
+    g.lineWidth = 1.3;
     g.strokeStyle = 'rgba(226,232,226,.75)';
 
     g.beginPath();
-    g.moveTo(gun.x, gun.y - 6);
+    g.moveTo(gun.x, gun.y - 8);
     g.lineTo(gun.x, gun.y + 2);
-    g.moveTo(target.x, target.y - 8);
+    g.moveTo(target.x, target.y - 10);
     g.lineTo(target.x, target.y + 2);
-    g.moveTo(target.x - 4, target.y - 3);
-    g.lineTo(target.x + 4, target.y - 3);
+    g.moveTo(target.x - 5, target.y - 4);
+    g.lineTo(target.x + 5, target.y - 4);
     g.stroke();
 
     g.restore();
@@ -616,10 +902,14 @@ function renderCrossSection(weapon, distanceMeters, solutions) {
         solutions
     );
 
-    setText(
-        $('crossSectionCaption'),
-        crossSectionCaption(model)
-    );
+    const caption = $('crossSectionCaption');
+    const text = crossSectionCaption(model);
+
+    setText(caption, text);
+
+    if (caption && caption.hidden !== !text) {
+        caption.hidden = !text;
+    }
 
     const canvas = $('crossSectionCanvas');
     const surface = canvas ? crossSectionSurface(canvas) : null;
