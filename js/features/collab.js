@@ -51,6 +51,8 @@ const COLLAB_CURSOR_SWEEP = 1000;
 const COLLAB_NAME_STORAGE_KEY = 'wardogs-collab-name';
 const COLLAB_NAME_MAX = 24;
 
+const COLLAB_NAME_INTERVAL = 500;
+
 const COLLAB_CURSOR_COLORS = [
     '#d7a452',
     '#5cc8ff',
@@ -75,6 +77,10 @@ const COLLAB = {
     roomCode: null,
     clientId: null,
     peers: 0,
+
+    roster: null,
+    nameTimer: null,
+
     mapId: null,
 
     /*
@@ -1354,6 +1360,7 @@ function collabHandleMessage(message) {
         case 'snapshot':
             COLLAB.clientId = message.you;
             COLLAB.peers = message.peers || 1;
+            collabSetRoster(message.roster);
             COLLAB.reconnectAttempt = 0;
             COLLAB.everConnected = true;
 
@@ -1394,6 +1401,8 @@ function collabHandleMessage(message) {
                 COLLAB.pendingPush = false;
                 collabPushSolo();
             }
+
+            collabSendName();
             break;
 
         case 'op':
@@ -1402,7 +1411,8 @@ function collabHandleMessage(message) {
 
         case 'peers':
             COLLAB.peers = message.count;
-            collabClearCursors();
+            collabSetRoster(message.roster);
+            collabPruneCursors();
             collabRender();
             break;
 
@@ -1647,10 +1657,16 @@ function collabResetSession() {
 
     collabClearCursors();
 
+    if (COLLAB.nameTimer) {
+        clearTimeout(COLLAB.nameTimer);
+        COLLAB.nameTimer = null;
+    }
+
     COLLAB.everConnected = false;
     COLLAB.roomCode = null;
     COLLAB.clientId = null;
     COLLAB.peers = 0;
+    COLLAB.roster = null;
     COLLAB.mapId = null;
     COLLAB.ownOps = [];
     COLLAB.redoOps = [];
@@ -1739,6 +1755,60 @@ function collabSetName(value) {
     } catch (error) {
         console.warn('Failed to store collab name:', error);
     }
+
+    collabQueueName();
+}
+
+function collabSendName() {
+    if (!collabRosterKnown() || !collabIsOnline()) {
+        return;
+    }
+
+    collabSend({
+        type: 'name',
+        name: collabOwnName()
+    });
+}
+
+function collabQueueName() {
+    if (COLLAB.nameTimer || !collabRosterKnown()) {
+        return;
+    }
+
+    COLLAB.nameTimer = setTimeout(() => {
+        COLLAB.nameTimer = null;
+        collabSendName();
+    }, COLLAB_NAME_INTERVAL);
+}
+
+function collabRosterKnown() {
+    return Array.isArray(COLLAB.roster);
+}
+
+function collabSetRoster(roster) {
+    if (!Array.isArray(roster)) {
+        COLLAB.roster = null;
+        return;
+    }
+
+    COLLAB.roster = roster
+        .filter(entry =>
+            entry &&
+            typeof entry.id === 'string' &&
+            entry.id
+        )
+        .map(entry => ({
+            id: entry.id,
+            name: collabCleanName(entry.name)
+        }));
+}
+
+function collabPeerCount() {
+    if (collabRosterKnown()) {
+        return COLLAB.roster.length;
+    }
+
+    return COLLAB.peers || 1;
 }
 
 function collabDisplayName() {
@@ -1925,6 +1995,34 @@ function collabSweepCursors() {
 
     for (const [id, cursor] of COLLAB.cursors) {
         if (cursor.at < deadline) {
+            COLLAB.cursors.delete(id);
+            removed = true;
+        }
+    }
+
+    if (!COLLAB.cursors.size) {
+        collabStopCursorSweep();
+    }
+
+    if (removed) {
+        collabRequestCursorRedraw();
+    }
+}
+
+function collabPruneCursors() {
+    if (!collabRosterKnown()) {
+        collabClearCursors();
+        return;
+    }
+
+    const present = new Set(
+        COLLAB.roster.map(entry => entry.id)
+    );
+
+    let removed = false;
+
+    for (const id of COLLAB.cursors.keys()) {
+        if (!present.has(id)) {
             COLLAB.cursors.delete(id);
             removed = true;
         }
@@ -2169,7 +2267,7 @@ function collabBuildActivePanel(container) {
     peers.className = 'collab-peers';
     peers.textContent = tr('collabPeers').replace(
         '{count}',
-        String(COLLAB.peers || 1)
+        String(collabPeerCount())
     );
 
     const nameRow = document.createElement('label');
@@ -2202,7 +2300,74 @@ function collabBuildActivePanel(container) {
         () => collabLeave()
     );
 
-    container.append(codeRow, copy, peers, nameRow, leave);
+    container.append(codeRow, copy, peers);
+
+    const roster = collabBuildRoster();
+
+    if (roster) {
+        container.append(roster);
+    }
+
+    container.append(nameRow, leave);
+}
+
+function collabBuildRoster() {
+    if (!collabRosterKnown()) {
+        return null;
+    }
+
+    const list = document.createElement('ul');
+    list.className = 'collab-roster';
+
+    for (const entry of COLLAB.roster) {
+        list.append(collabBuildRosterRow(entry));
+    }
+
+    return list;
+}
+
+function collabBuildRosterRow(entry) {
+    const isYou = entry.id === COLLAB.clientId;
+    const stale = !collabIsOnline();
+
+    const row = document.createElement('li');
+    row.className = 'collab-peer';
+
+    const swatch = document.createElement('span');
+    swatch.className = 'collab-peer-swatch';
+    swatch.style.background = collabPeerColor(entry.id);
+
+    const name = document.createElement('span');
+    name.className = 'collab-peer-name';
+    name.textContent = isYou
+        ? collabDisplayName()
+        : entry.name || collabFallbackName(entry.id);
+
+    row.append(swatch, name);
+
+    if (isYou) {
+        const you = document.createElement('span');
+        you.className = 'collab-peer-you';
+        you.textContent = tr('collabPeerYou');
+        row.append(you);
+    }
+
+    const healthLabel = tr(
+        stale
+            ? 'collabPeerStale'
+            : 'collabPeerConnected'
+    );
+
+    const health = document.createElement('span');
+    health.className = 'collab-peer-health';
+    health.classList.toggle('stale', stale);
+    health.title = healthLabel;
+    health.setAttribute('role', 'img');
+    health.setAttribute('aria-label', healthLabel);
+
+    row.append(health);
+
+    return row;
 }
 
 function collabRender() {

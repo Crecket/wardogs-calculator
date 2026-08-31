@@ -225,6 +225,31 @@ check('peer B online', true);
 await A.waitForFunction(() => COLLAB.peers === 2, null, { timeout: 10000 });
 check('A sees 2 peers', true);
 
+console.log('\n== peer roster ==');
+await B.evaluate(() => collabSetName('Bravo'));
+await A.waitForFunction(
+    () => (COLLAB.roster || []).some(entry => entry.name === 'Bravo'),
+    null, { timeout: 10000 }
+);
+check('a rename reaches the other peer without a mouse move', true);
+
+const roster = await A.evaluate(() => Array.from(
+    document.querySelectorAll('#collabPopover .collab-peer')
+).map(row => ({
+    name: row.querySelector('.collab-peer-name').textContent,
+    you: Boolean(row.querySelector('.collab-peer-you')),
+    swatch: row.querySelector('.collab-peer-swatch').style.background,
+    stale: row.querySelector('.collab-peer-health').classList.contains('stale')
+})));
+
+check('one row per peer', roster.length === 2, JSON.stringify(roster));
+check('exactly one row is marked as you',
+    roster.filter(row => row.you).length === 1, JSON.stringify(roster));
+check('the peer row carries their name',
+    roster.some(row => !row.you && row.name === 'Bravo'), JSON.stringify(roster));
+check('every row has a colour and reads connected',
+    roster.every(row => row.swatch && !row.stale), JSON.stringify(roster));
+
 console.log('\n== drawing syncs ==');
 await A.click('#mapToolPencil');
 /*
