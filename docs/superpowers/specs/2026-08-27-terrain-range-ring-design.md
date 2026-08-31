@@ -1,6 +1,6 @@
 # Design — terrain-aware max range ring (idea 10)
 
-Backing research: [ideas.md](../../ideas-research/ideas.md) § 10.
+Backing research: [ranked-ideas.md](../../ideas-research/ranked-ideas.md) item 5.
 Sibling design: [2026-08-26-elevation-correction-design.md](2026-08-26-elevation-correction-design.md),
 whose § 4 model this reuses unchanged.
 
@@ -316,7 +316,7 @@ reason this design can ship while the sibling waits on spotting shots.
 
 Every figure above comes from a throwaway probe run on 2026-08-26 against the
 shipped Bakurani heightfield — all 256 chunks decoded, rings solved at 360
-bearings. Recorded in [ideas.md](../../ideas-research/ideas.md) § 10; the probe
+bearings. Recorded in [ranked-ideas.md](../../ideas-research/ranked-ideas.md) item 5; the probe
 itself was not kept.
 
 | Claim | Measurement |

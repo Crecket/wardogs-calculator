@@ -1,8 +1,7 @@
 /*
  * Time of flight, derived rather than measured.
  *
- * The expected seconds come from docs/ideas-research/08-time-of-flight.md
- * section 2, which computed them from the same vacuum fit this reads. They
+ * The expected seconds were computed from the same vacuum fit this reads. They
  * are a regression fence on the derivation, not evidence about the game —
  * nobody has held a stopwatch to a real shell yet.
  *

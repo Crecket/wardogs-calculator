@@ -181,9 +181,8 @@ Every value is prefixed `≈`. Nothing is measured: the seconds are derived from
 the fitted vacuum model in `data/ballistics/projectile-model.json`, using the
 MIL actually on screen, so a corrected MIL gets the time that belongs to it.
 The derivation carries roughly ±2–4 s, which is fine for choosing an arc and
-not fine for time-on-target staggering. See
-[ideas-research/08-time-of-flight.md](ideas-research/08-time-of-flight.md) and
-the verification entry in [todo.md](todo.md).
+not fine for time-on-target staggering. See the verification entry in
+[todo.md](todo.md).
 
 
 ## Terrain elevation and SPH-2 setup

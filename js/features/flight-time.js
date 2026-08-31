@@ -26,7 +26,6 @@
  * asks, and printing it beats making them wonder. On the SPG-2 the two arcs
  * differ by a factor of two to three at the same range, which is a real
  * choice the panel can inform.
- * See docs/ideas-research/08-time-of-flight.md.
  *
  * These are DERIVED seconds and are printed with a ≈. The fit has never
  * been checked against the game, and the high-branch assumption underneath
@@ -105,8 +104,7 @@ function flightTimeSecondsForMil(weaponId, arc, mil, deltaZMeters = 0) {
 /*
  * Seconds for an arc at a distance, taking the MIL from the flat table.
  * The panel does not use this — it already holds the solutions, corrected
- * or not — but it is what makes the derivation checkable against the
- * figures in docs/ideas-research/08-time-of-flight.md.
+ * or not — but it is what makes the derivation checkable by hand.
  */
 function flightTimeSeconds(weaponId, arc, distanceMeters, deltaZMeters = 0) {
     const weapon = WEAPONS?.[weaponId];

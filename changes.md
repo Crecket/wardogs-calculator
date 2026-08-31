@@ -218,8 +218,8 @@ and weapon selection in real time. Zoom, pan and layer toggles stay local.
 - **8.1 `docs/todo.md`** — every value the app draws that nobody has measured
   in-game, with what it currently is, where it lives and what evidence it rests
   on. Each entry is one edit away from being settled. *Needs:* none
-- **8.2 `docs/ideas-research/`** — worked-through proposals (impact rings, time
-  of flight) and the running idea list, with shipped items marked. *Needs:* none
+- **8.2 `docs/ideas-research/ranked-ideas.md`** — every idea for the tool in one
+  ranked list, with shipped items marked. *Needs:* none
 - **8.3 Feature, terrain and map docs updated** — `docs/features.md`,
   `docs/terrain.md`, `docs/maps.md`, `docs/development.md`. *Needs:* none
 - **8.4 FOB build area named a half-side, not a radius** — the config key said

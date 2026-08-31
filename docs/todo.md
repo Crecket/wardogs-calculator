@@ -101,9 +101,8 @@ Two uncertainties sit under the number, and one stopwatch settles the larger:
   battery would want.
 
 Four stopwatch readings — mortar short range, SPG low, SPG high, one repeat —
-close both. The full argument, including why TOF is the cheapest probe of the
-drag error that gates everything else, is in
-[ideas-research/08-time-of-flight.md](ideas-research/08-time-of-flight.md) § 3.
+close both. TOF is also the cheapest probe of the drag error that gates
+everything else.
 
 ## Elevation correction — what is still switched off
 
