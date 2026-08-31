@@ -102,6 +102,29 @@ Per-call painter time rises 80–170% on the branch in every scenario. That is o
 
 ---
 
+## Dead ground and the minimum range ring reworked on `feat/collab-rooms`
+
+Two commits on the fork branch, on top of #11's terrain solver: `c46944ab7` solves the minimum range ring against the terrain instead of drawing the declared flat circle, and `ebd28c291` stops the dead-ground shading from being computed off a single arc.
+
+The minimum range ring now marches each bearing the way the max ring does, testing `declaredMin + (modelRangeAtAngle(v, theta, z - zGun) - levelMin)` at the tube's maximum elevation, so ground that drops away in front of the gun pushes the inner edge out and ground that rises pulls it in. The dead-ground wedges are clipped to that per-bearing inner edge rather than to a scalar, and the fill became a red diagonal hatch over a dark wash so it reads as a hazard rather than as a shadow.
+
+**The shading was answering the wrong question.** `deadGroundMuzzleVelocity` picked one arc and preferred `branch === 'low'`, so ground was shaded whenever the flat arc was masked by an intervening crest — but the SPG carries both a `low` and a `high` fit and the mortar is `high` only, and the high arc leaves the tube steeply enough to clear nearly every crest the low arc dies on. A point is dead only when **every** arc is blocked, so each arc now carries its own running required-tangent accumulator and its own muzzle velocity, and the launch solve takes the plus root for a high-branch arc where it took only the minus root before. The grazing accumulation stays on the minus root for both arcs: that is the shallowest launch that clears a crest, and for a fixed launch angle the shell's height at any x rises with launch tangent, so it is the correct threshold for the steep arc too.
+
+**A sentinel was leaking into the accumulator.** `deadGroundGrazingTan` returned `Infinity` when the discriminant went negative — when the arc simply cannot reach that crest — and `required` only ever ratchets upward, so the first out-of-reach sample on a bearing made every sample beyond it unconditionally dead. Standing at the foot of a large hill shaded the whole hill including its near face, which is in direct view with nothing in between. An arc failing to reach range x is a range fact, not a masking fact, and the march is already bounded by `ring.radii[b]`, so an unreachable crest no longer raises that arc's `required`. An unreachable *target* is now counted as blocked for that arc, which under the all-arcs rule only shades the point when no arc can deliver there.
+
+Measured with a Playwright script against the Bakurani heightfield, an SPG, the old single-arc algorithm re-run in the same page for the comparison:
+
+| Gun position | | wedges | angular metres | bearings shaded |
+| --- | --- | --- | --- | --- |
+| Map centre | before | 259 | 25,197 | 201 of 360 |
+| | after | 70 | 875 | 70 of 360 |
+| Foot of a 588 m rise | before | 406 | 351,023 | 300 of 360 |
+| | after | 107 | 1,363 | 107 of 360 |
+
+Across the twenty-one bearings running up that slope, none is shaded anywhere inside the crest after the change. The elevation-limit refinement — discarding an arc whose demanded launch angle falls outside `minElevationMil`/`maxElevationMil` — was deliberately left out: it needs a second angle helper threaded across `range-ring.js` and a per-arc tangent window through the sample loop, and the arc rule already carries the correction that mattered.
+
+---
+
 ## Status board
 
 Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed) · `pr` (open upstream) · `held` (reviewed, blocked on something upstream wants first) · `merged` · `absorbed` (closed unmerged, content shipped in v1.7.0) · `parked`.
@@ -129,6 +152,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 18 | — | Forced layout and no-op DOM writes on every pointer move | [`absorbed`](https://github.com/apollyon-sys/wardogs-calculator/pull/10) via #10 | branch deleted |
 | 20 | — | rAF-coalesced redraws, cached CSS custom properties, `createImageBitmap` tile decode with a bounded LRU, `devicePixelRatio` clamped to 2 | `branch` | `upstream-pr/render-perf`, cut from v1.7.0 |
 | 21 | 1.x | Live peer cursors, named and coloured | `branch` | `feat/collab-rooms` (fork only, extends item 16) |
+| 22 | 3.7 | Terrain-solved minimum range ring, dead ground shaded only where every arc is masked | `branch` | `feat/collab-rooms` (fork only, extends item 5) |
 
 The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
 
