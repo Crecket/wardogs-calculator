@@ -13,7 +13,7 @@ const OBS_DEFAULTS = {
     cursors: 'on',
     scale: 1,
     textSize: 10,
-    padding: 50,
+    padding: 90,
     maxZoom: 20
 };
 

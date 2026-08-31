@@ -314,6 +314,11 @@ check('textsize halves the readout type',
     Math.abs(parseFloat(options.milSize) - 62 * 1.5 * 0.62 * 0.5) < 1.5, options.milSize);
 check('padding reaches the framing options',
     options.padding === 40, String(options.padding));
+check('the link the app hands out carries the real defaults',
+    await configured.evaluate(() =>
+        COLLAB_OBS_QUERY.padding === OBS_DEFAULTS.padding &&
+        COLLAB_OBS_QUERY.textsize === OBS_DEFAULTS.textSize),
+    'COLLAB_OBS_QUERY has drifted from OBS_DEFAULTS');
 check('cursors=off is parsed', options.options.cursors === 'off');
 check('frame=map fits the whole map', Math.abs(options.zoom - 1) < 0.001,
     String(options.zoom));

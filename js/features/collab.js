@@ -3086,6 +3086,11 @@ const COLLAB_OBS_ICON =
     '<circle cx="8" cy="12" r="2.4"/>' +
     '</svg>';
 
+const COLLAB_OBS_QUERY = {
+    padding: 90,
+    textsize: 10
+};
+
 function collabObsLink() {
 
     if (!COLLAB.roomCode) {
@@ -3096,6 +3101,10 @@ function collabObsLink() {
         'obs/',
         window.location.href
     );
+
+    for (const [key, value] of Object.entries(COLLAB_OBS_QUERY)) {
+        url.searchParams.set(key, String(value));
+    }
 
     url.hash =
         `${COLLAB_HASH_KEY}=${COLLAB.roomCode}`;
