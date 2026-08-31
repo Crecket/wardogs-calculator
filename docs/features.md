@@ -297,7 +297,7 @@ The overlay never sends anything to a shared session, and **the room code is nev
 | `textsize` | `1`–`40` | `10` | Size of the readout type, in tenths of the normal size: `10` is the current size, `5` is half of everything in the readout, `20` is double. |
 | `maxzoom` | `1`–`24` | `20` | How far the auto-frame may zoom in. Lower it to keep more map context, raise it for short missions. |
 | `cursors` | `on`, `off` | `on` | Peer cursors and names from the shared session. |
-| `frame` | `pair`, `map` | `pair` | `pair` auto-frames gun and target; `map` holds a fixed fit of the whole map. |
+| `frame` | `pair`, `map`, `target` | `pair` | `pair` auto-frames gun and target; `target` locks onto the target alone at `maxzoom`, for a close view of the impact area; `map` holds a fixed fit of the whole map. |
 
 Example:
 

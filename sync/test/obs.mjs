@@ -314,6 +314,27 @@ check('textsize halves the readout type',
     Math.abs(parseFloat(options.milSize) - 62 * 1.5 * 0.62 * 0.5) < 1.5, options.milSize);
 check('padding reaches the framing options',
     options.padding === 40, String(options.padding));
+await configured.goto(
+    `http://localhost:${SITE_PORT}/obs/?frame=target&maxzoom=8`
+);
+await overlayReady(configured);
+
+const targetFrame = await configured.evaluate(() => ({
+    frame: OBS.options.frame,
+    zoom: Number(S.zoom.toFixed(3)),
+    cx: Number(OBS.view.cx.toFixed(4)),
+    targetX: Number(S.target.x.toFixed(4)),
+    gunX: Number(activeGun().position.x.toFixed(4))
+}));
+
+check('frame=target centres the target, not the pair',
+    targetFrame.frame === 'target' &&
+    Math.abs(targetFrame.cx - targetFrame.targetX) < 1e-6 &&
+    Math.abs(targetFrame.cx - (targetFrame.targetX + targetFrame.gunX) / 2) > 1e-6,
+    JSON.stringify(targetFrame));
+check('frame=target zooms to maxzoom',
+    Math.abs(targetFrame.zoom - 8) < 1e-6, String(targetFrame.zoom));
+
 check('the link the app hands out carries the real defaults',
     await configured.evaluate(() =>
         COLLAB_OBS_QUERY.padding === OBS_DEFAULTS.padding &&

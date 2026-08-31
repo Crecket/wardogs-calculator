@@ -79,7 +79,12 @@ function obsReadOptions() {
         bg: obsChoice(params, 'bg', ['transparent', 'opaque'], OBS_DEFAULTS.bg),
         panel: obsChoice(params, 'panel', ['full', 'compact', 'none'], OBS_DEFAULTS.panel),
         corner: obsChoice(params, 'corner', ['tl', 'tr', 'bl', 'br'], OBS_DEFAULTS.corner),
-        frame: obsChoice(params, 'frame', ['pair', 'map'], OBS_DEFAULTS.frame),
+        frame: obsChoice(
+            params,
+            'frame',
+            ['pair', 'map', 'target'],
+            OBS_DEFAULTS.frame
+        ),
         cursors: obsChoice(params, 'cursors', ['on', 'off'], OBS_DEFAULTS.cursors),
         scale: obsNumber(params, 'scale', 0.5, 3, OBS_DEFAULTS.scale),
         textSize: obsNumber(params, 'textsize', 1, 40, OBS_DEFAULTS.textSize),
@@ -321,9 +326,48 @@ function obsReadoutExtent() {
         : 0;
 }
 
+function obsReadoutShift(zoom) {
+
+    const reserved = obsReadoutExtent();
+
+    if (!reserved) {
+        return 0;
+    }
+
+    const v = view();
+    const base = v.scale / S.zoom;
+
+    const shift = reserved / 2 / (base * zoom);
+
+    return (
+        OBS.options.corner === 'tl' ||
+        OBS.options.corner === 'tr'
+    )
+        ? shift
+        : -shift;
+}
+
+function obsTargetView() {
+
+    const zoom = Math.max(
+        MIN_ZOOM,
+        OBS.options.maxZoom
+    );
+
+    return {
+        cx: S.target.x,
+        cy: S.target.y + obsReadoutShift(zoom),
+        zoom
+    };
+}
+
 function obsDesiredView() {
     if (OBS.options.frame === 'map') {
         return obsMapView();
+    }
+
+    if (OBS.options.frame === 'target') {
+        return obsTargetView();
     }
 
     const v = view();
@@ -366,18 +410,10 @@ function obsDesiredView() {
         Math.max(MIN_ZOOM, fit / base)
     );
 
-    const shift = reserved
-        ? reserved / 2 / (base * zoom)
-        : 0;
-
-    const top =
-        OBS.options.corner === 'tl' ||
-        OBS.options.corner === 'tr';
-
     return {
         cx: (gun.x + S.target.x) / 2,
         cy: (gun.y + S.target.y) / 2 +
-            (top ? shift : -shift),
+            obsReadoutShift(zoom),
         zoom
     };
 }
