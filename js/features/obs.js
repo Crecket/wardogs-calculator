@@ -356,7 +356,7 @@ function obsTargetView() {
 
     return {
         cx: S.target.x,
-        cy: S.target.y + obsReadoutShift(zoom),
+        cy: S.target.y,
         zoom
     };
 }

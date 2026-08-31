@@ -5,7 +5,6 @@ const CROSS_SECTION_TOTAL_SAMPLES =
     CROSS_SECTION_SAMPLES + CROSS_SECTION_MARGIN_SAMPLES * 2;
 
 const CROSS_SECTION_GRAVITY = 9.81;
-const CROSS_SECTION_APEX_STRETCH = 1.35;
 const CROSS_SECTION_ARC_ORDER = ['low', 'high', 'single'];
 
 const CROSS_SECTION_ARC_LABELS = {
@@ -467,7 +466,6 @@ function crossSectionVerticalRange(model) {
     }
 
     let apex = high;
-    let flat = high;
 
     model.shots.forEach(shot => {
         for (
@@ -478,31 +476,18 @@ function crossSectionVerticalRange(model) {
             if (shot.heights[i] > apex) {
                 apex = shot.heights[i];
             }
-
-            if (shot.arc !== 'high' && shot.heights[i] > flat) {
-                flat = shot.heights[i];
-            }
         }
     });
 
     const relief = Math.max(high - low, 20);
     const base = low - relief * 0.06;
 
-    const fitted = Math.max(flat, high);
-    const fittedTop = fitted + Math.max(fitted - low, 30) * 0.12;
-    const wholeTop = apex + Math.max(apex - low, 30) * 0.12;
-
-    const top =
-        wholeTop - base <=
-        (fittedTop - base) * CROSS_SECTION_APEX_STRETCH
-            ? wholeTop
-            : fittedTop;
+    const top = apex + Math.max(apex - low, 30) * 0.18;
 
     return {
         base,
         top,
-        apex,
-        clipped: apex > top
+        apex
     };
 }
 
@@ -581,27 +566,6 @@ function drawCrossSectionGround(g, model, project, left, right, bottom) {
     g.stroke();
 }
 
-function crossSectionOffFrameSpan(shot, project, gunIndex, top) {
-    let first = -1;
-    let last = -1;
-
-    for (let i = gunIndex; i <= shot.endIndex; i += 1) {
-        if (project(i, shot.heights[i]).y > top) {
-            continue;
-        }
-
-        if (first < 0) {
-            first = i;
-        }
-
-        last = i;
-    }
-
-    return first < 0
-        ? { first: gunIndex, last: shot.endIndex }
-        : { first, last };
-}
-
 function drawCrossSectionShots(g, model, project, left, right, top) {
     const ground = model.profile.ground;
     const gunIndex = model.profile.gunIndex;
@@ -653,41 +617,11 @@ function drawCrossSectionShots(g, model, project, left, right, top) {
         const apex = crossSectionApexIndex(shot, gunIndex);
         const at = project(apex, shot.heights[apex]);
 
-        if (at.y >= top) {
-            labels.push({
-                text: tr(labelKey),
-                x: Math.min(right - 30, Math.max(left + 30, at.x)),
-                y: at.y - 5,
-                color,
-                clipped: false
-            });
-
-            return;
-        }
-
-        const span = crossSectionOffFrameSpan(
-            shot,
-            project,
-            gunIndex,
-            top
-        );
-
-        const middle = (
-            project(span.first, shot.heights[span.first]).x +
-            project(span.last, shot.heights[span.last]).x
-        ) / 2;
-
         labels.push({
-            text: `${tr(labelKey)} · ${
-                tr('crossSectionApexAbove').replace(
-                    '{metres}',
-                    Math.round(shot.heights[apex] - zGun)
-                )
-            }`,
-            x: Math.min(right - 66, Math.max(left + 66, middle)),
-            y: top + 13,
-            color,
-            clipped: true
+            text: tr(labelKey),
+            x: Math.min(right - 30, Math.max(left + 30, at.x)),
+            y: at.y - 7,
+            color
         });
     });
 
@@ -696,7 +630,6 @@ function drawCrossSectionShots(g, model, project, left, right, top) {
     g.textBaseline = 'bottom';
 
     labels
-        .sort((a, b) => Number(b.clipped) - Number(a.clipped))
         .forEach(label => {
             let y = label.y;
 

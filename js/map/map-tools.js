@@ -74,7 +74,7 @@ const MAP_TOOL_STATE = {
         artillery: true,
         savedTargets: true,
         deadGround: false,
-        crossSection: false,
+        crossSection: true,
         cursorCoords: true
     }
 };

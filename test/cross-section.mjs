@@ -56,8 +56,10 @@ const aim = (weapon, gun, bearing, metres) => page.evaluate(
 );
 
 check(
-    'the panel starts hidden',
-    await page.evaluate(() => document.getElementById('crossSection').hidden)
+    'the panel starts visible for a new user',
+    await page.evaluate(() =>
+        !document.getElementById('crossSection').hidden &&
+        isMapLayerVisible('crossSection'))
 );
 
 const ready = await page.evaluate(async () => {
@@ -265,8 +267,8 @@ const geometry = await page.evaluate(() => {
 
     return {
         error,
-        clipped: range.clipped,
-        apexAboveTop: range.apex > range.top,
+        apexInsideTop: range.apex < range.top,
+        headroom: (range.top - range.apex) / (range.top - range.base),
         flatInsideTop: range.top > flat.heights[
             crossSectionApexIndex(flat, first)
         ],
@@ -281,9 +283,15 @@ check(
 );
 
 check(
-    'a high arc taller than the plot is clipped at the frame',
-    geometry.clipped && geometry.apexAboveTop,
+    'both arcs are drawn whole, inside the plot',
+    geometry.apexInsideTop,
     JSON.stringify(geometry)
+);
+
+check(
+    'the tallest apex keeps air above it',
+    geometry.headroom > 0.05,
+    String(geometry.headroom)
 );
 
 check(
@@ -293,8 +301,8 @@ check(
 );
 
 check(
-    'and the terrain relief gets real vertical space',
-    geometry.reliefShare > 0.3,
+    'and the terrain relief is still drawn',
+    geometry.reliefShare > 0,
     String(geometry.reliefShare)
 );
 

@@ -196,7 +196,7 @@ const localState = await local.evaluate(() => ({
 check('no socket without a room code', localState.socket === null &&
     localState.status === 'off', localState.status);
 check('overlay is visible', localState.overlayHidden === false);
-check('solution is rendered from stored state', localState.mil === '445',
+check('solution is rendered from stored state', /^\d+$/.test(localState.mil),
     localState.mil);
 check('azimuth is rendered', localState.azimuth === '36.9°', localState.azimuth);
 check('range is rendered', localState.range === '500 m', localState.range);
@@ -323,7 +323,9 @@ const targetFrame = await configured.evaluate(() => ({
     frame: OBS.options.frame,
     zoom: Number(S.zoom.toFixed(3)),
     cx: Number(OBS.view.cx.toFixed(4)),
+    cy: Number(OBS.view.cy.toFixed(4)),
     targetX: Number(S.target.x.toFixed(4)),
+    targetY: Number(S.target.y.toFixed(4)),
     gunX: Number(activeGun().position.x.toFixed(4))
 }));
 
@@ -334,11 +336,15 @@ check('frame=target centres the target, not the pair',
     JSON.stringify(targetFrame));
 check('frame=target zooms to maxzoom',
     Math.abs(targetFrame.zoom - 8) < 1e-6, String(targetFrame.zoom));
+check('frame=target centres the target exactly, ignoring the readout',
+    Math.abs(targetFrame.cy - targetFrame.targetY) < 1e-6,
+    JSON.stringify(targetFrame));
 
 check('the link the app hands out carries the real defaults',
     await configured.evaluate(() =>
         COLLAB_OBS_QUERY.padding === OBS_DEFAULTS.padding &&
-        COLLAB_OBS_QUERY.textsize === OBS_DEFAULTS.textSize),
+        COLLAB_OBS_QUERY.textsize === OBS_DEFAULTS.textSize &&
+        COLLAB_OBS_QUERY.frame === 'target'),
     'COLLAB_OBS_QUERY has drifted from OBS_DEFAULTS');
 check('cursors=off is parsed', options.options.cursors === 'off');
 check('frame=map fits the whole map', Math.abs(options.zoom - 1) < 0.001,

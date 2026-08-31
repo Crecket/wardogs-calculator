@@ -279,7 +279,7 @@ The overlay never sends anything to a shared session, and **the room code is nev
 ### Setting it up in OBS
 
 1. Add a **Browser** source.
-2. Set the URL to `https://wardogs-artillery.com/obs/?padding=90&textsize=10#room=YOURCODE` — the **Open the OBS overlay** button in the site header builds exactly this for the room you are in, with the two most-adjusted options spelled out so they are easy to find and change. Every option below can be added the same way.
+2. Set the URL to `https://wardogs-artillery.com/obs/?frame=target&padding=90&textsize=10#room=YOURCODE` — the **Open the OBS overlay** button in the site header builds exactly this for the room you are in, with the two most-adjusted options spelled out so they are easy to find and change. Every option below can be added the same way.
 3. Set **Width** to `1920` and **Height** to `1080`. The page is laid out for exactly that; a browser source cannot be resized from inside the page.
 4. Leave **Shutdown source when not visible** off if you want the overlay to keep following the mission while hidden.
 5. Everything is configured through the URL, because editing settings inside a browser source is miserable. Set the URL once in the source properties.

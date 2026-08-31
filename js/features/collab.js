@@ -3087,6 +3087,7 @@ const COLLAB_OBS_ICON =
     '</svg>';
 
 const COLLAB_OBS_QUERY = {
+    frame: 'target',
     padding: 90,
     textsize: 10
 };
