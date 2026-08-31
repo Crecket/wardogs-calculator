@@ -166,8 +166,12 @@ function collabInSession() {
     );
 }
 
+function collabIsReadOnly() {
+    return typeof isObsMode === 'function' && isObsMode();
+}
+
 function collabSuppressesLocalPersistence() {
-    return collabInSession();
+    return collabInSession() || collabIsReadOnly();
 }
 
 function collabHandlesHistory() {
@@ -193,7 +197,11 @@ function collabHttpBase() {
 }
 
 function collabRoomUrl(code) {
-    return `${getCollabServiceUrl()}/room/${encodeURIComponent(code)}`;
+    const url = `${getCollabServiceUrl()}/room/${encodeURIComponent(code)}`;
+
+    return collabIsReadOnly()
+        ? `${url}?viewer=1`
+        : url;
 }
 
 function collabShareLink() {
@@ -208,7 +216,7 @@ function collabShareLink() {
 }
 
 function collabSend(op) {
-    if (!collabIsOnline()) {
+    if (!collabIsOnline() || collabIsReadOnly()) {
         return false;
     }
 
@@ -2080,7 +2088,7 @@ function collabReadHash() {
 }
 
 function collabWriteHash() {
-    if (!COLLAB.roomCode) {
+    if (!COLLAB.roomCode || collabIsReadOnly()) {
         return;
     }
 
@@ -2373,7 +2381,7 @@ function collabBuildRosterRow(entry) {
 function collabRender() {
     const container = $('collabPopover');
 
-    if (!container) {
+    if (!container || collabIsReadOnly()) {
         return;
     }
 

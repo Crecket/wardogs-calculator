@@ -240,3 +240,60 @@ Artillery and Target can be locked independently against direct map interaction.
 ## Firing-solution result hierarchy
 
 Distance, MIL, and azimuth are treated as the three primary firing-solution values and are shown together in a high-contrast metric grid. Distance keeps meters as the primary value and kilometers as secondary context; MIL shows trajectory labels only as secondary information; ΔX and ΔY are visually de-emphasized below the main solution.
+
+
+## OBS overlay
+
+`/obs/` is a stripped route meant to be loaded as an **OBS browser source** and composited over gameplay footage. It renders the map, the active gun, the active target, the range rings and the dead-ground shading with no application chrome at all — no toolbar, no panels, no scrollbars, no MOTD — and a compact solution readout sized to survive a 1080p downscale.
+
+The camera frames the active gun and the active target together with padding and animates between framings rather than cutting, so a viewer can follow the shot without motion sickness. A viewer who has asked their system for reduced motion gets an instant cut instead.
+
+The overlay never sends anything to a shared session, and **the room code is never rendered anywhere on this route, in any state.** It is the only credential a room has; on stream it would be an invitation to wipe the map mid-broadcast.
+
+### Setting it up in OBS
+
+1. Add a **Browser** source.
+2. Set the URL to `https://wardogs-artillery.com/obs/` — plus a room fragment and any options below.
+3. Set **Width** to `1920` and **Height** to `1080`. The page is laid out for exactly that; a browser source cannot be resized from inside the page.
+4. Leave **Shutdown source when not visible** off if you want the overlay to keep following the mission while hidden.
+5. Everything is configured through the URL, because editing settings inside a browser source is miserable. Set the URL once in the source properties.
+
+### Query API
+
+| Parameter | Values | Default | What it does |
+|---|---|---|---|
+| `#room=` / `?room=` | a room code | none | Follow a shared session read-only. The fragment form matches the share links the session panel copies. Ignored when the site has no sync service configured. |
+| `bg` | `transparent`, `opaque` | `transparent` | Page background. Transparent composites over gameplay; the map's own tiles stay opaque where they cover. |
+| `panel` | `full`, `compact`, `none` | `full` | `full` is MIL, azimuth, distance, arc, range state and time of flight. `compact` is MIL and azimuth only. `none` hides the readout and leaves the map. |
+| `corner` | `tl`, `tr`, `bl`, `br` | `bl` | Which corner the readout sits in. |
+| `scale` | `0.5`–`3` | `1` | Size multiplier for the readout. Raise it when the stream is downscaled hard. |
+| `pad` | `0`–`600` | `160` | Padding in pixels kept around the gun/target pair when framing. |
+| `maxzoom` | `1`–`24` | `12` | How far the auto-frame may zoom in. Lower it to keep more map context, raise it for short missions. |
+| `cursors` | `on`, `off` | `on` | Peer cursors and names from the shared session. |
+| `frame` | `pair`, `map` | `pair` | `pair` auto-frames gun and target; `map` holds a fixed fit of the whole map. |
+
+Example:
+
+```text
+https://wardogs-artillery.com/obs/?bg=transparent&panel=compact&corner=tr&scale=1.25#room=abcdefghjkmn
+```
+
+### Theming it
+
+OBS can inject custom CSS per browser source. The overlay elements carry stable class names for exactly that:
+
+| Class | Element |
+|---|---|
+| `.obs-overlay` | The root, carrying `data-panel` and `data-corner` |
+| `.obs-readout` | The readout box |
+| `.obs-gun` | The gun / weapon / index line |
+| `.obs-metric`, `.obs-metric-mil`, `.obs-metric-azimuth`, `.obs-metric-range` | One metric each |
+| `.obs-metric-label`, `.obs-metric-value`, `.obs-metric-sub` | Label, big number, and the sub-line (arc, range state) |
+| `.obs-flight`, `.obs-flight-label`, `.obs-flight-values` | Time of flight |
+| `.obs-status` | The connection line, shown only while a session is connecting or reconnecting |
+
+`--obs-scale` on `body` is the size multiplier `?scale=` sets, and the readout is built from it, so overriding that one variable rescales the whole panel.
+
+### Without a room
+
+The route needs no shared session. With no room code it renders **this browser profile's own stored map** — the same guns, target and drawings the normal route would restore — which is enough for a solo streamer running the overlay in a second window on the same machine. It re-reads that state when the other window saves it, so the overlay follows along a moment behind. It never writes any of it back: the overlay is read-only against local storage as well as against a room. Switching maps in the other window is not followed, since stored points are only restored for the map they were saved on.

@@ -189,6 +189,38 @@ await page.waitForFunction(
 check('ignored, app still boots', await page.evaluate(() => COLLAB.status === 'off'));
 check('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 
+await page.close();
+
+/*
+ * The OBS overlay is the one route whose whole point is a room, so a build
+ * with no service configured has to fall back to the tab's own map rather
+ * than to a broken page — and still put no room code on screen.
+ */
+console.log('\n== obs overlay, service unconfigured ==');
+const overlayErrors = [];
+const overlay = await browser.newPage();
+overlay.on('pageerror', e => overlayErrors.push(`${e}`));
+
+await overlay.setViewportSize({ width: 1920, height: 1080 });
+await overlay.goto(`http://localhost:${PORT}/obs/#room=abcdefghjkmn`);
+await overlay.waitForFunction(
+    () => typeof OBS !== 'undefined' && OBS.active === true,
+    null, { timeout: 20000 }
+);
+
+check('overlay renders without the service',
+    await overlay.evaluate(() => document.getElementById('obsOverlay').hidden === false));
+check('overlay opened no socket',
+    await overlay.evaluate(() => COLLAB.socket === null && COLLAB.status === 'off'));
+check('overlay shows no room code',
+    !(await overlay.content()).includes('abcdefghjkmn'));
+check('overlay shows no status line',
+    await overlay.evaluate(() => document.getElementById('obsStatus').hidden === true));
+check('overlay reads the local map',
+    await overlay.evaluate(() => document.getElementById('obsRange').textContent.length > 0));
+check('overlay page has no errors', overlayErrors.length === 0,
+    overlayErrors.slice(0, 3).join(' | '));
+
 await browser.close();
 server.close();
 

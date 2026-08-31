@@ -2,6 +2,7 @@ import { cp, mkdir, readFile, rm, writeFile, readdir, stat } from 'node:fs/promi
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SEO_ALTERNATE_NAMES, SEO_PAGE_CONTENT } from './seo-content.mjs';
+import { buildObsPage } from './lib/obs-page.mjs';
 import {
     analyticsWebsiteId,
     collabUrl,
@@ -41,6 +42,10 @@ const desktopStyleFiles = [
     'styles/desktop/map-tools.css',
     'styles/desktop/motd.css',
     'styles/desktop/seo.css'
+];
+
+const obsStyleFiles = [
+    'styles/obs/overlay.css'
 ];
 
 const mobileStyleFiles = [
@@ -103,6 +108,11 @@ async function bundleStyles() {
     await bundleStyleFiles(
         mobileStyleFiles,
         'mobile.css'
+    );
+
+    await bundleStyleFiles(
+        obsStyleFiles,
+        'obs.css'
     );
 }
 
@@ -970,6 +980,22 @@ async function buildMobilePages() {
 }
 
 /*
+ * The OBS overlay route. Derived from the desktop shell rather than written
+ * as a page of its own — see scripts/lib/obs-page.mjs.
+ */
+async function buildObsRoute() {
+    const target = join(dist, 'obs');
+
+    await mkdir(target, { recursive: true });
+
+    await writeFile(
+        join(target, 'index.html'),
+        await buildObsPage(),
+        'utf8'
+    );
+}
+
+/*
  * One repository, one Pages artifact, one custom domain.
  * Desktop and mobile page shells share the same JS, locales,
  * maps, tiles, configuration and localStorage origin.
@@ -997,6 +1023,7 @@ await bundleStyles();
 await buildDesktopPages();
 await buildSitemap();
 await buildMobilePages();
+await buildObsRoute();
 
 console.log(`Built desktop + mobile site into ${dist}`);
 console.log(`Mobile entry: ${join(dist, 'mobile', 'index.html')}`);

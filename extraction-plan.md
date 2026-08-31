@@ -141,6 +141,24 @@ The sentinel fix from `ebd28c291` is not reverted — an unreachable crest still
 
 ---
 
+## OBS overlay route on `feat/ux-obs-mode`
+
+Ranked idea 14, cut from `feat/collab-rooms`. A `/obs/` route meant to be loaded as an OBS browser source: the map auto-framed on the active gun and the active target, a large solution readout, and no application chrome.
+
+**The route is generated from the desktop shell, not written as a page.** A browser source loads one URL and must boot the whole application — the same `init()`, renderer and collab client — so `scripts/lib/obs-page.mjs` takes `src/pages/index.html`, replaces the head wholesale (no SEO metadata, no analytics tag, no mobile redirect), marks the root `data-obs="1"`, injects `src/pages/obs/overlay.html` and one script, and the CSS hides everything but the canvas and the readout by exclusion rather than by naming panels. Nothing in the shell has to be kept in sync with a second copy, and `build-pages.mjs` and `dev-server.mjs` share the transform instead of duplicating it the way they duplicate `renderMobileLocale`.
+
+**The overlay joins a room as a read-only viewer.** An OBS browser source is a separate process with its own profile: no shared local storage, no `BroadcastChannel`, no `postMessage`. The network is the only path across, so the overlay opens the same socket with `?viewer=1` on the room URL. Server-side that is four small pieces in `room.js`: viewers are skipped by `roster()`, counted against their own `LIMITS.viewers` of 8 rather than the 16 editing slots, and answered `read-only` if one ever sends an op. Compatible in both directions, like the roster change — an old server ignores the query parameter and the overlay is merely a peer that never speaks, and a new server sees nothing different from a client that does not pass it.
+
+**Read-only is enforced on the client, once.** `collabIsReadOnly()` is `isObsMode()`, and `collabSend()` refuses on it, which is every op, every name frame and every cursor frame in one place. The same predicate widens `collabSuppressesLocalPersistence()`, so an overlay pointed at no room cannot write the streamer's stored map back over itself, and `collabRender()` returns early on it so the room code — the only credential a room has — is never built into this route's DOM in any state. `sync/test/obs.mjs` asserts that against the serialized DOM, before and after a room update, and `disabled.mjs` asserts it again with no service configured.
+
+**Two layers, so the feature keeps collab's self-disabling property.** With no `COLLAB_URL` the route still works: it renders this browser profile's own stored map, re-reading it on a `storage` event so a second window on the streamer's own machine follows a moment behind. The socket is strictly additive on top of that.
+
+The camera interpolates a world centre and a zoom rather than the raw pan, so a move that changes both stays framed on the pair throughout; `prefers-reduced-motion` cuts instead. Framing is driven from the wrapped `result()` — the existing rAF-coalesced `draw()` path is untouched, and nothing new runs per frame on the normal route.
+
+Two things deliberately left out: the active gun is inferred from which gun moved last, because gun selection is local view state that the room does not carry; and the `?scale=` multiplier is the only sizing control, with no per-element layout options, on the grounds that OBS can inject custom CSS against documented class names.
+
+---
+
 ## Status board
 
 Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed) · `pr` (open upstream) · `held` (reviewed, blocked on something upstream wants first) · `merged` · `absorbed` (closed unmerged, content shipped in v1.7.0) · `parked`.
@@ -170,6 +188,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 21 | 1.x | Live peer cursors, named and coloured | `branch` | `feat/collab-rooms` (fork only, extends item 16) |
 | 22 | 3.7 | Terrain-solved minimum range ring, dead ground shaded where the low arc is masked | `branch` | `feat/collab-rooms` (fork only, extends item 5) |
 | 23 | 1.x | Peer roster in the session panel, from a server-side roster | `branch` | `feat/ux-peer-roster` (fork only, extends items 16 and 21) |
+| 24 | — | OBS overlay route, auto-framed, joins a room as a read-only viewer | `branch` | `feat/ux-obs-mode` (fork only, extends items 16 and 21) |
 
 The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
 

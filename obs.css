@@ -1,0 +1,8 @@
+/*
+ * OBS overlay CSS development entry point.
+ *
+ * The production build concatenates the module into dist/obs.css, the way
+ * style.css and mobile.css are built.
+ */
+
+@import url("./styles/obs/overlay.css");
