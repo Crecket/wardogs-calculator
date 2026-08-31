@@ -826,6 +826,107 @@
     padding-top: 1px;
 }
 
+
+/* =========================
+   REACH BADGES
+   ========================= */
+
+.saved-target-reach {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    align-items: center;
+
+    gap: 3px;
+
+    padding-top: 1px;
+}
+
+.saved-target-reach-badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 2px;
+
+    min-width: 15px;
+
+    height: 14px;
+
+    padding: 0 3px;
+
+    border: 1px solid transparent;
+
+    font:
+        9px ui-monospace,
+        SFMono-Regular,
+        Consolas,
+        monospace;
+
+    line-height: 1;
+}
+
+.saved-target-reach-badge .reach-glyph {
+    font-size: 10px;
+}
+
+.saved-target-reach-badge .reach-gun {
+    opacity: .75;
+}
+
+.saved-target-reach-badge.active {
+    background: var(--active-bg);
+}
+
+.saved-target-reach-badge.reach-ok {
+    border-radius: 8px;
+
+    border-color:
+        color-mix(
+            in srgb,
+            #6fbf7a 55%,
+            var(--border)
+        );
+
+    color: #6fbf7a;
+}
+
+.saved-target-reach-badge.reach-masked {
+    border-radius: 3px;
+
+    border-style: dashed;
+
+    border-color:
+        color-mix(
+            in srgb,
+            var(--accent) 60%,
+            var(--border)
+        );
+
+    color: var(--accent);
+}
+
+.saved-target-reach-badge.reach-out,
+.saved-target-reach-badge.reach-close {
+    border-radius: 2px;
+
+    border-color:
+        color-mix(
+            in srgb,
+            #d86666 46%,
+            var(--border)
+        );
+
+    color: #d86666;
+}
+
+.saved-target-reach-badge.reach-close {
+    border-style: dotted;
+}
+
 @media (max-width: 520px) {
     .saved-targets {
         top: 10px;
