@@ -164,6 +164,12 @@ check(
     (await shots()).join(',')
 );
 
+check(
+    'arcs that collapse onto one trajectory share a single clause',
+    /^Low arc \/ High arc: falls short at \d+ m, \d+ m short$/.test(short),
+    short
+);
+
 const surfaces = () => page.evaluate(() => ({
     mil: document.getElementById('mil').textContent,
     milDetail: document.getElementById('milAlt').textContent,

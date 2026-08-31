@@ -5,6 +5,8 @@ const CROSS_SECTION_TOTAL_SAMPLES =
     CROSS_SECTION_SAMPLES + CROSS_SECTION_MARGIN_SAMPLES * 2;
 
 const CROSS_SECTION_GRAVITY = 9.81;
+const CROSS_SECTION_TERRAIN_SHARE = 0.34;
+const CROSS_SECTION_DETAIL_SHARE = 0.72;
 const CROSS_SECTION_ARC_ORDER = ['low', 'high', 'single'];
 
 const CROSS_SECTION_ARC_LABELS = {
@@ -392,15 +394,28 @@ function crossSectionCaption(model) {
         }
 
         const labelKey = CROSS_SECTION_ARC_LABELS[shot.arc];
+        const label = labelKey ? tr(labelKey) : '';
+        const sibling = clauses.find(clause => clause.state === state);
 
-        clauses.push(
-            labelKey
-                ? `${tr(labelKey)}: ${state}`
-                : state
-        );
+        if (sibling && label && sibling.labels.length) {
+            sibling.labels.push(label);
+
+            return;
+        }
+
+        clauses.push({
+            state,
+            labels: label ? [label] : []
+        });
     });
 
-    return clauses.join(' · ');
+    return clauses
+        .map(clause =>
+            clause.labels.length
+                ? `${clause.labels.join(' / ')}: ${clause.state}`
+                : clause.state
+        )
+        .join(' · ');
 }
 
 function crossSectionSurface(canvas) {
@@ -453,6 +468,7 @@ function crossSectionVerticalRange(model) {
     }
 
     let apex = high;
+    let flat = high;
 
     model.shots.forEach(shot => {
         for (
@@ -463,14 +479,77 @@ function crossSectionVerticalRange(model) {
             if (shot.heights[i] > apex) {
                 apex = shot.heights[i];
             }
+
+            if (shot.arc !== 'high' && shot.heights[i] > flat) {
+                flat = shot.heights[i];
+            }
         }
     });
 
     const span = Math.max(apex - low, 30);
+    const relief = Math.max(high - low, 20);
+    const crest = high + relief * 0.12;
 
     return {
-        base: low - span * 0.06,
+        base: low - relief * 0.06,
+        ground: crest,
+        detail: Math.max(crest, flat + relief * 0.12),
         top: apex + span * 0.12
+    };
+}
+
+function crossSectionScale(range, top, bottom) {
+    const plotHeight = bottom - top;
+    const full = range.top - range.base;
+
+    const linear = {
+        toY: z => top + (range.top - z) / full * plotHeight,
+        compressed: false,
+        breakY: null
+    };
+
+    if (
+        !(full > 0) ||
+        !(range.ground > range.base) ||
+        !(range.top > range.ground)
+    ) {
+        return linear;
+    }
+
+    const natural = (range.ground - range.base) / full;
+
+    if (natural >= CROSS_SECTION_TERRAIN_SHARE) {
+        return linear;
+    }
+
+    let breakZ = Math.min(range.detail, range.top);
+
+    let share =
+        CROSS_SECTION_TERRAIN_SHARE *
+        (breakZ - range.base) /
+        (range.ground - range.base);
+
+    if (!(share <= CROSS_SECTION_DETAIL_SHARE)) {
+        breakZ = range.ground;
+        share = CROSS_SECTION_TERRAIN_SHARE;
+    }
+
+    if (!(range.top > breakZ)) {
+        return linear;
+    }
+
+    const band = plotHeight * share;
+    const breakY = bottom - band;
+
+    return {
+        toY: z => z <= breakZ
+            ? bottom - (z - range.base) / (breakZ - range.base) * band
+            : breakY -
+                (z - breakZ) / (range.top - breakZ) *
+                (plotHeight - band),
+        compressed: true,
+        breakY,
+        breakZ
     };
 }
 
@@ -602,8 +681,8 @@ function drawCrossSectionShots(g, model, project, left, right) {
         let y = at.y - 5;
 
         placed.forEach(spot => {
-            if (Math.abs(spot.x - x) < 60 && Math.abs(spot.y - y) < 12) {
-                y = spot.y + 13;
+            if (Math.abs(spot.x - x) < 60 && Math.abs(spot.y - y) < 15) {
+                y = spot.y + 15;
             }
         });
 
@@ -618,10 +697,19 @@ function drawCrossSectionShots(g, model, project, left, right) {
     });
 }
 
-function drawCrossSectionScale(g, model, project, toY, left, top, bottom) {
+function drawCrossSectionScale(
+    g,
+    model,
+    project,
+    scale,
+    left,
+    right,
+    top,
+    bottom
+) {
     const profile = model.profile;
     const zGun = profile.ground[profile.gunIndex];
-    const gunLine = toY(zGun);
+    const gunLine = scale.toY(zGun);
 
     g.setLineDash([2, 4]);
     g.lineWidth = 1;
@@ -650,6 +738,38 @@ function drawCrossSectionScale(g, model, project, toY, left, top, bottom) {
         g.fillText('0 m', left + 2, gunLine - 3);
     }
 
+    if (scale.compressed) {
+        g.setLineDash([1, 3]);
+        g.lineWidth = 1;
+        g.strokeStyle = 'rgba(210,218,210,.3)';
+
+        g.beginPath();
+        g.moveTo(left, scale.breakY);
+        g.lineTo(right, scale.breakY);
+        g.stroke();
+
+        g.setLineDash([]);
+
+        g.fillStyle = cssVar('--muted', '#89959e');
+        g.textAlign = 'left';
+        g.textBaseline = 'bottom';
+
+        g.fillText(
+            `+${Math.round(scale.breakZ - zGun)} m`,
+            left + 2,
+            scale.breakY - 3
+        );
+
+        g.textAlign = 'right';
+        g.textBaseline = 'top';
+
+        g.fillText(
+            tr('crossSectionCompressed'),
+            right - 2,
+            top
+        );
+    }
+
     g.textBaseline = 'top';
 
     g.fillText(
@@ -670,10 +790,10 @@ function drawCrossSectionScale(g, model, project, toY, left, top, bottom) {
 function drawCrossSection(surface, model) {
     const { g, width, height } = surface;
 
-    const left = 10;
-    const right = width - 8;
-    const top = 10;
-    const bottom = height - 14;
+    const left = 6;
+    const right = width - 6;
+    const top = 8;
+    const bottom = height - 13;
 
     const plotWidth = right - left;
     const plotHeight = bottom - top;
@@ -687,11 +807,8 @@ function drawCrossSection(surface, model) {
 
     model.range = crossSectionVerticalRange(model);
 
-    const toY = z =>
-        top +
-        (model.range.top - z) /
-        (model.range.top - model.range.base) *
-        plotHeight;
+    const scale = crossSectionScale(model.range, top, bottom);
+    const toY = scale.toY;
 
     const project = (index, z) => ({
         x: left + (index / (ground.length - 1)) * plotWidth,
@@ -744,7 +861,16 @@ function drawCrossSection(surface, model) {
 
     g.restore();
 
-    drawCrossSectionScale(g, model, project, toY, left, top, bottom);
+    drawCrossSectionScale(
+        g,
+        model,
+        project,
+        scale,
+        left,
+        right,
+        top,
+        bottom
+    );
 }
 
 function crossSectionKey(weapon, distanceMeters) {
