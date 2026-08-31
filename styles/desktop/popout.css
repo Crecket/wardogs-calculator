@@ -38,6 +38,52 @@
             color .2s ease;
 }
 
+.header-controls .obs-launch-button {
+    width: 36px;
+    min-width: 36px;
+
+    height: 36px;
+    min-height: 36px;
+
+    padding: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 50%;
+
+    background: var(--input-bg);
+
+    border: 1px solid var(--border-light);
+
+    color: var(--muted);
+
+    cursor: pointer;
+
+    transition:
+            border-color .2s ease,
+            background-color .2s ease,
+            color .2s ease;
+}
+
+.header-controls .obs-launch-button:hover {
+    color: var(--text);
+}
+
+.header-controls .obs-launch-button.is-unavailable {
+    opacity: .42;
+
+    cursor: not-allowed;
+}
+
+.header-controls .obs-launch-button.is-unavailable:hover {
+    color: var(--muted);
+}
+
 .header-controls .panel-popout-button:hover {
     color: var(--text);
 }
