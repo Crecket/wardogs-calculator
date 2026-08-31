@@ -5,7 +5,8 @@
 .mobile-app .sidebar-toggle,
 .mobile-app footer,
 .mobile-app .toolbar,
-.mobile-app .legend {
+.mobile-app .legend,
+.mobile-app .cross-section {
     display: none !important;
 }
 
