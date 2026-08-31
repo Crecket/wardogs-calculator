@@ -29,6 +29,9 @@ export const LIMITS = {
     cursorsPerSecond: 20,
     cursorBurst: 30,
 
+    viewsPerSecond: 10,
+    viewBurst: 20,
+
     cursorNameLength: 24,
 
     idleMs: 14 * 24 * 60 * 60 * 1000
@@ -39,6 +42,7 @@ const COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
 
 const COORDINATE_BOUND = 1e6;
+const ZOOM_BOUND = 1e4;
 const NAME_LENGTH = 120;
 
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/g;
@@ -140,6 +144,32 @@ function cursorName(value) {
 
 export function validateName(value) {
     return cursorName(value);
+}
+
+function zoomLevel(value) {
+    const parsed = Number(value);
+
+    if (
+        !Number.isFinite(parsed) ||
+        parsed <= 0 ||
+        parsed > ZOOM_BOUND
+    ) {
+        fail('bad-zoom');
+    }
+
+    return parsed;
+}
+
+export function validateView(raw) {
+    if (!raw || typeof raw !== 'object') {
+        fail('bad-view');
+    }
+
+    return {
+        x: coordinate(raw.x),
+        y: coordinate(raw.y),
+        zoom: zoomLevel(raw.zoom)
+    };
 }
 
 export function validateCursor(raw) {

@@ -251,5 +251,12 @@ function drawNow() {
 
     ctx.restore();
 
+    if (
+        typeof collabTrackView ===
+        'function'
+    ) {
+        collabTrackView();
+    }
+
     result();
 }

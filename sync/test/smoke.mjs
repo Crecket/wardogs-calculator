@@ -159,6 +159,72 @@ check('a departed peer leaves the roster',
     !left.roster.some(entry => entry.id === snapGhost.you),
     JSON.stringify(left));
 
+console.log('\n== peer views ==');
+check('snapshot advertises the view frame',
+    Array.isArray(snapA.features) && snapA.features.includes('view'),
+    JSON.stringify(snapA.features));
+
+drain(a);
+drain(b);
+a.send(JSON.stringify({ type: 'view', x: 40.5, y: -12.25, zoom: 2.5 }));
+const view = await next(b, m => m.type === 'view');
+check('view reaches the peer',
+    view.x === 40.5 && view.y === -12.25 && view.zoom === 2.5, JSON.stringify(view));
+check('view is stamped with the server-side id', view.from === snapA.you, view.from);
+
+await new Promise(r => setTimeout(r, 250));
+check('view is not echoed to the sender', !a.inbox.some(m => m.type === 'view'), JSON.stringify(a.inbox));
+check('view is not acked', !a.inbox.some(m => m.type === 'ack'), JSON.stringify(a.inbox));
+
+drain(b);
+a.send(JSON.stringify({
+    type: 'view', x: 1, y: 2, zoom: 1, from: 'somebody-else', name: 'Scout', evil: 'payload'
+}));
+const cleanView = await next(b, m => m.type === 'view');
+check('a claimed id and extra fields are stripped',
+    cleanView.from === snapA.you &&
+    cleanView.evil === undefined &&
+    cleanView.name === undefined,
+    JSON.stringify(cleanView));
+
+drain(a);
+const viewRejects = [
+    ['view without a zoom', { type: 'view', x: 1, y: 1 }, 'bad-zoom'],
+    ['zero zoom', { type: 'view', x: 1, y: 1, zoom: 0 }, 'bad-zoom'],
+    ['absurd zoom', { type: 'view', x: 1, y: 1, zoom: 1e9 }, 'bad-zoom'],
+    ['NaN view coordinate', { type: 'view', x: 'abc', y: 1, zoom: 1 }, 'bad-coordinate']
+];
+
+for (const [label, frame, expected] of viewRejects) {
+    a.send(JSON.stringify(frame));
+    const res = await next(a, m => m.type === 'error');
+    check(label, res.code === expected, JSON.stringify(res));
+}
+
+drain(a);
+for (let i = 0; i < 120; i++) {
+    a.send(JSON.stringify({ type: 'view', x: i % 40, y: 1, zoom: 1 + (i % 3) }));
+}
+await new Promise(r => setTimeout(r, 250));
+check('a view flood never says rate-limited',
+    !a.inbox.some(m => m.type === 'error' && m.code === 'rate-limited'),
+    JSON.stringify(a.inbox.slice(0, 3)));
+
+a.send(JSON.stringify({ op: 'point.set', point: 'target', x: 3, y: 4 }));
+check('an op right after a view flood is still accepted',
+    (await next(a, m => m.type === 'ack' || m.type === 'error')).type === 'ack');
+
+drain(a);
+drain(b);
+const viewer = await open(room.code);
+const snapViewer = await next(viewer, m => m.type === 'snapshot');
+check('views never enter the document',
+    !JSON.stringify(snapViewer.doc).toLowerCase().includes('view') &&
+    !JSON.stringify(snapViewer.doc).includes('zoom'),
+    JSON.stringify(snapViewer.doc));
+viewer.close();
+await next(a, m => m.type === 'peers');
+
 drain(a);
 drain(b);
 

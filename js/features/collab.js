@@ -48,6 +48,12 @@ const COLLAB_CURSOR_INTERVAL = 80;
 const COLLAB_CURSOR_TIMEOUT = 5000;
 const COLLAB_CURSOR_SWEEP = 1000;
 
+const COLLAB_VIEW_INTERVAL = 120;
+
+const COLLAB_FOLLOW_TAU = 130;
+const COLLAB_FOLLOW_NOTICE = 2400;
+const COLLAB_FOLLOW_EPSILON = 0.01;
+
 const COLLAB_NAME_STORAGE_KEY = 'wardogs-collab-name';
 const COLLAB_NAME_MAX = 24;
 
@@ -80,6 +86,8 @@ const COLLAB = {
 
     roster: null,
     nameTimer: null,
+
+    features: null,
 
     mapId: null,
 
@@ -133,6 +141,23 @@ const COLLAB = {
     cursorSentAt: 0,
     cursorSweepTimer: null,
     cursorFrame: null,
+
+    views: new Map(),
+
+    viewTimer: null,
+    viewPending: null,
+    viewSent: null,
+    viewSentAt: 0,
+
+    follow: null,
+    followTarget: null,
+    followEased: null,
+    followApplied: null,
+    followFrame: null,
+    followLastFrame: 0,
+    followNoticeTimer: null,
+
+    motionQuery: null,
 
     name: null,
 
@@ -1327,6 +1352,7 @@ function collabConnect(code, includeMine = false) {
         }
 
         collabStopHeartbeat();
+        collabStopFollow(null);
 
         COLLAB.socket = null;
 
@@ -1360,6 +1386,7 @@ function collabHandleMessage(message) {
         case 'snapshot':
             COLLAB.clientId = message.you;
             COLLAB.peers = message.peers || 1;
+            collabSetFeatures(message.features);
             collabSetRoster(message.roster);
             COLLAB.reconnectAttempt = 0;
             COLLAB.everConnected = true;
@@ -1379,6 +1406,7 @@ function collabHandleMessage(message) {
             COLLAB.redoOps = [];
 
             collabClearCursors();
+            collabClearViews();
 
             collabSetStatus('online', 'collabStatusOnline');
             collabWriteHash();
@@ -1403,6 +1431,7 @@ function collabHandleMessage(message) {
             }
 
             collabSendName();
+            collabSendView();
             break;
 
         case 'op':
@@ -1413,11 +1442,16 @@ function collabHandleMessage(message) {
             COLLAB.peers = message.count;
             collabSetRoster(message.roster);
             collabPruneCursors();
+            collabPruneViews();
             collabRender();
             break;
 
         case 'cursor':
             collabReceiveCursor(message);
+            break;
+
+        case 'view':
+            collabReceiveView(message);
             break;
 
         case 'error':
@@ -1428,7 +1462,11 @@ function collabHandleMessage(message) {
                 break;
             }
 
-            if (message.code === 'bad-cursor') {
+            if (
+                message.code === 'bad-cursor' ||
+                message.code === 'bad-view' ||
+                message.code === 'bad-zoom'
+            ) {
                 break;
             }
 
@@ -1656,6 +1694,7 @@ function collabResetSession() {
     }
 
     collabClearCursors();
+    collabClearViews();
 
     if (COLLAB.nameTimer) {
         clearTimeout(COLLAB.nameTimer);
@@ -1667,6 +1706,7 @@ function collabResetSession() {
     COLLAB.clientId = null;
     COLLAB.peers = 0;
     COLLAB.roster = null;
+    COLLAB.features = null;
     COLLAB.mapId = null;
     COLLAB.ownOps = [];
     COLLAB.redoOps = [];
@@ -1791,6 +1831,10 @@ function collabSetRoster(roster) {
         return;
     }
 
+    const before = new Set(
+        (COLLAB.roster || []).map(entry => entry.id)
+    );
+
     COLLAB.roster = roster
         .filter(entry =>
             entry &&
@@ -1801,6 +1845,21 @@ function collabSetRoster(roster) {
             id: entry.id,
             name: collabCleanName(entry.name)
         }));
+
+    if (
+        before.size &&
+        COLLAB.roster.some(entry => !before.has(entry.id))
+    ) {
+        collabSendView();
+    }
+}
+
+function collabPeerName(id) {
+    const entry = collabRosterKnown()
+        ? COLLAB.roster.find(peer => peer.id === id)
+        : null;
+
+    return entry?.name || collabFallbackName(id);
 }
 
 function collabPeerCount() {
@@ -2053,6 +2112,516 @@ function collabClearCursors() {
 
     COLLAB.cursors.clear();
     collabRequestCursorRedraw();
+}
+
+function collabSetFeatures(features) {
+    COLLAB.features = Array.isArray(features)
+        ? features.filter(name => typeof name === 'string')
+        : null;
+}
+
+function collabViewSupported() {
+    return Boolean(
+        COLLAB.features &&
+        COLLAB.features.includes('view')
+    );
+}
+
+function collabViewCentre() {
+    if (typeof wrap === 'undefined' || !wrap) {
+        return null;
+    }
+
+    const world = toWorld(
+        wrap.clientWidth / 2,
+        wrap.clientHeight / 2
+    );
+
+    if (
+        !Number.isFinite(world.x) ||
+        !Number.isFinite(world.y) ||
+        !Number.isFinite(S.zoom)
+    ) {
+        return null;
+    }
+
+    return {
+        x: world.x,
+        y: world.y,
+        zoom: S.zoom
+    };
+}
+
+function collabSameView(a, b) {
+    return Boolean(a) &&
+        Boolean(b) &&
+        a.x === b.x &&
+        a.y === b.y &&
+        a.zoom === b.zoom;
+}
+
+function collabTrackView() {
+    if (!collabIsOnline() || !collabViewSupported()) {
+        return;
+    }
+
+    const centre = collabViewCentre();
+
+    if (!centre || collabSameView(centre, COLLAB.viewSent)) {
+        return;
+    }
+
+    collabQueueView(centre);
+}
+
+function collabSendView() {
+    if (!collabIsOnline() || !collabViewSupported()) {
+        return;
+    }
+
+    const centre = collabViewCentre();
+
+    if (centre) {
+        collabQueueView(centre);
+    }
+}
+
+function collabQueueView(centre) {
+    COLLAB.viewPending = centre;
+    COLLAB.viewSent = centre;
+
+    if (COLLAB.viewTimer) {
+        return;
+    }
+
+    const wait =
+        COLLAB_VIEW_INTERVAL -
+        (Date.now() - COLLAB.viewSentAt);
+
+    if (wait <= 0) {
+        collabFlushView();
+        return;
+    }
+
+    COLLAB.viewTimer = setTimeout(
+        collabFlushView,
+        wait
+    );
+}
+
+function collabFlushView() {
+    if (COLLAB.viewTimer) {
+        clearTimeout(COLLAB.viewTimer);
+        COLLAB.viewTimer = null;
+    }
+
+    const centre = COLLAB.viewPending;
+
+    COLLAB.viewPending = null;
+
+    if (
+        !centre ||
+        !collabIsOnline() ||
+        !collabViewSupported()
+    ) {
+        return;
+    }
+
+    COLLAB.viewSentAt = Date.now();
+
+    collabSend({
+        type: 'view',
+        x: centre.x,
+        y: centre.y,
+        zoom: centre.zoom
+    });
+}
+
+function collabReceiveView(message) {
+    const from = message.from;
+
+    if (
+        typeof from !== 'string' ||
+        !from ||
+        from === COLLAB.clientId
+    ) {
+        return;
+    }
+
+    if (
+        !Number.isFinite(message.x) ||
+        !Number.isFinite(message.y) ||
+        !Number.isFinite(message.zoom) ||
+        message.zoom <= 0
+    ) {
+        return;
+    }
+
+    COLLAB.views.set(from, {
+        x: message.x,
+        y: message.y,
+        zoom: message.zoom,
+        at: Date.now()
+    });
+
+    if (COLLAB.follow === from) {
+        collabAimFollow();
+    }
+}
+
+function collabPruneViews() {
+    if (!collabRosterKnown()) {
+        return;
+    }
+
+    const present = new Set(
+        COLLAB.roster.map(entry => entry.id)
+    );
+
+    for (const id of COLLAB.views.keys()) {
+        if (!present.has(id)) {
+            COLLAB.views.delete(id);
+        }
+    }
+
+    if (COLLAB.follow && !present.has(COLLAB.follow)) {
+        collabStopFollow('collabFollowLeft');
+    }
+}
+
+function collabClearViews() {
+    collabStopFollow(null);
+
+    if (COLLAB.viewTimer) {
+        clearTimeout(COLLAB.viewTimer);
+        COLLAB.viewTimer = null;
+    }
+
+    COLLAB.viewPending = null;
+    COLLAB.viewSent = null;
+    COLLAB.views.clear();
+}
+
+function collabCanFollow(id) {
+    return Boolean(
+        id &&
+        id !== COLLAB.clientId &&
+        collabIsOnline() &&
+        collabViewSupported()
+    );
+}
+
+function collabToggleFollow(id) {
+    if (COLLAB.follow === id) {
+        collabStopFollow('collabFollowReleased');
+        return;
+    }
+
+    collabStartFollow(id);
+}
+
+function collabStartFollow(id) {
+    if (!collabCanFollow(id)) {
+        return;
+    }
+
+    COLLAB.follow = id;
+    COLLAB.followTarget = null;
+    COLLAB.followEased = collabViewCentre();
+    COLLAB.followApplied = collabCameraState();
+
+    collabAimFollow();
+    collabStartFollowFrame();
+    collabRefreshFollowBanner();
+    collabRender();
+
+    if (typeof trackAnalytics === 'function') {
+        trackAnalytics('collab-follow-started');
+    }
+}
+
+function collabAimFollow() {
+    const view = COLLAB.views.get(COLLAB.follow);
+
+    if (!view) {
+        return;
+    }
+
+    const had = Boolean(COLLAB.followTarget);
+
+    COLLAB.followTarget = view;
+
+    if (!COLLAB.followEased) {
+        COLLAB.followEased = collabViewCentre();
+    }
+
+    collabStartFollowFrame();
+
+    if (!had) {
+        collabRefreshFollowBanner();
+    }
+}
+
+function collabStopFollow(noticeKey = null) {
+    const wasFollowing = Boolean(COLLAB.follow);
+
+    collabStopFollowFrame();
+
+    COLLAB.follow = null;
+    COLLAB.followTarget = null;
+    COLLAB.followEased = null;
+    COLLAB.followApplied = null;
+
+    if (!wasFollowing) {
+        collabHideFollowBanner();
+        return;
+    }
+
+    if (noticeKey) {
+        collabShowFollowNotice(noticeKey);
+    } else {
+        collabHideFollowBanner();
+    }
+
+    collabRender();
+}
+
+function collabStartFollowFrame() {
+    if (COLLAB.followFrame || !COLLAB.follow) {
+        return;
+    }
+
+    COLLAB.followLastFrame = performance.now();
+
+    COLLAB.followFrame = requestAnimationFrame(
+        collabStepFollow
+    );
+}
+
+function collabStopFollowFrame() {
+    if (COLLAB.followFrame) {
+        cancelAnimationFrame(COLLAB.followFrame);
+        COLLAB.followFrame = null;
+    }
+}
+
+function collabCameraState() {
+    return {
+        panX: S.panX,
+        panY: S.panY,
+        zoom: S.zoom
+    };
+}
+
+function collabCameraMovedByHand() {
+    const applied = COLLAB.followApplied;
+
+    return Boolean(applied) && (
+        applied.panX !== S.panX ||
+        applied.panY !== S.panY ||
+        applied.zoom !== S.zoom
+    );
+}
+
+function collabStepFollow(timestamp) {
+    COLLAB.followFrame = null;
+
+    if (!COLLAB.follow) {
+        return;
+    }
+
+    if (collabCameraMovedByHand()) {
+        collabStopFollow('collabFollowReleased');
+        return;
+    }
+
+    const delta = Math.min(
+        100,
+        timestamp - COLLAB.followLastFrame
+    );
+
+    COLLAB.followLastFrame = timestamp;
+
+    if (COLLAB.followTarget) {
+        COLLAB.followEased = collabEaseView(
+            COLLAB.followEased,
+            COLLAB.followTarget,
+            delta
+        );
+
+        if (collabApplyFollowCamera(COLLAB.followEased)) {
+            draw();
+        }
+    }
+
+    COLLAB.followFrame = requestAnimationFrame(
+        collabStepFollow
+    );
+}
+
+function collabReducedMotion() {
+    if (!COLLAB.motionQuery && window.matchMedia) {
+        COLLAB.motionQuery = window.matchMedia(
+            '(prefers-reduced-motion: reduce)'
+        );
+    }
+
+    return Boolean(COLLAB.motionQuery?.matches);
+}
+
+function collabEaseView(from, to, delta) {
+    if (!from || collabReducedMotion()) {
+        return {
+            x: to.x,
+            y: to.y,
+            zoom: to.zoom
+        };
+    }
+
+    const alpha =
+        1 -
+        Math.exp(-delta / COLLAB_FOLLOW_TAU);
+
+    return {
+        x: from.x + (to.x - from.x) * alpha,
+        y: from.y + (to.y - from.y) * alpha,
+        zoom: Math.exp(
+            Math.log(from.zoom) +
+            (
+                Math.log(to.zoom) -
+                Math.log(from.zoom)
+            ) * alpha
+        )
+    };
+}
+
+function collabApplyFollowCamera(target) {
+    if (typeof wrap === 'undefined' || !wrap) {
+        return false;
+    }
+
+    const zoom = Math.max(
+        MIN_ZOOM,
+        Math.min(
+            getMaxCameraZoom(),
+            target.zoom
+        )
+    );
+
+    const zoomed = zoom !== S.zoom;
+
+    S.zoom = zoom;
+
+    const point = toScreen(target.x, target.y);
+
+    const dx = wrap.clientWidth / 2 - point.x;
+    const dy = wrap.clientHeight / 2 - point.y;
+
+    const moved =
+        Math.abs(dx) > COLLAB_FOLLOW_EPSILON ||
+        Math.abs(dy) > COLLAB_FOLLOW_EPSILON;
+
+    if (moved) {
+        S.panX += dx;
+        S.panY += dy;
+    }
+
+    COLLAB.followApplied = collabCameraState();
+
+    return zoomed || moved;
+}
+
+function collabFollowBanner(create) {
+    const existing = $('collabFollowBanner');
+
+    if (existing || !create) {
+        return existing;
+    }
+
+    const host = document.querySelector('.map');
+
+    if (!host) {
+        return null;
+    }
+
+    const banner = document.createElement('div');
+    banner.id = 'collabFollowBanner';
+    banner.className = 'collab-follow-banner';
+    banner.setAttribute('role', 'status');
+
+    const label = document.createElement('span');
+    label.className = 'collab-follow-banner-label';
+
+    const stop = document.createElement('button');
+    stop.type = 'button';
+    stop.className = 'collab-follow-banner-stop';
+    stop.textContent = tr('collabFollowStop');
+
+    stop.addEventListener('click', event => {
+        event.stopPropagation();
+        collabStopFollow('collabFollowReleased');
+    });
+
+    banner.append(label, stop);
+    host.append(banner);
+
+    return banner;
+}
+
+function collabRefreshFollowBanner() {
+    const banner = collabFollowBanner(true);
+
+    if (!banner) {
+        return;
+    }
+
+    if (COLLAB.followNoticeTimer) {
+        clearTimeout(COLLAB.followNoticeTimer);
+        COLLAB.followNoticeTimer = null;
+    }
+
+    banner.classList.remove('released');
+    banner.querySelector('.collab-follow-banner-stop').hidden = false;
+
+    banner.querySelector('.collab-follow-banner-label').textContent =
+        tr(
+            COLLAB.followTarget
+                ? 'collabFollowBanner'
+                : 'collabFollowWaiting'
+        ).replace(
+            '{name}',
+            collabPeerName(COLLAB.follow)
+        );
+}
+
+function collabShowFollowNotice(key) {
+    const banner = collabFollowBanner(true);
+
+    if (!banner) {
+        return;
+    }
+
+    banner.classList.add('released');
+    banner.querySelector('.collab-follow-banner-stop').hidden = true;
+    banner.querySelector('.collab-follow-banner-label').textContent = tr(key);
+
+    if (COLLAB.followNoticeTimer) {
+        clearTimeout(COLLAB.followNoticeTimer);
+    }
+
+    COLLAB.followNoticeTimer = setTimeout(() => {
+        COLLAB.followNoticeTimer = null;
+        collabHideFollowBanner();
+    }, COLLAB_FOLLOW_NOTICE);
+}
+
+function collabHideFollowBanner() {
+    if (COLLAB.followNoticeTimer) {
+        clearTimeout(COLLAB.followNoticeTimer);
+        COLLAB.followNoticeTimer = null;
+    }
+
+    $('collabFollowBanner')?.remove();
 }
 
 /* =========================
@@ -2350,6 +2919,44 @@ function collabBuildRosterRow(entry) {
         you.className = 'collab-peer-you';
         you.textContent = tr('collabPeerYou');
         row.append(you);
+    }
+
+    if (!isYou && collabViewSupported()) {
+        const following = COLLAB.follow === entry.id;
+
+        const label = tr(
+            following
+                ? 'collabFollowing'
+                : 'collabFollow'
+        );
+
+        row.classList.add('followable');
+        row.classList.toggle('following', following);
+        row.tabIndex = 0;
+        row.setAttribute('role', 'button');
+        row.setAttribute('aria-pressed', String(following));
+        row.title = label;
+
+        row.addEventListener('click', event => {
+            event.stopPropagation();
+            collabToggleFollow(entry.id);
+        });
+
+        row.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            collabToggleFollow(entry.id);
+        });
+
+        const follow = document.createElement('span');
+        follow.className = 'collab-peer-follow';
+        follow.textContent = label;
+
+        row.append(follow);
     }
 
     const healthLabel = tr(

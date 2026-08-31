@@ -81,6 +81,7 @@ do not subject to CORS — joining is gated by the room code itself.
 |---|---|
 | Peers per room | 16 |
 | Ops per socket | 20/sec sustained, 40 burst |
+| View frames per socket | 10/sec sustained, 20 burst |
 | Message size | 64 KB |
 | Drawings / markers / targets | 2000 / 5000 / 500 |
 | Room lifetime | 14d after last activity |
@@ -102,6 +103,10 @@ limiting.
 
 `npm run test:guns` covers the gun collection, including that a client
 predating it still works against a room that has one.
+
+`npm run test:smoke` also covers the `view` frame: that it is advertised in the
+snapshot, relayed with a server-stamped id, refused for a bad zoom, unable to
+exhaust the op budget, and never stored.
 
 Two browser tests cover the client half. They need a built site
 (`npm run build` in the repo root) plus Chromium:
@@ -131,6 +136,19 @@ and it survives hibernation. Colour never travels: each client derives it from
 the peer id, so a roster row and that peer's cursor always agree. Both
 directions degrade: a client that ignores `roster` reads `count`, and a client
 that sends no `name` is listed with a null one.
+
+**Ephemeral frames are announced, not discovered.** The snapshot carries
+`features: ["view"]`. A client that wants the viewport-sharing frame checks
+that list rather than sending one and reading the answer, because a room that
+predates the frame rejects it as a generic `bad-op` that names no frame — a
+client would have to guess which of its messages the rejection was about, and
+the honest guess is "the last op I sent", which is wrong. With the list, an old
+client ignores a key it does not know and a new client against an old room
+simply never offers the feature. `{"type":"view","x":…,"y":…,"zoom":…}` is
+relayed exactly like a cursor: validated, stamped with the sender's server-side
+id, broadcast to everyone else and forgotten. It spends its own token bucket
+rather than the cursor one, so panning while moving the mouse cannot starve
+either.
 
 **Ops, not documents.** Peers exchange small ops (`drawing.add`, `marker.remove`,
 `point.set`, …) rather than whole-document broadcasts. The DO holds the

@@ -785,6 +785,84 @@ input[type="checkbox"] {
     text-transform: uppercase;
 }
 
+.collab-peer.followable {
+    cursor: pointer;
+}
+
+.collab-peer.followable:hover,
+.collab-peer.followable:focus-visible {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.collab-peer.following {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.collab-peer-follow {
+    flex: 0 0 auto;
+
+    color: var(--muted);
+
+    font-size: 9px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.collab-peer.following .collab-peer-follow {
+    color: var(--accent);
+}
+
+.collab-follow-banner {
+    position: absolute;
+
+    top: 10px;
+    left: 50%;
+
+    z-index: 6;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 5px 8px;
+
+    transform: translateX(-50%);
+
+    border: 1px solid var(--accent);
+    border-radius: 7px;
+
+    background: rgba(16, 19, 22, .92);
+
+    color: var(--text);
+
+    font-size: 11px;
+    line-height: 1.3;
+
+    pointer-events: auto;
+}
+
+.collab-follow-banner.released {
+    border-color: var(--border-light);
+    color: var(--muted);
+}
+
+.collab-follow-banner-stop {
+    padding: 2px 8px;
+
+    border: 1px solid var(--border-light);
+    border-radius: 5px;
+
+    background: var(--input-bg);
+
+    color: var(--text);
+
+    font-size: 10px;
+
+    cursor: pointer;
+}
+
 .collab-peer-health {
     flex: 0 0 auto;
     width: 6px;
