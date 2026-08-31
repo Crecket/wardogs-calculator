@@ -139,6 +139,116 @@ function rangeRingSample(field, gameX, gameY) {
     );
 }
 
+function modelArcLaunchTan(fit, rangeMeters, deltaZMeters) {
+    const muzzleVelocity = Number(fit?.muzzleVelocity);
+
+    if (
+        !Number.isFinite(muzzleVelocity) ||
+        muzzleVelocity <= 0 ||
+        !(rangeMeters > 0)
+    ) {
+        return null;
+    }
+
+    const vSquared = muzzleVelocity * muzzleVelocity;
+
+    const discriminant =
+        vSquared * vSquared -
+        RANGE_RING_GRAVITY *
+        (
+            RANGE_RING_GRAVITY * rangeMeters * rangeMeters +
+            2 * deltaZMeters * vSquared
+        );
+
+    if (discriminant < 0) {
+        return null;
+    }
+
+    const root = Math.sqrt(discriminant);
+
+    const tan =
+        fit.branch === 'low'
+            ? (vSquared - root) / (RANGE_RING_GRAVITY * rangeMeters)
+            : (vSquared + root) / (RANGE_RING_GRAVITY * rangeMeters);
+
+    return Number.isFinite(tan) && tan > 0 ? tan : null;
+}
+
+function modelArcMil(fit, tan) {
+    const offset = Number(fit?.angleOffsetDeg);
+    const perMil = Number(fit?.anglePerMilDeg);
+
+    if (
+        !Number.isFinite(offset) ||
+        !Number.isFinite(perMil) ||
+        perMil === 0
+    ) {
+        return null;
+    }
+
+    const degrees = Math.atan(tan) * 180 / Math.PI;
+    const mil = (degrees - offset) / perMil;
+
+    return Number.isFinite(mil) ? mil : null;
+}
+
+function modelArcElevationFits(weapon, mil) {
+    const minMil = Number(weapon?.minElevationMil);
+    const maxMil = Number(weapon?.maxElevationMil);
+
+    if (Number.isFinite(minMil) && mil < minMil) {
+        return false;
+    }
+
+    return !(Number.isFinite(maxMil) && mil > maxMil);
+}
+
+function modelledElevationSolution(
+    weapon,
+    arc,
+    distanceMeters,
+    deltaZMeters
+) {
+    const fit = projectileModelArc(weapon?.id, arc);
+
+    if (!fit) {
+        return null;
+    }
+
+    const tan = modelArcLaunchTan(fit, distanceMeters, deltaZMeters);
+
+    if (tan === null) {
+        return null;
+    }
+
+    const mil = modelArcMil(fit, tan);
+
+    if (mil === null || !modelArcElevationFits(weapon, mil)) {
+        return null;
+    }
+
+    return {
+        mil,
+        minMil: mil,
+        maxMil: mil,
+        tan,
+        modelled: true
+    };
+}
+
+function terrainDeltaZMeters(mapId, origin, target) {
+    const field = cachedHeightfield(mapId);
+
+    if (!field || !origin || !target) {
+        return null;
+    }
+
+    const zGun = rangeRingSample(field, origin.x, origin.y);
+    const zTarget = rangeRingSample(field, target.x, target.y);
+
+    return zGun === null || zTarget === null ? null : zTarget - zGun;
+}
+
 function rangeRingMemoKey(gun, mapId) {
     const cell = RANGE_RING_MEMO_METRES / METRES_PER_GAME_UNIT_RING;
 

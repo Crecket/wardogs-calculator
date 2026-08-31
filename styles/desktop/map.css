@@ -174,7 +174,7 @@ canvas.preset-marker-hover {
 
     max-width: calc(100% - 20px);
 
-    padding: 6px 10px 8px;
+    padding: 5px 5px 6px;
 
     border: 1px solid var(--border-light);
 
@@ -199,7 +199,9 @@ canvas.preset-marker-hover {
 }
 
 .cross-section-header {
-    height: 14px;
+    height: 13px;
+
+    padding: 0 3px;
 
     display: flex;
     align-items: center;
@@ -254,15 +256,17 @@ canvas.preset-marker-hover {
 
 .cross-section-canvas {
     width: 100%;
-    height: 224px;
+    height: 228px;
 
-    margin-top: 4px;
+    margin-top: 2px;
 
     display: block;
 }
 
 .cross-section-caption {
-    margin-top: 6px;
+    margin-top: 4px;
+
+    padding: 0 3px;
 
     color: var(--muted);
 
