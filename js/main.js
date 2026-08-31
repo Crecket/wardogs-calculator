@@ -278,6 +278,13 @@ async function init() {
             initCollab();
         }
 
+        if (
+            typeof initObs ===
+            'function'
+        ) {
+            initObs();
+        }
+
     } catch (error) {
 
         console.error(

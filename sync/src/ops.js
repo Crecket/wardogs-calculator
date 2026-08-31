@@ -20,6 +20,7 @@ export const LIMITS = {
     pointsPerDrawing: 10000,
 
     peers: 16,
+    viewers: 8,
 
     messageBytes: 64 * 1024,
 

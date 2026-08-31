@@ -21,6 +21,7 @@ import {
 import {
     fileURLToPath
 } from 'node:url';
+import { buildObsPage } from './lib/obs-page.mjs';
 import {
     collabUrl,
     loadEnv,
@@ -706,6 +707,23 @@ async function createRequestHandler() {
                         'pages',
                         'index.html'
                     )
+                );
+
+                return;
+            }
+
+            if (
+                pathname === '/obs' ||
+                pathname === '/obs/' ||
+                pathname === '/obs/index.html'
+            ) {
+                sendText(
+                    response,
+                    200,
+                    prepareDevHTML(
+                        await buildObsPage()
+                    ),
+                    'text/html; charset=utf-8'
                 );
 
                 return;

@@ -128,6 +128,21 @@ never offers a follow, so the roster reads exactly as it did before. A server
 that supports it only ever relays what a peer sent, so a client that predates
 the frame sends nothing, receives nothing it did not ask for, and ignores the
 `view` messages it does not recognise.
+**The OBS overlay joins as a read-only viewer.** A browser source is a
+separate process with its own profile, so the only way an overlay can see the
+session is over the same WebSocket. `/obs/` connects with `?viewer=1` on the
+room URL, and a viewer is held apart from the peers: it is left out of the
+roster and the peer count, and it spends one of eight viewer slots rather than
+one of the sixteen editing slots. A streamer's own overlay is not a phantom
+"peer 2" in everyone's list. The overlay sends nothing — the client refuses
+every op, name and cursor frame before it reaches the socket — and the room
+refuses one anyway with `read-only` if a viewer ever sends one. See
+[OBS overlay](features.md#obs-overlay) for the route and its options.
+
+**The viewer flag is optional in both directions.** It travels as a query
+parameter on the join, so a client talking to a server that predates it is
+simply an ordinary peer that happens never to send anything, and a server that
+honours it sees no difference in any client that does not pass it.
 
 **Dropped connections retry** with backoff, then reload a fresh snapshot.
 Anything you did while disconnected is discarded — the snapshot is authoritative.
@@ -143,6 +158,7 @@ Enforced by the server, not the client:
 | Limit | Value |
 |---|---|
 | Peers per room | 16 |
+| Read-only viewers per room | 8 |
 | Ops per second per peer | 20 sustained, 40 burst |
 | Message size | 64 KB |
 | Drawings / markers / targets | 2000 / 5000 / 500 |

@@ -10,7 +10,8 @@
         "test:browser": "node test/browser.mjs",
         "test:disabled": "node test/disabled.mjs",
         "test:guns": "node test/guns.mjs",
-        "test:cursors": "node test/cursors.mjs"
+        "test:cursors": "node test/cursors.mjs",
+        "test:obs": "node test/obs.mjs"
     },
     "devDependencies": {
         "wrangler": "^4.0.0"

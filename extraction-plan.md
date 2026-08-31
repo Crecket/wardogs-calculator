@@ -152,6 +152,21 @@ Theme is mirrored with a `MutationObserver` on `documentElement`'s `data-theme` 
 The panel leaves a placeholder card in its slot carrying a **Return to page** button, and it is restored on the pop-out's `pagehide`, on that button, on the control itself, and on the main page's `pagehide` — which also closes the window, so no path leaves the panel orphaned in a dead document or the sidebar with a hole in it. Size is remembered under its own `wardogs-solution-popout-size` key, untouched by collab's persistence suppression. The control is not loaded on mobile and refuses to initialize on a `mobile-app` body.
 
 `test/panel-popout.mjs` drives the whole cycle in headless Chromium, which does support Document PiP: open, node in the second document, `$()` still finding it, live updates written into the pop-out, theme following both ways, and the panel landing back at its original index in the sidebar by all three routes home.
+## OBS overlay route on `feat/ux-obs-mode`
+
+Ranked idea 14, cut from `feat/collab-rooms`. A `/obs/` route meant to be loaded as an OBS browser source: the map auto-framed on the active gun and the active target, a large solution readout, and no application chrome.
+
+**The route is generated from the desktop shell, not written as a page.** A browser source loads one URL and must boot the whole application — the same `init()`, renderer and collab client — so `scripts/lib/obs-page.mjs` takes `src/pages/index.html`, replaces the head wholesale (no SEO metadata, no analytics tag, no mobile redirect), marks the root `data-obs="1"`, injects `src/pages/obs/overlay.html` and one script, and the CSS hides everything but the canvas and the readout by exclusion rather than by naming panels. Nothing in the shell has to be kept in sync with a second copy, and `build-pages.mjs` and `dev-server.mjs` share the transform instead of duplicating it the way they duplicate `renderMobileLocale`.
+
+**The overlay joins a room as a read-only viewer.** An OBS browser source is a separate process with its own profile: no shared local storage, no `BroadcastChannel`, no `postMessage`. The network is the only path across, so the overlay opens the same socket with `?viewer=1` on the room URL. Server-side that is four small pieces in `room.js`: viewers are skipped by `roster()`, counted against their own `LIMITS.viewers` of 8 rather than the 16 editing slots, and answered `read-only` if one ever sends an op. Compatible in both directions, like the roster change — an old server ignores the query parameter and the overlay is merely a peer that never speaks, and a new server sees nothing different from a client that does not pass it.
+
+**Read-only is enforced on the client, once.** `collabIsReadOnly()` is `isObsMode()`, and `collabSend()` refuses on it, which is every op, every name frame and every cursor frame in one place. The same predicate widens `collabSuppressesLocalPersistence()`, so an overlay pointed at no room cannot write the streamer's stored map back over itself, and `collabRender()` returns early on it so the room code — the only credential a room has — is never built into this route's DOM in any state. `sync/test/obs.mjs` asserts that against the serialized DOM, before and after a room update, and `disabled.mjs` asserts it again with no service configured.
+
+**Two layers, so the feature keeps collab's self-disabling property.** With no `COLLAB_URL` the route still works: it renders this browser profile's own stored map, re-reading it on a `storage` event so a second window on the streamer's own machine follows a moment behind. The socket is strictly additive on top of that.
+
+The camera interpolates a world centre and a zoom rather than the raw pan, so a move that changes both stays framed on the pair throughout; `prefers-reduced-motion` cuts instead. Framing is driven from the wrapped `result()` — the existing rAF-coalesced `draw()` path is untouched, and nothing new runs per frame on the normal route.
+
+Two things deliberately left out: the active gun is inferred from which gun moved last, because gun selection is local view state that the room does not carry; and the `?scale=` multiplier is the only sizing control, with no per-element layout options, on the grounds that OBS can inject custom CSS against documented class names.
 
 ---
 
@@ -184,11 +199,11 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 21 | 1.x | Live peer cursors, named and coloured | `branch` | `feat/collab-rooms` (fork only, extends item 16) |
 | 22 | 3.7 | Terrain-solved minimum range ring, dead ground shaded where the low arc is masked | `branch` | `feat/collab-rooms` (fork only, extends item 5) |
 | 23 | 1.x | Peer roster in the session panel, from a server-side roster | `branch` | `feat/ux-peer-roster` (fork only, extends items 16 and 21) |
-<<<<<<< HEAD
 | 24 | 1.x | Follow a peer's camera from the roster, on an ephemeral `view` frame | `branch` | `feat/ux-follow-me` (fork only, extends items 16 and 23) |
-=======
-| 24 | 3.7 + 7.x | Per-target reachability badges on the saved-target rows | `branch` | `feat/ux-reach-badges` (fork only, extends items 5 and 15) |
->>>>>>> feat/ux-reach-badges
+| 25 | 3.7 + 7.x | Per-target reachability badges on the saved-target rows | `branch` | `feat/ux-reach-badges` (fork only, extends items 5 and 15) |
+| 26 | — | OBS overlay route, auto-framed, joins a room as a read-only viewer | `branch` | `feat/ux-obs-mode` (fork only, extends items 16 and 21) |
+| 27 | — | Results panel popped out into an always-on-top Document PiP window | `branch` | `feat/ux-panel-popout` (fork only) |
+| 28 | 3.7 | Gun-to-target trajectory cross-section with an exception-only caption | `branch` | `feat/ux-cross-section` (fork only, extends item 22) |
 
 The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
 

@@ -69,12 +69,6 @@
     gap: 6px;
 }
 
-.saved-targets-visibility {
-    font-size: 12px;
-
-    line-height: 1;
-}
-
 .saved-targets-count {
     min-width: 22px;
     height: 22px;
@@ -379,6 +373,7 @@
 }
 
 .saved-target-item-actions button,
+.saved-targets-header-actions button,
 .saved-target-actions-inline button {
     width: 28px;
     min-width: 28px;
@@ -411,6 +406,7 @@
     white-space: nowrap;
 }
 
+.saved-targets-header-actions button:hover,
 .saved-target-item-actions button:hover,
 .saved-target-actions-inline button:hover {
     border-color: var(--accent-border);

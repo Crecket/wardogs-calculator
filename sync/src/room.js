@@ -504,7 +504,11 @@ export class Room extends DurableObject {
             return new Response('No such room', { status: 404 });
         }
 
-        if (this.ctx.getWebSockets().length >= LIMITS.peers) {
+        const viewer = new URL(request.url)
+            .searchParams
+            .get('viewer') === '1';
+
+        if (this.atCapacity(viewer)) {
             return new Response('Room is full', { status: 409 });
         }
 
@@ -515,7 +519,7 @@ export class Room extends DurableObject {
         const clientId = crypto.randomUUID();
 
         this.ctx.acceptWebSocket(server);
-        server.serializeAttachment({ clientId, name: null });
+        server.serializeAttachment({ clientId, name: null, viewer });
 
         await this.touch();
 
@@ -553,11 +557,32 @@ export class Room extends DurableObject {
         }
     }
 
+    isViewer(socket) {
+        return socket.deserializeAttachment()?.viewer === true;
+    }
+
+    atCapacity(viewer) {
+        let peers = 0;
+        let viewers = 0;
+
+        for (const socket of this.ctx.getWebSockets()) {
+            if (this.isViewer(socket)) {
+                viewers += 1;
+            } else {
+                peers += 1;
+            }
+        }
+
+        return viewer
+            ? viewers >= LIMITS.viewers
+            : peers >= LIMITS.peers;
+    }
+
     roster(omit = null) {
         const entries = [];
 
         for (const socket of this.ctx.getWebSockets()) {
-            if (socket === omit) {
+            if (socket === omit || this.isViewer(socket)) {
                 continue;
             }
 
@@ -721,6 +746,11 @@ export class Room extends DurableObject {
          */
         if (raw?.type === 'ping') {
             this.send(socket, { type: 'pong' });
+            return;
+        }
+
+        if (raw?.type !== 'sync' && this.isViewer(socket)) {
+            this.send(socket, { type: 'error', code: 'read-only' });
             return;
         }
 
