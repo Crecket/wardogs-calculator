@@ -29,11 +29,7 @@ const shots = () => page.evaluate(() => {
         Math.hypot(S.target.x - S.origin.x, S.target.y - S.origin.y)
     );
 
-    const model = crossSectionModel(
-        weapon,
-        distance,
-        getWeaponElevationSolutions(weapon, distance)
-    );
+    const model = crossSectionModel(weapon, distance);
 
     return model.shots.map(shot => `${shot.arc}:${shot.kind}`);
 });
@@ -162,6 +158,27 @@ check(
     short
 );
 
+check(
+    'the low arc is drawn even when it cannot reach',
+    (await shots()).some(entry => entry.startsWith('low:')),
+    (await shots()).join(',')
+);
+
+check(
+    'arcs that collapse onto one trajectory share a single clause',
+    /^Low arc \/ High arc: falls short at \d+ m, \d+ m short$/.test(short),
+    short
+);
+
+const surfaces = () => page.evaluate(() => ({
+    mil: document.getElementById('mil').textContent,
+    milDetail: document.getElementById('milAlt').textContent,
+    status: document.getElementById('rangeStatus').textContent,
+    caption: document.getElementById('crossSectionCaption').hidden
+        ? ''
+        : document.getElementById('crossSectionCaption').textContent
+}));
+
 const beyondTable = await page.evaluate(() => {
     const gun = { x: 51.67, y: 113.74 };
     const ring = terrainRangeRing({ position: gun, weapon: 'spg' }, 'bakurani');
@@ -205,17 +222,42 @@ check(
     JSON.stringify(beyondTable)
 );
 
+const extended = await surfaces();
+
 check(
-    'the firing table has no MIL there',
-    beyondTable.mil === '—',
-    beyondTable.mil
+    'a target past the table gets a modelled MIL, not a dash',
+    /^≈ \d+ \/ ≈ \d+$/.test(extended.mil),
+    extended.mil
 );
 
 check(
-    'the panel still draws the arcs and says the table has no MIL',
-    (await shots()).length === 2 &&
-        beyondTable.caption === 'no MIL in the firing table at this range',
-    `${(await shots()).join(',')} | ${beyondTable.caption}`
+    'the modelled MIL is marked as modelled',
+    /modelled, beyond the firing table/.test(extended.milDetail),
+    extended.milDetail
+);
+
+check(
+    'the range status agrees with the MIL card',
+    extended.status === 'In range (modelled)',
+    extended.status
+);
+
+check(
+    'the cross-section stays silent when the shot works',
+    extended.caption === '' && (await shots()).length === 2,
+    `${extended.caption} | ${(await shots()).join(',')}`
+);
+
+await aim('spg', valley, 0, 4200);
+
+const unreachable = await surfaces();
+
+check(
+    'an unreachable target reports no solution on every surface',
+    unreachable.mil === '—' &&
+        unreachable.status === 'OUT OF RANGE' &&
+        /falls short/.test(unreachable.caption),
+    JSON.stringify(unreachable)
 );
 
 const painted = await page.evaluate(() => {

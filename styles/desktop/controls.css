@@ -283,8 +283,10 @@ button:disabled {
  * inside the MIL card: at the sub-line's 8 px the seconds could not be read,
  * and the arc labels are long enough in some locales to need real width.
  *
- * The badges wrap, so a locale whose arc names run to "Trayectoria baja"
- * stacks them instead of truncating either one.
+ * The row is a fixed grid — two equal columns for the two-arc weapons, one
+ * for the mortar — so a wider number never reflows it from a 2-up to a 1-up
+ * while the pointer moves. The arc names are the short "Low" / "High" and
+ * the heading above carries the rest.
  */
 .solution-flight {
     margin-top: 8px;
@@ -303,13 +305,16 @@ button:disabled {
 }
 
 .solution-flight-badges {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 5px;
 }
 
+.solution-flight-badges[data-arcs="1"] {
+    grid-template-columns: 1fr;
+}
+
 .flight-badge {
-    flex: 1 1 auto;
     min-width: 0;
 
     display: flex;
