@@ -24,6 +24,8 @@ body.obs-mode {
 
 body.obs-mode {
     --obs-scale: 1;
+    --obs-base-scale: 1;
+    --obs-text-scale: 1;
     --obs-ink: #ffffff;
     --obs-accent: #f0be6b;
     --obs-panel: rgba(8, 10, 12, .74);
@@ -112,6 +114,12 @@ body.obs-mode canvas {
 }
 
 .obs-readout {
+    --obs-scale:
+        calc(
+            var(--obs-base-scale) *
+            var(--obs-text-scale)
+        );
+
     position: absolute;
     display: flex;
     flex-direction: column;

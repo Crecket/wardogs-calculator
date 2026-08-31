@@ -285,7 +285,7 @@ console.log('\n== query API ==');
 const configured = await newPage(context);
 await seedPoints(configured);
 await configured.goto(
-    `http://localhost:${SITE_PORT}/obs/?bg=opaque&panel=compact&corner=tr&scale=1.5&maxzoom=3&cursors=off&frame=map`
+    `http://localhost:${SITE_PORT}/obs/?bg=opaque&panel=compact&corner=tr&scale=1.5&maxzoom=3&cursors=off&frame=map&textsize=5&padding=40`
 );
 await overlayReady(configured);
 
@@ -295,6 +295,9 @@ const options = await configured.evaluate(() => ({
     panel: document.getElementById('obsOverlay').dataset.panel,
     corner: document.getElementById('obsOverlay').dataset.corner,
     scale: getComputedStyle(document.body).getPropertyValue('--obs-scale').trim(),
+    textScale: getComputedStyle(document.body).getPropertyValue('--obs-text-scale').trim(),
+    padding: OBS.options.padding,
+    milSize: getComputedStyle(document.getElementById('obsMil')).fontSize,
     mapBg: cssVar('--map-bg', 'MISSING'),
     flightVisible: !document.getElementById('obsFlight').hidden,
     zoom: S.zoom
@@ -305,6 +308,12 @@ check('bg=opaque keeps the map ground', options.bg === 'opaque' &&
 check('panel=compact reaches the DOM', options.panel === 'compact');
 check('corner=tr reaches the DOM', options.corner === 'tr');
 check('scale reaches the CSS variable', options.scale === '1.5', options.scale);
+check('textsize reaches the CSS variable as a fraction of ten',
+    options.textScale === '0.5', options.textScale);
+check('textsize halves the readout type',
+    Math.abs(parseFloat(options.milSize) - 62 * 1.5 * 0.5) < 1.5, options.milSize);
+check('padding reaches the framing options',
+    options.padding === 40, String(options.padding));
 check('cursors=off is parsed', options.options.cursors === 'off');
 check('frame=map fits the whole map', Math.abs(options.zoom - 1) < 0.001,
     String(options.zoom));

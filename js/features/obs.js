@@ -11,7 +11,8 @@ const OBS_DEFAULTS = {
     frame: 'pair',
     cursors: 'on',
     scale: 1,
-    pad: 160,
+    textSize: 10,
+    padding: 50,
     maxZoom: 12
 };
 
@@ -80,7 +81,14 @@ function obsReadOptions() {
         frame: obsChoice(params, 'frame', ['pair', 'map'], OBS_DEFAULTS.frame),
         cursors: obsChoice(params, 'cursors', ['on', 'off'], OBS_DEFAULTS.cursors),
         scale: obsNumber(params, 'scale', 0.5, 3, OBS_DEFAULTS.scale),
-        pad: obsNumber(params, 'pad', 0, 600, OBS_DEFAULTS.pad),
+        textSize: obsNumber(params, 'textsize', 1, 40, OBS_DEFAULTS.textSize),
+        padding: obsNumber(
+            params,
+            'padding',
+            0,
+            600,
+            obsNumber(params, 'pad', 0, 600, OBS_DEFAULTS.padding)
+        ),
         maxZoom: obsNumber(params, 'maxzoom', 1, 24, OBS_DEFAULTS.maxZoom),
         room: obsRoomCode(params)
     };
@@ -91,6 +99,16 @@ function obsApplyOptions() {
 
     document.documentElement.dataset.obsBg = OBS.options.bg;
     document.body.style.setProperty('--obs-scale', String(OBS.options.scale));
+
+    document.body.style.setProperty(
+        '--obs-base-scale',
+        String(OBS.options.scale)
+    );
+
+    document.body.style.setProperty(
+        '--obs-text-scale',
+        String(OBS.options.textSize / OBS_DEFAULTS.textSize)
+    );
 
     if (typeof invalidateCssVarCache === 'function') {
         invalidateCssVarCache();
@@ -279,6 +297,25 @@ function obsMapView() {
     };
 }
 
+function obsReadoutExtent() {
+
+    if (OBS.options.panel === 'none') {
+        return 0;
+    }
+
+    const readout = $q('.obs-readout');
+
+    if (!readout) {
+        return 0;
+    }
+
+    const height = readout.getBoundingClientRect().height;
+
+    return height
+        ? height + OBS.options.padding
+        : 0;
+}
+
 function obsDesiredView() {
     if (OBS.options.frame === 'map') {
         return obsMapView();
@@ -289,9 +326,19 @@ function obsDesiredView() {
 
     const base = v.scale / S.zoom;
 
+    const reserved = obsReadoutExtent();
+
     const available = {
-        width: Math.max(1, wrap.clientWidth - OBS.options.pad * 2),
-        height: Math.max(1, wrap.clientHeight - OBS.options.pad * 2)
+        width: Math.max(
+            1,
+            wrap.clientWidth - OBS.options.padding * 2
+        ),
+        height: Math.max(
+            1,
+            wrap.clientHeight -
+                OBS.options.padding * 2 -
+                reserved * 2
+        )
     };
 
     const spanX = Math.max(
