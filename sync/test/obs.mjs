@@ -309,9 +309,9 @@ check('panel=compact reaches the DOM', options.panel === 'compact');
 check('corner=tr reaches the DOM', options.corner === 'tr');
 check('scale reaches the CSS variable', options.scale === '1.5', options.scale);
 check('textsize reaches the CSS variable as a fraction of ten',
-    options.textScale === '0.5', options.textScale);
+    Math.abs(parseFloat(options.textScale) - 0.62 * 0.5) < 0.001, options.textScale);
 check('textsize halves the readout type',
-    Math.abs(parseFloat(options.milSize) - 62 * 1.5 * 0.5) < 1.5, options.milSize);
+    Math.abs(parseFloat(options.milSize) - 62 * 1.5 * 0.62 * 0.5) < 1.5, options.milSize);
 check('padding reaches the framing options',
     options.padding === 40, String(options.padding));
 check('cursors=off is parsed', options.options.cursors === 'off');

@@ -3,6 +3,7 @@ const OBS_CAMERA_EPSILON = 0.004;
 const OBS_ZOOM_EPSILON = 0.002;
 const OBS_MIN_SPAN = 0.05;
 const OBS_LOCAL_RELOAD_MS = 120;
+const OBS_TEXT_BASE = 0.62;
 
 const OBS_DEFAULTS = {
     bg: 'transparent',
@@ -13,7 +14,7 @@ const OBS_DEFAULTS = {
     scale: 1,
     textSize: 10,
     padding: 50,
-    maxZoom: 12
+    maxZoom: 20
 };
 
 const OBS_CODE_PATTERN = /^[a-z0-9]{6,32}$/i;
@@ -107,7 +108,11 @@ function obsApplyOptions() {
 
     document.body.style.setProperty(
         '--obs-text-scale',
-        String(OBS.options.textSize / OBS_DEFAULTS.textSize)
+        String(
+            OBS_TEXT_BASE *
+            OBS.options.textSize /
+            OBS_DEFAULTS.textSize
+        )
     );
 
     if (typeof invalidateCssVarCache === 'function') {
@@ -337,7 +342,7 @@ function obsDesiredView() {
             1,
             wrap.clientHeight -
                 OBS.options.padding * 2 -
-                reserved * 2
+                reserved
         )
     };
 
@@ -356,13 +361,24 @@ function obsDesiredView() {
         available.height / spanY
     );
 
+    const zoom = Math.min(
+        OBS.options.maxZoom,
+        Math.max(MIN_ZOOM, fit / base)
+    );
+
+    const shift = reserved
+        ? reserved / 2 / (base * zoom)
+        : 0;
+
+    const top =
+        OBS.options.corner === 'tl' ||
+        OBS.options.corner === 'tr';
+
     return {
         cx: (gun.x + S.target.x) / 2,
-        cy: (gun.y + S.target.y) / 2,
-        zoom: Math.min(
-            OBS.options.maxZoom,
-            Math.max(MIN_ZOOM, fit / base)
-        )
+        cy: (gun.y + S.target.y) / 2 +
+            (top ? shift : -shift),
+        zoom
     };
 }
 

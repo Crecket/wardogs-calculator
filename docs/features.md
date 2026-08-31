@@ -295,7 +295,7 @@ The overlay never sends anything to a shared session, and **the room code is nev
 | `scale` | `0.5`–`3` | `1` | Size multiplier for the readout. Raise it when the stream is downscaled hard. |
 | `padding` | `0`–`600` | `50` | Padding in pixels kept around the gun/target pair when framing. `pad` is accepted as an alias. |
 | `textsize` | `1`–`40` | `10` | Size of the readout type, in tenths of the normal size: `10` is the current size, `5` is half of everything in the readout, `20` is double. |
-| `maxzoom` | `1`–`24` | `12` | How far the auto-frame may zoom in. Lower it to keep more map context, raise it for short missions. |
+| `maxzoom` | `1`–`24` | `20` | How far the auto-frame may zoom in. Lower it to keep more map context, raise it for short missions. |
 | `cursors` | `on`, `off` | `on` | Peer cursors and names from the shared session. |
 | `frame` | `pair`, `map` | `pair` | `pair` auto-frames gun and target; `map` holds a fixed fit of the whole map. |
 
