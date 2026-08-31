@@ -10,6 +10,7 @@
 - Interactive artillery and target positioning
 - Automatic recalculation when positions change
 - Saved target positions
+- Per-gun reachability badges on saved-target rows where terrain data is available
 - Optional artillery-position saving with targets
 - Export/import individual saved targets or the complete saved-target list as JSON
 - JSON-based weapon definitions
@@ -225,6 +226,22 @@ off square along the map edge.
 
 On maps without elevation data, and until the heightfield finishes loading,
 the ring is the plain circle it has always been.
+
+### Per-target reachability badges
+
+Every saved-target row carries a small badge per gun, under the coordinates, answering the one question the range ring and the dead-ground shading already answer on the map but only for whoever reads the layers:
+
+- **Round green ✓ — reachable.** Inside the terrain-solved ring and clear of dead ground.
+- **Dashed amber ▲ — masked.** In range, but the ground between gun and target blocks every arc. Usually a gun that moves a couple of hundred metres can hit it.
+- **Square red ✕ — out of range.** Past the terrain-solved max range on that bearing; a dotted variant means the target is inside the minimum-range ring instead.
+
+Masked and out of range are deliberately never collapsed together: they call for different actions. Each state differs in shape, border style and colour, so the badges survive being read at 14 px and by a colour-blind eye, and each carries a `title` and `aria-label` naming the gun and the state. With more than one gun the badge is numbered with the gun's position in the gun list, and the active gun's badge is highlighted.
+
+The badges are read-only local context. They are never persisted and never sent to a shared session, so two people in one room can see different badges on the same target — which is correct, because their guns are in different places.
+
+Nothing is computed twice: the badge asks the ring solver and the dead-ground solver for the answers they already cached for the map layers, and a target is then a constant-time lookup of one bearing. Solving happens off the render path, one gun at a time in idle time, so a row shows no badge for a moment rather than blocking the list.
+
+**Terrain-data caveat.** A badge appears only where the terrain solve is real: the map must ship a heightfield, the heightfield must have finished loading, and the projectile model must be available. On any other map, and on a custom map, no badge is drawn at all rather than a guess. Only **Bakurani** is height-corrected and alignment-validated (see [terrain.md](terrain.md)); on Ozeti the badge is only as good as the unvalidated alignment underneath it, and everywhere the whole answer inherits the accuracy of the projectile fit and the 32 m heightfield.
 
 
 ## Coordinate copy / paste

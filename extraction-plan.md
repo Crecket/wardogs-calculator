@@ -184,7 +184,11 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 21 | 1.x | Live peer cursors, named and coloured | `branch` | `feat/collab-rooms` (fork only, extends item 16) |
 | 22 | 3.7 | Terrain-solved minimum range ring, dead ground shaded where the low arc is masked | `branch` | `feat/collab-rooms` (fork only, extends item 5) |
 | 23 | 1.x | Peer roster in the session panel, from a server-side roster | `branch` | `feat/ux-peer-roster` (fork only, extends items 16 and 21) |
+<<<<<<< HEAD
 | 24 | 1.x | Follow a peer's camera from the roster, on an ephemeral `view` frame | `branch` | `feat/ux-follow-me` (fork only, extends items 16 and 23) |
+=======
+| 24 | 3.7 + 7.x | Per-target reachability badges on the saved-target rows | `branch` | `feat/ux-reach-badges` (fork only, extends items 5 and 15) |
+>>>>>>> feat/ux-reach-badges
 
 The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
 
@@ -771,3 +775,17 @@ Saved targets are drawn on the map as light orange numbered markers, and clickin
 
 A target that carries an artillery position describes two points, so the row tells a full restore apart from being on the target with the gun elsewhere. The partial case is drawn with a dashed border and keeps its sync button so you can reconcile it. This grows the derived highlight from #13 rather than replacing it: activeSavedTargetId still exists and still derives from where the target actually sits.
 ````
+
+---
+
+## Per-target reachability badges — `feat/ux-reach-badges`
+
+Item 24. One new file, `js/features/reach-badges.js`, plus a locale block, a CSS block, a script tag in both page shells and a browser test. `js/features/saved-targets.js` is not touched at all: the file wraps `renderSavedTargets` and `refreshSavedTargetHighlight` the way `js/features/results.js` already wraps them for the firing-info panel, so the two extensions stack instead of conflicting.
+
+The badge is a query, not a model. `terrainRangeRing()` gives the terrain-solved max radius and, from item 22, the minimum-range radius per bearing; `terrainDeadGround()` gives the masked intervals per bearing. A target is then one `atan2` into the bearing bucket and a comparison — no ray marching, no bisection, no second heightfield sampler. Ring and dead ground are already memoised under `rangeRingMemoKey()`, so the per-gun cost is paid once per 8 m of gun travel and shared with the map layers.
+
+Nothing solves on the render path. `RANGE_RING_CACHE.has()` and `DEAD_GROUND_CACHE.has()` decide whether a gun is answerable *now*; an unsolved gun is skipped and one gun per idle callback is solved in the background, then the badges are refreshed. Rows are diffed by a signature over map, language, active gun and every gun's memo key, so a pointer move that changes nothing costs one string compare. Badge nodes are reused and every write goes through a guard or `setText` — the row rebuild the plan complains about above is not repeated here.
+
+Measured in Chromium against the shipped Bakurani heightfield, 8 SPG-2 guns and 500 saved targets: 24.1 ms to solve all eight rings and dead-ground passes cold (idle-sliced in practice, one gun per callback), 15.3 ms for the first badge pass that creates 4,000 nodes, 4.2 ms to reclassify and update all 4,000 in place, and 0.000 ms for a pass where the signature is unchanged.
+
+With no heightfield, an unsupported or custom map, no projectile model, or a gun off the grid, no badge is drawn — never a guess. Badges are local: nothing is persisted and no collab op exists for them, so two peers in one room correctly see different badges on the same target.
