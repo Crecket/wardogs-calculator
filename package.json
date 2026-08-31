@@ -3,8 +3,9 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build-pages.mjs && node scripts/sync-locales.mjs && node scripts/version-assets.mjs",
-    "dev": "node scripts/dev-server.mjs",
-    "dev:sync": "npm --prefix sync run dev",
+    "dev": "node scripts/dev-supervisor.mjs node scripts/dev-server.mjs",
+    "dev:once": "node scripts/dev-server.mjs",
+    "dev:sync": "node scripts/dev-supervisor.mjs npm --prefix sync run dev",
     "sync-tiles": "node scripts/sync-tiles.mjs",
     "build-contours": "node scripts/build-contours.mjs",
     "build-heightfield": "node scripts/build-heightfield.mjs",
