@@ -70,14 +70,6 @@ const COLLAB_CURSOR_COLORS = [
     '#ff7ab8'
 ];
 
-const COLLAB_PEER_SELF_ICON =
-    '<svg aria-hidden="true" viewBox="0 0 24 24" width="11" height="11"' +
-    ' fill="none" stroke="currentColor" stroke-width="1.9"' +
-    ' stroke-linecap="round" stroke-linejoin="round">' +
-    '<circle cx="12" cy="8.2" r="3.4"/>' +
-    '<path d="M5.6 19.4a6.4 6.4 0 0 1 12.8 0"/>' +
-    '</svg>';
-
 const COLLAB_FOLLOW_ICON =
     '<svg aria-hidden="true" viewBox="0 0 24 24" width="11" height="11"' +
     ' fill="none" stroke="currentColor" stroke-width="1.8"' +
@@ -2912,7 +2904,20 @@ function collabBuildRoster() {
     const list = document.createElement('ul');
     list.className = 'collab-roster';
 
-    for (const entry of COLLAB.roster) {
+    const others = COLLAB.roster.filter(
+        entry => entry.id !== COLLAB.clientId
+    );
+
+    if (!others.length) {
+        const empty = document.createElement('li');
+        empty.className = 'collab-peer collab-peer-empty';
+        empty.textContent = tr('collabPeersAlone');
+        list.append(empty);
+
+        return list;
+    }
+
+    for (const entry of others) {
         list.append(collabBuildRosterRow(entry));
     }
 
@@ -2937,16 +2942,6 @@ function collabBuildRosterRow(entry) {
         : entry.name || collabFallbackName(entry.id);
 
     row.append(swatch, name);
-
-    if (isYou) {
-        const you = document.createElement('span');
-        you.className = 'collab-peer-you';
-        you.innerHTML = COLLAB_PEER_SELF_ICON;
-        you.title = tr('collabPeerYou');
-        you.setAttribute('role', 'img');
-        you.setAttribute('aria-label', tr('collabPeerYou'));
-        row.append(you);
-    }
 
     if (!isYou && collabViewSupported()) {
         const following = COLLAB.follow === entry.id;
