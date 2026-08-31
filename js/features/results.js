@@ -217,6 +217,14 @@ function renderElevationResult(weapon, distanceMeters) {
         resolved.terrainMeta
     );
 
+    if (typeof renderCrossSection === 'function') {
+        renderCrossSection(
+            weapon,
+            distanceMeters,
+            solutions
+        );
+    }
+
     setText(
         value,
         primary

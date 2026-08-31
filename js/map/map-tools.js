@@ -73,6 +73,7 @@ const MAP_TOOL_STATE = {
         fobAreas: true,
         artillery: true,
         deadGround: false,
+        crossSection: false,
         cursorCoords: true
     }
 };
@@ -1162,6 +1163,10 @@ function buildMapLayers() {
         ? [['contours', 'mapLayerContours']]
         : [];
 
+    const crossSectionLayer = $('crossSection')
+        ? [['crossSection', 'mapLayerCrossSection']]
+        : [];
+
     const groups = [
         {
             id: 'base',
@@ -1182,7 +1187,8 @@ function buildMapLayers() {
                 ['mainZone', 'mapLayerMainZone'],
                 ['fobAreas', 'mapLayerFobAreas'],
                 ['artillery', 'mapLayerArtillery'],
-                ['deadGround', 'mapLayerDeadGround']
+                ['deadGround', 'mapLayerDeadGround'],
+                ...crossSectionLayer
             ]
         },
         {
@@ -1240,6 +1246,11 @@ function buildMapLayers() {
             <path d="M3 17c3 0 4.5-6 7.5-6s4.5 6 7.5 6"/>
             <path d="M3 20h18"/>
             <path d="M14 8h5v4"/>
+        `,
+        crossSection: `
+            <path d="M3 19h18"/>
+            <path d="M3 16c3.5 0 4-4 7.5-4S15 16 21 16"/>
+            <path d="M4 14c2.5-8 12.5-8 15.5-1"/>
         `,
         artillery: `
             <circle cx="12" cy="12" r="6"/>
