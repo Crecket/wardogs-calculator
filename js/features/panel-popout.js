@@ -16,6 +16,15 @@ const SOLUTION_POPOUT_MAX_SIZE = {
     height: 1000
 };
 
+const SOLUTION_POPOUT_ICON =
+    '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"' +
+    ' fill="none" stroke="currentColor" stroke-width="1.8"' +
+    ' stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M13 4h7v7"/>' +
+    '<path d="M20 4l-8.5 8.5"/>' +
+    '<path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>' +
+    '</svg>';
+
 let solutionPopoutWindow = null;
 let solutionPopoutPanel = null;
 let solutionPopoutPlaceholder = null;
@@ -349,6 +358,9 @@ function createSolutionPopoutButton() {
     button.className =
         'panel-popout-button';
 
+    button.innerHTML =
+        SOLUTION_POPOUT_ICON;
+
     button.addEventListener(
         'click',
         event => {
@@ -438,8 +450,8 @@ function updateSolutionPopoutControls() {
                 ? tr('returnSolutionPanel')
                 : tr('popOutSolution');
 
-        solutionPopoutButton.textContent =
-            label;
+        solutionPopoutButton.innerHTML =
+            SOLUTION_POPOUT_ICON;
 
         solutionPopoutButton.title =
             poppedOut
@@ -684,29 +696,21 @@ function initSolutionPopout() {
         return;
     }
 
-    const panel =
-        findSolutionPanel();
+    const themeToggle =
+        $('themeToggle');
 
-    const heading =
-        panel?.querySelector(
-            'h2'
-        );
-
-    if (!heading) {
+    if (!themeToggle?.parentElement) {
         return;
     }
-
-    panel.classList.add(
-        'has-panel-popout'
-    );
 
     solutionPopoutButton =
         createSolutionPopoutButton();
 
-    heading.insertAdjacentElement(
-        'afterend',
-        solutionPopoutButton
-    );
+    themeToggle.parentElement
+        .insertBefore(
+            solutionPopoutButton,
+            themeToggle
+        );
 
     updateSolutionPopoutControls();
 
