@@ -86,7 +86,7 @@
   "mapLayerDrawings": "Rysunki",
   "mapLayerUserMarkers": "Znaczniki użytkownika",
   "mapLayerArtillery": "Warstwa artylerii",
-  "mapLayerDeadGround": "Martwe pole",
+  "mapLayerDeadGround": "Martwe pole (tor płaski)",
   "mapToolUndo": "Cofnij",
   "mapToolRedo": "Ponów",
   "mapToolUndoRedoHint": "Cofnij: {undo} · Ponów: {redo}",

@@ -71,7 +71,7 @@
   "mapLayerDrawings": "그림",
   "mapLayerUserMarkers": "사용자 마커",
   "mapLayerArtillery": "포병 오버레이",
-  "mapLayerDeadGround": "사각지대",
+  "mapLayerDeadGround": "사각지대 (저각 사격)",
   "mapToolUndo": "실행 취소",
   "mapToolRedo": "다시 실행",
   "mapToolUndoRedoHint": "실행 취소: {undo} · 다시 실행: {redo}",

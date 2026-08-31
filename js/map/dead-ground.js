@@ -15,20 +15,17 @@ function deadGroundArcs(weaponId) {
     for (const arc of Object.values(arcs)) {
         const v = Number(arc?.muzzleVelocity);
 
-        if (!Number.isFinite(v) || v <= 0) {
+        if (!Number.isFinite(v) || v <= 0 || arc.branch !== 'low') {
             continue;
         }
 
-        usable.push({
-            muzzleVelocity: v,
-            high: arc.branch === 'high'
-        });
+        usable.push({ muzzleVelocity: v });
     }
 
     return usable.length ? usable : null;
 }
 
-function deadGroundLaunchTan(muzzleVelocity, rangeMeters, deltaZMeters, high) {
+function deadGroundLaunchTan(muzzleVelocity, rangeMeters, deltaZMeters) {
     if (!(rangeMeters > 0)) {
         return null;
     }
@@ -49,10 +46,7 @@ function deadGroundLaunchTan(muzzleVelocity, rangeMeters, deltaZMeters, high) {
 
     const root = Math.sqrt(discriminant);
 
-    return (
-        (high ? vSquared + root : vSquared - root) /
-        (RANGE_RING_GRAVITY * rangeMeters)
-    );
+    return (vSquared - root) / (RANGE_RING_GRAVITY * rangeMeters);
 }
 
 function deadGroundGrazingTan(muzzleVelocity, xMeters, zMeters) {
@@ -102,8 +96,7 @@ function deadGroundBearingIntervals(
             const tanTheta = deadGroundLaunchTan(
                 arc.muzzleVelocity,
                 ranges[i],
-                deltas[i],
-                arc.high
+                deltas[i]
             );
 
             if (tanTheta !== null && tanTheta >= required[a]) {
@@ -326,23 +319,6 @@ function traceDeadGroundWedge(at, scale, angle, half, startMetres, endMetres) {
     ctx.closePath();
 }
 
-function traceDeadGroundEdge(at, scale, angle, half, metres) {
-    const r = metersToWorldDistance(metres) * scale;
-
-    const a0 = angle - half;
-    const a1 = angle + half;
-
-    ctx.moveTo(
-        at.x + Math.cos(a0) * r,
-        at.y - Math.sin(a0) * r
-    );
-
-    ctx.lineTo(
-        at.x + Math.cos(a1) * r,
-        at.y - Math.sin(a1) * r
-    );
-}
-
 function drawDeadGround(at, scale) {
     const solved = terrainDeadGround(
         {
@@ -382,24 +358,4 @@ function drawDeadGround(at, scale) {
 
     ctx.fillStyle = deadGroundHatch();
     ctx.fill();
-
-    ctx.beginPath();
-
-    for (let b = 0; b < bearings; b += 1) {
-        const intervals = solved.bearings[b];
-        const angle = b * 2 * Math.PI / bearings;
-
-        for (let i = 0; i < intervals.length; i += 2) {
-            traceDeadGroundEdge(at, scale, angle, half, intervals[i]);
-            traceDeadGroundEdge(at, scale, angle, half, intervals[i + 1]);
-        }
-    }
-
-    ctx.strokeStyle = 'rgba(20,10,12,.75)';
-    ctx.lineWidth = 3.5;
-    ctx.stroke();
-
-    ctx.strokeStyle = 'rgba(236,104,104,.95)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
 }

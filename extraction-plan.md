@@ -125,6 +125,22 @@ Across the twenty-one bearings running up that slope, none is shaded anywhere in
 
 ---
 
+## The all-arcs rule reverted to low arc only
+
+The all-arcs rule above is correct about what a gun *can* reach and useless as an overlay. Because the high arc leaves the tube steeply enough to clear nearly every crest, requiring every arc to be masked left the shading appearing only out near the max-range edge, where the launch angle is squeezed toward 45° and the two roots converge. The overlay was answering a question nobody asks: almost nothing is unreachable by *some* arc, and the player already knows that.
+
+The question players actually have is where the flat arc — the fast one, the one preferred whenever it is available because the shell arrives sooner — is blocked. So `deadGroundArcs` now keeps `branch === 'low'` fits only, and `deadGroundLaunchTan` lost its `high` parameter along with the plus root; there is only ever the minus root now. Everything downstream is untouched: the per-arc `required` accumulator, the interval runs, the wedge tracing. This puts the browser copy back in agreement with `scripts/lib/dead-ground.mjs`, which never stopped solving `'low'` and whose tests therefore already covered the behaviour being restored.
+
+The sentinel fix from `ebd28c291` is not reverted — an unreachable crest still leaves that arc's `required` alone, so a hill's near face stays unshaded.
+
+**The wedge outlines are gone with it.** `c46944ab7` stroked every interval edge twice, a dark 3.5 px backing under a 1.5 px `rgba(236,104,104,.95)` red. Under the all-arcs rule those edges only ever appeared hugging the max-range ring, where they read as a second, redder range limit sitting on top of the real one and meaning something else. `traceDeadGroundEdge` and both stroke passes are deleted; the dark wash and the red diagonal hatch carry the layer on their own, which is what the wedges are actually made of.
+
+**The mortar shades nothing.** Its fit is `single`, `branch: high`, so `deadGroundArcs` returns `null` and the layer draws nothing when the mortar is selected. That is the honest reading — a mortar genuinely drops behind almost any crest that matters — but it does mean the toggle is visibly inert for one of the two weapons, which is the thing to watch for in review.
+
+`mapLayerDeadGround` was renamed in all eleven locale files to carry the qualifier: "Dead ground (low arc)" in English, translated rather than pasted elsewhere, `cat.json` by hand in its own register.
+
+---
+
 ## Status board
 
 Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed) · `pr` (open upstream) · `held` (reviewed, blocked on something upstream wants first) · `merged` · `absorbed` (closed unmerged, content shipped in v1.7.0) · `parked`.
@@ -152,7 +168,7 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 18 | — | Forced layout and no-op DOM writes on every pointer move | [`absorbed`](https://github.com/apollyon-sys/wardogs-calculator/pull/10) via #10 | branch deleted |
 | 20 | — | rAF-coalesced redraws, cached CSS custom properties, `createImageBitmap` tile decode with a bounded LRU, `devicePixelRatio` clamped to 2 | `branch` | `upstream-pr/render-perf`, cut from v1.7.0 |
 | 21 | 1.x | Live peer cursors, named and coloured | `branch` | `feat/collab-rooms` (fork only, extends item 16) |
-| 22 | 3.7 | Terrain-solved minimum range ring, dead ground shaded only where every arc is masked | `branch` | `feat/collab-rooms` (fork only, extends item 5) |
+| 22 | 3.7 | Terrain-solved minimum range ring, dead ground shaded where the low arc is masked | `branch` | `feat/collab-rooms` (fork only, extends item 5) |
 
 The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
 

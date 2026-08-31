@@ -77,7 +77,7 @@
   "mapLayerDrawings": "绘图",
   "mapLayerUserMarkers": "用户标记",
   "mapLayerArtillery": "炮兵覆盖层",
-  "mapLayerDeadGround": "射击死角",
+  "mapLayerDeadGround": "射击死角（低弹道）",
   "mapToolUndo": "撤销",
   "mapToolRedo": "重做",
   "mapToolUndoRedoHint": "撤销：{undo} · 重做：{redo}",

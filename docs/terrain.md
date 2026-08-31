@@ -415,8 +415,8 @@ to be replaced by pak extraction rather than refined.
 
 ### The dead-ground layer
 
-The ring says how far a gun reaches on each bearing. The **Dead ground** layer
-says where inside that reach a crest gets in the way.
+The ring says how far a gun reaches on each bearing. The **Dead ground (low
+arc)** layer says where inside that reach a crest gets in the way.
 
 For every bearing the terrain is sampled outward in 25 m steps, the same march
 the ring uses. A sample at range `R` is dead ground when the flattest
@@ -424,10 +424,15 @@ trajectory that would land on it — the low root of the same vacuum model —
 passes below the ground at some closer distance. Adjacent dead samples merge
 into intervals and are drawn as dark radial wedges inside the ring.
 
-It is computed for the **flattest arc the weapon has**, and only that arc:
-SPG-2 `low`, mortar `single`. Where a weapon has a second, steeper arc it will
-reach much of what is shaded here, so the shading is the flat arc's problem,
-not the weapon's.
+It is computed for the **low arc, and only the low arc** — SPG-2 `low`. That
+is the arc worth planning around: it is the fast one, so it is what you fire
+unless something is in the way. A weapon's steeper arc will reach much of what
+is shaded here, so a wedge is the low arc's problem, not the weapon's.
+
+A weapon with no `low` fit therefore shades nothing at all. The mortar is
+`single`, `branch: high`, so the layer is inert when it is selected — which is
+the honest answer, since a mortar drops behind essentially any crest the
+terrain offers.
 
 The layer is **default off**, and it is solved only while it is on. It inherits
 every caveat the ring does and adds none of its own confidence:

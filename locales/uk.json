@@ -86,7 +86,7 @@
   "mapLayerDrawings": "Малюнки",
   "mapLayerUserMarkers": "Користувацькі мітки",
   "mapLayerArtillery": "Артилерійний шар",
-  "mapLayerDeadGround": "Мертвий простір",
+  "mapLayerDeadGround": "Мертвий простір (настильна)",
   "mapToolUndo": "Скасувати",
   "mapToolRedo": "Повторити",
   "mapToolUndoRedoHint": "Скасувати: {undo} · Повторити: {redo}",

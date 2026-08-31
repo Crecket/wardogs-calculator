@@ -86,7 +86,7 @@
   "mapLayerDrawings": "Zeichnungen",
   "mapLayerUserMarkers": "Benutzermarkierungen",
   "mapLayerArtillery": "Artillerie-Ebene",
-  "mapLayerDeadGround": "Toter Raum",
+  "mapLayerDeadGround": "Toter Raum (Flachbahn)",
   "mapToolUndo": "Rückgängig",
   "mapToolRedo": "Wiederholen",
   "mapToolUndoRedoHint": "Rückgängig: {undo} · Wiederholen: {redo}",
