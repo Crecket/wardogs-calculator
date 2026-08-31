@@ -699,6 +699,16 @@ function bindEvents() {
                 );
 
             if (
+                e.target === c &&
+                typeof collabOnPointerWorld ===
+                'function'
+            ) {
+                collabOnPointerWorld(
+                    toolWorld
+                );
+            }
+
+            if (
                 handleMapToolMouseMove(
                     e,
                     toolWorld
@@ -756,6 +766,13 @@ function bindEvents() {
             setPresetMarkerHover(
                 null
             );
+
+            if (
+                typeof collabOnPointerLeft ===
+                'function'
+            ) {
+                collabOnPointerLeft();
+            }
 
             if (!pan) {
 

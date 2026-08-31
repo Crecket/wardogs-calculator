@@ -292,6 +292,40 @@ await B.evaluate(() => {
 await A.waitForFunction(() => MAP_TOOL_STATE.markers.length === 2, null, { timeout: 10000 });
 check('B marker reached A (bidirectional)', true);
 
+console.log('\n== peer cursors ==');
+await A.evaluate(() => collabSetName('Alpha'));
+
+const cursorBox = await A.locator('#canvas').boundingBox();
+const ccx = cursorBox.x + cursorBox.width / 2;
+const ccy = cursorBox.y + cursorBox.height / 2;
+
+await A.mouse.move(ccx, ccy);
+await A.mouse.move(ccx + 30, ccy + 20, { steps: 4 });
+
+await B.waitForFunction(() => COLLAB.cursors.size === 1, null, { timeout: 10000 });
+check('A pointer reached B', true);
+check('cursor carries the name A typed',
+    await B.evaluate(() => [...COLLAB.cursors.values()][0].name === 'Alpha'));
+check('colour is agreed from the peer id alone',
+    await B.evaluate(() => {
+        const [id, cursor] = [...COLLAB.cursors.entries()][0];
+        return cursor.color === collabPeerColor(id);
+    }));
+check('sender holds no cursor of its own',
+    await A.evaluate(() => COLLAB.cursors.size === 0));
+check('cursors stay out of undo history',
+    await B.evaluate(() => !JSON.stringify(COLLAB.ownOps).includes('cursor')));
+check('cursors stay out of the document',
+    await B.evaluate(() => !JSON.stringify({
+        drawings: MAP_TOOL_STATE.drawings,
+        markers: MAP_TOOL_STATE.markers,
+        targets: savedTargets
+    }).includes('Alpha')));
+
+await A.mouse.move(ccx, cursorBox.y - 8);
+await B.waitForFunction(() => COLLAB.cursors.size === 0, null, { timeout: 10000 });
+check('leaving the canvas clears the peer cursor', true);
+
 console.log('\n== undo only undoes your own ops ==');
 /* Undo pops A's newest own op, so make a marker the newest thing A did. */
 await A.evaluate(() => {

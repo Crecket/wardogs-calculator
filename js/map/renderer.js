@@ -219,6 +219,13 @@ function draw() {
     }
     drawMapToolTransient();
 
+    if (
+        typeof drawCollabCursors ===
+        'function'
+    ) {
+        drawCollabCursors();
+    }
+
     ctx.restore();
 
     result();

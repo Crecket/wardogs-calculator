@@ -732,6 +732,39 @@ input[type="checkbox"] {
     text-align: center;
 }
 
+.collab-name-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 6px;
+}
+
+.collab-name-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.collab-name-input {
+    min-width: 0;
+    min-height: 30px;
+    padding: 6px 8px;
+
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+
+    background: var(--input-bg);
+    color: var(--text);
+
+    font: inherit;
+    font-size: 11px;
+}
+
+.collab-name-input:focus {
+    border-color: var(--accent-border);
+    outline: none;
+}
+
 .collab-status {
     min-height: 14px;
     color: var(--accent);

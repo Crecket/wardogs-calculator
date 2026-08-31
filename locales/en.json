@@ -146,6 +146,8 @@
   "collabCopyLink": "Copy link",
   "collabCopied": "Link copied",
   "collabPeers": "{count} connected",
+  "collabYourName": "Your name",
+  "collabNameFallback": "Peer {id}",
   "collabLeave": "Leave session",
   "collabStatusConnecting": "Connecting…",
   "collabStatusOnline": "Live — your edits are shared",

@@ -44,6 +44,24 @@ const COLLAB_SHARED_INTERVAL = 100;
 const COLLAB_PING_INTERVAL = 30000;
 const COLLAB_PING_FRAME = '{"type":"ping"}';
 
+const COLLAB_CURSOR_INTERVAL = 80;
+const COLLAB_CURSOR_TIMEOUT = 5000;
+const COLLAB_CURSOR_SWEEP = 1000;
+
+const COLLAB_NAME_STORAGE_KEY = 'wardogs-collab-name';
+const COLLAB_NAME_MAX = 24;
+
+const COLLAB_CURSOR_COLORS = [
+    '#d7a452',
+    '#5cc8ff',
+    '#7ddc7d',
+    '#ff8b6b',
+    '#c79bff',
+    '#ffd166',
+    '#4fd1c5',
+    '#ff7ab8'
+];
+
 const COLLAB_RECONNECT_BASE = 1000;
 const COLLAB_RECONNECT_MAX = 15000;
 const COLLAB_RECONNECT_ATTEMPTS = 8;
@@ -101,6 +119,16 @@ const COLLAB = {
     everConnected: false,
 
     throttleTimer: null,
+
+    cursors: new Map(),
+
+    cursorTimer: null,
+    cursorPending: null,
+    cursorSentAt: 0,
+    cursorSweepTimer: null,
+    cursorFrame: null,
+
+    name: null,
 
     statusKey: null,
     statusIsError: false,
@@ -1343,6 +1371,8 @@ function collabHandleMessage(message) {
             COLLAB.ownOps = [];
             COLLAB.redoOps = [];
 
+            collabClearCursors();
+
             collabSetStatus('online', 'collabStatusOnline');
             collabWriteHash();
 
@@ -1372,7 +1402,12 @@ function collabHandleMessage(message) {
 
         case 'peers':
             COLLAB.peers = message.count;
+            collabClearCursors();
             collabRender();
+            break;
+
+        case 'cursor':
+            collabReceiveCursor(message);
             break;
 
         case 'error':
@@ -1380,6 +1415,10 @@ function collabHandleMessage(message) {
 
             if (message.code === 'rate-limited') {
                 collabShowThrottled();
+                break;
+            }
+
+            if (message.code === 'bad-cursor') {
                 break;
             }
 
@@ -1606,6 +1645,8 @@ function collabResetSession() {
         COLLAB.throttleTimer = null;
     }
 
+    collabClearCursors();
+
     COLLAB.everConnected = false;
     COLLAB.roomCode = null;
     COLLAB.clientId = null;
@@ -1656,6 +1697,264 @@ function collabLeave() {
     if (typeof trackAnalytics === 'function') {
         trackAnalytics('collab-room-left');
     }
+}
+
+function collabCleanName(value) {
+    if (typeof value !== 'string') {
+        return '';
+    }
+
+    return value
+        .replace(/[\u0000-\u001f\u007f]/g, '')
+        .trim()
+        .slice(0, COLLAB_NAME_MAX);
+}
+
+function collabReadStoredName() {
+    try {
+        return collabCleanName(
+            localStorage.getItem(COLLAB_NAME_STORAGE_KEY)
+        );
+    } catch {
+        return '';
+    }
+}
+
+function collabOwnName() {
+    if (COLLAB.name === null) {
+        COLLAB.name = collabReadStoredName();
+    }
+
+    return COLLAB.name;
+}
+
+function collabSetName(value) {
+    COLLAB.name = collabCleanName(value);
+
+    try {
+        localStorage.setItem(
+            COLLAB_NAME_STORAGE_KEY,
+            COLLAB.name
+        );
+    } catch (error) {
+        console.warn('Failed to store collab name:', error);
+    }
+}
+
+function collabDisplayName() {
+    const own = collabOwnName();
+
+    if (own) {
+        return own;
+    }
+
+    return collabFallbackName(COLLAB.clientId);
+}
+
+function collabFallbackName(id) {
+    return tr('collabNameFallback').replace(
+        '{id}',
+        (id || '????').slice(0, 4)
+    );
+}
+
+function collabPeerColor(id) {
+    const text = String(id || '');
+
+    let hash = 0;
+
+    for (let index = 0; index < text.length; index += 1) {
+        hash = (hash * 31 + text.charCodeAt(index)) >>> 0;
+    }
+
+    return COLLAB_CURSOR_COLORS[
+        hash % COLLAB_CURSOR_COLORS.length
+    ];
+}
+
+function collabOnPointerWorld(world) {
+    if (
+        !world ||
+        !collabIsOnline() ||
+        COLLAB.applying
+    ) {
+        return;
+    }
+
+    COLLAB.cursorPending = world;
+
+    if (COLLAB.cursorTimer) {
+        return;
+    }
+
+    const wait =
+        COLLAB_CURSOR_INTERVAL -
+        (Date.now() - COLLAB.cursorSentAt);
+
+    if (wait <= 0) {
+        collabFlushCursor();
+        return;
+    }
+
+    COLLAB.cursorTimer = setTimeout(
+        collabFlushCursor,
+        wait
+    );
+}
+
+function collabFlushCursor() {
+    if (COLLAB.cursorTimer) {
+        clearTimeout(COLLAB.cursorTimer);
+        COLLAB.cursorTimer = null;
+    }
+
+    const point = COLLAB.cursorPending;
+
+    COLLAB.cursorPending = null;
+
+    if (!point || !collabIsOnline()) {
+        return;
+    }
+
+    COLLAB.cursorSentAt = Date.now();
+
+    collabSend({
+        type: 'cursor',
+        x: point.x,
+        y: point.y,
+        name: collabDisplayName()
+    });
+}
+
+function collabOnPointerLeft() {
+    if (COLLAB.cursorTimer) {
+        clearTimeout(COLLAB.cursorTimer);
+        COLLAB.cursorTimer = null;
+    }
+
+    COLLAB.cursorPending = null;
+
+    if (!collabIsOnline()) {
+        return;
+    }
+
+    COLLAB.cursorSentAt = Date.now();
+
+    collabSend({
+        type: 'cursor',
+        gone: true
+    });
+}
+
+function collabReceiveCursor(message) {
+    const from = message.from;
+
+    if (typeof from !== 'string' || !from) {
+        return;
+    }
+
+    if (
+        message.gone === true ||
+        !Number.isFinite(message.x) ||
+        !Number.isFinite(message.y)
+    ) {
+        if (COLLAB.cursors.delete(from)) {
+            collabRequestCursorRedraw();
+        }
+
+        return;
+    }
+
+    const existing = COLLAB.cursors.get(from);
+
+    const name = collabCleanName(message.name) ||
+        collabFallbackName(from);
+
+    if (existing) {
+        existing.x = message.x;
+        existing.y = message.y;
+        existing.name = name;
+        existing.at = Date.now();
+    } else {
+        COLLAB.cursors.set(from, {
+            x: message.x,
+            y: message.y,
+            name,
+            color: collabPeerColor(from),
+            at: Date.now()
+        });
+    }
+
+    collabStartCursorSweep();
+    collabRequestCursorRedraw();
+}
+
+function collabRequestCursorRedraw() {
+    if (COLLAB.cursorFrame) {
+        return;
+    }
+
+    COLLAB.cursorFrame = requestAnimationFrame(() => {
+        COLLAB.cursorFrame = null;
+        draw();
+    });
+}
+
+function collabStartCursorSweep() {
+    if (COLLAB.cursorSweepTimer) {
+        return;
+    }
+
+    COLLAB.cursorSweepTimer = setInterval(
+        collabSweepCursors,
+        COLLAB_CURSOR_SWEEP
+    );
+}
+
+function collabStopCursorSweep() {
+    if (COLLAB.cursorSweepTimer) {
+        clearInterval(COLLAB.cursorSweepTimer);
+        COLLAB.cursorSweepTimer = null;
+    }
+}
+
+function collabSweepCursors() {
+    const deadline = Date.now() - COLLAB_CURSOR_TIMEOUT;
+
+    let removed = false;
+
+    for (const [id, cursor] of COLLAB.cursors) {
+        if (cursor.at < deadline) {
+            COLLAB.cursors.delete(id);
+            removed = true;
+        }
+    }
+
+    if (!COLLAB.cursors.size) {
+        collabStopCursorSweep();
+    }
+
+    if (removed) {
+        collabRequestCursorRedraw();
+    }
+}
+
+function collabClearCursors() {
+    collabStopCursorSweep();
+
+    if (COLLAB.cursorTimer) {
+        clearTimeout(COLLAB.cursorTimer);
+        COLLAB.cursorTimer = null;
+    }
+
+    COLLAB.cursorPending = null;
+
+    if (!COLLAB.cursors.size) {
+        return;
+    }
+
+    COLLAB.cursors.clear();
+    collabRequestCursorRedraw();
 }
 
 /* =========================
@@ -1873,13 +2172,37 @@ function collabBuildActivePanel(container) {
         String(COLLAB.peers || 1)
     );
 
+    const nameRow = document.createElement('label');
+    nameRow.className = 'collab-name-row';
+
+    const swatch = document.createElement('span');
+    swatch.className = 'collab-name-swatch';
+    swatch.style.background = collabPeerColor(COLLAB.clientId);
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = 'collabNameInput';
+    nameInput.className = 'collab-name-input';
+    nameInput.autocomplete = 'off';
+    nameInput.spellcheck = false;
+    nameInput.maxLength = COLLAB_NAME_MAX;
+    nameInput.placeholder = collabFallbackName(COLLAB.clientId);
+    nameInput.value = collabOwnName();
+    nameInput.setAttribute('aria-label', tr('collabYourName'));
+
+    nameInput.addEventListener('input', () => {
+        collabSetName(nameInput.value);
+    });
+
+    nameRow.append(swatch, nameInput);
+
     const leave = collabButton(
         'collabLeave',
         'collab-leave',
         () => collabLeave()
     );
 
-    container.append(codeRow, copy, peers, leave);
+    container.append(codeRow, copy, peers, nameRow, leave);
 }
 
 function collabRender() {
@@ -1888,6 +2211,9 @@ function collabRender() {
     if (!container) {
         return;
     }
+
+    const keepNameFocus =
+        document.activeElement?.id === 'collabNameInput';
 
     container.innerHTML = '';
 
@@ -1915,6 +2241,18 @@ function collabRender() {
         : '';
 
     container.append(status);
+
+    if (keepNameFocus) {
+        const nameInput = container.querySelector('#collabNameInput');
+
+        if (nameInput) {
+            nameInput.focus();
+            nameInput.setSelectionRange(
+                nameInput.value.length,
+                nameInput.value.length
+            );
+        }
+    }
 }
 
 /* =========================

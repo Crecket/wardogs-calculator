@@ -193,6 +193,7 @@
 }
 
 .mobile-app .map-tool-collab button,
+.mobile-app .collab-name-input,
 .mobile-app .collab-join-row input {
     min-height: 42px;
     font-size: 12px;
