@@ -87,23 +87,6 @@ These were not in the original survey. Where one would displace something above,
 
 - [ ] **Second-monitor pop-out.** Open the results panel in its own window so the map keeps the main screen. Cheap, and a lot of this audience plays on two monitors.
 - [ ] **Saved-target search, tags and folders.** The list is flat and unfiltered; once someone has 40 targets it stops being usable.
-
-**Would rank in Tier 3 or lower:**
-
-- [ ] **Minimap or overview inset** showing the viewport against the whole map.
-- [ ] **Measure area** with a polygon, alongside the existing ruler.
-- [ ] **Recent-coordinate history** in the search box.
-- [ ] **Numeric input scrubbing** — drag on a coordinate field to change it.
-- [ ] **Layer opacity sliders and per-layer locking.**
-- [ ] **Duplicate a gun** with the same weapon and a small offset.
-- [ ] **Persistent saved measurements** — pin a ruler line to the map instead of losing it on the next measurement.
-- [ ] **Hold-to-preview the alternate arc** on the SPH-2 without switching selection.
-- [ ] **Compass rose, and a north-up lock** if map rotation is ever added.
-- [ ] **Hotkey cheat sheet** on `?`.
-- [ ] **Print stylesheet** for the plan and the range card.
-- [ ] **Weapon comparison view** — both weapons' envelopes against the same target.
-- [ ] **Auto-detect the map** from a pasted coordinate pair that only falls inside one map's bounds.
-
 ---
 
 ## Won't do
@@ -137,3 +120,16 @@ Considered and declined. Not a backlog — nothing here is waiting for capacity,
 - **Camera bookmarks.** Save and recall named views per map — the objective, the ridge, the home position.
 - **Shared timers.** A countdown any peer can start, visible to the room: respawn, resupply, objective. Foxhole planners have this and it is used constantly.
 - **Copy solution to clipboard** as a one-line string for voice or chat, distinct from the fuller call-for-fire block.
+- **Minimap or overview inset** showing the viewport against the whole map.
+- **Measure area** with a polygon, alongside the existing ruler.
+- **Recent-coordinate history** in the search box.
+- **Numeric input scrubbing** — drag on a coordinate field to change it.
+- **Layer opacity sliders and per-layer locking.**
+- **Duplicate a gun** with the same weapon and a small offset.
+- **Persistent saved measurements** — pin a ruler line to the map instead of losing it on the next measurement.
+- **Hold-to-preview the alternate arc** on the SPH-2 without switching selection.
+- **Compass rose, and a north-up lock** if map rotation is ever added.
+- **Hotkey cheat sheet** on `?`.
+- **Print stylesheet** for the plan and the range card.
+- **Weapon comparison view** — both weapons' envelopes against the same target.
+- **Auto-detect the map** from a pasted coordinate pair that only falls inside one map's bounds.
