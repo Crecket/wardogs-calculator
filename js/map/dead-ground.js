@@ -78,7 +78,8 @@ function deadGroundBearingIntervals(
     muzzleVelocity,
     ranges,
     deltas,
-    count
+    count,
+    minRange
 ) {
     const intervals = [];
 
@@ -87,9 +88,12 @@ function deadGroundBearingIntervals(
     }
 
     const edgeBefore = index =>
-        index === 0
-            ? ranges[0]
-            : (ranges[index - 1] + ranges[index]) / 2;
+        Math.max(
+            minRange,
+            index === 0
+                ? ranges[0]
+                : (ranges[index - 1] + ranges[index]) / 2
+        );
 
     const edgeAfter = index =>
         index === count - 1
@@ -106,7 +110,10 @@ function deadGroundBearingIntervals(
             deltas[i]
         );
 
-        const dead = tanTheta !== null && tanTheta < required;
+        const dead =
+            tanTheta !== null &&
+            tanTheta < required &&
+            ranges[i] >= minRange;
 
         if (dead && runStart < 0) {
             runStart = i;
@@ -228,7 +235,8 @@ function terrainDeadGround(gun, mapId) {
             muzzleVelocity,
             ranges,
             deltas,
-            count
+            count,
+            ring.minRadii ? ring.minRadii[b] : ring.minRangeMeters ?? 0
         );
 
         if (intervals.length) {
@@ -246,6 +254,50 @@ function terrainDeadGround(gun, mapId) {
     rememberDeadGround(key, solved);
 
     return solved;
+}
+
+const DEAD_GROUND_HATCH_STEP = 7;
+
+let DEAD_GROUND_HATCH = null;
+let DEAD_GROUND_HATCH_SCALE = 0;
+
+function deadGroundHatch() {
+    const d = renderScale();
+
+    if (DEAD_GROUND_HATCH && DEAD_GROUND_HATCH_SCALE === d) {
+        return DEAD_GROUND_HATCH;
+    }
+
+    const size = DEAD_GROUND_HATCH_STEP * d;
+
+    const tile = document.createElement('canvas');
+
+    tile.width = size;
+    tile.height = size;
+
+    const g = tile.getContext('2d');
+
+    g.strokeStyle = 'rgba(240,116,116,.55)';
+    g.lineWidth = 1.25 * d;
+    g.lineCap = 'square';
+
+    for (const offset of [-size, 0, size]) {
+        g.beginPath();
+        g.moveTo(offset, size);
+        g.lineTo(offset + size, 0);
+        g.stroke();
+    }
+
+    const pattern = ctx.createPattern(tile, 'repeat');
+
+    if (pattern && typeof DOMMatrix === 'function') {
+        pattern.setTransform(new DOMMatrix([1 / d, 0, 0, 1 / d, 0, 0]));
+    }
+
+    DEAD_GROUND_HATCH = pattern;
+    DEAD_GROUND_HATCH_SCALE = d;
+
+    return pattern;
 }
 
 function traceDeadGroundWedge(at, scale, angle, half, startMetres, endMetres) {
@@ -329,7 +381,10 @@ function drawDeadGround(at, scale) {
         }
     }
 
-    ctx.fillStyle = 'rgba(18,22,26,.42)';
+    ctx.fillStyle = 'rgba(10,12,16,.5)';
+    ctx.fill();
+
+    ctx.fillStyle = deadGroundHatch();
     ctx.fill();
 
     ctx.beginPath();
@@ -344,7 +399,11 @@ function drawDeadGround(at, scale) {
         }
     }
 
-    ctx.strokeStyle = 'rgba(196,92,92,.5)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(20,10,12,.75)';
+    ctx.lineWidth = 3.5;
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(236,104,104,.95)';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 }

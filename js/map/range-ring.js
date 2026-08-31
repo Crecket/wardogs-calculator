@@ -167,6 +167,171 @@ function rememberRangeRing(key, ring) {
     RANGE_RING_CACHE.set(key, ring);
 }
 
+function maxElevationArc(weaponId) {
+    const arcs = PROJECTILE_MODEL?.weapons?.[weaponId];
+
+    if (!arcs) {
+        return null;
+    }
+
+    return arcs.high ?? arcs.single ?? arcs.low ?? null;
+}
+
+function maxElevationAngle(weapon, arc) {
+    const mil = Number(weapon?.maxElevationMil);
+
+    const offset = Number(arc?.angleOffsetDeg);
+    const perMil = Number(arc?.anglePerMilDeg);
+
+    if (
+        !Number.isFinite(mil) ||
+        !Number.isFinite(offset) ||
+        !Number.isFinite(perMil)
+    ) {
+        return null;
+    }
+
+    const degrees = offset + perMil * mil;
+
+    return degrees > 0 && degrees < 90
+        ? degrees * Math.PI / 180
+        : null;
+}
+
+function modelRangeAtAngle(muzzleVelocity, theta, deltaZMeters) {
+    const cos = Math.cos(theta);
+
+    if (!(cos > 0)) {
+        return null;
+    }
+
+    const tan = Math.tan(theta);
+
+    const a =
+        RANGE_RING_GRAVITY /
+        (2 * muzzleVelocity * muzzleVelocity * cos * cos);
+
+    const discriminant = tan * tan - 4 * a * deltaZMeters;
+
+    if (discriminant < 0) {
+        return null;
+    }
+
+    return (tan + Math.sqrt(discriminant)) / (2 * a);
+}
+
+function minRangeRadii(field, gun, weapon, zGun, declaredMin) {
+    const arc = maxElevationArc(gun.weapon);
+    const theta = maxElevationAngle(weapon, arc);
+
+    const muzzleVelocity = Number(arc?.muzzleVelocity);
+
+    if (
+        !(declaredMin > 0) ||
+        theta === null ||
+        !Number.isFinite(muzzleVelocity) ||
+        muzzleVelocity <= 0
+    ) {
+        return null;
+    }
+
+    const levelMin = modelRangeAtAngle(muzzleVelocity, theta, 0);
+
+    if (!levelMin) {
+        return null;
+    }
+
+    const deepest = modelRangeAtAngle(
+        muzzleVelocity,
+        theta,
+        field.minZMeters - zGun
+    );
+
+    const marchLimit = Math.max(
+        declaredMin,
+        Math.min(
+            declaredMin + ((deepest ?? levelMin) - levelMin),
+            declaredMin * 4
+        )
+    );
+
+    const radii = new Float64Array(RANGE_RING_BEARINGS);
+
+    for (let b = 0; b < RANGE_RING_BEARINGS; b += 1) {
+        const angle = b * 2 * Math.PI / RANGE_RING_BEARINGS;
+
+        const stepX =
+            Math.cos(angle) / METRES_PER_GAME_UNIT_RING;
+
+        const stepY =
+            Math.sin(angle) / METRES_PER_GAME_UNIT_RING;
+
+        const short = metres => {
+            const z = rangeRingSample(
+                field,
+                gun.position.x + stepX * metres,
+                gun.position.y + stepY * metres
+            );
+
+            if (z === null) {
+                return null;
+            }
+
+            const modelled = modelRangeAtAngle(
+                muzzleVelocity,
+                theta,
+                z - zGun
+            );
+
+            if (modelled === null) {
+                return true;
+            }
+
+            return metres < declaredMin + (modelled - levelMin);
+        };
+
+        let edge = null;
+        let previous = 0;
+
+        for (
+            let r = RANGE_RING_MARCH_METRES;
+            r <= marchLimit + RANGE_RING_MARCH_METRES;
+            r += RANGE_RING_MARCH_METRES
+        ) {
+            const ok = short(r);
+
+            if (ok === null) {
+                edge = declaredMin;
+                break;
+            }
+
+            if (!ok) {
+                let inside = previous;
+                let outside = r;
+
+                for (let i = 0; i < RANGE_RING_BISECTIONS; i += 1) {
+                    const middle = (inside + outside) / 2;
+
+                    if (short(middle) === true) {
+                        inside = middle;
+                    } else {
+                        outside = middle;
+                    }
+                }
+
+                edge = (inside + outside) / 2;
+                break;
+            }
+
+            previous = r;
+        }
+
+        radii[b] = edge === null ? marchLimit : edge;
+    }
+
+    return radii;
+}
+
 function terrainRangeRing(gun, mapId) {
     const weapon = WEAPONS[gun.weapon];
 
@@ -292,9 +457,13 @@ function terrainRangeRing(gun, mapId) {
         radii[b] = edge === null ? marchLimit : edge;
     }
 
+    const declaredMin = (weapon.minRange ?? 0) * 1000;
+
     const ring = {
         radii,
-        maxRangeMeters: declaredMax
+        maxRangeMeters: declaredMax,
+        minRadii: minRangeRadii(field, gun, weapon, zGun, declaredMin),
+        minRangeMeters: declaredMin
     };
 
     rememberRangeRing(key, ring);
