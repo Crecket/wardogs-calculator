@@ -242,9 +242,10 @@ const roster = await A.evaluate(() => Array.from(
     stale: row.querySelector('.collab-peer-health').classList.contains('stale')
 })));
 
-check('one row per peer', roster.length === 2, JSON.stringify(roster));
-check('exactly one row is marked as you',
-    roster.filter(row => row.you).length === 1, JSON.stringify(roster));
+check('one row per other peer, and none for yourself',
+    roster.length === 1, JSON.stringify(roster));
+check('no row is marked as you',
+    roster.every(row => !row.you), JSON.stringify(roster));
 check('the peer row carries their name',
     roster.some(row => !row.you && row.name === 'Bravo'), JSON.stringify(roster));
 check('every row has a colour and reads connected',
@@ -377,16 +378,12 @@ check('only the other peer offers a follow',
     followRows.filter(row => row.followable).length === 1 &&
     followRows.every(row => row.followable !== row.you),
     JSON.stringify(followRows));
+check('your own row is not listed at all',
+    followRows.every(row => !row.you), JSON.stringify(followRows));
 check('the follow affordance is a real button with an icon and a label',
     followRows.some(row =>
         row.button && row.buttonIcon && row.label === 'Follow' && row.pressed === 'false'),
     JSON.stringify(followRows));
-check('your own row is marked with an icon, not the word',
-    followRows.some(row => row.you && row.youIcon && row.youText === '' && row.youLabel === 'you'),
-    JSON.stringify(followRows));
-check('your own row offers no follow button',
-    followRows.every(row => !row.you || !row.button), JSON.stringify(followRows));
-
 await A.evaluate(() =>
     document.querySelector('#collabPopover button.collab-peer-follow').click());
 

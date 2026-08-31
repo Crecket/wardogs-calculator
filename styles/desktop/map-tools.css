@@ -778,17 +778,6 @@ input[type="checkbox"] {
     white-space: nowrap;
 }
 
-.collab-peer-you {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-
-    width: 18px;
-    height: 18px;
-
-    color: var(--muted);
-}
 
 .collab-peer.following {
     border-color: var(--accent-border);
@@ -953,4 +942,10 @@ input[type="checkbox"] {
 
 .collab-status.error {
     color: #d86b6b;
+}
+
+.map-tool-collab .collab-peer-empty {
+    color: var(--muted);
+
+    font-style: italic;
 }

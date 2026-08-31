@@ -70,14 +70,6 @@ const COLLAB_CURSOR_COLORS = [
     '#ff7ab8'
 ];
 
-const COLLAB_PEER_SELF_ICON =
-    '<svg aria-hidden="true" viewBox="0 0 24 24" width="11" height="11"' +
-    ' fill="none" stroke="currentColor" stroke-width="1.9"' +
-    ' stroke-linecap="round" stroke-linejoin="round">' +
-    '<circle cx="12" cy="8.2" r="3.4"/>' +
-    '<path d="M5.6 19.4a6.4 6.4 0 0 1 12.8 0"/>' +
-    '</svg>';
-
 const COLLAB_FOLLOW_ICON =
     '<svg aria-hidden="true" viewBox="0 0 24 24" width="11" height="11"' +
     ' fill="none" stroke="currentColor" stroke-width="1.8"' +
@@ -2912,7 +2904,20 @@ function collabBuildRoster() {
     const list = document.createElement('ul');
     list.className = 'collab-roster';
 
-    for (const entry of COLLAB.roster) {
+    const others = COLLAB.roster.filter(
+        entry => entry.id !== COLLAB.clientId
+    );
+
+    if (!others.length) {
+        const empty = document.createElement('li');
+        empty.className = 'collab-peer collab-peer-empty';
+        empty.textContent = tr('collabPeersAlone');
+        list.append(empty);
+
+        return list;
+    }
+
+    for (const entry of others) {
         list.append(collabBuildRosterRow(entry));
     }
 
@@ -2937,16 +2942,6 @@ function collabBuildRosterRow(entry) {
         : entry.name || collabFallbackName(entry.id);
 
     row.append(swatch, name);
-
-    if (isYou) {
-        const you = document.createElement('span');
-        you.className = 'collab-peer-you';
-        you.innerHTML = COLLAB_PEER_SELF_ICON;
-        you.title = tr('collabPeerYou');
-        you.setAttribute('role', 'img');
-        you.setAttribute('aria-label', tr('collabPeerYou'));
-        row.append(you);
-    }
 
     if (!isYou && collabViewSupported()) {
         const following = COLLAB.follow === entry.id;
@@ -3080,3 +3075,150 @@ function initCollab() {
         }
     });
 }
+
+
+const COLLAB_OBS_ICON =
+    '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"' +
+    ' fill="none" stroke="currentColor" stroke-width="1.8"' +
+    ' stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M3 8h11a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/>' +
+    '<path d="m15 12 5-3v6l-5-3Z"/>' +
+    '<circle cx="8" cy="12" r="2.4"/>' +
+    '</svg>';
+
+function collabObsLink() {
+
+    if (!COLLAB.roomCode) {
+        return '';
+    }
+
+    const url = new URL(
+        'obs/',
+        window.location.href
+    );
+
+    url.hash =
+        `${COLLAB_HASH_KEY}=${COLLAB.roomCode}`;
+
+    return url.href;
+}
+
+function collabSyncObsButton() {
+
+    const button = $('obsOverlayLaunch');
+
+    if (!button) {
+        return;
+    }
+
+    const configured =
+        typeof isCollabConfigured === 'function' &&
+        isCollabConfigured();
+
+    if (button.hidden !== !configured) {
+        button.hidden = !configured;
+    }
+
+    const ready = Boolean(COLLAB.roomCode);
+
+    const label = tr(
+        ready
+            ? 'obsOverlayOpen'
+            : 'obsOverlayNeedsRoom'
+    );
+
+    button.classList.toggle(
+        'is-unavailable',
+        !ready
+    );
+
+    button.setAttribute(
+        'aria-disabled',
+        String(!ready)
+    );
+
+    button.title = label;
+
+    button.setAttribute(
+        'aria-label',
+        label
+    );
+}
+
+function collabInitObsButton() {
+
+    if (collabIsReadOnly()) {
+        return;
+    }
+
+    const theme = $('themeToggle');
+
+    const host = theme?.parentElement;
+
+    if (!host || $('obsOverlayLaunch')) {
+        return;
+    }
+
+    const button = document.createElement('button');
+
+    button.type = 'button';
+    button.id = 'obsOverlayLaunch';
+    button.className = 'obs-launch-button';
+    button.innerHTML = COLLAB_OBS_ICON;
+
+    button.addEventListener('click', () => {
+
+        const href = collabObsLink();
+
+        if (!href) {
+            return;
+        }
+
+        window.open(
+            href,
+            'wardogsObsOverlay',
+            'width=1280,height=720,noopener'
+        );
+    });
+
+    host.insertBefore(
+        button,
+        $('solutionPopoutToggle') || theme
+    );
+
+    collabSyncObsButton();
+}
+
+if (typeof collabRender === 'function') {
+
+    const collabRenderBase = collabRender;
+
+    collabRender = function (...args) {
+
+        const value =
+            collabRenderBase.apply(this, args);
+
+        collabInitObsButton();
+        collabSyncObsButton();
+
+        return value;
+    };
+}
+
+if (typeof applyLanguage === 'function') {
+
+    const applyLanguageObsBase = applyLanguage;
+
+    applyLanguage = function (...args) {
+
+        const value =
+            applyLanguageObsBase.apply(this, args);
+
+        collabInitObsButton();
+        collabSyncObsButton();
+
+        return value;
+    };
+}
+
+collabInitObsButton();
