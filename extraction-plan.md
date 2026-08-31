@@ -141,6 +141,20 @@ The sentinel fix from `ebd28c291` is not reverted — an unreachable crest still
 
 ---
 
+## The firing solution pops out on `feat/ux-panel-popout`
+
+Ranked idea #15, built on Document Picture-in-Picture. `documentPictureInPicture.requestWindow()` is the only web API that yields an always-on-top window holding live, interactive DOM; a `window.open` popup drops behind a fullscreen game the moment it loses focus, and every trick for re-raising it is either blocked or hostile. So the ranked entry's "degrades to a plain popup elsewhere" was dropped: on a browser without Document PiP the control is not rendered at all, because a window that cannot stay on top is not the feature and a silent worse-behaving fallback is a support burden.
+
+The window is the easy half. The panel node is **moved** into the second document — `pip.document.body.append(panel)` — never cloned, so `result()` keeps writing into the same elements and there is one firing solution rather than two drifting copies. Listeners registered with `addEventListener` survive adoption; what does not survive is every lookup that re-finds the panel from the main `document`. The audit found them all in five places, and the fix was one indirection rather than five: `js/core/core.js` gains `POPOUT_DOCUMENT` and `$()` falls back to it, with a matching `$q()` for the two `querySelector('.solution-result')` sites in `terrain-ballistics.js` and `experimental-terrain-correction.js` that anchor the SPH-2 leveling warning and the experimental correction panel. Both of those panels are inserted as siblings of `.solution-result` inside the Result section, so they travel with it and keep updating. `applyLanguage()` re-translates `[data-i18n]` through the main document and is wrapped the way `results.js` wraps `renderSavedTargets`. No delegated listener on `document` or `window` reaches into the panel — the only in-panel control is the experimental toggle's own `change` listener, which is bound to the node.
+
+Theme is mirrored with a `MutationObserver` on `documentElement`'s `data-theme` and `lang` rather than by editing `js/ui/theme.js`, which keeps the branch additive. Stylesheets are copied at open time by absolute `href`, and a second observer on `document.head` mirrors any `<style>` injected later.
+
+The panel leaves a placeholder card in its slot carrying a **Return to page** button, and it is restored on the pop-out's `pagehide`, on that button, on the control itself, and on the main page's `pagehide` — which also closes the window, so no path leaves the panel orphaned in a dead document or the sidebar with a hole in it. Size is remembered under its own `wardogs-solution-popout-size` key, untouched by collab's persistence suppression. The control is not loaded on mobile and refuses to initialize on a `mobile-app` body.
+
+`test/panel-popout.mjs` drives the whole cycle in headless Chromium, which does support Document PiP: open, node in the second document, `$()` still finding it, live updates written into the pop-out, theme following both ways, and the panel landing back at its original index in the sidebar by all three routes home.
+
+---
+
 ## Status board
 
 Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed) · `pr` (open upstream) · `held` (reviewed, blocked on something upstream wants first) · `merged` · `absorbed` (closed unmerged, content shipped in v1.7.0) · `parked`.

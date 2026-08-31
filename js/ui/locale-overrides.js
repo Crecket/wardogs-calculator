@@ -222,7 +222,7 @@
         if (!isSimplifiedChinese()) return;
 
         const warning =
-            document.getElementById('sphLevelWarning');
+            $('sphLevelWarning');
 
         if (!warning) return;
 
