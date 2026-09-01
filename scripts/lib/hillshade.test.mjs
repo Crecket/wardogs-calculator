@@ -201,3 +201,30 @@ test('shadow encodes black and highlight encodes white', () => {
     assert.equal(pixels[2], 255);
     assert.ok(pixels[3] > 0);
 });
+
+/*
+ * Flat ground shades at 180 out of 255, so an unnormalised delta would give
+ * a full highlight barely a quarter of a full shadow's alpha. Both extremes
+ * have to land on the same magnitude.
+ */
+test('a full highlight and a full shadow reach the same alpha', () => {
+    for (const altitude of [20, 45, 70]) {
+        const pixels = shadeToGreyAlpha(
+            Uint8Array.from([0, 255]),
+            { altitude }
+        );
+
+        assert.equal(pixels[1], 255, `full shadow at ${altitude} degrees`);
+        assert.equal(pixels[3], 255, `full highlight at ${altitude} degrees`);
+    }
+});
+
+test('gain scales both signs by the same factor', () => {
+    const shade = Uint8Array.from([60, 220]);
+
+    const plain = shadeToGreyAlpha(shade, { altitude: 45 });
+    const doubled = shadeToGreyAlpha(shade, { altitude: 45, gain: 2 });
+
+    assert.equal(doubled[1], Math.min(255, plain[1] * 2));
+    assert.equal(doubled[3], Math.min(255, plain[3] * 2));
+});

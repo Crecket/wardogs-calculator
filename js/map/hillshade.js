@@ -28,7 +28,7 @@ const HILLSHADE_MAP_IDS = [
     'ozeti'
 ];
 
-const HILLSHADE_OPACITY = 0.72;
+const HILLSHADE_OPACITY = 0.5;
 
 const HILLSHADE_CACHE = new Map();
 

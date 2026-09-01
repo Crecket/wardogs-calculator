@@ -152,6 +152,14 @@ export function computeHillshade(grid, width, height, options = {}) {
  * as translucent black where the ground is in shadow and translucent white
  * where it faces the sun, with flat ground fully transparent. That way the
  * tiles show through untouched wherever there is nothing to say.
+ *
+ * Flat ground sits at the neutral shade, which is nowhere near the middle
+ * of the 0..255 range — at a 45 degree sun it is 180 — so the two sides of
+ * neutral have very different room above and below them. Each sign is
+ * therefore normalised against its own headroom, so a slope square-on to
+ * the light and a slope fully in shadow come out equally strong instead of
+ * the highlight reaching a quarter of the shadow's alpha. Gain then scales
+ * the normalised value, and so still acts the same on both signs.
  */
 export function shadeToGreyAlpha(shade, options = {}) {
     const altitude = options.altitude ?? 45;
@@ -159,12 +167,19 @@ export function shadeToGreyAlpha(shade, options = {}) {
 
     const neutral = neutralShade(altitude);
 
+    const headroomUp = 255 - neutral;
+    const headroomDown = neutral;
+
     const pixels = new Uint8Array(shade.length * 2);
 
     for (let i = 0; i < shade.length; i += 1) {
-        const delta = (shade[i] - neutral) / 255;
+        const offset = shade[i] - neutral;
 
-        pixels[i * 2] = delta >= 0 ? 255 : 0;
+        const headroom = offset >= 0 ? headroomUp : headroomDown;
+
+        const delta = headroom > 0 ? offset / headroom : 0;
+
+        pixels[i * 2] = offset >= 0 ? 255 : 0;
 
         pixels[i * 2 + 1] = Math.max(
             0,
