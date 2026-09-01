@@ -664,6 +664,13 @@ function bindEvents() {
 
             if (pan) {
 
+                if (
+                    typeof hideMilCursor ===
+                    'function'
+                ) {
+                    hideMilCursor();
+                }
+
                 S.panX =
                     pan.originX +
                     (
@@ -720,6 +727,13 @@ function bindEvents() {
                     toolWorld
                 )
             ) {
+                if (
+                    typeof hideMilCursor ===
+                    'function'
+                ) {
+                    hideMilCursor();
+                }
+
                 drag = null;
                 return;
             }
@@ -727,6 +741,21 @@ function bindEvents() {
             updatePresetMarkerHover(
                 e
             );
+
+            if (
+                typeof updateMilCursor ===
+                'function'
+            ) {
+                if (drag) {
+                    hideMilCursor();
+                } else {
+                    updateMilCursor(
+                        e,
+                        toolWorld,
+                        rect
+                    );
+                }
+            }
 
             if (!drag) {
                 return;
@@ -785,6 +814,13 @@ function bindEvents() {
                 $('cursorCoords')
                     .style.display =
                     'none';
+            }
+
+            if (
+                typeof hideMilCursor ===
+                'function'
+            ) {
+                hideMilCursor();
             }
         }
     );

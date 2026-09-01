@@ -75,7 +75,8 @@ const MAP_TOOL_STATE = {
         savedTargets: true,
         deadGround: false,
         crossSection: true,
-        cursorCoords: true
+        cursorCoords: true,
+        milCursor: false
     }
 };
 
@@ -1108,6 +1109,14 @@ function setMapLayerVisible(layer, visible) {
         }
     }
 
+    if (
+        layer === 'milCursor' &&
+        !MAP_TOOL_STATE.layers.milCursor &&
+        typeof hideMilCursor === 'function'
+    ) {
+        hideMilCursor();
+    }
+
     draw();
 }
 
@@ -1143,6 +1152,14 @@ function setMapLayerGroupVisible(layerIds, visible) {
         if (cursor) {
             cursor.style.display = 'none';
         }
+    }
+
+    if (
+        !nextVisible &&
+        layerIds.includes('milCursor') &&
+        typeof hideMilCursor === 'function'
+    ) {
+        hideMilCursor();
     }
 
     draw();
@@ -1199,7 +1216,8 @@ function buildMapLayers() {
             items: [
                 ['drawings', 'mapLayerDrawings'],
                 ['userMarkers', 'mapLayerUserMarkers'],
-                ['cursorCoords', 'mapLayerCursorCoordinates']
+                ['cursorCoords', 'mapLayerCursorCoordinates'],
+                ['milCursor', 'mapLayerMilCursor']
             ]
         }
     ];
@@ -1266,6 +1284,10 @@ function buildMapLayers() {
         `,
         cursorCoords: `
             <path d="m5 3 13 9-6 1.5L9.5 19Z"/>
+        `,
+        milCursor: `
+            <path d="m4 3 9 6.5-4 1L7.5 14Z"/>
+            <path d="M13 15h8M13 19h5"/>
         `
     };
 

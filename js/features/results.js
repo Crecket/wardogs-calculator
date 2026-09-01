@@ -76,7 +76,10 @@ function formatMilValue(solution) {
 function resolveElevationSolutions(
     weapon,
     distanceMeters,
-    solutions
+    solutions,
+    origin,
+    target,
+    prime
 ) {
     if (
         typeof getTerrainBallisticSolutions !==
@@ -95,8 +98,9 @@ function resolveElevationSolutions(
                 distanceMeters,
                 solutions,
                 mapId: S.map,
-                origin: S.origin,
-                target: S.target
+                origin,
+                target,
+                prime
             });
 
         return {
@@ -118,6 +122,101 @@ function resolveElevationSolutions(
             terrainMeta: null
         };
     }
+}
+
+function firingGeometry(origin, target) {
+    const dx =
+        target.x -
+        origin.x;
+
+    const dy =
+        target.y -
+        origin.y;
+
+    const dWorld =
+        Math.hypot(
+            dx,
+            dy
+        );
+
+    const dMeters =
+        worldDistanceToMeters(dWorld);
+
+    let bearing =
+        Math.atan2(
+            dx,
+            dy
+        ) *
+        180 /
+        Math.PI;
+
+    if (
+        bearing <
+        0
+    ) {
+        bearing +=
+            360;
+    }
+
+    return {
+        dx,
+        dy,
+        dWorld,
+        dMeters,
+        bearing
+    };
+}
+
+function solveFiringElevation(
+    weapon,
+    distanceMeters,
+    origin,
+    target,
+    prime
+) {
+    const flatSolutions =
+        getWeaponElevationSolutions(
+            weapon,
+            distanceMeters
+        );
+
+    const resolved =
+        resolveElevationSolutions(
+            weapon,
+            distanceMeters,
+            flatSolutions,
+            origin,
+            target,
+            prime
+        );
+
+    const solutions =
+        extendModelledSolutions(
+            weapon,
+            distanceMeters,
+            resolved.solutions,
+            origin,
+            target
+        );
+
+    return {
+        solutions,
+
+        terrainMeta:
+        resolved.terrainMeta,
+
+        solved: Boolean(
+            solutions.single ||
+            solutions.low ||
+            solutions.high
+        ),
+
+        modelled: Boolean(
+            solutions.single?.modelled ||
+            solutions.low?.modelled ||
+            solutions.high?.modelled
+        )
+    };
 }
 
 function formatTerrainBallisticDetail(meta) {
@@ -264,27 +363,16 @@ function renderElevationResult(weapon, distanceMeters) {
         };
     }
 
-    const flatSolutions =
-        getWeaponElevationSolutions(
-            weapon,
-            distanceMeters
-        );
-
     const resolved =
-        resolveElevationSolutions(
+        solveFiringElevation(
             weapon,
             distanceMeters,
-            flatSolutions
-        );
-
-    const solutions =
-        extendModelledSolutions(
-            weapon,
-            distanceMeters,
-            resolved.solutions,
             S.origin,
             S.target
         );
+
+    const solutions =
+        resolved.solutions;
 
     const terrainDetail =
         formatTerrainBallisticDetail(
@@ -309,17 +397,11 @@ function renderElevationResult(weapon, distanceMeters) {
         secondary = tr('highArc');
     }
 
-    const solved = Boolean(
-        solutions.single ||
-        solutions.low ||
-        solutions.high
-    );
+    const solved =
+        resolved.solved;
 
-    const modelled = Boolean(
-        solutions.single?.modelled ||
-        solutions.low?.modelled ||
-        solutions.high?.modelled
-    );
+    const modelled =
+        resolved.modelled;
 
     if (!solved) {
         secondary = tr('noFiringSolution');
@@ -382,41 +464,26 @@ function result() {
         return;
     }
 
-    const dx =
-        S.target.x -
-        S.origin.x;
-
-    const dy =
-        S.target.y -
-        S.origin.y;
-
-    const dWorld =
-        Math.hypot(
-            dx,
-            dy
+    const geometry =
+        firingGeometry(
+            S.origin,
+            S.target
         );
 
+    const dx =
+        geometry.dx;
+
+    const dy =
+        geometry.dy;
+
     const dMeters =
-        worldDistanceToMeters(dWorld);
+        geometry.dMeters;
 
     const d =
         dMeters / 1000;
 
-    let a =
-        Math.atan2(
-            dx,
-            dy
-        ) *
-        180 /
-        Math.PI;
-
-    if (
-        a <
-        0
-    ) {
-        a +=
-            360;
-    }
+    const a =
+        geometry.bearing;
 
     setText(
         $('angle'),

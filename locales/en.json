@@ -113,6 +113,7 @@
   "mapToolEraser": "Eraser",
   "mapToolLayers": "Layers",
   "mapLayerCursorCoordinates": "Cursor coordinates",
+  "mapLayerMilCursor": "MIL under cursor",
   "mapToolDataTransfer": "Import / Export",
   "mapToolDataTransferHint": "Back up or share drawings, user markers, and layer settings.",
   "mapToolExportChanges": "Export changes",

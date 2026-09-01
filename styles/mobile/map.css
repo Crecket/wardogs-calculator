@@ -43,7 +43,8 @@
     -webkit-user-select: none;
 }
 
-.mobile-app .cursor-coords {
+.mobile-app .cursor-coords,
+.mobile-app .mil-cursor {
     display: none !important;
 }
 

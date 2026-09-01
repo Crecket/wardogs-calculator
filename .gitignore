@@ -6,3 +6,4 @@ dist-mobile/
 node_modules/
 maps/tiles/
 Trace-*.json
+.superpowers/

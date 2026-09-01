@@ -1271,10 +1271,12 @@
             return fallback;
         }
 
-        primeTerrainForPoints(
-            terrain,
-            [context.origin, context.target]
-        );
+        if (context.prime !== false) {
+            primeTerrainForPoints(
+                terrain,
+                [context.origin, context.target]
+            );
+        }
 
         const originZ =
             terrainHeightAtPointSync(terrain, context.origin);

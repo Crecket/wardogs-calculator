@@ -164,6 +164,76 @@ canvas.preset-marker-hover {
 
 
 
+/* =========================
+   MIL UNDER CURSOR
+   ========================= */
+
+.mil-cursor {
+    position: absolute;
+
+    left: 0;
+    top: 0;
+
+    display: none;
+
+    min-width: 96px;
+
+    padding: 6px 8px;
+
+    border: 0;
+
+    border-radius: 5px;
+
+    background:
+            color-mix(
+                    in srgb,
+                    var(--header-bg) 93%,
+                    transparent
+            );
+
+    color: var(--accent);
+
+    font:
+            12px ui-monospace,
+            SFMono-Regular,
+            Consolas,
+            monospace;
+
+    pointer-events: none;
+
+    white-space: nowrap;
+
+    z-index: 5;
+
+    transform:
+            translate(12px, 12px);
+}
+
+.mil-cursor-range {
+    margin-bottom: 3px;
+
+    opacity: 0.75;
+}
+
+.mil-cursor-row {
+    display: flex;
+
+    gap: 8px;
+
+    align-items: baseline;
+
+    justify-content: space-between;
+}
+
+.mil-cursor-arc {
+    opacity: 0.75;
+}
+
+.mil-cursor-value {
+    font-weight: 700;
+}
+
+
 .cross-section {
     position: absolute;
 
