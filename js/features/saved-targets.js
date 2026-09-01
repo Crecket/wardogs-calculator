@@ -1507,8 +1507,6 @@ function renderSavedTargets() {
             savedTargets.length;
     }
 
-    syncSavedTargetsVisibility();
-
     const exportAllButton =
         $('exportSavedTargets');
 
@@ -1933,59 +1931,3 @@ function renderSavedTargets() {
     );
 }
 
-
-function savedTargetsVisible() {
-    return (
-        typeof isMapLayerVisible !== 'function' ||
-        isMapLayerVisible('savedTargets')
-    );
-}
-
-function syncSavedTargetsVisibility() {
-    const button = $('toggleSavedTargets');
-
-    if (!button) {
-        return;
-    }
-
-    const visible = savedTargetsVisible();
-
-    button.textContent =
-        visible ? '▴' : '▾';
-
-    button.setAttribute(
-        'aria-pressed',
-        String(visible)
-    );
-
-    const label = tr(
-        visible
-            ? 'hideSavedTargets'
-            : 'showSavedTargets'
-    );
-
-    button.title = label;
-
-    button.setAttribute(
-        'aria-label',
-        label
-    );
-}
-
-function toggleSavedTargetsVisibility() {
-
-    if (typeof setMapLayerVisible !== 'function') {
-        return;
-    }
-
-    setMapLayerVisible(
-        'savedTargets',
-        !savedTargetsVisible()
-    );
-
-    syncSavedTargetsVisibility();
-
-    if (typeof buildMapLayers === 'function') {
-        buildMapLayers();
-    }
-}

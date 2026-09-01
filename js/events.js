@@ -432,12 +432,6 @@ function bindEvents() {
             importSavedTargets
         );
 
-    $('toggleSavedTargets')
-        ?.addEventListener(
-            'click',
-            toggleSavedTargetsVisibility
-        );
-
 
     /* =========================
        CANVAS

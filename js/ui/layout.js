@@ -8,6 +8,9 @@ const SIDEBAR_COLLAPSED_KEY =
 const SAVED_TARGETS_PANEL_COLLAPSED_KEY =
     'wardogs-saved-targets-panel-collapsed';
 
+const GUNS_PANEL_COLLAPSED_KEY =
+    'wardogs-guns-panel-collapsed';
+
 let mapResizeObserver =
     null;
 
@@ -1625,13 +1628,57 @@ function installDesktopSavedTargetsCollapseStyle() {
     );
 }
 
-function loadDesktopSavedTargetsCollapsed() {
+function desktopSavedTargetsPanelKey(
+    panel
+) {
+
+    return (
+        panel.classList.contains(
+            'guns-panel'
+        )
+            ? GUNS_PANEL_COLLAPSED_KEY
+            : SAVED_TARGETS_PANEL_COLLAPSED_KEY
+    );
+}
+
+function desktopSavedTargetsPanelLabel(
+    panel
+) {
+
+    const guns =
+        panel.classList.contains(
+            'guns-panel'
+        );
+
+    const key =
+        guns
+            ? 'gunsPanel'
+            : 'savedTargets';
+
+    const fallback =
+        guns
+            ? 'Guns'
+            : 'Saved targets';
+
+    return (
+        typeof tr ===
+            'function'
+            ? tr(key)
+            : fallback
+    );
+}
+
+function loadDesktopSavedTargetsCollapsed(
+    panel
+) {
 
     try {
 
         return (
             localStorage.getItem(
-                SAVED_TARGETS_PANEL_COLLAPSED_KEY
+                desktopSavedTargetsPanelKey(
+                    panel
+                )
             ) === 'true'
         );
 
@@ -1642,13 +1689,16 @@ function loadDesktopSavedTargetsCollapsed() {
 }
 
 function saveDesktopSavedTargetsCollapsed(
+    panel,
     collapsed
 ) {
 
     try {
 
         localStorage.setItem(
-            SAVED_TARGETS_PANEL_COLLAPSED_KEY,
+            desktopSavedTargetsPanelKey(
+                panel
+            ),
             collapsed
                 ? 'true'
                 : 'false'
@@ -1664,17 +1714,15 @@ function saveDesktopSavedTargetsCollapsed(
 }
 
 function setDesktopSavedTargetsCollapsed(
+    panel,
     collapsed,
     persist = true
 ) {
 
-    const panel =
-        document.querySelector(
-            '.workspace .saved-targets'
-        );
-
     const toggle =
-        $('savedTargetsCollapseToggle');
+        panel?.querySelector(
+            '.saved-targets-collapse-toggle'
+        );
 
     if (
         !panel ||
@@ -1706,10 +1754,9 @@ function setDesktopSavedTargetsCollapsed(
             : '▴';
 
     const label =
-        typeof tr ===
-            'function'
-            ? tr('savedTargets')
-            : 'Saved targets';
+        desktopSavedTargetsPanelLabel(
+            panel
+        );
 
     toggle.title =
         label;
@@ -1722,43 +1769,29 @@ function setDesktopSavedTargetsCollapsed(
     if (persist) {
 
         saveDesktopSavedTargetsCollapsed(
+            panel,
             next
         );
     }
 }
 
-function initDesktopSavedTargetsCollapse() {
-
-    const mobileApp =
-        document.body.classList.contains(
-            'mobile-app'
-        );
-
-    if (mobileApp) {
-        return;
-    }
-
-    const panel =
-        document.querySelector(
-            '.workspace .saved-targets'
-        );
+function initDesktopSavedTargetsPanelCollapse(
+    panel
+) {
 
     const header =
-        panel?.querySelector(
+        panel.querySelector(
             '.saved-targets-header'
         );
 
-    if (
-        !panel ||
-        !header
-    ) {
+    if (!header) {
         return;
     }
 
-    installDesktopSavedTargetsCollapseStyle();
-
     let toggle =
-        $('savedTargetsCollapseToggle');
+        panel.querySelector(
+            '.saved-targets-collapse-toggle'
+        );
 
     if (!toggle) {
 
@@ -1766,9 +1799,6 @@ function initDesktopSavedTargetsCollapse() {
             document.createElement(
                 'button'
             );
-
-        toggle.id =
-            'savedTargetsCollapseToggle';
 
         toggle.type =
             'button';
@@ -1788,6 +1818,7 @@ function initDesktopSavedTargetsCollapse() {
                 event.stopPropagation();
 
                 setDesktopSavedTargetsCollapsed(
+                    panel,
                     !panel.classList.contains(
                         'is-collapsed'
                     )
@@ -1797,8 +1828,43 @@ function initDesktopSavedTargetsCollapse() {
     }
 
     setDesktopSavedTargetsCollapsed(
-        loadDesktopSavedTargetsCollapsed(),
+        panel,
+        loadDesktopSavedTargetsCollapsed(
+            panel
+        ),
         false
+    );
+}
+
+function initDesktopSavedTargetsCollapse() {
+
+    const mobileApp =
+        document.body.classList.contains(
+            'mobile-app'
+        );
+
+    if (mobileApp) {
+        return;
+    }
+
+    const panels =
+        document.querySelectorAll(
+            '.workspace .saved-targets'
+        );
+
+    if (!panels.length) {
+        return;
+    }
+
+    installDesktopSavedTargetsCollapseStyle();
+
+    panels.forEach(
+        panel => {
+
+            initDesktopSavedTargetsPanelCollapse(
+                panel
+            );
+        }
     );
 }
 

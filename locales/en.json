@@ -45,8 +45,6 @@
   "collabPeersAlone": "No one else is here yet",
   "obsOverlayOpen": "Open the OBS overlay in a new window",
   "obsOverlayNeedsRoom": "Start a shared session first — the overlay needs a room to follow",
-  "showSavedTargets": "Show saved targets",
-  "hideSavedTargets": "Hide saved targets",
   "mapLayerSavedTargets": "Saved targets",
   "noSavedTargets": "No saved targets",
   "saveArtilleryPosition": "New targets move the artillery too",
