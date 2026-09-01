@@ -25,8 +25,8 @@ function loadProjectileModel() {
         })
         .catch(error => {
             console.warn(
-                '[range-ring] No projectile model; ' +
-                'range rings will stay circular.',
+                '[ballistics] No projectile model; ' +
+                'every range, reach, and dead-ground verdict falls back to its declared table value.',
                 error
             );
 

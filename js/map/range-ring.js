@@ -20,7 +20,6 @@
 const RANGE_RING_BEARINGS = 360;
 const RANGE_RING_MARCH_METRES = 25;
 const RANGE_RING_BISECTIONS = 14;
-const RANGE_RING_GRAVITY = BALLISTICS_GRAVITY;
 const METRES_PER_GAME_UNIT_RING = 100;
 
 /*
@@ -35,25 +34,40 @@ const RANGE_RING_MEMO_METRES = 8;
 
 const RANGE_RING_CACHE = new Map();
 
-/*
- * Max range is reached at the arc crossover, so either arc's fit is valid.
- * Take the highest: that branch's own table extends furthest, so its fit is
- * the one anchored by the max-range end of the data.
- */
-function weaponMuzzleVelocity(weaponId) {
-    const arcs = PROJECTILE_MODEL?.weapons?.[weaponId];
-
-    if (!arcs) {
-        return null;
-    }
-
+function weaponReachRange(weapon, deltaZMeters) {
     let best = null;
 
-    for (const arc of Object.values(arcs)) {
-        const v = Number(arc?.muzzleVelocity);
+    for (const arc of REACH_ARCS) {
+        const fit = projectileModelArc(weapon?.id, arc);
 
-        if (Number.isFinite(v) && v > 0 && (best === null || v > best)) {
-            best = v;
+        if (!fit) {
+            continue;
+        }
+
+        const range = arcMaxRangeModel(weapon, fit, deltaZMeters);
+
+        if (range !== null && (best === null || range > best)) {
+            best = range;
+        }
+    }
+
+    return best;
+}
+
+function weaponMinReachRange(weapon, deltaZMeters) {
+    let best = null;
+
+    for (const arc of REACH_ARCS) {
+        const fit = projectileModelArc(weapon?.id, arc);
+
+        if (!fit) {
+            continue;
+        }
+
+        const range = arcMinRangeModel(weapon, fit, deltaZMeters);
+
+        if (range !== null && (best === null || range < best)) {
+            best = range;
         }
     }
 
@@ -88,7 +102,8 @@ function rangeRingSample(field, gameX, gameY) {
 }
 
 function rangeRingMemoKey(gun, mapId) {
-    const cell = RANGE_RING_MEMO_METRES / METRES_PER_GAME_UNIT_RING;
+    const metresPerUnit = getCoordinateMetersPerUnit();
+    const cell = RANGE_RING_MEMO_METRES / metresPerUnit;
 
     return [
         mapId,
@@ -115,63 +130,15 @@ function rememberRangeRing(key, ring) {
     RANGE_RING_CACHE.set(key, ring);
 }
 
-function maxElevationArc(weaponId) {
-    const arcs = PROJECTILE_MODEL?.weapons?.[weaponId];
-
-    if (!arcs) {
-        return null;
-    }
-
-    return arcs.high ?? arcs.single ?? arcs.low ?? null;
-}
-
-function maxElevationAngle(weapon, arc) {
-    const mil = Number(weapon?.maxElevationMil);
-
-    const offset = Number(arc?.angleOffsetDeg);
-    const perMil = Number(arc?.anglePerMilDeg);
-
-    if (
-        !Number.isFinite(mil) ||
-        !Number.isFinite(offset) ||
-        !Number.isFinite(perMil)
-    ) {
-        return null;
-    }
-
-    const degrees = offset + perMil * mil;
-
-    return degrees > 0 && degrees < 90
-        ? degrees * Math.PI / 180
-        : null;
-}
-
 function minRangeRadii(field, gun, weapon, zGun, declaredMin) {
-    const arc = maxElevationArc(gun.weapon);
-    const theta = maxElevationAngle(weapon, arc);
+    const metresPerUnit = getCoordinateMetersPerUnit();
+    const levelMin = weaponMinReachRange(weapon, 0);
 
-    const muzzleVelocity = Number(arc?.muzzleVelocity);
-
-    if (
-        !(declaredMin > 0) ||
-        theta === null ||
-        !Number.isFinite(muzzleVelocity) ||
-        muzzleVelocity <= 0
-    ) {
+    if (!(declaredMin > 0) || levelMin === null) {
         return null;
     }
 
-    const levelMin = modelRangeAtAngle(muzzleVelocity, theta, 0);
-
-    if (!levelMin) {
-        return null;
-    }
-
-    const deepest = modelRangeAtAngle(
-        muzzleVelocity,
-        theta,
-        field.minZMeters - zGun
-    );
+    const deepest = weaponMinReachRange(weapon, field.minZMeters - zGun);
 
     const marchLimit = Math.max(
         declaredMin,
@@ -187,10 +154,10 @@ function minRangeRadii(field, gun, weapon, zGun, declaredMin) {
         const angle = b * 2 * Math.PI / RANGE_RING_BEARINGS;
 
         const stepX =
-            Math.cos(angle) / METRES_PER_GAME_UNIT_RING;
+            Math.cos(angle) / metresPerUnit;
 
         const stepY =
-            Math.sin(angle) / METRES_PER_GAME_UNIT_RING;
+            Math.sin(angle) / metresPerUnit;
 
         const short = metres => {
             const z = rangeRingSample(
@@ -203,11 +170,7 @@ function minRangeRadii(field, gun, weapon, zGun, declaredMin) {
                 return null;
             }
 
-            const modelled = modelRangeAtAngle(
-                muzzleVelocity,
-                theta,
-                z - zGun
-            );
+            const modelled = weaponMinReachRange(weapon, z - zGun);
 
             if (modelled === null) {
                 return true;
@@ -268,9 +231,9 @@ function terrainRangeRing(gun, mapId) {
     ensureHeightfieldLoaded(mapId);
 
     const field = cachedHeightfield(mapId);
-    const muzzleVelocity = weaponMuzzleVelocity(gun.weapon);
+    const levelMax = weaponReachRange(weapon, 0);
 
-    if (!field || !muzzleVelocity) {
+    if (!field || !levelMax) {
         return null;
     }
 
@@ -292,19 +255,15 @@ function terrainRangeRing(gun, mapId) {
     }
 
     const declaredMax = (weapon.maxRange ?? weapon.range) * 1000;
-    const levelMax = modelMaxRange(muzzleVelocity, 0);
-
-    if (!levelMax) {
-        return null;
-    }
+    const metresPerUnit = getCoordinateMetersPerUnit();
 
     /*
      * The furthest this gun could reach if the whole map were at its lowest
      * sample. An exact bound, so a bearing that never crosses still ends.
      */
     const marchLimit = Math.min(
-        modelMaxRange(muzzleVelocity, field.minZMeters - zGun) ??
-            declaredMax,
+        (weaponReachRange(weapon, field.minZMeters - zGun) ?? declaredMax) +
+            Math.max(0, declaredMax - levelMax),
         declaredMax * 2
     );
 
@@ -314,10 +273,10 @@ function terrainRangeRing(gun, mapId) {
         const angle = b * 2 * Math.PI / RANGE_RING_BEARINGS;
 
         const stepX =
-            Math.cos(angle) / METRES_PER_GAME_UNIT_RING;
+            Math.cos(angle) / metresPerUnit;
 
         const stepY =
-            Math.sin(angle) / METRES_PER_GAME_UNIT_RING;
+            Math.sin(angle) / metresPerUnit;
 
         /*
          * True while the shell still outreaches the distance travelled.
@@ -335,7 +294,7 @@ function terrainRangeRing(gun, mapId) {
                 return null;
             }
 
-            const modelled = modelMaxRange(muzzleVelocity, z - zGun);
+            const modelled = weaponReachRange(weapon, z - zGun);
 
             if (modelled === null) {
                 return false;
