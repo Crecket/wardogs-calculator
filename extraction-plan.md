@@ -204,6 +204,10 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 26 | — | OBS overlay route, auto-framed, joins a room as a read-only viewer | `branch` | `feat/ux-obs-mode` (fork only, extends items 16 and 21) |
 | 27 | — | Results panel popped out into an always-on-top Document PiP window | `branch` | `feat/ux-panel-popout` (fork only) |
 | 28 | 3.7 | Gun-to-target trajectory cross-section with an exception-only caption | `branch` | `feat/ux-cross-section` (fork only, extends item 22) |
+| 29 | — | MIL under the cursor: the active gun's firing solution follows the pointer, as an opt-in layer | `branch` | `feat/collab-rooms` (fork only, ranked idea 8) |
+| 30 | — | Shape tools: line, arrow, rectangle and circle beside the pencil, sharing its colour, undo and collab ops | `branch` | `feat/collab-rooms` (fork only, ranked idea 13; adds a `type` field to `sync/src/ops.js`'s drawing validator) |
+| 31 | 1.x | Overwrite feedback: a remote `point.set` or `gun.move` flashes the affected point in the peer's colour with their name | `branch` | `feat/collab-rooms` (fork only, ranked idea 26, extends items 16 and 21) |
+| 32 | 3.x | Shaded relief raster built from the terrain chunks, drawn between the tiles and the contours | `branch` | `feat/collab-rooms` (fork only, ranked idea 18, extends item 4) |
 
 The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
 
