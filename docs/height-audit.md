@@ -163,7 +163,7 @@ A near-duplicate of 3.2: Engine A, then Engine C via `getTerrainBallisticSolutio
 
 Samples the **2 m chunks** at origin and target with `terrainHeightAtPointSync`, both located through `locateTerrainPoint` (`:760`) using `globalQuadOffsetX/Y`, `gameUnitsToLandscapeQuadsX/Y` (50 and **−50** — the Y axis is mirrored) and `chunkQuads: 510`. ΔZ is `targetZ − originZ`.
 
-For each of `single`, `low`, `high` it calls `classifyArc` (`:1190`), which asks Engine C for both `missMeters` and `milCorrections` at (distance, ΔZ) and returns one of four outcomes: `corrected`, `negligible` (|miss| < `suppressionMissMeters` = 10 m), `unreachable` (either grid lookup returned null), or `nogrid`. The correction is applied only if the outcome is `corrected` **and** `allowed` (`:1308`) — that is, `releasePolicy.automaticMilCorrection` is true **and** the map is in `correctedMaps`. Today that means **Bakurani only**; Ozeti ships terrain, samples ΔZ, prints the caption and applies nothing.
+For each of `single`, `low`, `high` it calls `classifyArc` (`:1190`), which asks Engine C for both `missMeters` and `milCorrections` at (distance, ΔZ) and returns one of four outcomes: `corrected`, `negligible` (|miss| < `suppressionMissMeters` = 10 m), `offgrid` (either grid lookup returned null), or `nogrid`. The correction is applied only if the outcome is `corrected` **and** `allowed` (`:1308`) — that is, `releasePolicy.automaticMilCorrection` is true **and** the map is in `correctedMaps`. Today that means **Bakurani only**; Ozeti ships terrain, samples ΔZ, prints the caption and applies nothing.
 
 Chunk loading is fire-and-forget: `primeTerrainForPoints` (`:898`) requests the two chunks the shot touches and schedules a re-render on arrival. Until both are cached, `terrainHeightAtPointSync` returns null and the function returns the uncorrected solutions with `pendingTerrain: true` and no `deltaZ` field at all — which is why flight time falls back to ΔZ 0 during that window. Outside `manifest.coverage` it returns the plain fallback with **no meta at all**, so no caption appears and the user cannot tell "off the terrain dataset" from "on flat ground".
 
@@ -486,6 +486,29 @@ A generalisation of F worth stating on its own, because it is a property of the 
 **Mechanism.** `applySafeCandidates` (`js/features/experimental-terrain-correction.js:2056`) rewrites `mil`, `minMil` and `maxMil` on the solutions object. The rings, wedges, badges and cross-section never see the solutions object; they re-derive everything from Engine B.
 
 **Concrete input.** SPG on Bakurani with the toggle on, at a distance and ΔZ where a `SAFE_CONSENSUS` candidate differs from the table by, say, 40 mil. The MIL card shows the corrected value; the flight-time badge changes with it, because it is driven by the displayed MIL; the cross-section draws the *uncorrected* Engine B trajectory; the ring, wedges and badges are unchanged. Two trajectories for one shot, on one screen, one of them drawn.
+
+---
+
+## Resolution (2026-09)
+
+The unified reachability change replaced the scattered call sites into Engines B and C with `js/ballistics/model.js` and `js/ballistics/reachability.js`, and rewired every surface in section 3 above to render one verdict from `assessShot`. What follows maps each finding above to whether this branch closes it; `docs/superpowers/specs/2026-09-01-unified-reachability-design.md` § 9 is the authority this list is drawn from.
+
+- **A** — closed. `arcAngleStops` replaces `crossSectionElevationLimits`: each branch now keeps only the half of the weapon envelope meaningful on its own root, with 45° as the crossover, so the SPG low arc's real 13.91° minimum is no longer discarded alongside its meaningless 93.37° extrapolated maximum.
+- **B** — closed. `assessArc`'s anchored verdict and the cross-section's rewired drawing rules mean a shot below the gun's minimum elevation no longer draws a confident green hit; the secondary caption inversion (a min-range overshoot reported as "inside the minimum range") is fixed in the caption vocabulary.
+- **C** — closed. One heightfield-derived ΔZ is now both displayed and consumed everywhere; the 2 m-chunks-vs-32 m-grid split this finding described no longer produces two different numbers on the same panel.
+- **D** — closed. The flat range gate and the terrain-solved rings both go through `assessShot`'s anchored gates, so `rangeStatus` and the ring can no longer disagree about the same target.
+- **E** — closed. The correction grid's distance-axis clamp plus a ceiling-capped rule mean the firing table, the fitted model and the correction grid no longer narrate three different ceilings for the same shot.
+- **F** — closed. Dead ground now runs per weapon through the shared model rather than a local low-arc-only reimplementation; the mortar gets dead-ground wedges for the first time.
+- **G** — closed alongside F: the badge vocabulary's dependence on which arc shape a weapon happens to have no longer leaves `masked` permanently unreachable for the mortar or lets the SPG's high-arc clearance go unbadged.
+- **H** — open by design, not closed here. Ozeti's correction stays policy-gated pending alignment validation; `releasePolicy.correctedMaps` still lists only `bakurani`, and the terrain note keeps saying so.
+- **I** — closed. `assessShot` carries an explicit pending state and the silent ΔZ-0 substitution before terrain loads is gone, so a modelled MIL computed before terrain lands no longer looks identical to a terrain-aware one; the mil-cursor row picks up the same pending state.
+- **J** — closed. The two datasets' out-of-bounds behaviours are reconciled: on-grid clamping and off-manifest absence are now distinguished consistently rather than one dataset silently fabricating ground the other has no data for.
+- **K** — closed. `METRES_PER_GAME_UNIT_RING` is deleted; the ring, dead ground and reach badges all call `getCoordinateMetersPerUnit()` now, so there is one distance scale instead of a hardcoded one and a configurable one.
+- **L** — open by design, a non-goal. The experimental terrain-correction wrapper still only overrides the dialed MIL after verdicts are computed; verdicts never see it, exactly as before this branch.
+- **marchLimit anchor bug** (found during implementation, not lettered above) — closed. The ring's fixed-point march is now anchored by `+ max(0, declaredMax − levelMax)`, so a flat-field ring no longer caps at the model's level ceiling (2622.6 m for the SPG) short of the declared 2629 m.
+- **mortar max-ring overdraw** (found during implementation, not lettered above) — closed. `arcMaxRangeModel`'s clamp gives the mortar's true model ceiling as 687.2 m (its 58.125° minimum-elevation stop), not the unclamped 766.2 m the ring used to draw past; the solid ring no longer overdraws downhill reach by roughly 40 m per 100 m of drop.
+
+Not closed by this branch, and not claimed to be: the underlying vacuum fit remains unvalidated against the game (`docs/todo.md`), the experimental correction panel's own MIL override is unchanged, and Ozeti's correction gate stays closed pending alignment validation.
 
 ---
 

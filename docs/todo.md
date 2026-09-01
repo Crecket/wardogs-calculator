@@ -135,11 +135,7 @@ Two things still hold it back, both captioned in the panel rather than silent:
   ΔZ, comparing the corrected MIL against where the round actually lands.
   Nothing in this pipeline has been checked against the game — only against
   itself.
-- **The SPG tables outrun their own fitted model.** The high table's last row is
-  2629 m against a fitted vacuum ceiling of 2622.6 m. The grid's distance axis is
-  now clamped to that ceiling, so the corrected span reaches 2621 m instead of
-  stopping at 2580; the last few metres of table range still get nothing. It
-  disappears when the model comes from the paks.
+- **The SPG tables outrun their own fitted model — handled at the gating level.** The high table's last row is 2629 m against a fitted vacuum ceiling of 2622.6 m. The grid's distance axis is now clamped to that ceiling, so the corrected span reaches 2621 m instead of stopping at 2580; the last few metres of table range still get nothing. The unified-reachability change (2026-09) closed the gap between what each surface *said* about this mismatch — the grid clamp and `assessShot`'s anchored gates now agree with each other and with the firing table — but the fits themselves are unchanged and still stop short of 2629 m; only pak-extracted parameters make it disappear.
 - **No automated coverage under `js/`.** `scripts/lib/ballistics.test.mjs` covers
   the solver and the fit; the runtime half — the gate, the map allowlist,
   `correctArc`, the per-arc caption selection — has none, because the repo has no
@@ -147,11 +143,22 @@ Two things still hold it back, both captioned in the panel rather than silent:
 - **Vehicle attitude is not modelled.** The SPH-2 level warning is still just a
   caption. Chassis tilt moves the impact independently of terrain ΔZ, so a
   corrected MIL fired from a tilted platform is still wrong.
+- **Flight time and the branch assumption remain unvalidated against the game.** The unified-reachability change (2026-09) put every surface behind one verdict, but it did not touch what that verdict is built on: the vacuum fit, the branch convention, and the flight times derived from them are exactly as unverified as before this work.
 
 **Regenerating the data.** In this order — the second reads the first's output:
 
     npm run fit-ballistics
     npm run build-height-correction
+
+---
+
+## Unified reachability (2026-09) — untested and inert
+
+Two things this branch shipped without being able to fully check.
+
+**The browser suites were never executed.** `test/reachability.mjs` and its four siblings (`test/cross-section.mjs`, `test/flight-time.mjs`, `test/range-ring.mjs`, `test/reach-badges.mjs`) are written and reasoned about against the shipped behaviour, but Chromium navigation to the dev server times out in this environment — for the pre-existing, unmodified suites just as much as the new ones — so none of the five has actually run against the app on this branch. The node suites (`npm run test:scripts`) do pass, at 105 passing with the one known-environmental `dev-env.test.mjs` tile failure (missing `maps/tiles/`) that predates this work. Someone with a working browser environment needs to run all five browser suites before trusting the integration claims.
+
+**The experimental terrain-correction panel's status display is now inert.** Removing the last caller of `formatTerrainBallisticsStatus` also removed the only writer of the state that panel's arc list renders from, so the panel now permanently renders its empty branch. This does not affect the dialed-mil override itself — the experimental correction still overrides the MIL exactly as before (see "Elevation correction" above and audit finding L) — it is only that panel's own status text that no longer updates. Rewiring it was left out of scope as a non-goal of the unified-reachability change.
 
 ---
 
