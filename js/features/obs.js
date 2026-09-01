@@ -285,7 +285,9 @@ function obsRenderReadout() {
     if (status) {
         status.dataset.state = text === tr('inRange')
             ? 'in'
-            : 'out';
+            : text === tr('inRangeModelled')
+                ? 'warn'
+                : 'out';
     }
 
     const flight = $('obsFlight');
@@ -295,6 +297,22 @@ function obsRenderReadout() {
 
     if (flight && flight.hidden !== !values) {
         flight.hidden = !values;
+    }
+
+    const note = $('obsTerrainNote');
+    const source = $('terrainNote');
+    const noteText = source && !source.hidden ? source.textContent.trim() : '';
+
+    if (note) {
+        setText(note, noteText);
+
+        if (note.hidden !== !noteText) {
+            note.hidden = !noteText;
+        }
+
+        if (noteText && source?.dataset.state) {
+            note.dataset.state = source.dataset.state;
+        }
     }
 }
 

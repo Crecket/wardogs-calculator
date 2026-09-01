@@ -265,3 +265,13 @@ body.obs-mode canvas {
     bottom: auto;
     top: calc(36px * var(--obs-scale));
 }
+
+.obs-terrain-note {
+    font-size: calc(14px * var(--obs-scale));
+    opacity: .85;
+    color: #f0b24a;
+}
+
+.obs-terrain-note[data-state="loading"] {
+    color: #9aa4ae;
+}
