@@ -1,0 +1,22 @@
+{
+    "format": "wardogs-hillshade-v1",
+    "mapId": "bakurani",
+    "sampleSpacingMeters": 8,
+    "sunAzimuthDegrees": 315,
+    "sunAltitudeDegrees": 45,
+    "zFactor": 0.9283,
+    "gain": 1,
+    "reliefMeters": 1077,
+    "boundsReliefMeters": 1081,
+    "grid": {
+        "width": 1379,
+        "height": 1379,
+        "originX": 23.35,
+        "originY": 129.65,
+        "stepX": 0.08,
+        "stepY": 0.08
+    },
+    "file": "hillshade.png",
+    "bytes": 1398866,
+    "sha256": "da33c0bd18f424d11ec230a20e383b7f0e0404e01282383111b669bcb78ccfec"
+}

@@ -142,6 +142,15 @@ function drawNow() {
 
     /*
      * Layer 2:
+     * shaded relief, straight onto the tiles it describes and under the
+     * contour lines that trace the same ground.
+     */
+    if (isMapLayerVisible('hillshade')) {
+        drawHillshade(currentMap);
+    }
+
+    /*
+     * Layer 3:
      * terrain contours, above the tiles they describe and below
      * everything drawn on top of the ground.
      */
@@ -150,7 +159,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 3:
+     * Layer 4:
      * coordinate grid.
      */
     if (isMapLayerVisible('grid')) {
@@ -159,7 +168,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 4:
+     * Layer 5:
      * circular zones.
      */
     if (isMapLayerVisible('zones')) {
@@ -167,7 +176,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 5:
+     * Layer 6:
      * arbitrary polygons.
      */
     if (isMapLayerVisible('polygons')) {
@@ -225,7 +234,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 9:
+     * Layer 10:
      * preset icons are ALWAYS drawn last.
      *
      * This prevents tiles, grid, zones,

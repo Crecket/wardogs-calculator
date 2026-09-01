@@ -90,6 +90,7 @@
   "mapToolSearchOutOfBounds": "Coordinates are outside the map",
   "mapLayerMap": "Map tiles",
   "mapLayerContours": "Contours",
+  "mapLayerHillshade": "Shaded relief",
   "mapLayerGrid": "Grid",
   "mapLayerZones": "Zones",
   "mapLayerPolygons": "Polygons",

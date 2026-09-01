@@ -67,6 +67,11 @@ const MAP_TOOL_STATE = {
          * download, only made when somebody actually asks for them.
          */
         contours: false,
+        /*
+         * Off by default for the same reason: the relief raster is roughly
+         * a megabyte, fetched only when somebody asks for it.
+         */
+        hillshade: false,
         grid: true,
         zones: true,
         polygons: true,
@@ -1122,6 +1127,14 @@ function setMapLayerVisible(layer, visible) {
     }
 
     if (
+        layer === 'hillshade' &&
+        visible &&
+        typeof ensureHillshadeLoaded === 'function'
+    ) {
+        ensureHillshadeLoaded(currentMapToolMapId());
+    }
+
+    if (
         layer === 'cursorCoords' &&
         !MAP_TOOL_STATE.layers.cursorCoords
     ) {
@@ -1167,6 +1180,16 @@ function setMapLayerGroupVisible(layerIds, visible) {
     }
 
     if (
+        nextVisible &&
+        layerIds.includes('hillshade') &&
+        typeof ensureHillshadeLoaded === 'function'
+    ) {
+        ensureHillshadeLoaded(
+            currentMapToolMapId()
+        );
+    }
+
+    if (
         !nextVisible &&
         layerIds.includes('cursorCoords')
     ) {
@@ -1204,6 +1227,15 @@ function buildMapLayers() {
         ? [['contours', 'mapLayerContours']]
         : [];
 
+    const hillshadeLayer = (
+        typeof mapHasHillshade === 'function' &&
+        mapHasHillshade(
+            currentMapToolMapId()
+        )
+    )
+        ? [['hillshade', 'mapLayerHillshade']]
+        : [];
+
     const crossSectionLayer = $('crossSection')
         ? [['crossSection', 'mapLayerCrossSection']]
         : [];
@@ -1214,6 +1246,7 @@ function buildMapLayers() {
             titleKey: 'map',
             items: [
                 ['tiles', 'mapLayerMap'],
+                ...hillshadeLayer,
                 ...contourLayer,
                 ['grid', 'mapLayerGrid']
             ]
@@ -1253,6 +1286,11 @@ function buildMapLayers() {
             <path d="M3 7c3-2 5 2 8 0s5-2 10 0"/>
             <path d="M3 12c3-2 5 2 8 0s5-2 10 0"/>
             <path d="M3 17c3-2 5 2 8 0s5-2 10 0"/>
+        `,
+        hillshade: `
+            <path d="M3 19 10 7l4.5 7"/>
+            <path d="m11.5 19 4-6 5.5 6Z"/>
+            <path d="M3 19h18"/>
         `,
         grid: `
             <path d="M4 4h16v16H4z"/>
