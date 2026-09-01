@@ -219,6 +219,10 @@ body.obs-mode canvas {
     color: #8fdcaa;
 }
 
+.obs-metric-sub[data-state="warn"] {
+    color: #f0b24a;
+}
+
 .obs-flight {
     display: flex;
     align-items: baseline;
