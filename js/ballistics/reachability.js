@@ -127,3 +127,164 @@ function assessArc(weapon, arc, distanceMeters, deltaZMeters) {
 
     return { status: 'hit', mil, tan, tableRow };
 }
+
+const REACH_PROFILE_STEP_METRES = 25;
+
+const REACH_VERDICT_PRIORITY = ['hit', 'masked', 'tooClose', 'tooFar', 'unreachable'];
+
+function reachabilityProfile(field, origin, target, distanceMeters) {
+    const samples = Math.max(
+        2,
+        Math.min(256, Math.ceil(distanceMeters / REACH_PROFILE_STEP_METRES) + 1)
+    );
+
+    const ground = new Float64Array(samples);
+
+    for (let i = 0; i < samples; i += 1) {
+        const t = i / (samples - 1);
+
+        const z = rangeRingSample(
+            field,
+            origin.x + (target.x - origin.x) * t,
+            origin.y + (target.y - origin.y) * t
+        );
+
+        if (z === null) {
+            return null;
+        }
+
+        ground[i] = z;
+    }
+
+    return { ground, stepMeters: distanceMeters / (samples - 1) };
+}
+
+function trajectoryClearsProfile(fit, tan, profile) {
+    const v = Number(fit.muzzleVelocity);
+    const ground = profile.ground;
+    const last = ground.length - 1;
+    const zGun = ground[0];
+
+    const firstIndex = Math.min(
+        last,
+        Math.max(1, Math.ceil(REACH_PROFILE_STEP_METRES / profile.stepMeters))
+    );
+
+    for (let i = firstIndex; i < last; i += 1) {
+        if (zGun + modelShellHeight(tan, v, i * profile.stepMeters) < ground[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function reachabilityVerdict(arcs) {
+    let best = null;
+    let bestRank = Infinity;
+
+    for (const arc of REACH_ARCS) {
+        const assessed = arcs[arc];
+
+        if (!assessed || assessed.status === 'noModel') {
+            continue;
+        }
+
+        let label;
+
+        if (assessed.status === 'hit') {
+            label = assessed.masked ? 'masked' : 'hit';
+        } else if (assessed.status === 'tooClose' || assessed.status === 'tooFar') {
+            label = assessed.status;
+        } else {
+            label = 'unreachable';
+        }
+
+        const rank = REACH_VERDICT_PRIORITY.indexOf(label);
+
+        if (rank < bestRank) {
+            bestRank = rank;
+            best = label;
+        }
+    }
+
+    return best;
+}
+
+function assessShot(weapon, origin, target, mapId) {
+    const result = {
+        state: 'nodata',
+        distanceMeters: null,
+        deltaZ: null,
+        arcs: { single: null, low: null, high: null },
+        verdict: null
+    };
+
+    if (
+        !weapon ||
+        !origin ||
+        !target ||
+        !Number.isFinite(Number(origin.x)) ||
+        !Number.isFinite(Number(origin.y)) ||
+        !Number.isFinite(Number(target.x)) ||
+        !Number.isFinite(Number(target.y))
+    ) {
+        return result;
+    }
+
+    result.distanceMeters =
+        Math.hypot(target.x - origin.x, target.y - origin.y) *
+        getCoordinateMetersPerUnit();
+
+    if (typeof mapHasHeightfield !== 'function' || !mapHasHeightfield(mapId)) {
+        return result;
+    }
+
+    ensureHeightfieldLoaded(mapId);
+
+    const field = cachedHeightfield(mapId);
+
+    if (!field) {
+        result.state = 'pending';
+        return result;
+    }
+
+    const zGun = heightfieldSample(field, origin.x, origin.y);
+    const zTarget = heightfieldSample(field, target.x, target.y);
+
+    if (zGun === null || zTarget === null) {
+        result.state = 'offmap';
+        return result;
+    }
+
+    result.state = 'ready';
+    result.deltaZ = zTarget - zGun;
+
+    let profile;
+
+    for (const arc of REACH_ARCS) {
+        const assessed = assessArc(weapon, arc, result.distanceMeters, result.deltaZ);
+
+        assessed.masked = false;
+
+        if (assessed.status === 'hit' && assessed.tan !== null && !assessed.ceilingCapped) {
+            if (profile === undefined) {
+                profile = reachabilityProfile(field, origin, target, result.distanceMeters);
+            }
+
+            if (profile) {
+                assessed.masked = !trajectoryClearsProfile(
+                    projectileModelArc(weapon.id, arc),
+                    assessed.tan,
+                    profile
+                );
+            }
+        }
+
+        result.arcs[arc] = assessed;
+    }
+
+    result.verdict = reachabilityVerdict(result.arcs);
+
+    return result;
+}

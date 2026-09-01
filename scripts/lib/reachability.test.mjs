@@ -86,3 +86,64 @@ test('a modelled mil outside the envelope is refused', () => {
     assert.equal(callRuntime(ctx, 'assessArc(__toy, "low", 200, 0).status'), 'belowMinElevation');
     assert.equal(callRuntime(ctx, 'assessArc(__toy, "low", 900, 0).status'), 'hit');
 });
+
+const flatField = (width, height, ridge = null) => {
+    const heights = new Float32Array(width * height);
+    if (ridge) {
+        for (let j = 0; j < height; j += 1) {
+            heights[j * width + ridge.column] = ridge.height;
+        }
+    }
+    return { heights, width, height, originX: 0, originY: 0, stepGameUnits: 1, minZMeters: 0 };
+};
+
+function shotCtx(field) {
+    const ctx = loadRuntime(
+        ['js/map/heightfield.js', 'js/ballistics/model.js', 'js/ballistics/reachability.js'],
+        {
+            getCoordinateMetersPerUnit: () => 100
+        }
+    );
+    setRuntimeGlobal(ctx, 'mapHasHeightfield', () => true);
+    setRuntimeGlobal(ctx, 'ensureHeightfieldLoaded', () => {});
+    setRuntimeGlobal(ctx, 'PROJECTILE_MODEL', model);
+    setRuntimeGlobal(ctx, '__spg', spg);
+    setRuntimeGlobal(ctx, '__mortar', mortar);
+    setRuntimeGlobal(ctx, '__field', field);
+    setRuntimeGlobal(ctx, 'cachedHeightfield', () => field);
+    callRuntime(ctx, `rangeRingSample = (field, x, y) => heightfieldSample(
+        field,
+        Math.min(field.originX + (field.width - 1) * field.stepGameUnits, Math.max(field.originX, x)),
+        Math.min(field.originY + (field.height - 1) * field.stepGameUnits, Math.max(field.originY, y))
+    )`);
+    return ctx;
+}
+
+test('assessShot on flat ground: SPG 900 m is a plain hit, 2700 m is tooFar', () => {
+    const ctx = shotCtx(flatField(40, 3));
+    const near = callRuntime(ctx, 'assessShot(__spg, {x: 1, y: 1}, {x: 10, y: 1}, "m")');
+    assert.equal(near.state, 'ready');
+    assert.equal(near.deltaZ, 0);
+    assert.equal(near.verdict, 'hit');
+    assert.equal(near.arcs.low.status, 'tooClose');
+    assert.equal(near.arcs.high.masked, false);
+    const far = callRuntime(ctx, 'assessShot(__spg, {x: 1, y: 1}, {x: 28, y: 1}, "m")');
+    assert.equal(far.verdict, 'tooFar');
+});
+
+test('assessShot marks a ridge-blocked mortar shot masked', () => {
+    const ctx = shotCtx(flatField(9, 3, { column: 5, height: 250 }));
+    const shot = callRuntime(ctx, 'assessShot(__mortar, {x: 0, y: 1}, {x: 6.5, y: 1}, "m")');
+    assert.equal(shot.state, 'ready');
+    assert.equal(shot.arcs.single.status, 'hit');
+    assert.equal(shot.arcs.single.masked, true);
+    assert.equal(shot.verdict, 'masked');
+});
+
+test('assessShot reports pending and offmap honestly', () => {
+    const ctx = shotCtx(flatField(9, 3));
+    setRuntimeGlobal(ctx, 'cachedHeightfield', () => null);
+    assert.equal(callRuntime(ctx, 'assessShot(__spg, {x: 1, y: 1}, {x: 5, y: 1}, "m").state'), 'pending');
+    const ctx2 = shotCtx(flatField(9, 3));
+    assert.equal(callRuntime(ctx2, 'assessShot(__spg, {x: 1, y: 1}, {x: 100, y: 1}, "m").state'), 'offmap');
+});
