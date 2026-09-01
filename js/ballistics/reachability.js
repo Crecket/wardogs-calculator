@@ -211,7 +211,7 @@ function reachabilityVerdict(arcs) {
     return best;
 }
 
-const ASSESS_SHOT_MEMO_LIMIT = 4000;
+const ASSESS_SHOT_MEMO_LIMIT = 50000;
 
 const ASSESS_SHOT_MEMO = new WeakMap();
 
@@ -313,11 +313,13 @@ function assessShot(weapon, origin, target, mapId) {
 
     result.verdict = reachabilityVerdict(result.arcs);
 
-    if (memo.size >= ASSESS_SHOT_MEMO_LIMIT) {
-        memo.clear();
-    }
+    if (PROJECTILE_MODEL) {
+        if (memo.size >= ASSESS_SHOT_MEMO_LIMIT) {
+            memo.delete(memo.keys().next().value);
+        }
 
-    memo.set(memoKey, result);
+        memo.set(memoKey, result);
+    }
 
     return result;
 }
