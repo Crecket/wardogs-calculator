@@ -1246,9 +1246,9 @@ function buildMapLayers() {
             titleKey: 'map',
             items: [
                 ['tiles', 'mapLayerMap'],
-                ...hillshadeLayer,
+                ['grid', 'mapLayerGrid'],
                 ...contourLayer,
-                ['grid', 'mapLayerGrid']
+                ...hillshadeLayer
             ]
         },
         {
