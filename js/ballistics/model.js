@@ -47,23 +47,6 @@ function projectileModelArc(weaponId, arc) {
         : null;
 }
 
-/*
- * solveTan's discriminant solved for R:
- * R = (v/g) * sqrt(v^2 - 2 g deltaZ). Mirrors maxRangeMeters in
- * scripts/lib/ballistics.mjs, which is where it is unit-tested.
- */
-function modelMaxRange(muzzleVelocity, deltaZMeters) {
-    const inner =
-        muzzleVelocity * muzzleVelocity -
-        2 * BALLISTICS_GRAVITY * deltaZMeters;
-
-    if (inner <= 0) {
-        return null;
-    }
-
-    return muzzleVelocity * Math.sqrt(inner) / BALLISTICS_GRAVITY;
-}
-
 function modelArcLaunchTan(fit, rangeMeters, deltaZMeters) {
     const muzzleVelocity = Number(fit?.muzzleVelocity);
 

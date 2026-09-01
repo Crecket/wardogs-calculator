@@ -60,27 +60,27 @@ function assessArc(weapon, arc, distanceMeters, deltaZMeters) {
         const levelMax = arcMaxRangeModel(weapon, fit, 0);
         const shiftedMax = arcMaxRangeModel(weapon, fit, dz);
 
-        if (levelMax !== null) {
-            if (shiftedMax === null) {
-                return { status: 'tooFar', mil: null, tan: null, tableRow };
-            }
+        if (levelMax !== null && shiftedMax === null) {
+            return { status: 'tooFar', mil: null, tan: null, tableRow };
+        }
 
-            const anchoredMax = declared.maxMeters + (shiftedMax - levelMax);
+        const anchoredMax = levelMax !== null && shiftedMax !== null
+            ? declared.maxMeters + (shiftedMax - levelMax)
+            : declared.maxMeters;
 
-            if (distanceMeters > anchoredMax + 1e-6) {
-                return { status: 'tooFar', mil: null, tan: null, tableRow };
-            }
+        if (distanceMeters > anchoredMax + 1e-6) {
+            return { status: 'tooFar', mil: null, tan: null, tableRow };
         }
 
         const levelMin = arcMinRangeModel(weapon, fit, 0);
         const shiftedMin = arcMinRangeModel(weapon, fit, dz);
 
-        if (levelMin !== null && shiftedMin !== null) {
-            const anchoredMin = declared.minMeters + (shiftedMin - levelMin);
+        const anchoredMin = levelMin !== null && shiftedMin !== null
+            ? declared.minMeters + (shiftedMin - levelMin)
+            : declared.minMeters;
 
-            if (distanceMeters + 1e-6 < anchoredMin) {
-                return { status: 'tooClose', mil: null, tan: null, tableRow };
-            }
+        if (distanceMeters + 1e-6 < anchoredMin) {
+            return { status: 'tooClose', mil: null, tan: null, tableRow };
         }
     }
 
@@ -112,17 +112,33 @@ function assessArc(weapon, arc, distanceMeters, deltaZMeters) {
 
     const mil = modelArcMil(fit, tan);
 
-    if (!tableRow && mil !== null && !modelArcElevationFits(weapon, mil)) {
-        const minMil = Number(weapon?.minElevationMil);
+    if (!tableRow) {
+        if (mil !== null && !modelArcElevationFits(weapon, mil)) {
+            const minMil = Number(weapon?.minElevationMil);
 
-        return {
-            status: Number.isFinite(minMil) && mil < minMil
-                ? 'belowMinElevation'
-                : 'aboveMaxElevation',
-            mil,
-            tan,
-            tableRow
-        };
+            return {
+                status: Number.isFinite(minMil) && mil < minMil
+                    ? 'belowMinElevation'
+                    : 'aboveMaxElevation',
+                mil,
+                tan,
+                tableRow
+            };
+        }
+
+        const stops = arcAngleStops(weapon, fit);
+
+        if (stops) {
+            const radians = Math.atan(tan);
+
+            if (radians < stops.minRadians - 1e-9) {
+                return { status: 'belowMinElevation', mil, tan, tableRow };
+            }
+
+            if (radians > stops.maxRadians + 1e-9) {
+                return { status: 'aboveMaxElevation', mil, tan, tableRow };
+            }
+        }
     }
 
     return { status: 'hit', mil, tan, tableRow };

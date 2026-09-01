@@ -147,3 +147,86 @@ test('assessShot reports pending and offmap honestly', () => {
     const ctx2 = shotCtx(flatField(9, 3));
     assert.equal(callRuntime(ctx2, 'assessShot(__spg, {x: 1, y: 1}, {x: 100, y: 1}, "m").state'), 'offmap');
 });
+
+test('no arc ever hits outside its anchored envelope, and no gate ever vanishes', () => {
+    const ctx = ctxWith();
+
+    const report = JSON.parse(callRuntime(ctx, `(() => {
+        const out = {
+            levelOutsideDeclared: [],
+            downhillBelowDeclaredMin: [],
+            uphillAboveDeclaredMax: [],
+            gateVanished: [],
+            outsideArcStops: []
+        };
+
+        for (const arc of ['low', 'high']) {
+            const fit = projectileModelArc('spg', arc);
+            const declared = arcDeclaredRange(__spg, arc);
+            const stops = arcAngleStops(__spg, fit);
+            const levelMin = arcMinRangeModel(__spg, fit, 0);
+            const levelMax = arcMaxRangeModel(__spg, fit, 0);
+
+            for (let d = 50; d <= 3200; d += 25) {
+                for (let dz = -800; dz <= 800; dz += 25) {
+                    const assessed = assessArc(__spg, arc, d, dz);
+
+                    if (assessed.status !== 'hit') {
+                        continue;
+                    }
+
+                    const where = arc + ' d=' + d + ' dz=' + dz;
+                    const shiftedMin = arcMinRangeModel(__spg, fit, dz);
+                    const shiftedMax = arcMaxRangeModel(__spg, fit, dz);
+
+                    if (dz === 0 && (d < declared.minMeters || d > declared.maxMeters)) {
+                        out.levelOutsideDeclared.push(where);
+                    }
+
+                    if (dz <= 0 && d < declared.minMeters) {
+                        out.downhillBelowDeclaredMin.push(where);
+                    }
+
+                    if (dz >= 0 && d > declared.maxMeters) {
+                        out.uphillAboveDeclaredMax.push(where);
+                    }
+
+                    if ((levelMin === null || shiftedMin === null) && d < declared.minMeters) {
+                        out.gateVanished.push('min ' + where);
+                    }
+
+                    if ((levelMax === null || shiftedMax === null) && d > declared.maxMeters) {
+                        out.gateVanished.push('max ' + where);
+                    }
+
+                    if (!assessed.tableRow && assessed.tan !== null && stops) {
+                        const radians = Math.atan(assessed.tan);
+
+                        if (
+                            radians < stops.minRadians - 1e-9 ||
+                            radians > stops.maxRadians + 1e-9
+                        ) {
+                            out.outsideArcStops.push(where);
+                        }
+                    }
+                }
+            }
+        }
+
+        return JSON.stringify(out);
+    })()`));
+
+    assert.deepEqual(report.levelOutsideDeclared, []);
+    assert.deepEqual(report.downhillBelowDeclaredMin, []);
+    assert.deepEqual(report.uphillAboveDeclaredMax, []);
+    assert.deepEqual(report.gateVanished, []);
+    assert.deepEqual(report.outsideArcStops, []);
+});
+
+test('an uphill low-arc shot inside minimum range stays tooClose', () => {
+    const ctx = ctxWith();
+    assert.equal(callRuntime(ctx, 'arcMinRangeModel(__spg, projectileModelArc("spg", "low"), 200)'), null);
+    assert.equal(callRuntime(ctx, 'assessArc(__spg, "low", 300, 200).status'), 'tooClose');
+    assert.equal(callRuntime(ctx, 'assessArc(__spg, "low", 100, 200).status'), 'tooClose');
+    assert.equal(callRuntime(ctx, 'assessArc(__spg, "low", 200, 600).status'), 'tooClose');
+});
