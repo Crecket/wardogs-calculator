@@ -20,7 +20,7 @@
 const RANGE_RING_BEARINGS = 360;
 const RANGE_RING_MARCH_METRES = 25;
 const RANGE_RING_BISECTIONS = 14;
-const RANGE_RING_GRAVITY = 9.81;
+const RANGE_RING_GRAVITY = BALLISTICS_GRAVITY;
 const METRES_PER_GAME_UNIT_RING = 100;
 
 /*
@@ -34,41 +34,6 @@ const METRES_PER_GAME_UNIT_RING = 100;
 const RANGE_RING_MEMO_METRES = 8;
 
 const RANGE_RING_CACHE = new Map();
-
-let PROJECTILE_MODEL = null;
-
-function loadProjectileModel() {
-    return fetch('data/ballistics/projectile-model.json')
-        .then(response => response.ok ? response.json() : null)
-        .then(model => {
-            PROJECTILE_MODEL =
-                model?.schema === 'wardogs-projectile-model-v1'
-                    ? model
-                    : null;
-        })
-        .catch(error => {
-            console.warn(
-                '[range-ring] No projectile model; ' +
-                'range rings will stay circular.',
-                error
-            );
-
-            PROJECTILE_MODEL = null;
-        });
-}
-
-/*
- * The one copy of the fit. The flight-time readout reads the same arcs, and
- * fetching the file twice would be two copies free to disagree about which
- * load succeeded.
- */
-function projectileModelArc(weaponId, arc) {
-    const fit = PROJECTILE_MODEL?.weapons?.[weaponId]?.[arc];
-
-    return fit && Number.isFinite(Number(fit.muzzleVelocity))
-        ? fit
-        : null;
-}
 
 /*
  * Max range is reached at the arc crossover, so either arc's fit is valid.
@@ -96,23 +61,6 @@ function weaponMuzzleVelocity(weaponId) {
 }
 
 /*
- * solveTan's discriminant solved for R:
- * R = (v/g) * sqrt(v^2 - 2 g deltaZ). Mirrors maxRangeMeters in
- * scripts/lib/ballistics.mjs, which is where it is unit-tested.
- */
-function modelMaxRange(muzzleVelocity, deltaZMeters) {
-    const inner =
-        muzzleVelocity * muzzleVelocity -
-        2 * RANGE_RING_GRAVITY * deltaZMeters;
-
-    if (inner <= 0) {
-        return null;
-    }
-
-    return muzzleVelocity * Math.sqrt(inner) / RANGE_RING_GRAVITY;
-}
-
-/*
  * The march can leave the map before a bearing converges: a gun 1.6 km from
  * the north edge outreaches it on a third of its bearings. Beyond the
  * playable bounds there is no data, so the ray is sampled at the nearest
@@ -137,70 +85,6 @@ function rangeRingSample(field, gameX, gameY) {
         Math.min(maxX, Math.max(field.originX, gameX)),
         Math.min(maxY, Math.max(field.originY, gameY))
     );
-}
-
-function modelArcLaunchTan(fit, rangeMeters, deltaZMeters) {
-    const muzzleVelocity = Number(fit?.muzzleVelocity);
-
-    if (
-        !Number.isFinite(muzzleVelocity) ||
-        muzzleVelocity <= 0 ||
-        !(rangeMeters > 0)
-    ) {
-        return null;
-    }
-
-    const vSquared = muzzleVelocity * muzzleVelocity;
-
-    const discriminant =
-        vSquared * vSquared -
-        RANGE_RING_GRAVITY *
-        (
-            RANGE_RING_GRAVITY * rangeMeters * rangeMeters +
-            2 * deltaZMeters * vSquared
-        );
-
-    if (discriminant < 0) {
-        return null;
-    }
-
-    const root = Math.sqrt(discriminant);
-
-    const tan =
-        fit.branch === 'low'
-            ? (vSquared - root) / (RANGE_RING_GRAVITY * rangeMeters)
-            : (vSquared + root) / (RANGE_RING_GRAVITY * rangeMeters);
-
-    return Number.isFinite(tan) && tan > 0 ? tan : null;
-}
-
-function modelArcMil(fit, tan) {
-    const offset = Number(fit?.angleOffsetDeg);
-    const perMil = Number(fit?.anglePerMilDeg);
-
-    if (
-        !Number.isFinite(offset) ||
-        !Number.isFinite(perMil) ||
-        perMil === 0
-    ) {
-        return null;
-    }
-
-    const degrees = Math.atan(tan) * 180 / Math.PI;
-    const mil = (degrees - offset) / perMil;
-
-    return Number.isFinite(mil) ? mil : null;
-}
-
-function modelArcElevationFits(weapon, mil) {
-    const minMil = Number(weapon?.minElevationMil);
-    const maxMil = Number(weapon?.maxElevationMil);
-
-    if (Number.isFinite(minMil) && mil < minMil) {
-        return false;
-    }
-
-    return !(Number.isFinite(maxMil) && mil > maxMil);
 }
 
 function modelledElevationSolution(
@@ -306,28 +190,6 @@ function maxElevationAngle(weapon, arc) {
     return degrees > 0 && degrees < 90
         ? degrees * Math.PI / 180
         : null;
-}
-
-function modelRangeAtAngle(muzzleVelocity, theta, deltaZMeters) {
-    const cos = Math.cos(theta);
-
-    if (!(cos > 0)) {
-        return null;
-    }
-
-    const tan = Math.tan(theta);
-
-    const a =
-        RANGE_RING_GRAVITY /
-        (2 * muzzleVelocity * muzzleVelocity * cos * cos);
-
-    const discriminant = tan * tan - 4 * a * deltaZMeters;
-
-    if (discriminant < 0) {
-        return null;
-    }
-
-    return (tan + Math.sqrt(discriminant)) / (2 * a);
 }
 
 function minRangeRadii(field, gun, weapon, zGun, declaredMin) {
