@@ -1020,15 +1020,6 @@
     const ARCS = ['single', 'low', 'high'];
 
     /*
-     * Adds the interpolated correction to one arc, or returns the arc
-     * untouched. Returns null when the arc is absent from the solution.
-     *
-     * A null from interpolateHeightCorrection means one of three things,
-     * all handled identically: the arc is uncorrected by policy (the grid
-     * entry is null), the target is off the grid, or the target is
-     * unreachable on this arc because it sits above the trajectory's apex.
-     */
-    /*
      * Classifies one arc, and corrects it when that is both possible and
      * worth doing. `outcome` is what the caption keys off:
      *

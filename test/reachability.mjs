@@ -21,12 +21,20 @@ page.on('pageerror', e => errors.push(e.message));
 await page.goto(URL, { waitUntil: 'networkidle' });
 await page.waitForTimeout(1200);
 
-const edge = await page.evaluate(async () => {
+const PROBE_DISTANCE = 2620;
+
+const result = await page.evaluate(async probeDistance => {
     ensureHeightfieldLoaded('bakurani');
 
     for (let i = 0; i < 40 && !cachedHeightfield('bakurani'); i += 1) {
         await new Promise(r => setTimeout(r, 250));
     }
+
+    const grid = await fetch('data/ballistics/height-correction.json')
+        .then(r => r.json());
+
+    const lastAxisDistance =
+        grid.weapons.spg.low.distancesMeters.at(-1);
 
     const origin = { x: 30, y: 60 };
     const target = { x: 30 + 26.2, y: 60 };
@@ -34,19 +42,21 @@ const edge = await page.evaluate(async () => {
 
     getTerrainBallisticSolutions({
         weapon,
-        distanceMeters: 2620,
-        solutions: getWeaponElevationSolutions(weapon, 2620),
+        distanceMeters: probeDistance,
+        solutions: getWeaponElevationSolutions(weapon, probeDistance),
         mapId: 'bakurani',
         origin,
         target,
         prime: true
     });
 
+    let edge = null;
+
     for (let i = 0; i < 40; i += 1) {
         const again = getTerrainBallisticSolutions({
             weapon,
-            distanceMeters: 2620,
-            solutions: getWeaponElevationSolutions(weapon, 2620),
+            distanceMeters: probeDistance,
+            solutions: getWeaponElevationSolutions(weapon, probeDistance),
             mapId: 'bakurani',
             origin,
             target,
@@ -54,16 +64,48 @@ const edge = await page.evaluate(async () => {
         });
 
         if (again.meta && !again.meta.pendingTerrain) {
-            return again.meta;
+            edge = again.meta;
+            break;
         }
 
         await new Promise(r => setTimeout(r, 250));
     }
 
-    return null;
+    return { lastAxisDistance, edge };
 });
 
-check('2620 m sits past the grid axis yet is corrected via the clamp', Boolean(edge) && edge.arcsCorrected.includes('low'), JSON.stringify(edge));
+const { lastAxisDistance, edge } = result;
+
+check(
+    `probe distance ${PROBE_DISTANCE} m sits past spg.low's grid axis end`,
+    Number.isFinite(lastAxisDistance) && PROBE_DISTANCE > lastAxisDistance,
+    `lastAxisDistance=${lastAxisDistance}`
+);
+
+check(
+    'the probe resolved a ΔZ instead of timing out pending',
+    Boolean(edge),
+    JSON.stringify(edge)
+);
+
+check(
+    'the probe sits on the negative side of the ΔZ column, where the grid cell is finite',
+    Number.isFinite(edge?.correctionDeltaZ) && edge.correctionDeltaZ < 0,
+    `correctionDeltaZ=${edge?.correctionDeltaZ}`
+);
+
+check(
+    'a correction was actually applied to the solutions',
+    edge?.applied === true,
+    JSON.stringify(edge)
+);
+
+check(
+    '2620 m sits past the grid axis yet is corrected via the clamp',
+    Boolean(edge) && Array.isArray(edge.arcsCorrected) && edge.arcsCorrected.includes('low'),
+    JSON.stringify(edge)
+);
+
 check('no page errors', errors.length === 0, errors.join('; '));
 
 await browser.close();

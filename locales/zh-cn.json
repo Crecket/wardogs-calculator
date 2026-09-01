@@ -140,13 +140,6 @@
   "mobileLinks": "链接",
   "mobileCredits": "致谢",
   "mobileLegal": "法律信息",
-  "terrainLoading": "正在加载地形高程",
-  "terrainStatus": "ΔZ {dz} m · 未按高差修正",
-  "terrainStatusUnreachable": "ΔZ {dz} m · {arcs}无法打到该目标",
-  "terrainStatusUnreachableAll": "ΔZ {dz} m · 无法打到该目标",
-  "arcNameSingle": "弹道",
-  "arcNameLow": "低伸弹道",
-  "arcNameHigh": "高抛弹道",
   "sphLevelWarningTitle": "射击前请将 SPH-2 调平",
   "sphLevelWarningBody": "车体倾斜会改变实际射程。请尽量将 SPH-2 停在平坦地面上。在炮手 HUD 中找到 STABILIZED / ASL 下方的车辆轮廓；两侧的小标记显示横向倾斜。重新调整车辆位置，直到标记尽可能居中并处于同一水平。前后坡度同样会影响射程，因此避免在上坡或下坡位置停车。",
   "weaponNames": {
