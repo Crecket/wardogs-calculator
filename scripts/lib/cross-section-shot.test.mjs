@@ -69,6 +69,37 @@ test('beyond the anchored maximum the arc is tooFar and captioned short', () => 
     assert.ok(far.impactMeters < 2700);
 });
 
+test('the shared verdict, not the drawing march, decides blocked versus hit', () => {
+    const ctx = sectionCtx();
+
+    const ridged = flatProfile(917);
+    for (let i = 100; i < 120; i += 1) {
+        ridged.ground[i] = 1400;
+    }
+    setRuntimeGlobal(ctx, '__ridged', ridged);
+
+    const own = callRuntime(ctx, 'crossSectionShot(__spg, "high", __ridged)');
+    assert.equal(own.masked, true);
+    assert.equal(own.kind, 'blocked');
+
+    const clear = callRuntime(ctx, `(() => {
+        const shared = assessArc(__spg, 'high', 917, 0);
+        shared.masked = false;
+        return crossSectionShot(__spg, 'high', __ridged, shared);
+    })()`);
+    assert.equal(clear.masked, false);
+    assert.equal(clear.kind, 'hit');
+    assert.equal(clear.endIndex, ridged.targetIndex);
+
+    const blocked = callRuntime(ctx, `(() => {
+        const shared = assessArc(__spg, 'high', 917, 0);
+        shared.masked = true;
+        return crossSectionShot(__spg, 'high', __profile, shared);
+    })()`);
+    assert.equal(blocked.masked, true);
+    assert.equal(blocked.kind, 'blocked');
+});
+
 test('the ceiling-capped table sliver draws honest model shortfall, not a mask', () => {
     const ctx = sectionCtx();
     setRuntimeGlobal(ctx, '__edge', flatProfile(2620));

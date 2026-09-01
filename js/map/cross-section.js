@@ -153,7 +153,7 @@ function crossSectionStopTan(weapon, fit, status) {
     return Math.tan(radians);
 }
 
-function crossSectionShot(weapon, arc, profile) {
+function crossSectionShot(weapon, arc, profile, shared) {
     const fit = crossSectionFit(weapon.id, arc);
     const muzzleVelocity = Number(fit?.muzzleVelocity);
 
@@ -165,7 +165,13 @@ function crossSectionShot(weapon, arc, profile) {
         profile.ground[profile.targetIndex] -
         profile.ground[profile.gunIndex];
 
-    const assessed = assessArc(weapon, arc, profile.distanceMeters, deltaZ);
+    const authority =
+        shared && shared.status !== 'noModel' && typeof shared.masked === 'boolean'
+            ? shared
+            : null;
+
+    const assessed =
+        authority ?? assessArc(weapon, arc, profile.distanceMeters, deltaZ);
 
     if (assessed.status === 'noModel') {
         return null;
@@ -185,14 +191,28 @@ function crossSectionShot(weapon, arc, profile) {
     const march = crossSectionMarch(profile, tan, muzzleVelocity, firstIndex);
 
     const capped = assessed.ceilingCapped === true;
-    const masked = assessed.status === 'hit' && !capped && march.impactIndex >= 0;
+    const clean = assessed.status === 'hit' && !capped;
+
+    const masked = clean && (
+        authority
+            ? authority.masked === true
+            : march.impactIndex >= 0
+    );
 
     let kind = 'hit';
     let endIndex = profile.targetIndex;
     let impactMeters = profile.distanceMeters;
 
-    if (march.impactIndex >= 0) {
-        kind = assessed.status === 'hit' && !capped ? 'blocked' : 'short';
+    if (clean) {
+        if (masked && march.impactIndex >= 0) {
+            kind = 'blocked';
+            endIndex = march.impactIndex;
+            impactMeters = (endIndex - profile.gunIndex) * profile.stepMeters;
+        } else if (masked) {
+            kind = 'blocked';
+        }
+    } else if (march.impactIndex >= 0) {
+        kind = 'short';
         endIndex = march.impactIndex;
         impactMeters = (endIndex - profile.gunIndex) * profile.stepMeters;
     } else if (assessed.status !== 'hit') {
@@ -280,8 +300,14 @@ function crossSectionModel(weapon, distanceMeters) {
         };
     }
 
+    const shot = typeof assessShot === 'function'
+        ? assessShot(weapon, S.origin, S.target, S.map)
+        : null;
+
+    const arcs = shot?.state === 'ready' ? shot.arcs : null;
+
     const shots = CROSS_SECTION_ARC_ORDER
-        .map(arc => crossSectionShot(weapon, arc, profile))
+        .map(arc => crossSectionShot(weapon, arc, profile, arcs?.[arc] ?? null))
         .filter(Boolean);
 
     return {
