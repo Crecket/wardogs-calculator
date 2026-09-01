@@ -21,7 +21,7 @@ Both are baked from the same source and both live under `data/terrain/<map-id>/`
 | Decode | `worldZOffsetMeters + localZ * worldZScaleMetersPerLocalUnit`, per-chunk `minLocalZ`/`maxLocalZ` | `minZMeters + (raw / 65535) * (maxZMeters - minZMeters)`, whole-map range |
 | Consumed by | the MIL correction, the ΔZ caption, the flight-time ΔZ | the range rings, dead ground, reach badges, the cross-section, and the "modelled" out-of-table MIL |
 
-A third baked file, `data/terrain/<map>/contours.json`, is a *rendering* product only (`js/map/contours.js`): 20 m contour polylines sampled from the chunks on a 4 m grid at build time. It feeds no calculation, carries no altitude labels, and colours lines by height *relative to the map's own lowest sample* (`decodeContours` computes `relief` and calls `contourRampColor`). It is the only height surface in the app with no ballistic consumer at all.
+A third baked file, `data/terrain/<map>/contours.json`, is a *rendering* product only (`js/map/contours.js`): 20 m contour polylines sampled from the chunks on a 4 m grid at build time. It feeds no calculation, carries no altitude labels, and colours lines by height *relative to the map's own lowest sample* (`decodeContours` computes `relief` and calls `contourRampColor`). Together with the shaded-relief raster (3.21) it is one of the two height surfaces in the app with no ballistic consumer at all.
 
 Both maps that ship terrain — `bakurani` and `ozeti` — are listed twice, independently, in `HEIGHTFIELD_MAP_IDS` (`js/map/heightfield.js`) and `CONTOUR_MAP_IDS` (`js/map/contours.js`), and a third time in `data/ballistics/terrain-context.json` under `terrainMaps`. A fourth list, `releasePolicy.correctedMaps`, contains only `bakurani`. Nothing keeps the four in step.
 
@@ -277,11 +277,33 @@ Display only. Opt-in layer, per-map `contours.json`, rasterised offscreen and re
 `obsRenderReadout` (`js/features/obs.js:264`) mirrors the DOM: `mil`, `milAlt`, `angle`, `distm`, `rangeStatus`, and the flight-time badges. `src/pages/obs/overlay.html` has **no terrain note element**, so the "not corrected for height" and "cannot reach this target" captions never reach a stream. The overlay shows the corrected MIL with none of the warnings attached to it.
 
 
+### 3.21 Hillshade
+
+**Display only.** The shaded-relief layer (`js/map/hillshade.js`, baked by `scripts/build-hillshade.mjs` and `scripts/lib/hillshade.mjs`) feeds no calculation, no caption and no badge. Nothing reads it, it reads no ballistics, and it cannot produce a wrong firing solution. It can still mislead the eye, which is why it is catalogued here.
+
+**Height source.** The same 2 m Terrain3D chunks the MIL correction reads, but resampled at **8 m spacing** at build time into one greyscale-with-alpha PNG per map, committed at `data/terrain/<map>/hillshade.png` with a `hillshade.json` sidecar carrying the grid geometry, the sun parameters, the z-factor and a `sha256` of the raster. So the repository now holds **three independent samplings of the same terrain**: the 2 m chunks the correction streams, the 32 m `heightfield.bin` every ring and wedge reads, and this 8 m bake. A fourth, the 4 m contour bake, is described above. Nothing cross-checks any of them.
+
+**Ballistic model.** None. Horn's 3×3 slope and aspect, then a Lambertian shade against a single light at azimuth 315° and altitude 45° — the printed-topo convention, because relief lit from the south reads inverted to most eyes.
+
+**Constants.** Sample spacing 8 m, azimuth 315°, altitude 45°, gain 1, all `scripts/build-hillshade.mjs` defaults and all recorded in the sidecar. Drawn at `HILLSHADE_OPACITY = 0.5` between the tiles and the contour lines. The per-map vertical exaggeration is `zFactorForRelief` = `clamp(1000 / reliefMeters, 0.5, 4)`, which gives **Bakurani 0.9283** (1077 m of relief) and **Ozeti 2.6151** (382 m).
+
+**The sharpest thing to say about it.** That per-map z-factor means **identical real slopes render with different apparent steepness on the two maps** — an Ozeti hillside shades roughly 2.8× as hard as a Bakurani hillside of the same gradient. The layer is a relative reading of one map's own relief, exactly like the contour colour ramp, and a user who has learned to eyeball "steep" from the shading on one map is reading a different scale on the other. Nothing on screen says so, and the sidecar that records the factor is never shown.
+
+**Can it disagree with the contours?** Yes, visually, and only visually. The contours are baked at 4 m from the same chunks; the hillshade at 8 m. The coarser grid smooths features narrower than about 16 m, so a gully or spur that the contour layer draws can be shaded as if it were not there, and the two layers can imply slightly different terrain in the same place. Neither feeds a solution, so the disagreement stops at the eye.
+
+**The datum.** The caveat in section 1 applies and is harmless here: Horn's method uses only differences between neighbouring samples, and the shade never touches an absolute Z. The ~−900 m offset cancels out and cannot leak into the layer. This is the one height surface where the datum is structurally incapable of causing a problem.
+
+**Shading balance — fixed in this change.** Flat ground shades at `cos(45°) × 255 = 180.3` out of 255, and the encoder originally normalised both signs by 255, so a full highlight could reach alpha 75 while a full shadow reached 180. Measured over the committed Bakurani raster before the fix: shadow mean alpha 39.5, max 180; highlight mean 25.1, max **75**. The layer therefore net-darkened the basemap and muted sunlit faces relative to shadowed ones, and `--gain` could not correct it because it scales both signs equally. Each sign is now normalised against its own headroom — positive by `1 − neutral/255`, negative by `neutral/255` — so both extremes reach alpha 255. After: Bakurani shadow mean 56.3 / max 255, highlight mean 84.7 / max 255; Ozeti shadow mean 73.9 / max 255, highlight mean 97.1 / max 255. `HILLSHADE_OPACITY` dropped from 0.72 to 0.5 to match: the darkest shadow now composites at 50% black against the old 51%, so shadow depth is unchanged and the highlights gain the range they were missing.
+
+**When terrain is not loaded.** The layer is opt-in and its raster is a separate download nobody who leaves it off ever makes. `HILLSHADE_MAP_IDS` is a fifth hardcoded per-map allowlist alongside the four in section 1. A fetch or decode failure is cached as `null` with one console warning and the layer stays empty for the session; a load in flight simply draws nothing until it lands, then redraws. There is no caption either way, which is correct here — an absent decoration needs no warning, because nothing depends on it.
+
 ---
 
 ## 4. Disagreements
 
 Each entry names the surfaces that differ, the mechanism with file and line, a concrete input, and what each surface reports for that input. The first two were flagged before this audit and are verified here; the rest follow the same format.
+
+The hillshade (3.21) has no entry here, and that is the honest answer rather than an omission: it is display-only, nothing reads it, and the only way it can differ from another surface is visually — a smoothed gully against the contour layer, or the same gradient shaded harder on Ozeti than on Bakurani. Neither can change a MIL, a ring, a badge or a wedge.
 
 ### A. `crossSectionElevationLimits` discards valid limits for the SPG low arc — confirmed
 
@@ -518,3 +540,4 @@ Which height source and which engine each surface uses, and whether it honours t
 | 3.18 | `contours.js` | baked contours | none | n/a |
 | 3.19 | Ring rendering | via 3.9 / 3.10 | none | no |
 | 3.20 | OBS overlay | mirrors 3.2 | none | inherits |
+| 3.21 | Hillshade | 8 m bake of the 2 m chunks | none | n/a |
