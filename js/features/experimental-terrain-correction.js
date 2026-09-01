@@ -25,7 +25,6 @@
         },
         loadPromise: null,
         baseResolver: null,
-        baseFormatter: null,
         lastDisplayMeta: null,
         lastError: null,
         rerenderQueued: false
@@ -1920,7 +1919,7 @@
 
         const deltaZ =
             Number(
-                resolved?.meta?.deltaZ
+                resolved?.meta?.correctionDeltaZ
             );
 
         if (
@@ -2296,7 +2295,7 @@
                     state.available &&
                     isSupportedWeapon &&
                     finite(
-                        baseMeta?.deltaZ
+                        baseMeta?.correctionDeltaZ
                     );
 
                 if (
@@ -2375,103 +2374,6 @@
                         }
                     }
                 };
-            };
-    }
-
-    function installFormatter() {
-        if (
-            typeof window
-                .formatTerrainBallisticsStatus !==
-            'function'
-        ) {
-            return;
-        }
-
-        if (
-            state.baseFormatter
-        ) {
-            return;
-        }
-
-        state.baseFormatter =
-            window
-                .formatTerrainBallisticsStatus;
-
-        window
-            .formatTerrainBallisticsStatus =
-            function experimentalTerrainStatus(
-                meta
-            ) {
-                state.lastDisplayMeta =
-                    meta || null;
-
-                syncPanel();
-
-                const experimental =
-                    meta
-                        ?.experimentalTerrainCorrection;
-
-                if (
-                    !experimental ||
-                    !experimental.available
-                ) {
-                    return (
-                        state.baseFormatter(
-                            meta
-                        )
-                    );
-                }
-
-                if (
-                    meta?.pendingTerrain
-                ) {
-                    return (
-                        state.baseFormatter(
-                            meta
-                        )
-                    );
-                }
-
-                const deltaZ =
-                    finite(meta?.deltaZ)
-                        ? (
-                            `${Number(meta.deltaZ) >= 0 ? '+' : ''}` +
-                            `${Number(meta.deltaZ).toFixed(1)}`
-                        )
-                        : null;
-
-                let status = null;
-
-                if (
-                    experimental.loading
-                ) {
-                    status =
-                        text()
-                            .candidateLoading;
-                } else if (
-                    state.enabled &&
-                    experimental.applied
-                ) {
-                    status =
-                        text()
-                            .statusOn;
-                } else if (
-                    state.enabled
-                ) {
-                    status =
-                        text()
-                            .statusFallback;
-                }
-
-                if (status === null) {
-                    return deltaZ === null
-                        ? ''
-                        : `ΔZ ${deltaZ} m`;
-                }
-
-                return deltaZ === null
-                    ? status
-                    : `ΔZ ${deltaZ} m · ${status}`;
             };
     }
 
@@ -3057,7 +2959,6 @@
                 readStoredEnabled();
 
             wrapResolver();
-            installFormatter();
             ensurePanel();
             syncPanel();
 

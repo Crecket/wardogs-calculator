@@ -252,95 +252,22 @@
 
     function installTerrainChineseOverrides() {
         if (
-            typeof window.formatTerrainBallisticsStatus !== 'function' ||
-            window.formatTerrainBallisticsStatus.__zhCnWrapped
+            typeof window.syncSphLevelWarning !== 'function' ||
+            window.syncSphLevelWarning.__zhCnWrapped
         ) {
             return;
         }
 
-        const originalFormat =
-            window.formatTerrainBallisticsStatus;
+        const originalSync =
+            window.syncSphLevelWarning;
 
-        const localizedFormat = function formatLocalizedTerrainStatus(meta) {
-            if (!isSimplifiedChinese()) {
-                return originalFormat(meta);
-            }
-
-            if (!meta?.available) return '';
-
-            if (meta.pendingTerrain) {
-                return zhText(
-                    'terrainLoading',
-                    '正在加载地形高程'
-                );
-            }
-
-            if (!Number.isFinite(meta.deltaZ)) {
-                return '';
-            }
-
-            const dz =
-                `${meta.deltaZ >= 0 ? '+' : ''}${meta.deltaZ.toFixed(1)}`;
-
-            /*
-             * Mirrors the warning selection in
-             * formatTerrainBallisticsStatus: an arc that cannot reach the
-             * target, then a correction withheld by policy, then silence.
-             */
-            const names = {
-                low: zhText('arcNameLow', '低伸弹道'),
-                high: zhText('arcNameHigh', '高抛弹道'),
-                single: zhText('arcNameSingle', '弹道')
-            };
-
-            const unreachable = (meta.arcsUnreliable || [])
-                .map(arc => names[arc])
-                .filter(Boolean)
-                .join(' + ');
-
-            if (meta.arcsUnreliable?.length) {
-                const total =
-                    (meta.arcsCorrected?.length || 0) +
-                    (meta.arcsUncorrected?.length || 0);
-
-                if (meta.arcsUnreliable.length >= total) {
-                    return zhText(
-                        'terrainStatusUnreachableAll',
-                        'ΔZ {dz} m · 无法打到该目标'
-                    ).replace('{dz}', dz);
-                }
-
-                if (unreachable) {
-                    return zhText(
-                        'terrainStatusUnreachable',
-                        'ΔZ {dz} m · {arcs}无法打到该目标'
-                    ).replace('{dz}', dz).replace('{arcs}', unreachable);
-                }
-            }
-
-            if (!meta.arcsWithheld?.length) {
-                return '';
-            }
-
-            return zhText(
-                'terrainStatus',
-                'ΔZ {dz} m · 未按高差修正'
-            ).replace('{dz}', dz);
+        window.syncSphLevelWarning = function syncLocalizedSphWarning() {
+            const result = originalSync();
+            patchSphWarningChinese();
+            return result;
         };
 
-        localizedFormat.__zhCnWrapped = true;
-        window.formatTerrainBallisticsStatus = localizedFormat;
-
-        if (typeof window.syncSphLevelWarning === 'function') {
-            const originalSync =
-                window.syncSphLevelWarning;
-
-            window.syncSphLevelWarning = function syncLocalizedSphWarning() {
-                const result = originalSync();
-                patchSphWarningChinese();
-                return result;
-            };
-        }
+        window.syncSphLevelWarning.__zhCnWrapped = true;
 
         patchSphWarningChinese();
     }
