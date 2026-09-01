@@ -587,7 +587,7 @@ function collabApplySnapshot(doc) {
     return true;
 }
 
-function collabApplyOp(op) {
+function collabApplyOp(op, from) {
     COLLAB.applying = true;
 
     try {
@@ -676,6 +676,12 @@ function collabApplyOp(op) {
                     gun.position.x = op.x;
                     gun.position.y = op.y;
                     clamp(gun.position);
+
+                    collabFlashOverwrite(
+                        `gun:${op.id}`,
+                        gun.position,
+                        from
+                    );
                 }
 
                 COLLAB.lastShared.guns[op.id] = {
@@ -745,6 +751,12 @@ function collabApplyOp(op) {
                 destination.x = op.x;
                 destination.y = op.y;
                 clamp(destination);
+
+                collabFlashOverwrite(
+                    collabPointFlashKey(op.point),
+                    destination,
+                    from
+                );
 
                 /*
                  * Record what we just adopted, so the diff in
@@ -1451,7 +1463,7 @@ function collabHandleMessage(message) {
             break;
 
         case 'op':
-            collabApplyOp(message.op);
+            collabApplyOp(message.op, message.from);
             break;
 
         case 'peers':
@@ -1712,6 +1724,10 @@ function collabResetSession() {
     collabClearCursors();
     collabClearViews();
 
+    if (typeof collabClearFlashes === 'function') {
+        collabClearFlashes();
+    }
+
     if (COLLAB.nameTimer) {
         clearTimeout(COLLAB.nameTimer);
         COLLAB.nameTimer = null;
@@ -1915,6 +1931,30 @@ function collabPeerColor(id) {
     return COLLAB_CURSOR_COLORS[
         hash % COLLAB_CURSOR_COLORS.length
     ];
+}
+
+function collabPointFlashKey(point) {
+    if (point !== 'origin') {
+        return point;
+    }
+
+    const first = S.guns?.[0];
+
+    return first?.id
+        ? `gun:${first.id}`
+        : 'origin';
+}
+
+function collabFlashOverwrite(key, point, from) {
+    if (
+        !from ||
+        from === COLLAB.clientId ||
+        typeof collabFlashPoint !== 'function'
+    ) {
+        return;
+    }
+
+    collabFlashPoint(key, point, from);
 }
 
 function collabOnPointerWorld(world) {

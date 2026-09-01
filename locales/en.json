@@ -188,6 +188,7 @@
   "collabFollowStop": "Stop",
   "collabFollowReleased": "Follow released",
   "collabFollowLeft": "The peer you were following left",
+  "collabMovedBy": "{name} moved this",
   "collabYourName": "Your name",
   "collabNameFallback": "Peer {id}",
   "collabLeave": "Leave session",

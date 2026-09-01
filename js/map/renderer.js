@@ -252,6 +252,13 @@ function drawNow() {
         drawCollabCursors();
     }
 
+    if (
+        typeof drawCollabFlashes ===
+        'function'
+    ) {
+        drawCollabFlashes();
+    }
+
     ctx.restore();
 
     if (
