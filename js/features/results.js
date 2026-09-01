@@ -658,56 +658,16 @@ function getSavedTargetElevationSummary(
     origin,
     targetPoint
 ) {
-    const flatSolutions =
-        getWeaponElevationSolutions(
-            weapon,
-            distanceMeters
-        );
-
-    let solutions =
-        flatSolutions;
-
-    if (
-        typeof getTerrainBallisticSolutions ===
-        'function'
-    ) {
-        try {
-            const resolved =
-                getTerrainBallisticSolutions({
-                    weapon,
-                    distanceMeters,
-                    solutions:
-                        flatSolutions,
-                    mapId:
-                        S.map,
-                    origin,
-                    target:
-                        targetPoint
-                });
-
-            solutions =
-                resolved?.solutions ??
-                flatSolutions;
-        } catch (error) {
-            /*
-             * Saved-target cards are a convenience view.
-             * A terrain resolver failure must never make
-             * the target list unusable; flat-table values
-             * remain the fallback just like the main result.
-             */
-            solutions =
-                flatSolutions;
-        }
-    }
-
-    const extended =
-        extendModelledSolutions(
+    const firing =
+        solveFiringElevation(
             weapon,
             distanceMeters,
-            solutions,
             origin,
             targetPoint
         );
+
+    const extended =
+        firing.solutions;
 
     let primary =
         '—';
@@ -752,18 +712,10 @@ function getSavedTargetElevationSummary(
     }
 
     const solved =
-        Boolean(
-            extended.single ||
-            extended.low ||
-            extended.high
-        );
+        firing.solved;
 
     const modelled =
-        Boolean(
-            extended.single?.modelled ||
-            extended.low?.modelled ||
-            extended.high?.modelled
-        );
+        firing.modelled;
 
     if (!solved) {
         secondary =
