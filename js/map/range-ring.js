@@ -20,7 +20,6 @@
 const RANGE_RING_BEARINGS = 360;
 const RANGE_RING_MARCH_METRES = 25;
 const RANGE_RING_BISECTIONS = 14;
-const METRES_PER_GAME_UNIT_RING = 100;
 
 /*
  * Metres the gun may move before its ring is resolved again.

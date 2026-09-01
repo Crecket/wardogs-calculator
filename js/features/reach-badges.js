@@ -3,7 +3,8 @@ const REACH_STATE_LABEL = {
     reachable: 'reachReachable',
     masked: 'reachMasked',
     out: 'reachOutOfRange',
-    close: 'reachTooClose'
+    close: 'reachTooClose',
+    unknown: 'reachUnknown'
 };
 
 const REACH_SUMMARY_CLASS = {
@@ -33,27 +34,6 @@ let reachSignature = null;
 
 let reachSolvePending = false;
 
-function reachBearingIndex(bearings, dx, dy) {
-    const step = 2 * Math.PI / bearings;
-
-    const index =
-        Math.round(
-            Math.atan2(dy, dx) / step
-        ) % bearings;
-
-    return index < 0 ? index + bearings : index;
-}
-
-function reachIntervalHit(intervals, metres) {
-    for (let i = 0; i < intervals.length; i += 2) {
-        if (metres >= intervals[i] && metres <= intervals[i + 1]) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 function reachClassify(solved, target) {
     const x = Number(target?.x);
     const y = Number(target?.y);
@@ -62,41 +42,35 @@ function reachClassify(solved, target) {
         return null;
     }
 
-    if (!solved.ring) {
+    const weapon = WEAPONS[solved.gun.weapon];
+
+    if (!weapon) {
+        return null;
+    }
+
+    const shot = assessShot(weapon, solved.gun.position, { x, y }, S.map);
+
+    if (shot.state === 'pending') {
         return 'pending';
     }
 
-    const ring = solved.ring;
-
-    const dx = x - solved.gun.position.x;
-    const dy = y - solved.gun.position.y;
-
-    const metres =
-        Math.hypot(dx, dy) * METRES_PER_GAME_UNIT_RING;
-
-    const bearing =
-        reachBearingIndex(ring.radii.length, dx, dy);
-
-    if (metres > ring.radii[bearing]) {
-        return 'out';
+    if (shot.state !== 'ready') {
+        return 'unknown';
     }
 
-    const minimum =
-        ring.minRadii
-            ? ring.minRadii[bearing]
-            : ring.minRangeMeters ?? 0;
-
-    if (metres < minimum) {
-        return 'close';
-    }
-
-    if (!solved.dead) {
+    if (shot.verdict === 'hit') {
         return 'reachable';
     }
 
-    return reachIntervalHit(solved.dead.bearings[bearing], metres)
-        ? 'masked'
-        : 'reachable';
+    if (shot.verdict === 'masked') {
+        return 'masked';
+    }
+
+    if (shot.verdict === 'tooClose') {
+        return 'close';
+    }
+
+    return 'out';
 }
 
 function reachGunSolved(gun, key) {
@@ -301,7 +275,7 @@ function reachSummarise(guns, target) {
 
         if (state === 'pending') {
             pending += 1;
-        } else {
+        } else if (state !== 'unknown') {
             counted += 1;
 
             if (state === 'reachable') {
