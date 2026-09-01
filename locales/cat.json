@@ -166,5 +166,17 @@
   "collabMapLocked": "THE MEOWP STAYS PUT DURING A CATNAP.",
   "collabErrorRejected": "THE BOX SAID NO. FETCHING IT AGAIN.",
   "collabErrorMap": "THAT BOX USES A MEOWP THIS SITE HAS NEVER SNIFFED.",
-  "collabErrorCustomMap": "CATNAPS NEED A PROPER MEOWP, NOT A HOMEMADE ONE."
+  "collabErrorCustomMap": "CATNAPS NEED A PROPER MEOWP, NOT A HOMEMADE ONE.",
+  "noteDeltaZ": "ΔZ {dz} m",
+  "noteArc": "ARC",
+  "noteAllArcs": "ALL THE ARCS",
+  "noteMasked": "{arcs}: BLOCKED BY THE HILL, MEOW",
+  "noteTooClose": "{arcs}: TOO CLOSE, KITTY",
+  "noteTooFar": "{arcs}: CAN'T REACH FROM HERE, MEOW",
+  "noteUncorrected": "NO HEIGHT MEOWGIC APPLIED",
+  "noteElevationLimit": "MIL STUCK AT MAX TILT, MEOW",
+  "noteOffMap": "NO GROUND DATA HERE, MEOW",
+  "crossSectionBelowMin": "NEEDS A LOWER ANGLE THAN THE GUN ALLOWS — OVERSHOOTS THE MOUSE",
+  "crossSectionAboveMax": "NEEDS A HIGHER ANGLE THAN THE GUN ALLOWS — MISSES THE MOUSE",
+  "reachUnknown": "NO GROUND DATA, MEOW"
 }

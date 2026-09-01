@@ -160,5 +160,17 @@
   "collabMapLocked": "Під час сесії карту змінювати не можна.",
   "collabErrorRejected": "Кімната відхилила зміну; перезавантаження з сервера.",
   "collabErrorMap": "У цій кімнаті карта, якої немає на сайті.",
-  "collabErrorCustomMap": "Для спільної сесії потрібна готова карта, а не власна."
+  "collabErrorCustomMap": "Для спільної сесії потрібна готова карта, а не власна.",
+  "noteDeltaZ": "ΔZ {dz} м",
+  "noteArc": "траєкторія",
+  "noteAllArcs": "усі траєкторії",
+  "noteMasked": "{arcs}: закрито рельєфом",
+  "noteTooClose": "{arcs}: ближче мінімальної дальності",
+  "noteTooFar": "{arcs}: не дістає на цій висоті",
+  "noteUncorrected": "без поправки на висоту",
+  "noteElevationLimit": "МІЛ обмежений межею підвищення гармати",
+  "noteOffMap": "тут немає даних про висоти",
+  "crossSectionBelowMin": "потрібен кут нижче мінімального — переліт",
+  "crossSectionAboveMax": "потрібен кут вище максимального — недоліт",
+  "reachUnknown": "Немає даних про висоти"
 }

@@ -17,54 +17,40 @@ function formatMilSolution(solution) {
     return `${Math.round(solution.mil ?? minMil)}`;
 }
 
-function extendModelledSolutions(
-    weapon,
-    distanceMeters,
-    solutions,
-    origin,
-    target
-) {
-    if (
-        solutions.single ||
-        solutions.low ||
-        solutions.high ||
-        typeof modelledElevationSolution !== 'function'
-    ) {
+function fillModelledSolutions(weapon, distanceMeters, solutions, shot) {
+    if (!shot || shot.state !== 'ready') {
         return solutions;
     }
 
-    const sampled =
-        typeof terrainDeltaZMeters === 'function'
-            ? terrainDeltaZMeters(S.map, origin, target)
-            : null;
+    const filled = { ...solutions };
+    let changed = false;
 
-    const deltaZ = Number.isFinite(sampled) ? sampled : 0;
+    for (const arc of ['single', 'low', 'high']) {
+        const assessed = shot.arcs[arc];
 
-    const modelled = {
-        ...solutions,
-        single: modelledElevationSolution(
-            weapon,
-            'single',
-            distanceMeters,
-            deltaZ
-        ),
-        low: modelledElevationSolution(
-            weapon,
-            'low',
-            distanceMeters,
-            deltaZ
-        ),
-        high: modelledElevationSolution(
-            weapon,
-            'high',
-            distanceMeters,
-            deltaZ
-        )
-    };
+        if (
+            filled[arc] ||
+            !assessed ||
+            assessed.status !== 'hit' ||
+            assessed.masked ||
+            assessed.tableRow ||
+            assessed.mil === null
+        ) {
+            continue;
+        }
 
-    return modelled.single || modelled.low || modelled.high
-        ? modelled
-        : solutions;
+        filled[arc] = {
+            mil: assessed.mil,
+            minMil: assessed.mil,
+            maxMil: assessed.mil,
+            tan: assessed.tan,
+            modelled: true
+        };
+
+        changed = true;
+    }
+
+    return changed ? filled : solutions;
 }
 
 function formatMilValue(solution) {
@@ -174,43 +160,34 @@ function solveFiringElevation(
     target,
     prime
 ) {
-    const flatSolutions =
-        getWeaponElevationSolutions(
-            weapon,
-            distanceMeters
-        );
+    const flatSolutions = getWeaponElevationSolutions(weapon, distanceMeters);
 
-    const resolved =
-        resolveElevationSolutions(
-            weapon,
-            distanceMeters,
-            flatSolutions,
-            origin,
-            target,
-            prime
-        );
+    const resolved = resolveElevationSolutions(
+        weapon,
+        distanceMeters,
+        flatSolutions,
+        origin,
+        target,
+        prime
+    );
 
-    const solutions =
-        extendModelledSolutions(
-            weapon,
-            distanceMeters,
-            resolved.solutions,
-            origin,
-            target
-        );
+    const shot =
+        typeof assessShot === 'function'
+            ? assessShot(weapon, origin, target, S.map)
+            : null;
+
+    const solutions = fillModelledSolutions(
+        weapon,
+        distanceMeters,
+        resolved.solutions,
+        shot
+    );
 
     return {
         solutions,
-
-        terrainMeta:
-        resolved.terrainMeta,
-
-        solved: Boolean(
-            solutions.single ||
-            solutions.low ||
-            solutions.high
-        ),
-
+        terrainMeta: resolved.terrainMeta,
+        shot,
+        solved: Boolean(solutions.single || solutions.low || solutions.high),
         modelled: Boolean(
             solutions.single?.modelled ||
             solutions.low?.modelled ||
@@ -219,31 +196,141 @@ function solveFiringElevation(
     };
 }
 
-function formatTerrainBallisticDetail(meta) {
-    if (
-        typeof formatTerrainBallisticsStatus !==
-        'function'
-    ) {
+function correctionNoteFragment(meta) {
+    if (!meta || meta.pendingTerrain) {
         return '';
     }
 
-    return formatTerrainBallisticsStatus(meta);
+    if (meta.envelopeClamped) {
+        return tr('noteElevationLimit');
+    }
+
+    if (Array.isArray(meta.arcsWithheld) && meta.arcsWithheld.length) {
+        return tr('noteUncorrected');
+    }
+
+    return '';
 }
 
-/*
- * Which look the note wears. It only ever renders as a warning now, so there
- * is no "all good" state: when nothing is wrong the caption is empty and the
- * note is hidden entirely.
- */
-function terrainNoteState(meta) {
-    if (meta?.pendingTerrain) {
+function terrainNoteText(shot, meta) {
+    if (!shot || shot.state === 'nodata') {
+        return '';
+    }
+
+    if (shot.state === 'pending') {
+        return tr('crossSectionLoadingTerrain');
+    }
+
+    if (shot.state === 'offmap') {
+        return tr('noteOffMap');
+    }
+
+    const names = {
+        low: tr('lowArc'),
+        high: tr('highArc'),
+        single: tr('noteArc')
+    };
+
+    const groups = { masked: [], tooClose: [], tooFar: [] };
+    let total = 0;
+
+    for (const arc of ['single', 'low', 'high']) {
+        const assessed = shot.arcs[arc];
+
+        if (!assessed || assessed.status === 'noModel') {
+            continue;
+        }
+
+        total += 1;
+
+        if (assessed.status === 'hit' && assessed.masked) {
+            groups.masked.push(names[arc]);
+        } else if (assessed.status === 'tooClose') {
+            groups.tooClose.push(names[arc]);
+        } else if (
+            assessed.status === 'tooFar' ||
+            assessed.status === 'belowMinElevation' ||
+            assessed.status === 'aboveMaxElevation'
+        ) {
+            groups.tooFar.push(names[arc]);
+        }
+    }
+
+    const keys = { masked: 'noteMasked', tooClose: 'noteTooClose', tooFar: 'noteTooFar' };
+    const clauses = [];
+
+    for (const group of ['masked', 'tooClose', 'tooFar']) {
+        if (!groups[group].length) {
+            continue;
+        }
+
+        const arcs = groups[group].length >= total
+            ? tr('noteAllArcs')
+            : groups[group].join(' + ');
+
+        const template = tr(keys[group]);
+
+        clauses.push(
+            template.includes('{arcs}')
+                ? template.replace('{arcs}', arcs)
+                : `${arcs} ${template}`
+        );
+    }
+
+    const correction = correctionNoteFragment(meta);
+
+    if (correction) {
+        clauses.push(correction);
+    }
+
+    if (!clauses.length) {
+        return '';
+    }
+
+    const dz = `${shot.deltaZ >= 0 ? '+' : ''}${shot.deltaZ.toFixed(1)}`;
+
+    return [tr('noteDeltaZ').replace('{dz}', dz), ...clauses].join(' · ');
+}
+
+function rangeStatusView(elevation) {
+    if (elevation.shot?.state === 'pending') {
+        return { text: tr('reachPending'), color: '#9aa4ae' };
+    }
+
+    const verdict = elevation.shot?.state === 'ready'
+        ? elevation.shot.verdict
+        : null;
+
+    if (verdict === 'masked') {
+        return { text: tr('reachMasked'), color: '#f0b24a' };
+    }
+
+    if (verdict === 'tooClose') {
+        return { text: tr('reachTooClose'), color: '#d86666' };
+    }
+
+    if (verdict === 'tooFar' || verdict === 'unreachable') {
+        return { text: tr('outRange'), color: '#d86666' };
+    }
+
+    if (!elevation.solved) {
+        return { text: tr('outRange'), color: '#d86666' };
+    }
+
+    return elevation.modelled
+        ? { text: tr('inRangeModelled'), color: '#f0b24a' }
+        : { text: tr('inRange'), color: '#82c596' };
+}
+
+function terrainNoteState(shot, meta) {
+    if (shot?.state === 'pending') {
         return 'loading';
     }
 
     return meta?.applied ? 'mixed' : 'uncorrected';
 }
 
-function renderTerrainNote(meta, text) {
+function renderTerrainNote(shot, meta, text) {
     const note = $('terrainNote');
 
     if (!note) {
@@ -257,9 +344,7 @@ function renderTerrainNote(meta, text) {
     }
 
     if (text) {
-        note.dataset.state = terrainNoteState(meta);
-    } else {
-        delete note.dataset.state;
+        note.dataset.state = terrainNoteState(shot, meta);
     }
 }
 
@@ -295,7 +380,7 @@ function flightBadgeNode(host, index) {
  * strings and the numbers are computed. The row re-runs on every pointer
  * move, so the pills are reused and only their text is rewritten.
  */
-function renderFlightTime(weapon, solutions, terrainMeta) {
+function renderFlightTime(weapon, solutions, shot) {
     const row = $('flightTimes');
     const host = $('flightTimeBadges');
 
@@ -304,11 +389,14 @@ function renderFlightTime(weapon, solutions, terrainMeta) {
     }
 
     const badges =
-        typeof flightTimeBadges === 'function'
+        typeof flightTimeBadges === 'function' &&
+        shot?.state !== 'pending'
             ? flightTimeBadges(
                 weapon,
                 solutions,
-                Number(terrainMeta?.deltaZ) || 0
+                shot?.state === 'ready' && Number.isFinite(shot.deltaZ)
+                    ? shot.deltaZ
+                    : 0
             )
             : [];
 
@@ -375,7 +463,8 @@ function renderElevationResult(weapon, distanceMeters) {
         resolved.solutions;
 
     const terrainDetail =
-        formatTerrainBallisticDetail(
+        terrainNoteText(
+            resolved.shot,
             resolved.terrainMeta
         );
 
@@ -412,6 +501,7 @@ function renderElevationResult(weapon, distanceMeters) {
     }
 
     renderTerrainNote(
+        resolved.shot,
         resolved.terrainMeta,
         terrainDetail
     );
@@ -419,7 +509,7 @@ function renderElevationResult(weapon, distanceMeters) {
     renderFlightTime(
         weapon,
         solutions,
-        resolved.terrainMeta
+        resolved.shot
     );
 
     if (typeof renderCrossSection === 'function') {
@@ -452,7 +542,8 @@ function renderElevationResult(weapon, distanceMeters) {
 
     return {
         solved,
-        modelled
+        modelled,
+        shot: resolved.shot
     };
 }
 
@@ -570,28 +661,10 @@ function result() {
             : `${Math.round(maxRange * 1000)} m`
     );
 
-    setText(
-        $('rangeStatus'),
-        elevation.solved
-            ? (
-                elevation.modelled
-                    ? tr('inRangeModelled')
-                    : tr('inRange')
-            )
-            : tr('outRange')
-    );
+    const statusView = rangeStatusView(elevation);
 
-    setStyle(
-        $('rangeStatus'),
-        'color',
-        elevation.solved
-            ? (
-                elevation.modelled
-                    ? '#f0b24a'
-                    : '#82c596'
-            )
-            : '#d86666'
-    );
+    setText($('rangeStatus'), statusView.text);
+    setStyle($('rangeStatus'), 'color', statusView.color);
 
     const mapName =
         S.map ===

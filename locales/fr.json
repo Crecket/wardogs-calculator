@@ -160,5 +160,17 @@
   "collabMapLocked": "La carte est figée pendant une session.",
   "collabErrorRejected": "Le salon a refusé cette modification ; rechargement depuis le serveur.",
   "collabErrorMap": "Ce salon utilise une carte absente de ce site.",
-  "collabErrorCustomMap": "Une session partagée exige une carte prédéfinie, pas une carte personnalisée."
+  "collabErrorCustomMap": "Une session partagée exige une carte prédéfinie, pas une carte personnalisée.",
+  "noteDeltaZ": "ΔZ {dz} m",
+  "noteArc": "trajectoire",
+  "noteAllArcs": "toutes les trajectoires",
+  "noteMasked": "{arcs} : masquée par le terrain",
+  "noteTooClose": "{arcs} : en deçà de la portée minimale",
+  "noteTooFar": "{arcs} : hors de portée à cette hauteur",
+  "noteUncorrected": "sans correction d'altitude",
+  "noteElevationLimit": "MIL limité à l'élévation maximale de la pièce",
+  "noteOffMap": "aucune donnée de terrain ici",
+  "crossSectionBelowMin": "nécessite une élévation sous le minimum de la pièce — tire trop loin",
+  "crossSectionAboveMax": "nécessite une élévation au-dessus du maximum de la pièce — tombe trop court",
+  "reachUnknown": "Aucune donnée de terrain"
 }

@@ -123,5 +123,17 @@
   "markerLabelSpawnVehicle": "리스폰 차량",
   "markerLabelFob": "FOB",
   "markerLabelTank": "전차",
-  "markerLabelArtillery": "포병"
+  "markerLabelArtillery": "포병",
+  "noteDeltaZ": "ΔZ {dz} m",
+  "noteArc": "탄도",
+  "noteAllArcs": "모든 탄도",
+  "noteMasked": "{arcs}: 지형에 가려짐",
+  "noteTooClose": "{arcs}: 최소 사거리 이내",
+  "noteTooFar": "{arcs}: 이 높이에서는 사거리 밖",
+  "noteUncorrected": "고도 보정 없음",
+  "noteElevationLimit": "포의 최대 앙각 한계에 고정된 MIL",
+  "noteOffMap": "이 지점에는 지형 데이터 없음",
+  "crossSectionBelowMin": "포의 최소 앙각보다 낮은 각이 필요함 — 목표를 넘어감",
+  "crossSectionAboveMax": "포의 최대 앙각보다 높은 각이 필요함 — 목표에 못 미침",
+  "reachUnknown": "지형 데이터 없음"
 }

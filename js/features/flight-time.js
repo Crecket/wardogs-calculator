@@ -32,8 +32,6 @@
  * it is an inference — see docs/todo.md.
  */
 
-const FLIGHT_TIME_GRAVITY = 9.81;
-
 /*
  * A distance that lands on a table row carrying several mils has no single
  * angle, so the band's midpoint stands in for it. The spread is a few mils
@@ -88,7 +86,7 @@ function flightTimeSecondsForMil(weaponId, arc, mil, deltaZMeters = 0) {
 
     const inner =
         vertical * vertical -
-        2 * FLIGHT_TIME_GRAVITY * dz;
+        2 * BALLISTICS_GRAVITY * dz;
 
     if (!Number.isFinite(inner) || inner < 0) {
         return null;
@@ -96,7 +94,7 @@ function flightTimeSecondsForMil(weaponId, arc, mil, deltaZMeters = 0) {
 
     const seconds =
         (vertical + Math.sqrt(inner)) /
-        FLIGHT_TIME_GRAVITY;
+        BALLISTICS_GRAVITY;
 
     return seconds > 0 ? seconds : null;
 }

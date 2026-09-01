@@ -213,5 +213,17 @@
   "reachPending": "Still solving",
   "reachAll": "All {total} guns can reach this",
   "reachSome": "{reachable} of {total} guns can reach this",
-  "reachNone": "No gun can reach this"
+  "reachNone": "No gun can reach this",
+  "noteDeltaZ": "ΔZ {dz} m",
+  "noteArc": "arc",
+  "noteAllArcs": "all arcs",
+  "noteMasked": "{arcs}: masked by terrain",
+  "noteTooClose": "{arcs}: inside minimum range",
+  "noteTooFar": "{arcs}: out of reach at this height",
+  "noteUncorrected": "not corrected for height",
+  "noteElevationLimit": "MIL clamped at the gun's elevation limit",
+  "noteOffMap": "no terrain data here",
+  "crossSectionBelowMin": "needs elevation below the gun's minimum — passes over",
+  "crossSectionAboveMax": "needs elevation above the gun's maximum — falls short",
+  "reachUnknown": "No terrain data"
 }

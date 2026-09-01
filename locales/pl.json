@@ -160,5 +160,17 @@
   "collabMapLocked": "Podczas sesji mapa jest zablokowana.",
   "collabErrorRejected": "Pokój odrzucił tę zmianę; przeładowanie z serwera.",
   "collabErrorMap": "Ten pokój używa mapy, której nie ma na tej stronie.",
-  "collabErrorCustomMap": "Sesje współdzielone wymagają mapy predefiniowanej, nie własnej."
+  "collabErrorCustomMap": "Sesje współdzielone wymagają mapy predefiniowanej, nie własnej.",
+  "noteDeltaZ": "ΔZ {dz} m",
+  "noteArc": "tor",
+  "noteAllArcs": "wszystkie tory",
+  "noteMasked": "{arcs}: zasłonięty terenem",
+  "noteTooClose": "{arcs}: bliżej niż minimalny zasięg",
+  "noteTooFar": "{arcs}: poza zasięgiem na tej wysokości",
+  "noteUncorrected": "bez poprawki na wysokość",
+  "noteElevationLimit": "MIL ograniczony do limitu podniesienia działa",
+  "noteOffMap": "brak danych o terenie w tym miejscu",
+  "crossSectionBelowMin": "wymaga kąta poniżej minimum działa — przelot",
+  "crossSectionAboveMax": "wymaga kąta powyżej maksimum działa — niedolot",
+  "reachUnknown": "Brak danych o terenie"
 }

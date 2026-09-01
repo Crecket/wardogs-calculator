@@ -160,5 +160,17 @@
   "collabMapLocked": "O mapa fica fixo durante uma sessão.",
   "collabErrorRejected": "A sala recusou essa alteração; a recarregar do servidor.",
   "collabErrorMap": "Essa sala usa um mapa que este site não tem.",
-  "collabErrorCustomMap": "As sessões partilhadas precisam de um mapa predefinido, não de um personalizado."
+  "collabErrorCustomMap": "As sessões partilhadas precisam de um mapa predefinido, não de um personalizado.",
+  "noteDeltaZ": "ΔZ {dz} m",
+  "noteArc": "trajetória",
+  "noteAllArcs": "todas as trajetórias",
+  "noteMasked": "{arcs}: bloqueada pelo terreno",
+  "noteTooClose": "{arcs}: dentro do alcance mínimo",
+  "noteTooFar": "{arcs}: fora de alcance a esta altura",
+  "noteUncorrected": "sem correção de altura",
+  "noteElevationLimit": "MIL limitado ao máximo de elevação da peça",
+  "noteOffMap": "sem dados de terreno aqui",
+  "crossSectionBelowMin": "precisa de uma elevação abaixo do mínimo da peça — passa por cima",
+  "crossSectionAboveMax": "precisa de uma elevação acima do máximo da peça — fica aquém",
+  "reachUnknown": "Sem dados de terreno"
 }

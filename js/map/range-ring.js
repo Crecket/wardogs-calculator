@@ -87,52 +87,6 @@ function rangeRingSample(field, gameX, gameY) {
     );
 }
 
-function modelledElevationSolution(
-    weapon,
-    arc,
-    distanceMeters,
-    deltaZMeters
-) {
-    const fit = projectileModelArc(weapon?.id, arc);
-
-    if (!fit) {
-        return null;
-    }
-
-    const tan = modelArcLaunchTan(fit, distanceMeters, deltaZMeters);
-
-    if (tan === null) {
-        return null;
-    }
-
-    const mil = modelArcMil(fit, tan);
-
-    if (mil === null || !modelArcElevationFits(weapon, mil)) {
-        return null;
-    }
-
-    return {
-        mil,
-        minMil: mil,
-        maxMil: mil,
-        tan,
-        modelled: true
-    };
-}
-
-function terrainDeltaZMeters(mapId, origin, target) {
-    const field = cachedHeightfield(mapId);
-
-    if (!field || !origin || !target) {
-        return null;
-    }
-
-    const zGun = rangeRingSample(field, origin.x, origin.y);
-    const zTarget = rangeRingSample(field, target.x, target.y);
-
-    return zGun === null || zTarget === null ? null : zTarget - zGun;
-}
-
 function rangeRingMemoKey(gun, mapId) {
     const cell = RANGE_RING_MEMO_METRES / METRES_PER_GAME_UNIT_RING;
 

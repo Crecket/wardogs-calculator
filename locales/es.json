@@ -160,5 +160,17 @@
   "collabMapLocked": "El mapa queda fijo durante una sesión.",
   "collabErrorRejected": "La sala rechazó ese cambio; recargando desde el servidor.",
   "collabErrorMap": "Esa sala usa un mapa que este sitio no tiene.",
-  "collabErrorCustomMap": "Las sesiones compartidas necesitan un mapa predefinido, no uno personalizado."
+  "collabErrorCustomMap": "Las sesiones compartidas necesitan un mapa predefinido, no uno personalizado.",
+  "noteDeltaZ": "ΔZ {dz} m",
+  "noteArc": "trayectoria",
+  "noteAllArcs": "todas las trayectorias",
+  "noteMasked": "{arcs}: bloqueada por el terreno",
+  "noteTooClose": "{arcs}: dentro del alcance mínimo",
+  "noteTooFar": "{arcs}: fuera de alcance a esta altura",
+  "noteUncorrected": "sin corrección por altura",
+  "noteElevationLimit": "MIL limitado al máximo de elevación del cañón",
+  "noteOffMap": "sin datos de terreno aquí",
+  "crossSectionBelowMin": "necesita una elevación por debajo del mínimo del cañón — se pasa de largo",
+  "crossSectionAboveMax": "necesita una elevación por encima del máximo del cañón — se queda corto",
+  "reachUnknown": "Sin datos de terreno"
 }

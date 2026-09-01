@@ -156,5 +156,17 @@
   "markerLabelSpawnVehicle": "重生载具",
   "markerLabelFob": "FOB",
   "markerLabelTank": "坦克",
-  "markerLabelArtillery": "炮兵"
+  "markerLabelArtillery": "炮兵",
+  "noteDeltaZ": "ΔZ {dz} m",
+  "noteArc": "弹道",
+  "noteAllArcs": "所有弹道",
+  "noteMasked": "{arcs}：被地形遮挡",
+  "noteTooClose": "{arcs}：小于最小射程",
+  "noteTooFar": "{arcs}：在此高度超出射程",
+  "noteUncorrected": "未按高差修正",
+  "noteElevationLimit": "MIL 已限制在火炮的仰角上限",
+  "noteOffMap": "此处无地形数据",
+  "crossSectionBelowMin": "所需仰角低于火炮最小值 — 越过目标",
+  "crossSectionAboveMax": "所需仰角高于火炮最大值 — 未及目标",
+  "reachUnknown": "无地形数据"
 }
