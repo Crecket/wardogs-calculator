@@ -4,7 +4,6 @@ const CROSS_SECTION_MARGIN_SAMPLES = 10;
 const CROSS_SECTION_TOTAL_SAMPLES =
     CROSS_SECTION_SAMPLES + CROSS_SECTION_MARGIN_SAMPLES * 2;
 
-const CROSS_SECTION_GRAVITY = 9.81;
 const CROSS_SECTION_ARC_ORDER = ['low', 'high', 'single'];
 
 const CROSS_SECTION_ARC_LABELS = {
@@ -63,57 +62,6 @@ function crossSectionFit(weaponId, arc) {
         : null;
 }
 
-function crossSectionElevationLimits(weapon, fit) {
-    const offset = Number(fit?.angleOffsetDeg);
-    const perMil = Number(fit?.anglePerMilDeg);
-    const minMil = Number(weapon?.minElevationMil);
-    const maxMil = Number(weapon?.maxElevationMil);
-
-    if (
-        !Number.isFinite(offset) ||
-        !Number.isFinite(perMil) ||
-        !Number.isFinite(minMil) ||
-        !Number.isFinite(maxMil)
-    ) {
-        return null;
-    }
-
-    const shallow = offset + perMil * minMil;
-    const steep = offset + perMil * maxMil;
-
-    if (!(shallow > 0) || !(steep < 90) || shallow >= steep) {
-        return null;
-    }
-
-    return {
-        minTan: Math.tan(shallow * Math.PI / 180),
-        maxTan: Math.tan(steep * Math.PI / 180)
-    };
-}
-
-function crossSectionMaxRangeTan(muzzleVelocity, deltaZMeters) {
-    const inner =
-        muzzleVelocity * muzzleVelocity -
-        2 * CROSS_SECTION_GRAVITY * deltaZMeters;
-
-    if (inner <= 0) {
-        return null;
-    }
-
-    return muzzleVelocity / Math.sqrt(inner);
-}
-
-function crossSectionShellHeight(tan, muzzleVelocity, xMeters) {
-    return (
-        xMeters * tan -
-        CROSS_SECTION_GRAVITY *
-        xMeters *
-        xMeters *
-        (1 + tan * tan) /
-        (2 * muzzleVelocity * muzzleVelocity)
-    );
-}
-
 function crossSectionCrestIndex(profile, firstIndex) {
     const ground = profile.ground;
     const span = profile.targetIndex - profile.gunIndex;
@@ -157,7 +105,7 @@ function crossSectionMarch(profile, tan, muzzleVelocity, firstIndex) {
     for (let i = profile.gunIndex; i < CROSS_SECTION_TOTAL_SAMPLES; i += 1) {
         heights[i] =
             zGun +
-            crossSectionShellHeight(
+            modelShellHeight(
                 tan,
                 muzzleVelocity,
                 (i - profile.gunIndex) * profile.stepMeters
@@ -183,6 +131,28 @@ function crossSectionMarch(profile, tan, muzzleVelocity, firstIndex) {
     };
 }
 
+function crossSectionStopTan(weapon, fit, status) {
+    const stops = arcAngleStops(weapon, fit);
+
+    if (!stops) {
+        return null;
+    }
+
+    let radians;
+
+    if (status === 'belowMinElevation') {
+        radians = stops.minRadians;
+    } else if (status === 'aboveMaxElevation') {
+        radians = stops.maxRadians;
+    } else if (status === 'tooClose') {
+        radians = fit.branch === 'low' ? stops.minRadians : stops.maxRadians;
+    } else {
+        radians = fit.branch === 'low' ? stops.maxRadians : stops.minRadians;
+    }
+
+    return Math.tan(radians);
+}
+
 function crossSectionShot(weapon, arc, profile) {
     const fit = crossSectionFit(weapon.id, arc);
     const muzzleVelocity = Number(fit?.muzzleVelocity);
@@ -191,95 +161,77 @@ function crossSectionShot(weapon, arc, profile) {
         return null;
     }
 
-    const firstIndex = crossSectionFirstIndex(profile);
-    const crestIndex = crossSectionCrestIndex(profile, firstIndex);
-    const limits = crossSectionElevationLimits(weapon, fit);
-
     const deltaZ =
         profile.ground[profile.targetIndex] -
         profile.ground[profile.gunIndex];
 
-    const reachTan =
-        typeof modelArcLaunchTan === 'function'
-            ? modelArcLaunchTan(fit, profile.distanceMeters, deltaZ)
-            : null;
+    const assessed = assessArc(weapon, arc, profile.distanceMeters, deltaZ);
 
-    let reaches = reachTan !== null;
-    let clampedTo = null;
+    if (assessed.status === 'noModel') {
+        return null;
+    }
 
-    let tan = reachTan === null
-        ? crossSectionMaxRangeTan(muzzleVelocity, deltaZ)
-        : reachTan;
+    const firstIndex = crossSectionFirstIndex(profile);
+    const crestIndex = crossSectionCrestIndex(profile, firstIndex);
+
+    const tan = assessed.status === 'hit'
+        ? assessed.tan
+        : crossSectionStopTan(weapon, fit, assessed.status);
 
     if (tan === null) {
         return null;
     }
 
-    if (limits && tan < limits.minTan) {
-        reaches = false;
-        clampedTo = 'min';
-        tan = limits.minTan;
-    } else if (limits && tan > limits.maxTan) {
-        reaches = false;
-        clampedTo = 'max';
-        tan = limits.maxTan;
-    }
+    const march = crossSectionMarch(profile, tan, muzzleVelocity, firstIndex);
 
-    let march = crossSectionMarch(profile, tan, muzzleVelocity, firstIndex);
-
-    if (!reaches && march.impactIndex > firstIndex) {
-        const landing =
-            profile.ground[march.impactIndex] -
-            profile.ground[profile.gunIndex];
-
-        let refined = crossSectionMaxRangeTan(muzzleVelocity, landing);
-
-        if (refined !== null && limits) {
-            refined = Math.min(
-                limits.maxTan,
-                Math.max(limits.minTan, refined)
-            );
-        }
-
-        if (refined !== null) {
-            march = crossSectionMarch(
-                profile,
-                refined,
-                muzzleVelocity,
-                firstIndex
-            );
-        }
-    }
-
-    const heights = march.heights;
+    const capped = assessed.ceilingCapped === true;
+    const masked = assessed.status === 'hit' && !capped && march.impactIndex >= 0;
 
     let kind = 'hit';
     let endIndex = profile.targetIndex;
+    let impactMeters = profile.distanceMeters;
 
     if (march.impactIndex >= 0) {
-        kind = reaches ? 'blocked' : 'short';
+        kind = assessed.status === 'hit' && !capped ? 'blocked' : 'short';
         endIndex = march.impactIndex;
-    } else if (!reaches) {
+        impactMeters = (endIndex - profile.gunIndex) * profile.stepMeters;
+    } else if (assessed.status !== 'hit') {
         kind = 'over';
 
         endIndex = march.landingIndex >= 0
             ? march.landingIndex
             : CROSS_SECTION_TOTAL_SAMPLES - 1;
-    }
 
-    const impactMeters =
-        (endIndex - profile.gunIndex) * profile.stepMeters;
+        impactMeters = (endIndex - profile.gunIndex) * profile.stepMeters;
+    } else if (capped) {
+        const modelImpactMeters = modelRangeAtAngle(muzzleVelocity, Math.atan(tan), deltaZ);
+
+        if (modelImpactMeters !== null && modelImpactMeters < profile.distanceMeters - 1e-6) {
+            kind = 'short';
+            impactMeters = modelImpactMeters;
+
+            endIndex = Math.min(
+                profile.targetIndex,
+                Math.max(
+                    profile.gunIndex,
+                    profile.gunIndex + Math.round(modelImpactMeters / profile.stepMeters)
+                )
+            );
+        }
+    }
 
     return {
         arc,
-        heights,
+        status: assessed.status,
+        masked,
+        ceilingCapped: capped,
+        heights: march.heights,
         kind,
-        clampedTo,
         crestIndex,
         endIndex,
         impactMeters,
         shortfallMeters: profile.distanceMeters - impactMeters,
-        clearance: heights[crestIndex] - profile.ground[crestIndex]
+        clearance: march.heights[crestIndex] - profile.ground[crestIndex]
     };
 }
 
@@ -344,25 +296,35 @@ function crossSectionModel(weapon, distanceMeters) {
 }
 
 function crossSectionShotCaption(shot) {
-    if (shot.kind === 'blocked') {
+    if (shot.masked || shot.kind === 'blocked') {
         return tr('crossSectionBlocked')
             .replace('{metres}', Math.round(shot.impactMeters))
             .replace('{short}', Math.round(shot.shortfallMeters));
     }
 
-    if (shot.kind === 'short') {
-        return tr('crossSectionShort')
-            .replace('{metres}', Math.round(shot.impactMeters))
-            .replace('{short}', Math.round(shot.shortfallMeters));
+    if (shot.status === 'hit') {
+        return shot.ceilingCapped && shot.kind === 'short'
+            ? tr('crossSectionShort')
+                .replace('{metres}', Math.round(shot.impactMeters))
+                .replace('{short}', Math.round(shot.shortfallMeters))
+            : null;
     }
 
-    if (shot.kind === 'over') {
-        return shot.clampedTo === 'min'
-            ? tr('crossSectionOver')
-            : tr('crossSectionPasses');
+    if (shot.status === 'belowMinElevation') {
+        return tr('crossSectionBelowMin');
     }
 
-    return null;
+    if (shot.status === 'aboveMaxElevation') {
+        return tr('crossSectionAboveMax');
+    }
+
+    if (shot.status === 'tooClose') {
+        return tr('crossSectionOver');
+    }
+
+    return tr('crossSectionShort')
+        .replace('{metres}', Math.round(shot.impactMeters))
+        .replace('{short}', Math.round(shot.shortfallMeters));
 }
 
 function crossSectionCaption(model) {
