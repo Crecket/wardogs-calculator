@@ -48,67 +48,6 @@ function hillshadeHeaderUrl(mapId) {
     return `data/terrain/${mapId}/hillshade.json`;
 }
 
-function hillshadeIsSameOrigin(url) {
-    try {
-        return new URL(url, location.href).origin === location.origin;
-    } catch (error) {
-        return false;
-    }
-}
-
-function decodeHillshadeElement(url) {
-    return new Promise((resolve, reject) => {
-        const image = new Image();
-
-        image.decoding = 'async';
-
-        image.onload = () => {
-            if (typeof image.decode !== 'function') {
-                resolve(image);
-
-                return;
-            }
-
-            image.decode().then(
-                () => resolve(image),
-                () => resolve(image)
-            );
-        };
-
-        image.onerror = () => reject(new Error(url));
-
-        image.src = url;
-    });
-}
-
-async function decodeHillshade(url) {
-    if (
-        typeof createImageBitmap !== 'function' ||
-        typeof fetch !== 'function' ||
-        !hillshadeIsSameOrigin(url)
-    ) {
-        return decodeHillshadeElement(url);
-    }
-
-    let response = null;
-
-    try {
-        response = await fetch(url);
-    } catch (error) {
-        return decodeHillshadeElement(url);
-    }
-
-    if (!response.ok) {
-        throw new Error(`${url}: ${response.status}`);
-    }
-
-    try {
-        return await createImageBitmap(await response.blob());
-    } catch (error) {
-        return decodeHillshadeElement(url);
-    }
-}
-
 function hillshadeGrid(payload) {
     const grid = payload?.grid || {};
 
@@ -165,7 +104,7 @@ function loadHillshade(mapId) {
 
             const grid = hillshadeGrid(payload);
 
-            return decodeHillshade(hillshadeUrl(mapId)).then(image => {
+            return decodeMapImage(hillshadeUrl(mapId)).then(image => {
                 const entry = { image, grid };
 
                 HILLSHADE_CACHE.set(mapId, entry);

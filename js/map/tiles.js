@@ -140,108 +140,6 @@ function getTileURL(
     );
 }
 
-function decodeTileElement(url) {
-
-    return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
-
-            const image =
-                new Image();
-
-            image.decoding =
-                'async';
-
-            image.onload =
-                () => {
-
-                    if (
-                        typeof image.decode !== 'function'
-                    ) {
-
-                        resolve(image);
-
-                        return;
-                    }
-
-                    image
-                        .decode()
-                        .then(
-                            () => resolve(image),
-                            () => resolve(image)
-                        );
-                };
-
-            image.onerror =
-                () => reject(
-                    new Error(url)
-                );
-
-            image.src =
-                url;
-        }
-    );
-}
-
-function tileIsSameOrigin(url) {
-
-    try {
-
-        return new URL(
-            url,
-            location.href
-        ).origin === location.origin;
-
-    } catch (error) {
-
-        return false;
-    }
-}
-
-
-async function decodeTile(url) {
-
-    if (
-        typeof createImageBitmap !== 'function' ||
-        typeof fetch !== 'function' ||
-        !tileIsSameOrigin(url)
-    ) {
-        return decodeTileElement(url);
-    }
-
-    let response =
-        null;
-
-    try {
-
-        response =
-            await fetch(url);
-
-    } catch (error) {
-
-        return decodeTileElement(url);
-    }
-
-    if (!response.ok) {
-        throw new Error(
-            `${url}: ${response.status}`
-        );
-    }
-
-    try {
-
-        return await createImageBitmap(
-            await response.blob()
-        );
-
-    } catch (error) {
-
-        return decodeTileElement(url);
-    }
-}
-
 function loadTile(
     map,
     zoom,
@@ -283,7 +181,7 @@ function loadTile(
         tile
     );
 
-    decodeTile(url)
+    decodeMapImage(url)
         .then(
             image => {
 
