@@ -269,7 +269,7 @@ canvas.preset-marker-hover {
 }
 
 .cross-section-header {
-    height: 13px;
+    min-height: 24px;
 
     padding: 0 2px;
 
@@ -292,9 +292,13 @@ canvas.preset-marker-hover {
 }
 
 .cross-section-toggle {
-    width: 14px;
-    height: 14px;
+    width: 24px;
+    min-width: 24px;
 
+    height: 24px;
+    min-height: 24px;
+
+    margin: 0;
     margin-left: auto;
 
     padding: 0;
@@ -302,26 +306,27 @@ canvas.preset-marker-hover {
     display: grid;
     place-items: center;
 
-    border: 1px solid transparent;
+    border: 1px solid var(--border-light);
 
-    border-radius: 4px;
+    border-radius: 5px;
 
-    background: transparent;
+    background: var(--input-bg);
 
     color: var(--muted);
 
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1;
 
     cursor: pointer;
 }
 
-.cross-section-toggle:hover {
-    border-color: var(--border-light);
+.cross-section-toggle:hover,
+.cross-section-toggle:focus-visible {
+    border-color: var(--accent-border);
 
     background: var(--input-hover-bg);
 
-    color: var(--text);
+    color: var(--accent);
 }
 
 .cross-section-canvas {

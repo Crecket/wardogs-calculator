@@ -848,7 +848,7 @@ function syncCrossSectionToggle(panel) {
     button.setAttribute('aria-label', label);
     button.title = label;
 
-    setText(button, collapsed ? '+' : '−');
+    setText(button, collapsed ? '▾' : '▴');
 }
 
 function renderCrossSection(weapon, distanceMeters) {
