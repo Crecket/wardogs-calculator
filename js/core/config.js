@@ -66,6 +66,7 @@ const DEFAULT_APP_CONFIG = {
         shortcuts: {
             ruler: 'r',
             pencil: 'p',
+            shapes: 'g',
             eraser: 'e',
             marker: 'm',
             coordinateSearch: 'f',

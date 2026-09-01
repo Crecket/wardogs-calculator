@@ -145,7 +145,8 @@ function startMobilePinch() {
         typeof MAP_TOOL_STATE !== 'undefined' &&
         (
             MAP_TOOL_STATE.rulerDragging ||
-            MAP_TOOL_STATE.pencilDragging
+            MAP_TOOL_STATE.pencilDragging ||
+            MAP_TOOL_STATE.shapeDragging
         )
     ) {
         handleMapToolMouseUp();
@@ -269,7 +270,7 @@ function handleMobilePointerDown(event) {
 
     if (
         typeof MAP_TOOL_STATE !== 'undefined' &&
-        ['ruler', 'pencil', 'eraser', 'marker'].includes(
+        ['ruler', 'pencil', 'shapes', 'eraser', 'marker'].includes(
             MAP_TOOL_STATE.tool
         )
     ) {
@@ -474,7 +475,7 @@ function finishMobileTap(event, gesture) {
 
     if (
         typeof MAP_TOOL_STATE === 'undefined' ||
-        !['ruler', 'pencil', 'eraser', 'marker'].includes(
+        !['ruler', 'pencil', 'shapes', 'eraser', 'marker'].includes(
             MAP_TOOL_STATE.tool
         )
     ) {

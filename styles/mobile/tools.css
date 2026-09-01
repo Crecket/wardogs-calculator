@@ -165,6 +165,18 @@
     grid-template-columns: repeat(5, 32px);
 }
 
+.mobile-app .map-tool-shape-colors {
+    grid-template-columns: repeat(5, 32px);
+}
+
+.mobile-app .map-tool-shape-row {
+    grid-template-columns: repeat(4, 44px);
+}
+
+.mobile-app .map-tool-shape-option {
+    height: 40px;
+}
+
 .mobile-app .map-tool-history-actions button {
     min-height: 38px;
 }

@@ -81,6 +81,7 @@
 
             <div class="map-tools" id="mapTools">
                 <div class="map-tool-popover map-tool-palette" id="pencilPalette"></div>
+<div class="map-tool-popover map-tool-shape-palette" id="shapePalette"></div>
                 <div class="map-tool-popover map-tool-marker-picker" id="markerPicker"></div>
                 <div class="map-tool-popover map-tool-coordinate-search" id="coordinateSearchPopover">
                     <div class="map-tool-popover-title" id="coordinateSearchTitle">Coordinate search</div>
@@ -107,6 +108,9 @@
                     </button>
                     <button aria-label="Pencil" class="map-tool-button" data-tool="pencil" id="mapToolPencil" title="Pencil" type="button">
                         <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4.2-1 10.6-10.6-3.2-3.2L5 15.8 4 20Z"/><path d="m14.8 6 3.2 3.2"/></svg>
+                    </button>
+                    <button aria-label="Shapes" class="map-tool-button" data-tool="shapes" id="mapToolShapes" title="Shapes" type="button">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="10.5" width="10" height="10" rx="1"/><circle cx="16" cy="7.5" r="4.5"/></svg>
                     </button>
                     <button aria-label="Eraser" class="map-tool-button" data-tool="eraser" id="mapToolEraser" title="Eraser" type="button">
                         <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 14.5 8-8a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L10 19H6.5L4.5 17a1.8 1.8 0 0 1 0-2.5Z"/><path d="m9.5 9.5 5 5"/><path d="M10 19h9"/></svg>
@@ -300,6 +304,7 @@
 <script src="js/map/range-ring.js"></script>
 <script src="js/map/dead-ground.js"></script>
 <script src="js/map/map-tools.js"></script>
+<script src="js/map/map-shapes.js"></script>
 <script src="js/map/grid.js"></script>
 <script src="js/map/collab-cursors.js"></script>
 <script src="js/map/renderer.js"></script>

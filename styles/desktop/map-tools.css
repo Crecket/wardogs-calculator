@@ -210,6 +210,31 @@
     background: var(--input-hover-bg);
 }
 
+.map-tool-shape-palette {
+    gap: 8px;
+    justify-items: start;
+}
+
+.map-tool-shape-row {
+    display: grid;
+    grid-template-columns:
+        repeat(4, 36px);
+
+    gap: 6px;
+}
+
+.map-tool-shape-colors {
+    display: grid;
+    grid-template-columns:
+        repeat(5, 28px);
+
+    gap: 6px;
+}
+
+.map-tool-shape-option {
+    height: 32px;
+}
+
 .map-tool-marker-picker {
     grid-template-columns:
         repeat(4, 42px);

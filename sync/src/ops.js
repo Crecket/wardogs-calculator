@@ -42,6 +42,8 @@ const ID_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
 const COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
 
+const SHAPE_TYPES = ['line', 'arrow', 'rect', 'circle'];
+
 const COORDINATE_BOUND = 1e6;
 const ZOOM_BOUND = 1e4;
 const NAME_LENGTH = 120;
@@ -230,12 +232,18 @@ export function validateDrawing(value, mapId) {
         fail('bad-color');
     }
 
-    return {
+    const drawing = {
         id: id(value.id),
         mapId: slug(value.mapId, mapId),
         color: value.color,
         points
     };
+
+    if (SHAPE_TYPES.includes(value.type)) {
+        drawing.type = value.type;
+    }
+
+    return drawing;
 }
 
 export function validateMarker(value, mapId) {

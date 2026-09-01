@@ -253,6 +253,7 @@
 <!-- MAP TOOLS -->
 <div class="map-tools" id="mapTools">
 <div class="map-tool-popover map-tool-palette" id="pencilPalette"></div>
+<div class="map-tool-popover map-tool-shape-palette" id="shapePalette"></div>
 <div class="map-tool-popover map-tool-marker-picker" id="markerPicker"></div>
 <div class="map-tool-popover map-tool-coordinate-search" id="coordinateSearchPopover">
 <div class="map-tool-popover-title" id="coordinateSearchTitle">Coordinate search</div>
@@ -284,6 +285,9 @@
 <path d="M4 20l4.2-1 10.6-10.6-3.2-3.2L5 15.8 4 20Z"/>
 <path d="m14.8 6 3.2 3.2"/>
 </svg>
+</button>
+<button aria-label="Shapes" class="map-tool-button" data-tool="shapes" id="mapToolShapes" title="Shapes" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="10.5" width="10" height="10" rx="1"/><circle cx="16" cy="7.5" r="4.5"/></svg>
 </button>
 <button aria-label="Eraser" class="map-tool-button" data-tool="eraser" id="mapToolEraser" title="Eraser" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -371,6 +375,7 @@
 <script src="js/map/dead-ground.js"></script>
 <script src="js/map/cross-section.js"></script>
 <script src="js/map/map-tools.js"></script>
+<script src="js/map/map-shapes.js"></script>
 <script src="js/map/grid.js"></script>
 <script src="js/map/collab-cursors.js"></script>
 <script src="js/map/renderer.js"></script>
