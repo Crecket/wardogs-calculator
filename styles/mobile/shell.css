@@ -16,6 +16,54 @@ body.mobile-app {
     --mobile-sheet-peek: 92px;
     --mobile-edge: 10px;
 
+    --mobile-map-top: calc(
+        var(--mobile-header-height) + env(safe-area-inset-top)
+    );
+
+    --mobile-mode-switch-height: 50px;
+
+    --mobile-bottom-reserved: calc(
+        var(--mobile-sheet-peek) +
+        env(safe-area-inset-bottom) +
+        var(--mobile-edge) +
+        var(--mobile-mode-switch-height)
+    );
+
+    --mobile-tools-top: 42px;
+    --mobile-tools-toggle-size: 42px;
+    --mobile-tools-gap: 7px;
+    --mobile-tools-button: 40px;
+    --mobile-tools-rail-width: 93px;
+
+    --mobile-tools-bar-max-height: calc(
+        100dvh -
+        var(--mobile-map-top) -
+        var(--mobile-tools-top) -
+        var(--mobile-tools-toggle-size) -
+        var(--mobile-tools-gap) -
+        var(--mobile-bottom-reserved) -
+        var(--mobile-edge)
+    );
+
+    --mobile-tools-popover-max-height: calc(
+        100dvh -
+        var(--mobile-map-top) -
+        var(--mobile-tools-top) -
+        var(--mobile-bottom-reserved) -
+        var(--mobile-edge)
+    );
+
+    --mobile-tools-popover-offset: calc(
+        var(--mobile-tools-rail-width) + 4px
+    );
+
+    --mobile-tools-popover-max-width: calc(
+        100vw -
+        var(--mobile-edge) -
+        var(--mobile-tools-popover-offset) -
+        var(--mobile-edge)
+    );
+
     display: block;
     position: fixed;
     inset: 0;

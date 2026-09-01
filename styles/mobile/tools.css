@@ -3,25 +3,27 @@
    ========================= */
 
 .mobile-app .map-tools {
-    top: 42px;
-    right: 10px;
+    top: var(--mobile-tools-top);
+    right: var(--mobile-edge);
     bottom: auto;
 
     z-index: 16;
     flex-direction: column;
     align-items: flex-end;
-    gap: 7px;
+    gap: var(--mobile-tools-gap);
 
     transition: opacity .18s ease, transform .18s ease;
 }
 
 .mobile-app .map-tools-bar {
     display: none;
-    flex-direction: column;
+    grid-template-columns: repeat(2, var(--mobile-tools-button));
+    align-content: start;
     gap: 3px;
     padding: 4px;
 
-    max-height: calc(100dvh - 150px);
+    width: var(--mobile-tools-rail-width);
+    max-height: var(--mobile-tools-bar-max-height);
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
@@ -30,14 +32,14 @@
 }
 
 .mobile-app .map-tools.mobile-map-tools-open .map-tools-bar {
-    display: flex;
+    display: grid;
 }
 
 .mobile-app .mobile-map-tools-toggle {
-    width: 42px;
-    min-width: 42px;
-    height: 42px;
-    min-height: 42px;
+    width: var(--mobile-tools-toggle-size);
+    min-width: var(--mobile-tools-toggle-size);
+    height: var(--mobile-tools-toggle-size);
+    min-height: var(--mobile-tools-toggle-size);
     padding: 0;
 
     display: grid;
@@ -68,34 +70,42 @@
 }
 
 .mobile-app .map-tool-button {
-    width: 40px;
-    height: 40px;
-    min-height: 40px;
+    width: var(--mobile-tools-button);
+    height: var(--mobile-tools-button);
+    min-height: var(--mobile-tools-button);
     border-radius: 7px;
 }
 
 .mobile-app .map-tool-button.map-tool-primary {
-    width: 52px;
-    height: 52px;
-    min-height: 52px;
+    grid-column: 1 / -1;
+
+    width: auto;
+    height: 48px;
+    min-height: 48px;
 }
 
 .mobile-app .map-tools-divider {
+    grid-column: 1 / -1;
     align-self: stretch;
+    justify-self: stretch;
 
     width: auto;
     height: 1px;
 
-    margin: 3px 2px;
+    margin: 1px 2px;
 }
 
 .mobile-app .map-tool-popover {
     position: absolute;
     top: 0;
-    right: 52px;
+    right: var(--mobile-tools-popover-offset);
 
-    max-width: calc(100vw - 72px);
-    max-height: min(56dvh, 420px);
+    max-width: var(--mobile-tools-popover-max-width);
+    max-height: min(
+        56dvh,
+        420px,
+        var(--mobile-tools-popover-max-height)
+    );
     overflow-y: auto;
 
     overscroll-behavior: contain;
@@ -110,9 +120,9 @@
      */
     position: absolute;
     top: 0;
-    right: 52px;
+    right: var(--mobile-tools-popover-offset);
 
-    max-height: calc(100dvh - 170px);
+    max-height: var(--mobile-tools-popover-max-height);
     overflow-y: auto;
 
     overscroll-behavior: contain;
@@ -123,7 +133,7 @@
 }
 
 .mobile-app .map-tool-coordinate-search {
-    width: min(250px, calc(100vw - 72px));
+    width: min(250px, var(--mobile-tools-popover-max-width));
 }
 
 /*
@@ -192,7 +202,7 @@
 }
 
 .mobile-app .map-tool-data-transfer {
-    width: min(280px, calc(100vw - 72px));
+    width: min(280px, var(--mobile-tools-popover-max-width));
 }
 
 .mobile-app .map-tool-data-transfer-actions button {
@@ -201,7 +211,7 @@
 }
 
 .mobile-app .map-tool-collab {
-    width: min(280px, calc(100vw - 72px));
+    width: min(280px, var(--mobile-tools-popover-max-width));
 }
 
 .mobile-app .map-tool-collab button,

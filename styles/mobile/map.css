@@ -87,12 +87,21 @@
 
 .mobile-solution-hud {
     position: absolute;
-    top: 42px;
-    left: 10px;
+    top: var(--mobile-tools-top);
+    left: var(--mobile-edge);
     z-index: 10;
 
-    /* Leave a dedicated lane for the mobile Map Tools toggle. */
-    width: min(292px, calc(100vw - 72px));
+    /* Leave a dedicated lane for the mobile Map Tools rail. */
+    width: min(
+        292px,
+        calc(
+            100vw -
+            var(--mobile-edge) -
+            var(--mobile-tools-rail-width) -
+            var(--mobile-edge) -
+            var(--mobile-edge)
+        )
+    );
     padding: 5px;
 
     border: 1px solid var(--border-light);
@@ -303,9 +312,13 @@
 
 .mobile-app .mobile-mode-switch {
     position: absolute;
-    right: 10px;
-    bottom: calc(var(--mobile-sheet-peek) + env(safe-area-inset-bottom) + 10px);
-    left: 10px;
+    right: var(--mobile-edge);
+    bottom: calc(
+        var(--mobile-sheet-peek) +
+        env(safe-area-inset-bottom) +
+        var(--mobile-edge)
+    );
+    left: var(--mobile-edge);
     z-index: 18;
 
     grid-template-columns: 1fr 1fr;
