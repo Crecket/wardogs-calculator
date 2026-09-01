@@ -1,4 +1,3 @@
-const DEAD_GROUND_CLEARANCE_METRES = 0;
 const DEAD_GROUND_CACHE_LIMIT = 256;
 
 const DEAD_GROUND_CACHE = new Map();
@@ -12,52 +11,31 @@ function deadGroundArcs(weaponId) {
 
     const usable = [];
 
-    for (const arc of Object.values(arcs)) {
+    for (const [name, arc] of Object.entries(arcs)) {
         const v = Number(arc?.muzzleVelocity);
 
-        if (!Number.isFinite(v) || v <= 0 || arc.branch !== 'low') {
-            continue;
+        if (Number.isFinite(v) && v > 0) {
+            usable.push({ name, fit: arc });
         }
-
-        usable.push({ muzzleVelocity: v });
     }
 
     return usable.length ? usable : null;
 }
 
-function deadGroundLaunchTan(muzzleVelocity, rangeMeters, deltaZMeters) {
-    if (!(rangeMeters > 0)) {
-        return null;
+function deadGroundTrajectoryClears(fit, tan, ranges, deltas, index) {
+    const v = Number(fit.muzzleVelocity);
+
+    for (let j = 0; j < index; j += 1) {
+        if (modelShellHeight(tan, v, ranges[j]) < deltas[j]) {
+            return false;
+        }
     }
 
-    const vSquared = muzzleVelocity * muzzleVelocity;
-
-    const discriminant =
-        vSquared * vSquared -
-        RANGE_RING_GRAVITY *
-        (
-            RANGE_RING_GRAVITY * rangeMeters * rangeMeters +
-            2 * deltaZMeters * vSquared
-        );
-
-    if (discriminant < 0) {
-        return null;
-    }
-
-    const root = Math.sqrt(discriminant);
-
-    return (vSquared - root) / (RANGE_RING_GRAVITY * rangeMeters);
-}
-
-function deadGroundGrazingTan(muzzleVelocity, xMeters, zMeters) {
-    return deadGroundLaunchTan(
-        muzzleVelocity,
-        xMeters,
-        zMeters - DEAD_GROUND_CLEARANCE_METRES
-    );
+    return true;
 }
 
 function deadGroundBearingIntervals(
+    weapon,
     arcs,
     ranges,
     deltas,
@@ -83,34 +61,20 @@ function deadGroundBearingIntervals(
             ? ranges[index]
             : (ranges[index] + ranges[index + 1]) / 2;
 
-    const required = new Float64Array(arcs.length).fill(-Infinity);
-
     let runStart = -1;
 
     for (let i = 0; i < count; i += 1) {
         let dead = ranges[i] >= minRange;
 
-        for (let a = 0; a < arcs.length; a += 1) {
-            const arc = arcs[a];
+        for (let a = 0; dead && a < arcs.length; a += 1) {
+            const assessed = assessArc(weapon, arcs[a].name, ranges[i], deltas[i]);
 
-            const tanTheta = deadGroundLaunchTan(
-                arc.muzzleVelocity,
-                ranges[i],
-                deltas[i]
-            );
-
-            if (tanTheta !== null && tanTheta >= required[a]) {
-                dead = false;
+            if (assessed.status !== 'hit' || assessed.tan === null || assessed.ceilingCapped) {
+                continue;
             }
 
-            const graze = deadGroundGrazingTan(
-                arc.muzzleVelocity,
-                ranges[i],
-                deltas[i]
-            );
-
-            if (graze !== null && graze > required[a]) {
-                required[a] = graze;
+            if (deadGroundTrajectoryClears(arcs[a].fit, assessed.tan, ranges, deltas, i)) {
+                dead = false;
             }
         }
 
@@ -150,8 +114,9 @@ function terrainDeadGround(gun, mapId) {
 
     const field = cachedHeightfield(mapId);
     const arcs = deadGroundArcs(gun.weapon);
+    const weapon = WEAPONS[gun.weapon];
 
-    if (!field || !arcs) {
+    if (!field || !arcs || !weapon) {
         return null;
     }
 
@@ -187,14 +152,16 @@ function terrainDeadGround(gun, mapId) {
 
     let any = false;
 
+    const metresPerUnit = getCoordinateMetersPerUnit();
+
     for (let b = 0; b < bearings; b += 1) {
         const angle = b * 2 * Math.PI / bearings;
 
         const stepX =
-            Math.cos(angle) / METRES_PER_GAME_UNIT_RING;
+            Math.cos(angle) / metresPerUnit;
 
         const stepY =
-            Math.sin(angle) / METRES_PER_GAME_UNIT_RING;
+            Math.sin(angle) / metresPerUnit;
 
         const limit = ring.radii[b];
 
@@ -221,6 +188,7 @@ function terrainDeadGround(gun, mapId) {
         }
 
         const intervals = deadGroundBearingIntervals(
+            weapon,
             arcs,
             ranges,
             deltas,
