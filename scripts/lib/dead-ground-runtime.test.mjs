@@ -4,7 +4,13 @@ import { loadRuntime, callRuntime, setRuntimeGlobal } from './runtime-globals.mj
 
 const model = {
     schema: 'wardogs-projectile-model-v1',
-    weapons: { mortar: { single: { branch: 'high', muzzleVelocity: 86.7, angleOffsetDeg: 52.5, anglePerMilDeg: 0.0375 } } }
+    weapons: {
+        mortar: { single: { branch: 'high', muzzleVelocity: 86.7, angleOffsetDeg: 52.5, anglePerMilDeg: 0.0375 } },
+        spg: {
+            low: { branch: 'low', muzzleVelocity: 160.1, angleOffsetDeg: 12.75, anglePerMilDeg: 0.058 },
+            high: { branch: 'high', muzzleVelocity: 160.4, angleOffsetDeg: 14.5, anglePerMilDeg: 0.048 }
+        }
+    }
 };
 
 const mortar = {
@@ -12,45 +18,75 @@ const mortar = {
     ballistics: { single: [[80, 950], [697, 120]] }
 };
 
-test('a 250 m ridge at 500 m casts mortar dead ground from the ridge outward', () => {
+const spg = {
+    id: 'spg', minRange: 0.78, maxRange: 2.629, minElevationMil: 20, maxElevationMil: 1390,
+    ballistics: { low: [[1181, 20], [2629, 556]], high: [[780, 1390], [2629, 636]] }
+};
+
+function deadGroundCtx() {
     const ctx = loadRuntime(
         ['js/ballistics/model.js', 'js/ballistics/reachability.js', 'js/map/dead-ground.js'],
         { RANGE_RING_MARCH_METRES: 25, RANGE_RING_CACHE: new Map(), getCoordinateMetersPerUnit: () => 100 }
     );
     setRuntimeGlobal(ctx, 'PROJECTILE_MODEL', model);
     setRuntimeGlobal(ctx, '__mortar', mortar);
+    setRuntimeGlobal(ctx, '__spg', spg);
+    return ctx;
+}
 
-    const count = 26;
+test('dead ground is solved from the low arc alone', () => {
+    const ctx = deadGroundCtx();
+
+    const arcs = callRuntime(ctx, 'deadGroundArcs("spg")');
+
+    assert.ok(Array.isArray(arcs) && arcs.length === 1);
+    assert.equal(arcs[0].name, 'low');
+});
+
+test('a 250 m ridge at 1500 m casts spg dead ground from the ridge outward', () => {
+    const ctx = deadGroundCtx();
+
+    const count = 104;
     const ranges = Array.from({ length: count }, (v, i) => 25 * (i + 1));
-    const deltas = ranges.map(r => (r === 500 ? 250 : 0));
+    const deltas = ranges.map(r => (r === 1500 ? 250 : 0));
 
     setRuntimeGlobal(ctx, '__ranges', Float64Array.from(ranges));
     setRuntimeGlobal(ctx, '__deltas', Float64Array.from(deltas));
 
-    const arcs = callRuntime(ctx, 'deadGroundArcs("mortar")');
-    assert.ok(Array.isArray(arcs) && arcs.length === 1);
+    const intervals = callRuntime(
+        ctx,
+        `deadGroundBearingIntervals(__spg, deadGroundArcs("spg"), __ranges, __deltas, ${count}, 1181)`
+    );
+
+    assert.ok(intervals.length >= 2, String(intervals));
+    assert.ok(intervals[0] > 1450 && intervals[0] <= 1550, String(intervals[0]));
+});
+
+test('flat ground casts no spg dead ground', () => {
+    const ctx = deadGroundCtx();
+
+    const count = 104;
+    setRuntimeGlobal(ctx, '__ranges', Float64Array.from({ length: count }, (v, i) => 25 * (i + 1)));
+    setRuntimeGlobal(ctx, '__deltas', new Float64Array(count));
 
     const intervals = callRuntime(
         ctx,
-        `deadGroundBearingIntervals(__mortar, deadGroundArcs("mortar"), __ranges, __deltas, ${count}, 132)`
+        `deadGroundBearingIntervals(__spg, deadGroundArcs("spg"), __ranges, __deltas, ${count}, 1181)`
     );
 
-    assert.equal(intervals.length, 2);
-    assert.ok(intervals[0] > 450 && intervals[0] < 500, String(intervals[0]));
-    assert.equal(intervals[1], 650);
+    assert.equal(intervals.length, 0);
 });
 
-test('flat ground casts no mortar dead ground', () => {
-    const ctx = loadRuntime(
-        ['js/ballistics/model.js', 'js/ballistics/reachability.js', 'js/map/dead-ground.js'],
-        { RANGE_RING_MARCH_METRES: 25, RANGE_RING_CACHE: new Map(), getCoordinateMetersPerUnit: () => 100 }
-    );
-    setRuntimeGlobal(ctx, 'PROJECTILE_MODEL', model);
-    setRuntimeGlobal(ctx, '__mortar', mortar);
+test('a weapon with no low arc gets no dead ground at all', () => {
+    const ctx = deadGroundCtx();
+
+    assert.equal(callRuntime(ctx, 'deadGroundArcs("mortar")'), null);
 
     const count = 26;
-    setRuntimeGlobal(ctx, '__ranges', Float64Array.from({ length: count }, (v, i) => 25 * (i + 1)));
-    setRuntimeGlobal(ctx, '__deltas', new Float64Array(count));
+    const ranges = Array.from({ length: count }, (v, i) => 25 * (i + 1));
+
+    setRuntimeGlobal(ctx, '__ranges', Float64Array.from(ranges));
+    setRuntimeGlobal(ctx, '__deltas', Float64Array.from(ranges.map(r => (r === 500 ? 250 : 0))));
 
     const intervals = callRuntime(
         ctx,

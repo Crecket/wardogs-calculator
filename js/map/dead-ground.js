@@ -3,23 +3,15 @@ const DEAD_GROUND_CACHE_LIMIT = 256;
 const DEAD_GROUND_CACHE = new Map();
 
 function deadGroundArcs(weaponId) {
-    const arcs = PROJECTILE_MODEL?.weapons?.[weaponId];
+    const name = lowArcName(weaponId);
+    const fit = projectileModelArc(weaponId, name);
+    const v = Number(fit?.muzzleVelocity);
 
-    if (!arcs) {
+    if (!Number.isFinite(v) || v <= 0) {
         return null;
     }
 
-    const usable = [];
-
-    for (const [name, arc] of Object.entries(arcs)) {
-        const v = Number(arc?.muzzleVelocity);
-
-        if (Number.isFinite(v) && v > 0) {
-            usable.push({ name, fit: arc });
-        }
-    }
-
-    return usable.length ? usable : null;
+    return [{ name, fit }];
 }
 
 function deadGroundTrajectoryClears(fit, tan, ranges, deltas, index) {
@@ -44,7 +36,7 @@ function deadGroundBearingIntervals(
 ) {
     const intervals = [];
 
-    if (count < 2) {
+    if (count < 2 || !arcs?.length) {
         return intervals;
     }
 

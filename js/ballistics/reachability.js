@@ -1,5 +1,27 @@
 const REACH_ARCS = ['single', 'low', 'high'];
 
+/*
+ * Dead ground answers a narrower question than the reach verdict
+ * does: not "can this gun hit that ground at all", but "can it hit it
+ * on the flat arc" — the shot a crew reaches for when time to target
+ * matters. The map layer is named "Dead ground (low arc)" and this is
+ * what makes that true. The rings stay whole-weapon.
+ *
+ * Branch, not elevation fraction, decides: a fit is the low arc when
+ * it solves the shallow root, which arcAngleStops caps at the 45°
+ * crossover. Weapons whose every arc is a high-branch fit (the
+ * mortar, 58.1°-84.4°) have no low arc and so cast no dead ground.
+ */
+function lowArcName(weaponId) {
+    for (const arc of REACH_ARCS) {
+        if (projectileModelArc(weaponId, arc)?.branch === 'low') {
+            return arc;
+        }
+    }
+
+    return null;
+}
+
 function arcDeclaredRange(weapon, arc) {
     const weaponMin = (weapon?.minRange ?? 0) * 1000;
     const weaponMax = (weapon?.maxRange ?? weapon?.range ?? 0) * 1000;
