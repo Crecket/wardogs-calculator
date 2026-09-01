@@ -62,6 +62,20 @@ test('terrainNoteText covers pending, offmap, nodata, a null shot and the all-ar
     assert.equal(text, 'ΔZ -5.0 m · all arcs: out of reach at this height');
 });
 
+test('the uncorrected warning renders for arcs the grid could not cover, not just for withheld ones', () => {
+    const ctx = noteCtx();
+    setRuntimeGlobal(ctx, '__shot', {
+        state: 'ready', deltaZ: 900,
+        arcs: { single: null, low: arcOk, high: arcOk }
+    });
+    const withheld = callRuntime(ctx, 'terrainNoteText(__shot, { arcsWithheld: ["low"], arcsUnavailable: [] })');
+    assert.equal(withheld, 'ΔZ +900.0 m · not corrected for height');
+    const unavailable = callRuntime(ctx, 'terrainNoteText(__shot, { arcsWithheld: [], arcsUnavailable: ["low"] })');
+    assert.equal(unavailable, 'ΔZ +900.0 m · not corrected for height');
+    const negligible = callRuntime(ctx, 'terrainNoteText(__shot, { arcsWithheld: [], arcsUnavailable: [] })');
+    assert.equal(negligible, '');
+});
+
 test('fillModelledSolutions fills only fireable table-less arcs and never invents deltaZ', () => {
     const ctx = noteCtx();
     setRuntimeGlobal(ctx, '__shot', {

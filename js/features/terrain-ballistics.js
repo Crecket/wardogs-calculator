@@ -1210,6 +1210,7 @@
             arcsCorrected: [],
             arcsUncorrected: [],
             arcsWithheld: [],
+            arcsUnavailable: [],
             missMeters: null,
             envelopeClamped: false
         };
@@ -1246,6 +1247,11 @@
                 if (result.outcome === 'corrected') {
                     /* Correctable, and a real miss, but policy said no. */
                     meta.arcsWithheld.push(arc);
+                } else if (
+                    result.outcome === 'offgrid' ||
+                    result.outcome === 'nogrid'
+                ) {
+                    meta.arcsUnavailable.push(arc);
                 }
             }
 

@@ -192,6 +192,7 @@ test('the ΔZ axis is never clamped: a 900 m height difference stays uncorrected
     assert.equal('deltaZ' in result.meta, false);
     assert.equal(result.meta.arcsCorrected.includes('low'), false);
     assert.equal(result.meta.arcsUncorrected.includes('low'), true);
+    assert.equal(result.meta.arcsUnavailable.includes('low'), true);
     assert.equal(result.solutions.low.mil, 1380);
     assert.equal(result.solutions.low.minMil, 1350);
     assert.equal(result.solutions.low.maxMil, 1390);

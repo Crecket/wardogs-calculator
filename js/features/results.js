@@ -205,7 +205,11 @@ function correctionNoteFragment(meta) {
         return tr('noteElevationLimit');
     }
 
-    if (Array.isArray(meta.arcsWithheld) && meta.arcsWithheld.length) {
+    const unwarned =
+        (Array.isArray(meta.arcsWithheld) ? meta.arcsWithheld.length : 0) +
+        (Array.isArray(meta.arcsUnavailable) ? meta.arcsUnavailable.length : 0);
+
+    if (unwarned) {
         return tr('noteUncorrected');
     }
 
