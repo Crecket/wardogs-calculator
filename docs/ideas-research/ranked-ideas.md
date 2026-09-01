@@ -64,6 +64,8 @@ Performance sits at the top for the same reason: panning smoothness is felt by e
 38. [ ] **Polar and shift-from-known-point missions.** Real calls for fire are polar (bearing and distance from the observer) or a shift from a known point; we only accept a grid coordinate. Small math, matches how people talk on voice, but the audience that knows to want it is small.
 39. [ ] **Protocol version handshake.** The Worker announces its version on connect and a stale page gets a reload banner. Needed the first time an op shape changes in the wild.
 
+40. [ ] **Numbered tower markers instead of spelled-out labels.** The preset tower markers carry `"label": "Tower 4"` in `maps/bakurani.json` and `maps/ozeti.json`, and `js/map/overlays.js:247-288` strokes that string above the icon in 12px semibold with a black halo. Five towers per map means five two-word captions competing with the grid, the contours, the range rings and the gun-to-target line, and the word "Tower" is redundant the moment you can see the icon. Draw the number alone, high-contrast, centred on the icon rather than riding above it — the identity is the digit, and the glyph already says what kind of thing it is. Cheap, and it removes clutter that everybody sees in every session, which is a better ratio than most of Tier 3.
+
 ### Infrastructure, unranked against user value
 
 - [ ] **Two-client convergence tests.** Drive two headless clients against a local Durable Object, fuzz op interleavings, assert both documents end identical. Collaborative editing bugs are exactly the kind that cannot be found by hand.
