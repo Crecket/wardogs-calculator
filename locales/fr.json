@@ -172,5 +172,6 @@
   "noteOffMap": "aucune donnée de terrain ici",
   "crossSectionBelowMin": "nécessite une élévation sous le minimum de la pièce — tire trop loin",
   "crossSectionAboveMax": "nécessite une élévation au-dessus du maximum de la pièce — tombe trop court",
-  "reachUnknown": "Aucune donnée de terrain"
+  "reachUnknown": "Aucune donnée de terrain",
+  "crossSectionLoadingTerrain": "chargement des altitudes"
 }

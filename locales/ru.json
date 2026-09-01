@@ -168,5 +168,6 @@
   "noteOffMap": "нет данных о высотах здесь",
   "crossSectionBelowMin": "нужен угол ниже минимального — перелёт",
   "crossSectionAboveMax": "нужен угол выше максимального — недолёт",
-  "reachUnknown": "Нет данных о высотах"
+  "reachUnknown": "Нет данных о высотах",
+  "crossSectionLoadingTerrain": "загрузка высот"
 }

@@ -161,5 +161,6 @@
   "noteOffMap": "此处无地形数据",
   "crossSectionBelowMin": "所需仰角低于火炮最小值 — 越过目标",
   "crossSectionAboveMax": "所需仰角高于火炮最大值 — 未及目标",
-  "reachUnknown": "无地形数据"
+  "reachUnknown": "无地形数据",
+  "crossSectionLoadingTerrain": "正在加载高程"
 }

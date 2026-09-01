@@ -172,5 +172,6 @@
   "noteOffMap": "brak danych o terenie w tym miejscu",
   "crossSectionBelowMin": "wymaga kąta poniżej minimum działa — przelot",
   "crossSectionAboveMax": "wymaga kąta powyżej maksimum działa — niedolot",
-  "reachUnknown": "Brak danych o terenie"
+  "reachUnknown": "Brak danych o terenie",
+  "crossSectionLoadingTerrain": "ładowanie wysokości"
 }

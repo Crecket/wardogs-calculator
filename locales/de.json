@@ -172,5 +172,6 @@
   "noteOffMap": "keine Höhendaten hier",
   "crossSectionBelowMin": "benötigt Erhöhung unter dem Minimum des Geschützes — überschießt",
   "crossSectionAboveMax": "benötigt Erhöhung über dem Maximum des Geschützes — bleibt kurz",
-  "reachUnknown": "Keine Höhendaten"
+  "reachUnknown": "Keine Höhendaten",
+  "crossSectionLoadingTerrain": "Höhendaten werden geladen"
 }

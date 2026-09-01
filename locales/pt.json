@@ -172,5 +172,6 @@
   "noteOffMap": "sem dados de terreno aqui",
   "crossSectionBelowMin": "precisa de uma elevação abaixo do mínimo da peça — passa por cima",
   "crossSectionAboveMax": "precisa de uma elevação acima do máximo da peça — fica aquém",
-  "reachUnknown": "Sem dados de terreno"
+  "reachUnknown": "Sem dados de terreno",
+  "crossSectionLoadingTerrain": "a carregar altitudes"
 }

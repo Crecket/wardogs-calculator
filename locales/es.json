@@ -172,5 +172,6 @@
   "noteOffMap": "sin datos de terreno aquí",
   "crossSectionBelowMin": "necesita una elevación por debajo del mínimo del cañón — se pasa de largo",
   "crossSectionAboveMax": "necesita una elevación por encima del máximo del cañón — se queda corto",
-  "reachUnknown": "Sin datos de terreno"
+  "reachUnknown": "Sin datos de terreno",
+  "crossSectionLoadingTerrain": "cargando alturas"
 }

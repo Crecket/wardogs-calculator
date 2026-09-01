@@ -172,5 +172,6 @@
   "noteOffMap": "тут немає даних про висоти",
   "crossSectionBelowMin": "потрібен кут нижче мінімального — переліт",
   "crossSectionAboveMax": "потрібен кут вище максимального — недоліт",
-  "reachUnknown": "Немає даних про висоти"
+  "reachUnknown": "Немає даних про висоти",
+  "crossSectionLoadingTerrain": "завантаження висот"
 }

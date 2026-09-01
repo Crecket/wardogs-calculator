@@ -178,5 +178,6 @@
   "noteOffMap": "NO GROUND DATA HERE, MEOW",
   "crossSectionBelowMin": "NEEDS A LOWER ANGLE THAN THE GUN ALLOWS — OVERSHOOTS THE MOUSE",
   "crossSectionAboveMax": "NEEDS A HIGHER ANGLE THAN THE GUN ALLOWS — MISSES THE MOUSE",
-  "reachUnknown": "NO GROUND DATA, MEOW"
+  "reachUnknown": "NO GROUND DATA, MEOW",
+  "crossSectionLoadingTerrain": "LOADING HEIGHT MEOWGIC"
 }
