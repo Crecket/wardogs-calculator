@@ -8,6 +8,9 @@ const model = {
         spg: {
             low: { branch: 'low', muzzleVelocity: 160.1, angleOffsetDeg: 12.75, anglePerMilDeg: 0.058 },
             high: { branch: 'high', muzzleVelocity: 160.4, angleOffsetDeg: 14.5, anglePerMilDeg: 0.048 }
+        },
+        mortar: {
+            single: { branch: 'high', muzzleVelocity: 86.7, angleOffsetDeg: 52.5, anglePerMilDeg: 0.0375 }
         }
     }
 };
@@ -15,6 +18,11 @@ const model = {
 const spg = {
     id: 'spg', minRange: 0.78, maxRange: 2.629, minElevationMil: 20, maxElevationMil: 1390,
     ballistics: { low: [[1181, 20], [2629, 600]], high: [[735, 1400], [2629, 610]] }
+};
+
+const mortar = {
+    id: 'mortar', minRange: 0.132, maxRange: 0.684, minElevationMil: 150, maxElevationMil: 850,
+    ballistics: { single: [[80, 950], [697, 120]] }
 };
 
 function badgeCtx(field) {
@@ -39,7 +47,7 @@ function badgeCtx(field) {
         }
     );
     setRuntimeGlobal(ctx, 'PROJECTILE_MODEL', model);
-    setRuntimeGlobal(ctx, 'WEAPONS', { spg });
+    setRuntimeGlobal(ctx, 'WEAPONS', { spg, mortar });
     setRuntimeGlobal(ctx, 'cachedHeightfield', () => field);
     setRuntimeGlobal(ctx, 'mapHasHeightfield', () => true);
     setRuntimeGlobal(ctx, 'ensureHeightfieldLoaded', () => {});
@@ -56,6 +64,18 @@ const flat = {
     width: 40, height: 3, originX: 0, originY: 0, stepGameUnits: 1, minZMeters: 0
 };
 
+const ridged = (() => {
+    const width = 9;
+    const height = 3;
+    const heights = new Float32Array(width * height);
+
+    for (let j = 0; j < height; j += 1) {
+        heights[j * width + 5] = 250;
+    }
+
+    return { heights, width, height, originX: 0, originY: 0, stepGameUnits: 1, minZMeters: 0 };
+})();
+
 test('reachClassify mirrors the assessShot verdict', () => {
     const ctx = badgeCtx(flat);
     setRuntimeGlobal(ctx, '__gun', { gun: { position: { x: 1, y: 1 }, weapon: 'spg' } });
@@ -69,4 +89,16 @@ test('reachClassify is pending while the heightfield loads', () => {
     const ctx = badgeCtx(null);
     setRuntimeGlobal(ctx, '__gun', { gun: { position: { x: 1, y: 1 }, weapon: 'spg' } });
     assert.equal(callRuntime(ctx, 'reachClassify(__gun, { x: 10, y: 1 })'), 'pending');
+});
+
+test('reachClassify reads masked from a mortar target behind a blocking crest', () => {
+    const ctx = badgeCtx(ridged);
+    setRuntimeGlobal(ctx, '__mortarGun', { gun: { position: { x: 0, y: 1 }, weapon: 'mortar' } });
+    assert.equal(callRuntime(ctx, 'reachClassify(__mortarGun, { x: 6.5, y: 1 })'), 'masked');
+});
+
+test('reachClassify returns null for a non-numeric target', () => {
+    const ctx = badgeCtx(flat);
+    setRuntimeGlobal(ctx, '__gun', { gun: { position: { x: 1, y: 1 }, weapon: 'spg' } });
+    assert.equal(callRuntime(ctx, "reachClassify(__gun, { x: 'a', y: 1 })"), null);
 });

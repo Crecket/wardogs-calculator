@@ -211,6 +211,25 @@ function reachabilityVerdict(arcs) {
     return best;
 }
 
+const ASSESS_SHOT_MEMO_LIMIT = 4000;
+
+const ASSESS_SHOT_MEMO = new WeakMap();
+
+function assessShotMemoFor(field) {
+    let memo = ASSESS_SHOT_MEMO.get(field);
+
+    if (!memo) {
+        memo = new Map();
+        ASSESS_SHOT_MEMO.set(field, memo);
+    }
+
+    return memo;
+}
+
+function assessShotMemoKey(mapId, weaponId, origin, target) {
+    return `${mapId}|${weaponId}|${origin.x},${origin.y}|${target.x},${target.y}`;
+}
+
 function assessShot(weapon, origin, target, mapId) {
     const result = {
         state: 'nodata',
@@ -249,6 +268,14 @@ function assessShot(weapon, origin, target, mapId) {
         return result;
     }
 
+    const memo = assessShotMemoFor(field);
+    const memoKey = assessShotMemoKey(mapId, weapon.id, origin, target);
+    const memoised = memo.get(memoKey);
+
+    if (memoised) {
+        return memoised;
+    }
+
     const zGun = heightfieldSample(field, origin.x, origin.y);
     const zTarget = heightfieldSample(field, target.x, target.y);
 
@@ -285,6 +312,12 @@ function assessShot(weapon, origin, target, mapId) {
     }
 
     result.verdict = reachabilityVerdict(result.arcs);
+
+    if (memo.size >= ASSESS_SHOT_MEMO_LIMIT) {
+        memo.clear();
+    }
+
+    memo.set(memoKey, result);
 
     return result;
 }
