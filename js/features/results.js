@@ -268,13 +268,7 @@ function terrainNoteText(shot, meta) {
             ? tr('noteAllArcs')
             : groups[group].join(' + ');
 
-        const template = tr(keys[group]);
-
-        clauses.push(
-            template.includes('{arcs}')
-                ? template.replace('{arcs}', arcs)
-                : `${arcs} ${template}`
-        );
+        clauses.push(tr(keys[group]).replace('{arcs}', arcs));
     }
 
     const correction = correctionNoteFragment(meta);
