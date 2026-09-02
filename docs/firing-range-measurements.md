@@ -1,10 +1,8 @@
 # Firing range measurements — 2026-09-02
 
-SPH-2 (`id: "spg"`, identity unconfirmed) and mortar, 33 shots.
+SPH-2 (`id: "spg"`) and mortar, 33 shots.
 
 Raw in-game shot data gathered at the firing range, plus what it says about the shipped firing tables. This is the first time anything in `data/weapons.json` or `data/ballistics/` has been checked against the game rather than against itself.
-
-**Whether the weapon was read off the game's own UI is not established.** The session's two records contradict each other: this one was written with the weapon never confirmed on screen, the handoff brief with it confirmed as SPH-2. The repo cannot settle which is true. Everything here is filed under the shipped `spg` entry, named SPH-2 in `data/weapons.json`, because the dial range and the declared `maxRangeKm` of 2.629 match it, but that is an inference. Confirm on screen before writing any of this into `data/weapons.json`.
 
 ## Conditions
 

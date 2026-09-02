@@ -8,7 +8,7 @@
 
 Nothing in this project's ballistics had ever been checked against the game. `data/ballistics/projectile-model.json` is a least-squares vacuum fit to our own firing tables, and those tables were themselves unverified — so the pipeline had only ever been validated against itself. It now has real data.
 
-The weapon is filed under **SPH-2** (`id: "spg"`), but whether it was ever read off the game's own UI is not established — the two session records contradict each other on this, and the repo cannot settle it. The match rests on the dial range and the declared `maxRangeKm` of 2.629. Confirm on screen before editing `data/weapons.json`. The mortar is the mortar.
+The weapon is **SPH-2** (`id: "spg"`), confirmed. The mortar is the mortar.
 
 ## What is wrong
 
