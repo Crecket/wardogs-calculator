@@ -78,31 +78,25 @@ board. If it does, replace the file and re-add its `maps/assets.json` entry
 `markerLabelSpawnDeploy` key across `locales/*.json`. If it does not, delete
 the file.
 
-## Time of flight has never been timed
+## Time of flight — measured for the mortar, modelled for the SPH-2
 
-**Current:** derived at runtime by `js/features/flight-time.js`, shown as a
-badge row under the metric grid — `≈ 17 s` for the mortar, `≈ 12 s` / `≈ 30 s`
-per arc for the SPH-2
-**Renders as:** one badge per arc, from the MIL on screen
-**Evidence:** none from the game. The seconds come from the same vacuum fit as
-everything else in `data/ballistics/projectile-model.json`.
+**Current:** `js/features/flight-time.js`, shown as a badge row under the metric grid — one badge per arc, from the MIL on screen
+**Evidence:** the 2026-09-02 firing-range session, `docs/firing-range-measurements.md`.
 
-Two uncertainties sit under the number, and one stopwatch settles the larger:
+The mortar's seconds are interpolated straight from five video-timed shots (150–850 mil, 16.5–22.4 s, ±0.4 s) stored as `measuredFlightTimes` in `data/ballistics/projectile-model.json`. The vacuum fit they replaced ran 1.5 s short at 150 mil and 4.8 s short at 850, so the old "good enough to choose an arc" caveat was measured and found wanting; the readout now carries the measurement's own ±0.4 s instead. Those timings were taken without a known height difference, so the mortar badge does not move with ΔZ — a target 100 m below the gun adds on the order of a second that the badge does not show.
 
-- **The branch assumption.** `sin(2θ)` is symmetric about 45°, so a range table
-  alone cannot say whether it is the shallow or the steep solution. It is
-  resolved by convention, not measurement — and TOF is brutally sensitive to
-  it: a mortar shot at 400 m is 16.9 s on the high branch and 4.8 s on the low
-  one. **One mortar shot at short range settles it beyond any doubt**, and the
-  same assumption underpins the shipped elevation correction, so that shot
-  validates far more than this readout.
-- **The fitted velocity.** ±5% moves the derived seconds by ±2–4 s. Good enough
-  to choose an arc; not good enough for the time-on-target staggering that a
-  battery would want.
+The SPH-2's seconds come from the drag fit (below), which reproduces its three timed shots — 14.22 s at 300 mil, 23.43 s at 600, 35.40 s at 1200 — within 0.35 s. No shot below 300 mil or above 1200 was timed.
 
-Four stopwatch readings — mortar short range, SPG low, SPG high, one repeat —
-close both. TOF is also the cheapest probe of the drag error that gates
-everything else.
+**The branch assumption is settled.** At 150 mil the mortar flew 16.5 s where the high-angle prediction was 15.0 s and the low-angle alternative 9.3 s; at 750 mil it flew 20.75 s against 17.4 s and 2.9 s. The mortar fires high-angle, which is the convention the elevation correction assumes throughout.
+
+## SPH-2 low arc below 150 mil is extrapolated
+
+**Current:** rows 35–140 mil of `ballistics.low` in `data/weapons.json`, 822–1551 m, generated from the fitted model; `extrapolatedBelowMil.low: 150` marks them and the MIL card prints them with a `≈`
+**Evidence:** none. A hill blocked the firing lane at the range and the 35 and 100 mil dials could not be shot.
+
+This is precisely where the shipped table was furthest off — −150 m at 150 mil and growing as the dial dropped — and the two available extrapolations disagree by 250 m at the 35 mil floor: extending the measured error trend puts the old table about 185 m long there, the fitted model puts it 434 m long. The regenerated rows follow the model because it is the only thing anchored to measurements at all, but nothing between 150 mil and the floor has been checked. Two shots at 35 and 100 mil from a position with a clear lane under 1400 m settle it; the fit does not depend on them.
+
+The 35 mil floor itself is a hard game limit, confirmed directly: the gun will not depress further. `minElevationMil` was 20 and is now 35.
 
 ## Elevation correction — what is still switched off
 
@@ -124,28 +118,16 @@ Two things still hold it back, both captioned in the panel rather than silent:
 
 **The model itself is still unverified.** This is the one that should worry you.
 
-- **Projectile parameters from the paks.** `data/ballistics/projectile-model.json`
-  is a least-squares vacuum fit to our own firing tables, RMS 8–14 m. The SPG's
-  two arcs want different mil→degree slopes (`0.048` on `high`, `0.058` on
-  `low`), which is the fit absorbing real drag. Early Access on 2026-09-10
-  restores `Wardogs/Content/Paks/pakchunk0-WindowsClient.*`; read the
-  projectile's muzzle velocity, gravity scale and drag term and rewrite the file
-  with `source: "pak-extract"`.
-- **No in-game validation has happened.** Four or five spotting shots on known
-  ΔZ, comparing the corrected MIL against where the round actually lands.
-  Nothing in this pipeline has been checked against the game — only against
-  itself.
-- **The SPG tables outrun their own fitted model — handled at the gating level.** The high table's last row is 2629 m against a fitted vacuum ceiling of 2622.6 m. The grid's distance axis is now clamped to that ceiling, so the corrected span reaches 2621 m instead of stopping at 2580; the last few metres of table range still get nothing. The unified-reachability change (2026-09) closed the gap between what each surface *said* about this mismatch — the grid clamp and `assessShot`'s anchored gates now agree with each other and with the firing table — but the fits themselves are unchanged and still stop short of 2629 m; only pak-extracted parameters make it disappear.
+- **The SPH-2 model is a two-parameter stopgap, fitted to twelve dials.** `data/ballistics/projectile-model.json` now carries `source: "firing-range-fit"` for both SPH-2 arcs: 262.4 m/s, quadratic drag 3.90 × 10⁻⁴ /m, one elevation scale `2.254° + 0.05625°/mil` straight through the maximum-range angle. It reproduces the 2026-09-02 measurements to 19.7 m RMS with a worst residual of about −37 m at 150 mil, against roughly 73 m RMS and 150 m worst for the tables it replaced, and the regenerated `data/weapons.json` tables inherit that accuracy. But a single drag coefficient leaves structure behind — adding a linear term made the fit worse — so the real drag law has a shape two parameters do not capture. Early Access on 2026-09-10 restores `Wardogs/Content/Paks/pakchunk0-WindowsClient.*`; read the projectile's muzzle velocity, gravity scale and drag term and rewrite the file with `source: "pak-extract"`. The mortar's arc is still a vacuum fit to its own table (`source: "vacuum-fit"`); the table is measured correct to within +1.0 to +7.5 m, so the fit is a fine range model, but its flight times were 1.5–4.8 s short and no physical model that was tried fits the mortar at all.
+- **The elevation correction itself is still entirely unvalidated.** The firing range is not a shipped map and has no heightfield, so every shot there was at an unknown ΔZ. Four or five spotting shots on known ΔZ, comparing the corrected MIL against where the round actually lands, are still needed. The range tables have now been checked against the game; the correction built on top of them has not.
+- **Terrain sensitivity varies enormously by arc, and the correction treats every arc the same.** Range moves roughly 1.9 m per metre of target height on the SPH-2 low arc, 0.09 m per metre on its high arc, and about 0.5 m per metre for the mortar. `releasePolicy.automaticMilCorrection` applies uniformly. Not something the measurements settle, but worth considering.
 - **No automated coverage under `js/`.** `scripts/lib/ballistics.test.mjs` covers
   the solver and the fit; the runtime half — the gate, the map allowlist,
   `correctArc`, the per-arc caption selection — has none, because the repo has no
   browser test harness for it. Verified once against a throwaway VM harness.
-- **Vehicle attitude is not modelled.** The SPH-2 level warning is still just a
-  caption. Chassis tilt moves the impact independently of terrain ΔZ, so a
-  corrected MIL fired from a tilted platform is still wrong.
-- **Flight time and the branch assumption remain unvalidated against the game.** The unified-reachability change (2026-09) put every surface behind one verdict, but it did not touch what that verdict is built on: the vacuum fit, the branch convention, and the flight times derived from them are exactly as unverified as before this work.
+- **Vehicle attitude is real, bounded, and has no input to correct from.** Across four of five 1380 mil shots, about 5° of traverse moved the impact 12 m — roughly 2.6 mil of induced launch angle — while a held barrel repeated to 1–8 m. That is below the model's own 19.7 m RMS, so it is not the largest remaining error once the tables are fixed. A fifth shot landed 33 m short of the others and is an outlier nothing explains. The chassis tilt itself was never read off the game, so the SPH-2 level warning stays a caption.
 
-**Regenerating the data.** In this order — the second reads the first's output:
+**Regenerating the data.** In this order — the second reads the first's output. `fit-ballistics` refits only `vacuum-fit` arcs and carries the measured SPH-2 fit over untouched:
 
     npm run fit-ballistics
     npm run build-height-correction
@@ -204,9 +186,15 @@ and `t_ui_phalanx_map_icon` exist too, for markers we do not have yet.)
 
 Values that are already grounded and need no verification:
 
-- Weapon ranges and firing tables — `data/weapons.json`. The *generated*
-  files in `data/ballistics/` are a different matter; see the elevation
-  correction section above.
+- Weapon ranges and firing tables — `data/weapons.json`. Measured at the
+  firing range on 2026-09-02: the mortar table is right to within +1.0 to
+  +7.5 m across six dials, and the SPH-2 tables were regenerated from a fit
+  that reproduces twelve dials to 19.7 m RMS — except below 150 mil, which is
+  its own entry above. `maxRangeKm` 2.629 checks out; `minRangeKm` 0.78 is
+  the shipped high table's 1390 mil entry and, if wrong, is understated.
+- SPH-2 dispersion — essentially none. Held still, repeats land within
+  7.2 m at 2192 m and 7.6 m at 1224 m, so a discrepancy in the app is model
+  error, not scatter.
 - Map bounds and `coordinateMetersPerUnit` — per-map in `maps/*.json`
 - Preset marker positions other than Ozeti's `valkyra`
 - Main zone centre and radius — Bakurani `7991, 7183` r500, Ozeti
