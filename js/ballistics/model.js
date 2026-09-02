@@ -203,6 +203,7 @@ function trajectoryHeightAt(path, xMeters) {
 }
 
 const TRAJECTORY_FAMILIES = new Map();
+const TRAJECTORY_FAMILY_BY_FIT = new WeakMap();
 
 function familyOptimumTable(paths) {
     let apexMax = -Infinity;
@@ -268,6 +269,14 @@ function familyOptimumTable(paths) {
 }
 
 function trajectoryFamily(fit) {
+    const memo = fit === null || typeof fit !== 'object'
+        ? undefined
+        : TRAJECTORY_FAMILY_BY_FIT.get(fit);
+
+    if (memo) {
+        return memo;
+    }
+
     const muzzleVelocity = Number(fit?.muzzleVelocity);
     const drag = Number(fit?.dragPerMeter);
 
@@ -284,6 +293,8 @@ function trajectoryFamily(fit) {
     const cached = TRAJECTORY_FAMILIES.get(key);
 
     if (cached) {
+        TRAJECTORY_FAMILY_BY_FIT.set(fit, cached);
+
         return cached;
     }
 
@@ -312,6 +323,7 @@ function trajectoryFamily(fit) {
     };
 
     TRAJECTORY_FAMILIES.set(key, family);
+    TRAJECTORY_FAMILY_BY_FIT.set(fit, family);
 
     return family;
 }
