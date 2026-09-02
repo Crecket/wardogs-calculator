@@ -4,6 +4,8 @@ This document maps every place the calculator reads terrain height, derives some
 
 The short version: there are **two independent terrain datasets**, **three independent ballistic engines**, and **four independent definitions of "can this gun reach that target"**, and they are wired together in a way that lets a single screen show two different answers about the same shot at the same time. The "Disagreements" section is the payload; everything before it exists so that section can be read without opening the code.
 
+> **Superseded in one place, 2026-09-02.** The terrain-shaped *minimum* range ring is gone. `minRangeRadii()` and `weaponMinReachRange()` were deleted from `js/map/range-ring.js` and the ring no longer carries a `minRadii` field, because the shaped inner boundary produced cutouts too small to read. Everywhere this document says `ring.minRadii` — §3.9, §3.10, the `drawGunRangeRings` note, and the two ΔZ rows in the disagreements table — the inner edge is now the flat declared `ring.minRangeMeters`. The per-arc minimum *verdicts* in `js/ballistics/reachability.js` are unchanged; they still call `arcMinRangeModel`, so the disagreement those rows describe between the badge and `rangeStatus` still stands, just with a circular inner edge on the drawing side.
+
 ---
 
 ## 1. The two height datasets

@@ -43,12 +43,12 @@ All seven open PRs and both fork branches were merged onto `upstream/main` at `3
 
 `buildMapLayers()` was resolved the same way everywhere: adopt his grouped structure, re-insert the branch's own layers into `tactical`, and add matching `icons` entries so they do not render as empty SVGs.
 
-**Two things found while merging, both left alone as out of scope.**
+**Two things found while merging were recorded as out of scope. Both turned out to be already fixed** — re-checked against the working tree on 2026-09-02.
 
-- `js/features/saved-targets.js` on `feat/collab-rooms` has regressed on both halves of #13. `savedTargetMatchState()` uses `savedTargets.find()`, so duplicate coordinates highlight only the first row — the exact bug the maintainer asked about — and there is no `String(target.id)` coercion anywhere in the file, so a numeric id from the import path silently fails `item.dataset.targetId === state.id`. The fork's version is an evolution of the *pre*-#13 code (it adds `full`/`partial` levels and the sync button, which upstream has no equivalent of), so keeping it through the merge was right; it needs the `Set` and the `String()` ported back into it.
-- The flight-time badges still do `host.textContent = ''` plus `createElement` on every `result()`, on the same pointer-move path the `setText` guards protect. Needs node reuse rather than a guard.
+- `js/features/saved-targets.js` was said to have regressed on both halves of #13. It has not. `savedTargetMatchState()` accumulates every coordinate match into a `Map` (`:52`–`:89`), `activeSavedTargetIds()` returns `new Set(...keys())` (`:92`), and `String(target.id)` is the map key (`:81`), so duplicate coordinates all highlight and a numeric id cannot miss. The four remaining `savedTargets.find()` calls are unique-id lookups, which is the correct semantic. Fixed in `fbeed1ec5`.
+- The flight-time badges were said to still rebuild their DOM on every `result()`. They do not — `flightBadgeNode()` (`js/features/results.js:349`) reuses nodes and `renderFlightTime` (`:381`) trims with a `while` loop and writes through `setText`. Fixed in `7e774d5ef`, and `test/flight-time.mjs` asserts "the pills are reused rather than rebuilt". This plan already said so at the bottom of the file; the two earlier mentions contradicted it.
 
-**One thing found and fixed.** The #3 merge added machine-written `forcePlacementHint` / `forcePlacementHintActive` strings to `ko.json` and `zh-cn.json` — the same objection the maintainer raised on #14. Both were removed before the branch was pushed; `tr()` resolves `language?.[key] ?? fallback?.[key] ?? key` with `DEFAULT_LANG` of `en`, and both keys exist in `en.json`, so they fall back to English. Note also that upstream ships `ko.json` and `zh-cn.json` with CRLF endings while the rest of the repo is LF, and one line in `ko.json` is `\r\r\n`; leave those alone or every future merge re-conflicts on them.
+**One thing found and fixed.** The #3 merge added machine-written `forcePlacementHint` / `forcePlacementHintActive` strings to `ko.json` and `zh-cn.json` — the same objection the maintainer raised on #14. Both were removed before the branch was pushed; `tr()` resolves `language?.[key] ?? fallback?.[key] ?? key` with `DEFAULT_LANG` of `en`, and both keys exist in `en.json`, so they fall back to English. The CRLF warning previously recorded here is stale: `git ls-files --eol locales/` reports `i/lf w/lf` for all twelve locale files, and there is no `\r\r\n` line in `ko.json`. Normal edits will not re-conflict on line endings.
 
 ---
 
@@ -292,6 +292,28 @@ Because GitHub cannot take a cross-fork PR whose base is a branch in the fork, b
 Item 8.4 evaporated on contact: since the `fob` ring config has never shipped upstream, there is no rename to perform. The key ships as `halfSide` from the start and `radius` never exists for it.
 
 Everything is pushed to `origin` (the fork). Ready-to-use PR bodies are at the bottom of this file.
+
+---
+
+## Fork branch work, 2026-09-02
+
+Six branches cut from `feat/collab-rooms`, each merged back after its suite went green. `npm run test:scripts` is **112/112** for the first time; the `dev-env` failure that had been tolerated as "known" is gone.
+
+**Product fixes.**
+
+- **A second press of any map tool disarms it.** `caa9d9a2b` fixed only the marker *button*. `pencil` and `shapes` were byte-identical to the pre-fix shape, and `coordinateSearch`, `layers`, `dataTransfer` and `collab` were an unconditional-assign variant of it. `handleMapToolShortcut` duplicated all of them and was never touched, so the marker **hotkey** still reproduced the original bug. All six buttons and five hotkeys now carry the guard. `test/map-tool-toggle.mjs` is new: 57 assertions, verified to fail 11 with the fix reverted. It also pins the deliberate exception — the coordinate-search hotkey cannot toggle while its own input has focus, because `handleMapToolShortcut` refuses to fire inside a text field.
+- **The range ring bisects its tail gap.** `terrainRangeRing` marched in 25 m steps and, when the crossing fell between the last step and `marchLimit`, returned `marchLimit` itself — an unreachable radius. On the valley gun this put one bearing 1.32 m past the declared max and failed `test/range-ring.mjs`'s "valley ring never exceeds the flat circle". Latent since the bound was corrected in `0ae50d4b6`. The bisection is now a local helper used by both the march and the tail.
+- **The min range is a plain circle again.** Terrain-shaped minimum rings produced cutouts too small to read, so `minRangeRadii()` and `weaponMinReachRange()` are deleted along with the `minRadii` field (−112 lines in `js/map/range-ring.js`). `guns-overlay.js` always draws the declared circle and `dead-ground.js` reads `minRangeMeters`. `arcMinRangeModel` stays — `js/ballistics/reachability.js` still uses it, so per-arc minimum *verdicts* are unaffected; only the drawn ring changed.
+- **The unreviewed machine-written targeting strings are dropped.** `mapToolTargeting` and `targetingModeHint` removed from `de, es, fr, ko, pl, pt, ru, uk, zh-cn` — the same objection the maintainer raised on #14. `en.json` keeps them as the fallback and `cat.json` keeps its hand-written jokes ("Meowgeting"). English fallback verified in-page for all nine. Note the plan previously blamed `bf79c953b` for this; that commit only touches `scripts/zh-cn-seo.mjs`. The real one is `80f4da117`.
+
+**Test fixes.**
+
+- `test/reachability.mjs` passed `PROBE_DISTANCE` to nothing — `page.evaluate(async probeDistance => {...})` closed without a second argument, so the probe ran with `undefined` and the clamp case looked broken when the clamp is healthy. One line.
+- `scripts/lib/dev-env.test.mjs` asserted a tile fixture deleted in `1777efecb`; `maps/tiles/` is gitignored so it can never be committed back. It now lays down its own fixture under a `__devtest__` map id, asserts content-type and a byte round-trip, and removes only what it created. The `TILE_BASE_URL` test gained the matching negative: the dev server rewrites the map definition but never proxies `/maps/tiles/**`.
+
+**Still open.** `test/reach-badges.mjs` crashes building its fixtures: since `635953aae` restricted dead ground to the low arc, no bearing at its gun position is clear, so `reachable` stays null. Its `masked` fixture also needs relocating — a sweep of six gun positions found `masked` reachable for the SPG but not at that one. `test/cross-section.mjs` fails one assertion, `box.header <= 20`, because `67db18489` deliberately grew the collapse toggle to 24px for parity with the other panels; the threshold is stale, not the CSS.
+
+Confirmed intended, not a bug: mortars now have no dead-ground layer at all, because the mortar's only arc is `branch: 'high'` and `deadGroundArcs` keeps low-branch fits only.
 
 ---
 
