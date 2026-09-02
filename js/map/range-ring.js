@@ -305,6 +305,23 @@ function terrainRangeRing(gun, mapId) {
         let edge = null;
         let previous = RANGE_RING_MARCH_METRES;
 
+        const bisect = (from, to) => {
+            let inside = from;
+            let outside = to;
+
+            for (let i = 0; i < RANGE_RING_BISECTIONS; i += 1) {
+                const middle = (inside + outside) / 2;
+
+                if (reaches(middle) === true) {
+                    inside = middle;
+                } else {
+                    outside = middle;
+                }
+            }
+
+            return (inside + outside) / 2;
+        };
+
         for (
             let r = RANGE_RING_MARCH_METRES;
             r <= marchLimit;
@@ -318,27 +335,20 @@ function terrainRangeRing(gun, mapId) {
             }
 
             if (!ok) {
-                let inside = previous;
-                let outside = r;
-
-                for (let i = 0; i < RANGE_RING_BISECTIONS; i += 1) {
-                    const middle = (inside + outside) / 2;
-
-                    if (reaches(middle) === true) {
-                        inside = middle;
-                    } else {
-                        outside = middle;
-                    }
-                }
-
-                edge = (inside + outside) / 2;
+                edge = bisect(previous, r);
                 break;
             }
 
             previous = r;
         }
 
-        radii[b] = edge === null ? marchLimit : edge;
+        if (edge === null) {
+            edge = reaches(marchLimit) === true
+                ? marchLimit
+                : bisect(Math.min(previous, marchLimit), marchLimit);
+        }
+
+        radii[b] = edge;
     }
 
     const declaredMin = (weapon.minRange ?? 0) * 1000;
