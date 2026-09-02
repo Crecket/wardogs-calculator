@@ -319,7 +319,10 @@ function trajectoryFamily(fit) {
         optimum,
         minRadians: radians[0],
         maxRadians: radians[count - 1],
-        levelOptimumRadians: radians[optimum.nodes[levelIndex]]
+        levelOptimumRadians: radians[optimum.nodes[levelIndex]],
+        solveRanges: new Float64Array(count),
+        solveStamps: new Int32Array(count),
+        solveStamp: 0
     };
 
     TRAJECTORY_FAMILIES.set(key, family);
@@ -398,6 +401,47 @@ function familyOptimum(family, deltaZMeters) {
     };
 }
 
+function familySolveStamp(family) {
+    if (family.solveStamp === 0x7fffffff) {
+        family.solveStamps.fill(0);
+        family.solveStamp = 0;
+    }
+
+    family.solveStamp += 1;
+
+    return family.solveStamp;
+}
+
+function familySolveNode(family, index, deltaZMeters, stamp) {
+    if (family.solveStamps[index] !== stamp) {
+        const range = trajectoryRangeAt(family.paths[index], deltaZMeters);
+
+        family.solveRanges[index] = range === null ? NaN : range;
+        family.solveStamps[index] = stamp;
+    }
+
+    const range = family.solveRanges[index];
+
+    return Number.isNaN(range) ? null : range;
+}
+
+function familySolveRange(family, radians, deltaZMeters, stamp) {
+    const at = familyLocate(family, radians);
+
+    if (!at) {
+        return null;
+    }
+
+    const a = familySolveNode(family, at.index, deltaZMeters, stamp);
+    const b = familySolveNode(family, at.index + 1, deltaZMeters, stamp);
+
+    if (a === null || b === null) {
+        return null;
+    }
+
+    return a + (b - a) * at.weight;
+}
+
 function familySolve(family, rangeMeters, deltaZMeters, branch) {
     const optimum = familyOptimum(family, deltaZMeters);
 
@@ -406,13 +450,14 @@ function familySolve(family, rangeMeters, deltaZMeters, branch) {
     }
 
     const low = branch === 'low';
+    const stamp = familySolveStamp(family);
 
     let inside = optimum.radians;
     let outside = low ? family.minRadians : family.maxRadians;
 
     for (let i = 0; i < FAMILY_SOLVE_ITERATIONS; i += 1) {
         const middle = (inside + outside) / 2;
-        const range = familyRange(family, middle, deltaZMeters);
+        const range = familySolveRange(family, middle, deltaZMeters, stamp);
 
         if (range !== null && range >= rangeMeters) {
             inside = middle;
@@ -546,37 +591,52 @@ function modelShellHeight(fit, tan, xMeters) {
     return height === null ? TRAJECTORY_FLOOR_METERS : height;
 }
 
-const ARC_ANGLE_STOPS_BY_FIT = new WeakMap();
-
-function arcAngleStops(weapon, fit) {
+function fitMemoGet(memos, weapon, fit) {
     const memo = fit === null || typeof fit !== 'object'
         ? undefined
-        : ARC_ANGLE_STOPS_BY_FIT.get(fit);
+        : memos.get(fit);
 
-    if (
+    return (
         memo &&
         memo.weapon === weapon &&
         memo.minElevationMil === weapon?.minElevationMil &&
         memo.maxElevationMil === weapon?.maxElevationMil
-    ) {
-        return memo.stops;
-    }
+    )
+        ? memo
+        : undefined;
+}
 
-    const stops = arcAngleStopsUncached(weapon, fit);
-
+function fitMemoSet(memos, weapon, fit, value) {
     if (fit !== null && typeof fit === 'object') {
-        ARC_ANGLE_STOPS_BY_FIT.set(
+        memos.set(
             fit,
             {
                 weapon,
                 minElevationMil: weapon?.minElevationMil,
                 maxElevationMil: weapon?.maxElevationMil,
-                stops
+                value
             }
         );
     }
 
-    return stops;
+    return value;
+}
+
+const ARC_ANGLE_STOPS_BY_FIT = new WeakMap();
+
+function arcAngleStops(weapon, fit) {
+    const memo = fitMemoGet(ARC_ANGLE_STOPS_BY_FIT, weapon, fit);
+
+    if (memo) {
+        return memo.value;
+    }
+
+    return fitMemoSet(
+        ARC_ANGLE_STOPS_BY_FIT,
+        weapon,
+        fit,
+        arcAngleStopsUncached(weapon, fit)
+    );
 }
 
 function arcAngleStopsUncached(weapon, fit) {
@@ -615,7 +675,43 @@ function arcAngleStopsUncached(weapon, fit) {
     };
 }
 
+const ARC_LEVEL_RANGES_BY_FIT = new WeakMap();
+
+function arcLevelRanges(weapon, fit) {
+    const memo = fitMemoGet(ARC_LEVEL_RANGES_BY_FIT, weapon, fit);
+
+    if (memo) {
+        return memo.value;
+    }
+
+    return fitMemoSet(
+        ARC_LEVEL_RANGES_BY_FIT,
+        weapon,
+        fit,
+        {
+            max: arcMaxRangeAt(weapon, fit, 0),
+            min: arcMinRangeAt(weapon, fit, 0)
+        }
+    );
+}
+
 function arcMaxRangeModel(weapon, fit, deltaZMeters) {
+    if (deltaZMeters === 0) {
+        return arcLevelRanges(weapon, fit).max;
+    }
+
+    return arcMaxRangeAt(weapon, fit, deltaZMeters);
+}
+
+function arcMinRangeModel(weapon, fit, deltaZMeters) {
+    if (deltaZMeters === 0) {
+        return arcLevelRanges(weapon, fit).min;
+    }
+
+    return arcMinRangeAt(weapon, fit, deltaZMeters);
+}
+
+function arcMaxRangeAt(weapon, fit, deltaZMeters) {
     const stops = arcAngleStops(weapon, fit);
 
     if (!stops) {
@@ -636,7 +732,7 @@ function arcMaxRangeModel(weapon, fit, deltaZMeters) {
     return modelRangeAtAngle(fit, theta, deltaZMeters);
 }
 
-function arcMinRangeModel(weapon, fit, deltaZMeters) {
+function arcMinRangeAt(weapon, fit, deltaZMeters) {
     const stops = arcAngleStops(weapon, fit);
 
     if (!stops) {
