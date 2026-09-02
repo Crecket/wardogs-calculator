@@ -106,11 +106,11 @@ Terrain is ruled out for all of it. At 1380 mil the round descends at 85° and r
 | 1300 | high | 1223.9 m | 1165 m | +59 m |
 | 1380 | high | 889.9 m | 825 m | +65 m, see below |
 
-The tables are accurate either side of 45° elevation and degrade monotonically with distance from it — long below, short above. Extrapolating the low-arc trend to the bottom of the dial puts the error near −320 m at minimum elevation, but shots 1–3 cannot confirm that and the low dials need re-shooting.
+The tables are accurate either side of 45° elevation and degrade monotonically with distance from it — long below, short above. How far the low arc degrades below 150 mil is not known. A straight line through the five measured low-arc errors reaches only about −185 m at the 35 mil floor, while the fitted model sits −434 m below the table there; the two disagree by 250 m and nothing measured lies between them. The low dials need re-shooting before any figure is quoted for that end.
 
 The 1380 row is the weakest in the table. Its 889.9 m is the mean of shots 25 and 26 only, and the five shots at that dial range over 45 m once traverse and the unexplained shot 13 are included, so the +65 m there is not separable from that scatter. The high table being short is carried by the 910 through 1300 rows, which the 1380 row is consistent with but does not independently confirm.
 
-`minElevationMil` is `20` in `data/weapons.json`. The floor was reported as about **35**, with some hesitancy, and needs one more confirmation before the value is changed.
+`minElevationMil` is `20` in `data/weapons.json`. The gun will not depress below **35** — a hard limit the game enforces, not a reading taken off a shot. The shipped value is wrong and should be 35.
 
 ## Derived model
 

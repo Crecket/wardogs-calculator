@@ -12,7 +12,7 @@ The weapon is **SPH-2** (`id: "spg"`), confirmed. The mortar is the mortar.
 
 ## What is wrong
 
-**The SPH-2 low firing table is long, badly, and the error grows as the dial drops.** Measured against `data/weapons.json`: −9 m at 600 mil, −41 m at 450, −81 m at 300, −135 m at 200, −150 m at 150. Extrapolating below that puts it near −320 m at the bottom of the dial, though that end is unmeasured. The shipped table claims an RMS of 14 m; it is out by ten times that through the middle of its range.
+**The SPH-2 low firing table is long, badly, and the error grows as the dial drops.** Measured against `data/weapons.json`: −9 m at 600 mil, −41 m at 450, −81 m at 300, −135 m at 200, −150 m at 150. How much worse it gets below 150 mil is genuinely unknown: extending the measured trend reaches about −185 m at the 35 mil floor, the fitted model implies −434 m there, and nothing was shot between. The shipped table claims an RMS of 14 m; it is out by ten times that through the middle of its range.
 
 **The SPH-2 high table is short above 800 mil.** It is exact at 800 (−2 m) and drifts steadily: +26 m at 910, +38 m at 1000, +32 m at 1030, +57 m at 1200, +59 m at 1300. The +65 m at 1380 is consistent with that but is the mean of two shots in a dial whose five repeats range over 45 m, so it does not stand on its own.
 
@@ -24,7 +24,7 @@ That 0.05625 is exactly 6400 mils to a circle. It was fitted freely first (0.056
 
 **The mortar's flight times are wrong and get worse with elevation:** −1.5 s at 150 mil, −1.8 s at 450, −2.9 s at 600, −3.4 s at 750, **−4.8 s at 850**. `docs/todo.md` describes the readout as "good enough to choose an arc; not good enough for the time-on-target staggering that a battery would want" — that is now measured, and five seconds is well past usable for a battery.
 
-**`minElevationMil` is `20` for the SPH-2; the floor was reported as about 35.** Reported with some hesitancy ("I think 35 is the lowest"), so treat as needing one more confirmation rather than as settled. Leaving it wrong and documented is preferable to changing it on a maybe.
+**`minElevationMil` is `20` for the SPH-2; the gun will not depress below 35.** The game will not let the barrel go lower, so 35 is a hard floor rather than the lowest angle that happened to be shot. Set it to 35.
 
 ## What is right — do not touch
 
