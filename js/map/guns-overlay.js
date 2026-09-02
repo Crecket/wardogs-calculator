@@ -185,12 +185,7 @@ function drawGunRangeRings(gun, at) {
 
     if (minRangePx > 0) {
         ctx.beginPath();
-
-        if (ring && ring.minRadii) {
-            traceRangeRing(at, ring.minRadii, v.scale, null);
-        } else {
-            ctx.arc(at.x, at.y, minRangePx, 0, Math.PI * 2);
-        }
+        ctx.arc(at.x, at.y, minRangePx, 0, Math.PI * 2);
 
         ctx.strokeStyle = '#d86666';
         ctx.lineWidth = 1.5;

@@ -34,7 +34,6 @@ test('weapon reach helpers take the best arc and honour the mortar clamp', () =>
     assert.ok(Math.abs(callRuntime(ctx, 'weaponReachRange(WEAPONS.spg, 0)') - 2622.6) < 0.1);
     assert.ok(Math.abs(callRuntime(ctx, 'weaponReachRange(WEAPONS.mortar, 0)') - 687.2) < 0.1);
     assert.ok(Math.abs(callRuntime(ctx, 'weaponReachRange(WEAPONS.mortar, -100)') - 744.4) < 1);
-    assert.ok(Math.abs(callRuntime(ctx, 'weaponMinReachRange(WEAPONS.spg, 0)') - 791.3) < 0.1);
 });
 
 test('a gun at the lowest map height still gets the full declared circle at deltaZ 0', () => {
@@ -58,5 +57,6 @@ test('a gun at the lowest map height still gets the full declared circle at delt
     assert.ok(ring, 'ring solved');
     assert.ok(Math.abs(ring.radii[0] - 2629) < 1, String(ring.radii[0]));
     assert.ok(Math.abs(ring.radii[90] - 2629) < 1, String(ring.radii[90]));
-    assert.ok(Math.abs((ring.minRadii?.[0] ?? 0) - 780) < 1, String(ring.minRadii?.[0]));
+    assert.equal(ring.minRadii, undefined, 'the min ring is no longer terrain-shaped');
+    assert.ok(Math.abs(ring.minRangeMeters - 780) < 1, String(ring.minRangeMeters));
 });
