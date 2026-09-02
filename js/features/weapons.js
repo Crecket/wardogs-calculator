@@ -91,8 +91,37 @@ function normalizeWeapon(item) {
         maxElevationMil: Number.isFinite(Number(item.maxElevationMil))
             ? Number(item.maxElevationMil)
             : null,
+        extrapolatedBelowMil: normalizeExtrapolatedBelowMil(item.extrapolatedBelowMil),
         ballistics: normalizeBallistics(item.ballistics)
     };
+}
+
+function normalizeExtrapolatedBelowMil(value) {
+    const normalized = {};
+
+    for (const arc of ['single', 'low', 'high']) {
+        const mil = Number(value?.[arc]);
+
+        if (Number.isFinite(mil)) {
+            normalized[arc] = mil;
+        }
+    }
+
+    return normalized;
+}
+
+function markExtrapolated(weapon, arc, solution) {
+    const belowMil = weapon.extrapolatedBelowMil?.[arc];
+
+    if (
+        !solution ||
+        !Number.isFinite(belowMil) ||
+        !(Number(solution.maxMil) < belowMil)
+    ) {
+        return solution;
+    }
+
+    return { ...solution, extrapolated: true };
 }
 
 function groupBallisticTable(table) {
@@ -227,21 +256,20 @@ function getWeaponElevationSolutions(weapon, distanceMeters) {
         };
     }
 
-    return {
-        inRange,
-        single: interpolateBallisticTable(
-            weapon.ballistics.single,
-            distanceMeters
-        ),
-        low: interpolateBallisticTable(
-            weapon.ballistics.low,
-            distanceMeters
-        ),
-        high: interpolateBallisticTable(
-            weapon.ballistics.high,
-            distanceMeters
-        )
-    };
+    const solutions = { inRange };
+
+    for (const arc of ['single', 'low', 'high']) {
+        solutions[arc] = markExtrapolated(
+            weapon,
+            arc,
+            interpolateBallisticTable(
+                weapon.ballistics[arc],
+                distanceMeters
+            )
+        );
+    }
+
+    return solutions;
 }
 
 function getWeaponName(weapon) {
