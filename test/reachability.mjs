@@ -72,7 +72,7 @@ const result = await page.evaluate(async probeDistance => {
     }
 
     return { lastAxisDistance, edge };
-});
+}, PROBE_DISTANCE);
 
 const { lastAxisDistance, edge } = result;
 
