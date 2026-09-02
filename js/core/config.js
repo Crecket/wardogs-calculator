@@ -10,18 +10,19 @@ const DEFAULT_APP_CONFIG = {
         },
 
         /*
-         * PLACEHOLDER SIZES — these are not measured in-game values.
-         * Both are in metres and exist so the shapes render at a sane
-         * size until someone confirms the real numbers; replace them in
-         * config/app.json rather than here.
+         * Both sizes are in metres. Override them in config/app.json
+         * rather than here.
          *
          * A FOB build area is a square, so it is measured by `halfSide`:
          * the distance from the FOB to an edge, and the buildable side is
          * twice it. There is no circle involved and no radius to name.
+         * The 60 m half-side is confirmed from the game data — the build
+         * area is a 120 x 120 m square.
          *
-         * The main zone is a circle and `radius` means what it says —
-         * a fallback only. Real maps record their own centre and radius in
-         * maps/*.json, taken from the game's own control-zone values.
+         * The main zone is a circle and `radius` means what it says, and
+         * unlike the FOB it is still an unmeasured placeholder — a fallback
+         * only. Real maps record their own centre and radius in maps/*.json,
+         * taken from the game's own control-zone values.
          */
         rings: {
             fob: {
