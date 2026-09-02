@@ -1,9 +1,9 @@
 /*
- * Time of flight, derived rather than measured.
+ * Time of flight.
  *
- * The expected seconds were computed from the same vacuum fit this reads. They
- * are a regression fence on the derivation, not evidence about the game —
- * nobody has held a stopwatch to a real shell yet.
+ * The SPH-2 seconds were computed from the same drag fit this reads and are a
+ * regression fence on the derivation; the mortar seconds are the interpolated
+ * firing-range timings of 2026-09-02.
  *
  *   PORT=8123 npm run dev       # in one shell
  *   node test/flight-time.mjs   # in another
@@ -33,20 +33,20 @@ const derived = await page.evaluate(() => ({
 }));
 
 check(
-    'SPG low arc at 1800 m is about 12 s',
-    Math.abs(derived.low - 12.1) < 1.5,
+    'SPG low arc at 1800 m is about 10 s',
+    Math.abs(derived.low - 10.3) < 1.5,
     derived.low
 );
 
 check(
-    'SPG high arc at 1800 m is about 30 s',
-    Math.abs(derived.high - 30.3) < 1.5,
+    'SPG high arc at 1800 m is about 34 s',
+    Math.abs(derived.high - 34.3) < 1.5,
     derived.high
 );
 
 check(
-    'the mortar derives at about 17 s',
-    Math.abs(derived.mortar - 16.9) < 1.5,
+    'the mortar interpolates to about 20 s',
+    Math.abs(derived.mortar - 19.8) < 1.5,
     derived.mortar
 );
 
@@ -115,8 +115,8 @@ check(
     mortar.badges[0]?.arc
 );
 check(
-    'and reads about 17 s',
-    Math.abs(mortar.badges[0]?.seconds - 17) <= 2,
+    'and reads about 20 s',
+    Math.abs(mortar.badges[0]?.seconds - 20) <= 2,
     mortar.badges[0]?.value
 );
 
@@ -155,19 +155,19 @@ check(
 );
 
 /*
- * Below 1181 m the low table has no coverage, so the high arc is the only
- * option and the row must not print a phantom second badge.
+ * Below 815 m neither table has coverage, so the row must not print a
+ * phantom badge; at 1000 m both arcs are in the table and both print.
  */
-const highOnly = await readPanel('spg', 1000);
+const bothArcs = await readPanel('spg', 1000);
 check(
-    'a single arc prints a single badge',
-    highOnly.hidden === false && highOnly.badges.length === 1,
-    JSON.stringify(highOnly.badges)
+    'two arcs print two badges',
+    bothArcs.hidden === false && bothArcs.badges.length === 2,
+    JSON.stringify(bothArcs.badges)
 );
 check(
-    'and it agrees with the single MIL shown',
-    !highOnly.mil.includes('/'),
-    highOnly.mil
+    'and the MIL shows both solutions',
+    bothArcs.mil.includes('/'),
+    bothArcs.mil
 );
 
 const outOfRange = await readPanel('spg', 4000);

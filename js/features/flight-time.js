@@ -11,16 +11,18 @@
  * trajectory gives the time at which it descends through the target's
  * height, dz being target minus gun as in the terrain correction.
  *
- * The mortar reads the same file; its arc carries no drag term, so its
- * seconds are the vacuum fit's, which the firing-range timings of
- * 2026-09-02 show running 1.5 to 4.8 s short.
+ * The mortar's seconds are interpolated straight from the timings measured
+ * at the firing range on 2026-09-02 (measuredFlightTimes in the same file),
+ * because no physical model fits that weapon and its range table needs
+ * none — see docs/firing-range-measurements.md. Those measurements were
+ * taken without a known height difference, so dz does not move them.
  *
  * The angle comes from the MIL actually on screen rather than from the
  * distance, so the printed time always belongs to the number above it —
  * including when the terrain correction has moved that number.
  *
  * Everything is printed with a ≈: the SPH-2 model reproduces its three
- * timed shots within 0.35 s.
+ * timed shots within 0.35 s, and the mortar timings are good to ±0.4 s.
  */
 
 /*
@@ -47,6 +49,42 @@ function flightTimeMil(solution) {
         : null;
 }
 
+function measuredFlightTimeSeconds(fit, mil) {
+    const samples = Array.isArray(fit?.measuredFlightTimes)
+        ? fit.measuredFlightTimes
+            .map(pair => [Number(pair?.[0]), Number(pair?.[1])])
+            .filter(pair => pair.every(Number.isFinite))
+            .sort((a, b) => a[0] - b[0])
+        : [];
+
+    if (!samples.length) {
+        return null;
+    }
+
+    if (mil <= samples[0][0]) {
+        return samples[0][1];
+    }
+
+    const last = samples[samples.length - 1];
+
+    if (mil >= last[0]) {
+        return last[1];
+    }
+
+    for (let i = 0; i < samples.length - 1; i += 1) {
+        const [milA, secondsA] = samples[i];
+        const [milB, secondsB] = samples[i + 1];
+
+        if (mil >= milA && mil <= milB) {
+            return milB === milA
+                ? secondsA
+                : secondsA + (secondsB - secondsA) * (mil - milA) / (milB - milA);
+        }
+    }
+
+    return null;
+}
+
 /*
  * Seconds for one arc at one MIL. Exposed on its own so the derivation can
  * be tested without going through the panel.
@@ -59,6 +97,12 @@ function flightTimeSecondsForMil(weaponId, arc, mil, deltaZMeters = 0) {
 
     if (!fit || !Number.isFinite(mil)) {
         return null;
+    }
+
+    const measured = measuredFlightTimeSeconds(fit, mil);
+
+    if (measured !== null) {
+        return measured > 0 ? measured : null;
     }
 
     const tan = modelArcTanForMil(fit, mil);
