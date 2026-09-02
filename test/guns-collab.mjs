@@ -93,6 +93,42 @@ check('the peer received the move',
         () => `${S.guns[1].position.x},${S.guns[1].position.y}`
     ) === '70,71');
 
+/*
+ * A drag of gun 1 sends a gun.move and its legacy point.set origin mirror
+ * as two messages. The peer's throttled flush can land between them, and
+ * must not read the half-applied pair as a local edit and bounce a
+ * point.set origin back to the dragger, who would then see a "moved by"
+ * flash on their own marker.
+ */
+const bounced = await peer.evaluate(() => {
+    const sent = [];
+    const original = collabSend;
+
+    window.collabSend = op => {
+        sent.push(op);
+        return original(op);
+    };
+
+    collabApplyOp(
+        {
+            op: 'gun.move',
+            id: S.guns[0].id,
+            x: S.guns[0].position.x + 1,
+            y: S.guns[0].position.y + 1
+        },
+        'someone-else'
+    );
+
+    collabFlushShared();
+
+    window.collabSend = original;
+
+    return sent.map(op => op.op);
+});
+
+check('a flush between a gun.move and its origin mirror sends nothing back',
+    bounced.length === 0, bounced.join(','));
+
 /* --- per-gun weapon --- */
 
 const chosen = await host.evaluate(() => {

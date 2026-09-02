@@ -665,6 +665,8 @@ function collabApplyOp(op, from) {
                     weapon: op.gun.weapon || null
                 };
 
+                collabMirrorLegacyOrigin(op.gun.id);
+
                 renderGuns();
                 break;
             }
@@ -689,6 +691,8 @@ function collabApplyOp(op, from) {
                     y: op.y,
                     weapon: gun ? gun.weapon || null : null
                 };
+
+                collabMirrorLegacyOrigin(op.id);
 
                 renderGuns();
                 break;
@@ -863,6 +867,8 @@ function collabApplyOp(op, from) {
                         y: entry.y,
                         weapon: entry.weapon || null
                     };
+
+                    collabMirrorLegacyOrigin(entry.id);
                 }
                 break;
             }
@@ -1931,6 +1937,24 @@ function collabPeerColor(id) {
     return COLLAB_CURSOR_COLORS[
         hash % COLLAB_CURSOR_COLORS.length
     ];
+}
+
+/*
+ * The legacy `point.set origin` mirrors gun 1, and a peer sends the two as
+ * separate messages. The throttled flush in collabFlushShared can run
+ * between them; if the gun record has moved on while the origin record has
+ * not, the diff reads that as a local edit and bounces a point.set back to
+ * the sender, who sees their own drag flagged as a peer's. So an incoming
+ * move of gun 1 has to advance both records together.
+ */
+function collabMirrorLegacyOrigin(gunId) {
+    const first = S.guns[0];
+
+    if (!first || first.id !== gunId) {
+        return;
+    }
+
+    COLLAB.lastShared.origin = structuredClone(first.position);
 }
 
 function collabPointFlashKey(point) {
