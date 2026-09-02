@@ -216,19 +216,7 @@ function correctionNoteFragment(meta) {
     return '';
 }
 
-function terrainNoteText(shot, meta) {
-    if (!shot || shot.state === 'nodata') {
-        return '';
-    }
-
-    if (shot.state === 'pending') {
-        return tr('crossSectionLoadingTerrain');
-    }
-
-    if (shot.state === 'offmap') {
-        return tr('noteOffMap');
-    }
-
+function terrainNoteGroups(shot) {
     const names = {
         low: tr('lowArc'),
         high: tr('highArc'),
@@ -259,6 +247,38 @@ function terrainNoteText(shot, meta) {
             groups.tooFar.push(names[arc]);
         }
     }
+
+    return { groups, total };
+}
+
+function terrainNoteWarns(shot) {
+    if (shot?.state !== 'ready' || !shot.arcs) {
+        return false;
+    }
+
+    const { groups } = terrainNoteGroups(shot);
+
+    return Boolean(
+        groups.masked.length ||
+        groups.tooClose.length ||
+        groups.tooFar.length
+    );
+}
+
+function terrainNoteText(shot, meta) {
+    if (!shot || shot.state === 'nodata') {
+        return '';
+    }
+
+    if (shot.state === 'pending') {
+        return tr('crossSectionLoadingTerrain');
+    }
+
+    if (shot.state === 'offmap') {
+        return tr('noteOffMap');
+    }
+
+    const { groups, total } = terrainNoteGroups(shot);
 
     const keys = { masked: 'noteMasked', tooClose: 'noteTooClose', tooFar: 'noteTooFar' };
     const clauses = [];
@@ -343,6 +363,12 @@ function renderTerrainNote(shot, meta, text) {
 
     if (text) {
         note.dataset.state = terrainNoteState(shot, meta);
+    }
+
+    if (text && terrainNoteWarns(shot)) {
+        note.dataset.warn = 'true';
+    } else {
+        delete note.dataset.warn;
     }
 }
 

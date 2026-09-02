@@ -283,6 +283,13 @@
     display: none;
 }
 
+.mobile-terrain-note[data-warn]::before {
+    content: "\26A0";
+    margin-right: 4px;
+    color: #f0b24a;
+    font-size: 10px;
+}
+
 .mobile-terrain-note[data-state="mixed"] {
     border-left-color: #f0b24a;
     background: color-mix(in srgb, #f0b24a 15%, transparent);
