@@ -56,7 +56,7 @@ function fillModelledSolutions(weapon, distanceMeters, solutions, shot) {
 function formatMilValue(solution) {
     const text = formatMilSolution(solution);
 
-    return solution?.modelled ? `≈ ${text}` : text;
+    return solution?.modelled || solution?.extrapolated ? `≈ ${text}` : text;
 }
 
 function resolveElevationSolutions(

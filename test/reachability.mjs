@@ -152,7 +152,7 @@ const scenarios = await page.evaluate(() => {
             ceil2620HighStatus: ceil2620High.status,
             ceil2620HighCapped: Boolean(ceil2620High.ceilingCapped),
             tooClose800NegHigh: assessArc(weapon, 'high', 800, -200).status,
-            hit800PosHigh: assessArc(weapon, 'high', 800, 100).status,
+            hit850PosHigh: assessArc(weapon, 'high', 850, 100).status,
             dangerous2600Low: assessArc(weapon, 'low', 2600, 200).status,
             dangerous2600High: assessArc(weapon, 'high', 2600, 200).status
         }
@@ -160,7 +160,7 @@ const scenarios = await page.evaluate(() => {
 });
 
 check('assessShot resolves on live Bakurani terrain', scenarios.nearState === 'ready' && scenarios.deltaZFinite, JSON.stringify(scenarios));
-check('917 m: low arc refused, high arc live', scenarios.nearLow === 'tooClose' && scenarios.nearHigh === 'hit', JSON.stringify(scenarios));
+check('917 m: both arcs live', scenarios.nearVerdict === 'hit' && scenarios.nearHigh === 'hit', JSON.stringify(scenarios));
 check('assessShot wires the same verdict assessArc computes at the sampled deltaZ', scenarios.mortarWired === true, JSON.stringify(scenarios));
 
 check(
@@ -172,8 +172,8 @@ check(
 );
 
 check(
-    'SPG @ 917 m ΔZ 0: low arc tooClose (917 < 1181), high arc hit — §4.2 worked verdict',
-    scenarios.pure.near917Low === 'tooClose' && scenarios.pure.near917High === 'hit',
+    'SPG @ 917 m ΔZ 0: both arcs hit (the low arc on an extrapolated row above its 822 m floor)',
+    scenarios.pure.near917Low === 'hit' && scenarios.pure.near917High === 'hit',
     JSON.stringify(scenarios.pure)
 );
 
@@ -184,18 +184,18 @@ check(
 );
 
 check(
-    'SPG @ 2620 m ΔZ 0: both arcs hit, low arc ceiling-capped at its 2612.8 m vacuum ceiling',
+    'SPG @ 2620 m ΔZ 0: both arcs hit inside the model\'s 2638.6 m level reach, neither ceiling-capped',
     scenarios.pure.ceil2620LowStatus === 'hit' &&
-        scenarios.pure.ceil2620LowCapped === true &&
+        scenarios.pure.ceil2620LowCapped === false &&
         scenarios.pure.ceil2620HighStatus === 'hit' &&
         scenarios.pure.ceil2620HighCapped === false,
     JSON.stringify(scenarios.pure)
 );
 
 check(
-    'SPG @ 800 m high arc: ΔZ -200 is tooClose (anchored min ≈ 810 m), ΔZ +100 is hit (anchored min ≈ 764 m)',
-    scenarios.pure.tooClose800NegHigh === 'tooClose' && scenarios.pure.hit800PosHigh === 'hit',
-    JSON.stringify({ neg200: scenarios.pure.tooClose800NegHigh, pos100: scenarios.pure.hit800PosHigh })
+    'SPG high arc: 800 m at ΔZ -200 is tooClose (anchored min ≈ 831 m), 850 m at ΔZ +100 is hit',
+    scenarios.pure.tooClose800NegHigh === 'tooClose' && scenarios.pure.hit850PosHigh === 'hit',
+    JSON.stringify({ neg200: scenarios.pure.tooClose800NegHigh, pos100: scenarios.pure.hit850PosHigh })
 );
 
 check(

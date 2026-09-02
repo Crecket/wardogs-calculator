@@ -3,19 +3,19 @@ import assert from 'node:assert/strict';
 import { loadRuntime, callRuntime, setRuntimeGlobal } from './runtime-globals.mjs';
 
 const model = {
-    schema: 'wardogs-projectile-model-v1',
+    schema: 'wardogs-projectile-model-v2',
     weapons: {
-        mortar: { single: { branch: 'high', muzzleVelocity: 86.7, angleOffsetDeg: 52.5, anglePerMilDeg: 0.0375 } },
+        mortar: { single: { branch: 'high', muzzleVelocity: 86.7, dragPerMeter: 0, angleOffsetDeg: 52.5, anglePerMilDeg: 0.0375 } },
         spg: {
-            low: { branch: 'low', muzzleVelocity: 160.1, angleOffsetDeg: 12.75, anglePerMilDeg: 0.058 },
-            high: { branch: 'high', muzzleVelocity: 160.4, angleOffsetDeg: 14.5, anglePerMilDeg: 0.048 }
+            low: { branch: 'low', muzzleVelocity: 262.4, dragPerMeter: 0.00039, angleOffsetDeg: 2.254, anglePerMilDeg: 0.05625 },
+            high: { branch: 'high', muzzleVelocity: 262.4, dragPerMeter: 0.00039, angleOffsetDeg: 2.254, anglePerMilDeg: 0.05625 }
         }
     }
 };
 
 const spg = {
-    id: 'spg', minRange: 0.78, maxRange: 2.629, minElevationMil: 20, maxElevationMil: 1390,
-    ballistics: { low: [[1181, 20], [2629, 600]], high: [[735, 1400], [2629, 610]] }
+    id: 'spg', minRange: 0.78, maxRange: 2.629, minElevationMil: 35, maxElevationMil: 1390,
+    ballistics: { low: [[822, 35], [2639, 630]], high: [[815, 1390], [2638, 640]] }
 };
 
 const mortar = {
@@ -33,45 +33,70 @@ function ctxWith() {
 
 test('arcDeclaredRange intersects the weapon gates with the table coverage', () => {
     const ctx = ctxWith();
-    assert.deepEqual(JSON.parse(callRuntime(ctx, 'JSON.stringify(arcDeclaredRange(__spg, "low"))')), { minMeters: 1181, maxMeters: 2629 });
-    assert.deepEqual(JSON.parse(callRuntime(ctx, 'JSON.stringify(arcDeclaredRange(__spg, "high"))')), { minMeters: 780, maxMeters: 2629 });
+    assert.deepEqual(JSON.parse(callRuntime(ctx, 'JSON.stringify(arcDeclaredRange(__spg, "low"))')), { minMeters: 822, maxMeters: 2629 });
+    assert.deepEqual(JSON.parse(callRuntime(ctx, 'JSON.stringify(arcDeclaredRange(__spg, "high"))')), { minMeters: 815, maxMeters: 2629 });
     assert.deepEqual(JSON.parse(callRuntime(ctx, 'JSON.stringify(arcDeclaredRange(__mortar, "single"))')), { minMeters: 132, maxMeters: 684 });
 });
 
-test('the 917 m SPG shot: low arc is tooClose, high arc hits', () => {
+test('the 800 m SPG shot is tooClose on both arcs; 917 m hits on both', () => {
     const ctx = ctxWith();
-    assert.equal(callRuntime(ctx, 'assessArc(__spg, "low", 917, 0).status'), 'tooClose');
+    assert.equal(callRuntime(ctx, 'assessArc(__spg, "low", 800, 0).status'), 'tooClose');
+    assert.equal(callRuntime(ctx, 'assessArc(__spg, "high", 800, 0).status'), 'tooClose');
+    const low = callRuntime(ctx, 'assessArc(__spg, "low", 917, 0)');
+    assert.equal(low.status, 'hit');
+    assert.equal(low.tableRow, true);
+    assert.ok(low.mil > 35 && low.mil < 60, String(low.mil));
     const high = callRuntime(ctx, 'assessArc(__spg, "high", 917, 0)');
     assert.equal(high.status, 'hit');
     assert.equal(high.tableRow, true);
+    assert.ok(high.mil > 1360 && high.mil < 1390, String(high.mil));
 });
 
 test('anchored gates shift with deltaZ', () => {
     const ctx = ctxWith();
     assert.equal(callRuntime(ctx, 'assessArc(__mortar, "single", 690, 0).status'), 'tooFar');
     assert.equal(callRuntime(ctx, 'assessArc(__spg, "high", 800, -200).status'), 'tooClose');
-    assert.equal(callRuntime(ctx, 'assessArc(__spg, "high", 800, 100).status'), 'hit');
+    assert.equal(callRuntime(ctx, 'assessArc(__spg, "high", 820, -200).status'), 'tooClose');
+    assert.equal(callRuntime(ctx, 'assessArc(__spg, "high", 850, -100).status'), 'hit');
+    assert.equal(callRuntime(ctx, 'assessArc(__spg, "high", 850, 100).status'), 'hit');
     assert.equal(callRuntime(ctx, 'assessArc(__spg, "high", 2600, 200).status'), 'tooFar');
     assert.equal(callRuntime(ctx, 'assessArc(__spg, "low", 2600, 200).status'), 'tooFar');
 });
 
 test('the table edge stays a hit and the beyond-table window is modelled', () => {
     const ctx = ctxWith();
-    const edge = callRuntime(ctx, 'assessArc(__spg, "low", 2620, 0)');
+    const edge = callRuntime(ctx, 'assessArc(__spg, "low", 2629, 0)');
     assert.equal(edge.status, 'hit');
     assert.equal(edge.tableRow, true);
-    assert.equal(edge.ceilingCapped, true);
-    assert.ok(Number.isFinite(edge.tan));
-    assert.equal(edge.mil, null);
+    assert.equal(edge.ceilingCapped, undefined);
+    assert.ok(Number.isFinite(edge.mil));
     const beyond = callRuntime(ctx, 'assessArc(__spg, "high", 2650, -100)');
     assert.equal(beyond.status, 'hit');
     assert.equal(beyond.tableRow, false);
     assert.ok(Number.isFinite(beyond.mil));
 });
 
+test('a table row the model cannot reach is capped at the arc stop, not refused', () => {
+    const ctx = ctxWith();
+    setRuntimeGlobal(ctx, 'PROJECTILE_MODEL', {
+        schema: 'wardogs-projectile-model-v2',
+        weapons: { toy: { low: { branch: 'low', muzzleVelocity: 100, dragPerMeter: 0, angleOffsetDeg: 0, anglePerMilDeg: 0.05 } } }
+    });
+    setRuntimeGlobal(ctx, '__toy', {
+        id: 'toy', minRange: 0.1, maxRange: 1.1, minElevationMil: 200, maxElevationMil: 1600,
+        ballistics: { low: [[100, 200], [1100, 800]] }
+    });
+    const capped = callRuntime(ctx, 'assessArc(__toy, "low", 1050, 0)');
+    assert.equal(capped.status, 'hit');
+    assert.equal(capped.tableRow, true);
+    assert.equal(capped.ceilingCapped, true);
+    assert.ok(Math.abs(capped.tan - 1) < 1e-6);
+    assert.equal(capped.mil, null);
+});
+
 test('a table-covered row is never envelope-refused despite fit noise', () => {
     const ctx = ctxWith();
-    const row = callRuntime(ctx, 'assessArc(__spg, "low", 1181, 0)');
+    const row = callRuntime(ctx, 'assessArc(__spg, "low", 822, 0)');
     assert.equal(row.status, 'hit');
     assert.equal(row.tableRow, true);
 });
@@ -79,8 +104,8 @@ test('a table-covered row is never envelope-refused despite fit noise', () => {
 test('a modelled mil outside the envelope is refused', () => {
     const ctx = ctxWith();
     setRuntimeGlobal(ctx, 'PROJECTILE_MODEL', {
-        schema: 'wardogs-projectile-model-v1',
-        weapons: { toy: { low: { branch: 'low', muzzleVelocity: 100, angleOffsetDeg: 0, anglePerMilDeg: 0.05 } } }
+        schema: 'wardogs-projectile-model-v2',
+        weapons: { toy: { low: { branch: 'low', muzzleVelocity: 100, dragPerMeter: 0, angleOffsetDeg: 0, anglePerMilDeg: 0.05 } } }
     });
     setRuntimeGlobal(ctx, '__toy', { id: 'toy', minRange: 0.1, maxRange: 10, minElevationMil: 200, maxElevationMil: 1600, ballistics: {} });
     assert.equal(callRuntime(ctx, 'assessArc(__toy, "low", 200, 0).status'), 'belowMinElevation');
@@ -125,8 +150,11 @@ test('assessShot on flat ground: SPG 900 m is a plain hit, 2700 m is tooFar', ()
     assert.equal(near.state, 'ready');
     assert.equal(near.deltaZ, 0);
     assert.equal(near.verdict, 'hit');
-    assert.equal(near.arcs.low.status, 'tooClose');
+    assert.equal(near.arcs.low.status, 'hit');
+    assert.equal(near.arcs.low.masked, false);
     assert.equal(near.arcs.high.masked, false);
+    const close = callRuntime(ctx, 'assessShot(__spg, {x: 1, y: 1}, {x: 9, y: 1}, "m")');
+    assert.equal(close.verdict, 'tooClose');
     const far = callRuntime(ctx, 'assessShot(__spg, {x: 1, y: 1}, {x: 28, y: 1}, "m")');
     assert.equal(far.verdict, 'tooFar');
 });

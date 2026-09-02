@@ -5,9 +5,8 @@ const DEAD_GROUND_CACHE = new Map();
 function deadGroundArcs(weaponId) {
     const name = lowArcName(weaponId);
     const fit = projectileModelArc(weaponId, name);
-    const v = Number(fit?.muzzleVelocity);
 
-    if (!Number.isFinite(v) || v <= 0) {
+    if (!fit) {
         return null;
     }
 
@@ -15,10 +14,8 @@ function deadGroundArcs(weaponId) {
 }
 
 function deadGroundTrajectoryClears(fit, tan, ranges, deltas, index) {
-    const v = Number(fit.muzzleVelocity);
-
     for (let j = 0; j < index; j += 1) {
-        if (modelShellHeight(tan, v, ranges[j]) < deltas[j]) {
+        if (modelShellHeight(fit, tan, ranges[j]) < deltas[j]) {
             return false;
         }
     }

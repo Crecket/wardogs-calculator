@@ -177,12 +177,12 @@ The SPH-2 shows one badge per arc, each labelled with that arc's name. At
 trade-off the arc choice actually turns on: the low arc puts rounds on target
 in a third of the time, the high arc clears terrain the low arc would hit.
 
-Every value is prefixed `≈`. Nothing is measured: the seconds are derived from
-the fitted vacuum model in `data/ballistics/projectile-model.json`, using the
-MIL actually on screen, so a corrected MIL gets the time that belongs to it.
-The derivation carries roughly ±2–4 s, which is fine for choosing an arc and
-not fine for time-on-target staggering. See the verification entry in
-[todo.md](todo.md).
+Every value is prefixed `≈`. The mortar's seconds are interpolated from five
+shots timed at the firing range on 2026-09-02, good to about ±0.4 s; the SPH-2's
+come from the drag model in `data/ballistics/projectile-model.json`, which
+reproduces its three timed shots within 0.35 s, using the MIL actually on
+screen, so a corrected MIL gets the time that belongs to it. See the time of
+flight entry in [todo.md](todo.md) for what was and was not timed.
 
 
 ## Terrain elevation and SPH-2 setup
