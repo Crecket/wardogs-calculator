@@ -72,7 +72,7 @@ const fixture = await page.evaluate(() => {
     }
 
     const out = at(0, ring.radii[0] * 1.4);
-    const close = at(0, Math.max(1, (ring.minRadii ? ring.minRadii[0] : 0) / 2));
+    const close = at(0, Math.max(1, (ring.minRangeMeters ?? 0) / 2));
 
     const points = { reachable, masked, out, close };
 

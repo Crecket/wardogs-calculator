@@ -185,7 +185,7 @@ function terrainDeadGround(gun, mapId) {
             ranges,
             deltas,
             count,
-            ring.minRadii ? ring.minRadii[b] : ring.minRangeMeters ?? 0
+            ring.minRangeMeters ?? 0
         );
 
         if (intervals.length) {

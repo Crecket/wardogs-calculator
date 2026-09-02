@@ -53,26 +53,6 @@ function weaponReachRange(weapon, deltaZMeters) {
     return best;
 }
 
-function weaponMinReachRange(weapon, deltaZMeters) {
-    let best = null;
-
-    for (const arc of REACH_ARCS) {
-        const fit = projectileModelArc(weapon?.id, arc);
-
-        if (!fit) {
-            continue;
-        }
-
-        const range = arcMinRangeModel(weapon, fit, deltaZMeters);
-
-        if (range !== null && (best === null || range < best)) {
-            best = range;
-        }
-    }
-
-    return best;
-}
-
 /*
  * The march can leave the map before a bearing converges: a gun 1.6 km from
  * the north edge outreaches it on a third of its bearings. Beyond the
@@ -127,97 +107,6 @@ function rememberRangeRing(key, ring) {
     }
 
     RANGE_RING_CACHE.set(key, ring);
-}
-
-function minRangeRadii(field, gun, weapon, zGun, declaredMin) {
-    const metresPerUnit = getCoordinateMetersPerUnit();
-    const levelMin = weaponMinReachRange(weapon, 0);
-
-    if (!(declaredMin > 0) || levelMin === null) {
-        return null;
-    }
-
-    const deepest = weaponMinReachRange(weapon, field.minZMeters - zGun);
-
-    const marchLimit = Math.max(
-        declaredMin,
-        Math.min(
-            declaredMin + ((deepest ?? levelMin) - levelMin),
-            declaredMin * 4
-        )
-    );
-
-    const radii = new Float64Array(RANGE_RING_BEARINGS);
-
-    for (let b = 0; b < RANGE_RING_BEARINGS; b += 1) {
-        const angle = b * 2 * Math.PI / RANGE_RING_BEARINGS;
-
-        const stepX =
-            Math.cos(angle) / metresPerUnit;
-
-        const stepY =
-            Math.sin(angle) / metresPerUnit;
-
-        const short = metres => {
-            const z = rangeRingSample(
-                field,
-                gun.position.x + stepX * metres,
-                gun.position.y + stepY * metres
-            );
-
-            if (z === null) {
-                return null;
-            }
-
-            const modelled = weaponMinReachRange(weapon, z - zGun);
-
-            if (modelled === null) {
-                return true;
-            }
-
-            return metres < declaredMin + (modelled - levelMin);
-        };
-
-        let edge = null;
-        let previous = 0;
-
-        for (
-            let r = RANGE_RING_MARCH_METRES;
-            r <= marchLimit + RANGE_RING_MARCH_METRES;
-            r += RANGE_RING_MARCH_METRES
-        ) {
-            const ok = short(r);
-
-            if (ok === null) {
-                edge = declaredMin;
-                break;
-            }
-
-            if (!ok) {
-                let inside = previous;
-                let outside = r;
-
-                for (let i = 0; i < RANGE_RING_BISECTIONS; i += 1) {
-                    const middle = (inside + outside) / 2;
-
-                    if (short(middle) === true) {
-                        inside = middle;
-                    } else {
-                        outside = middle;
-                    }
-                }
-
-                edge = (inside + outside) / 2;
-                break;
-            }
-
-            previous = r;
-        }
-
-        radii[b] = edge === null ? marchLimit : edge;
-    }
-
-    return radii;
 }
 
 function terrainRangeRing(gun, mapId) {
@@ -356,7 +245,6 @@ function terrainRangeRing(gun, mapId) {
     const ring = {
         radii,
         maxRangeMeters: declaredMax,
-        minRadii: minRangeRadii(field, gun, weapon, zGun, declaredMin),
         minRangeMeters: declaredMin
     };
 
