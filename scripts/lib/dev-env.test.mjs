@@ -10,7 +10,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { spawn } from 'node:child_process';
-import { readFile, writeFile, rm, rename } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rm, rename } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,6 +20,23 @@ const envPath = join(root, '.env');
 const backupPath = join(root, '.env.testbackup');
 
 const PORT = Number(process.env.DEV_TEST_PORT || 8806);
+
+/*
+ * The real tile pyramids left the tree for object storage and maps/tiles is
+ * gitignored, so a committed fixture is impossible. The test lays down its
+ * own under a map id nothing else uses, which also keeps it clear of any
+ * pyramid a developer has synced locally.
+ */
+const TILE_MAP_ID = '__devtest__';
+const tileRoot = join(root, 'maps/tiles', TILE_MAP_ID);
+const tilePath = join(tileRoot, 'zoom_0/0_0.webp');
+const tileURL = `/maps/tiles/${TILE_MAP_ID}/zoom_0/0_0.webp`;
+const TILE_BYTES = Buffer.from('RIFF....WEBPVP8 fixture', 'utf8');
+
+async function writeTileFixture() {
+    await mkdir(dirname(tilePath), { recursive: true });
+    await writeFile(tilePath, TILE_BYTES);
+}
 
 /*
  * loadEnv() resolves .env from the repo root, so this test has to write the
@@ -38,6 +55,7 @@ before(async () => {
 
 after(async () => {
     await rm(envPath, { force: true });
+    await rm(tileRoot, { recursive: true, force: true });
 
     if (hadExistingEnv) {
         await rename(backupPath, envPath);
@@ -114,6 +132,20 @@ test('dev server injects COLLAB_URL and TILE_BASE_URL', async () => {
             await readFile(join(root, 'config/app.json'), 'utf8')
         );
         assert.equal(appOnDisk.collab.url, null);
+
+        /*
+         * TILE_BASE_URL only rewrites the map definition. The dev server
+         * still serves whatever sits under maps/tiles rather than
+         * redirecting to the bucket.
+         */
+        await writeTileFixture();
+
+        const tile = await fetch(`http://localhost:${PORT}${tileURL}`);
+        assert.ok(tile.ok, `expected a local tile, got ${tile.status}`);
+        assert.deepEqual(
+            Buffer.from(await tile.arrayBuffer()),
+            TILE_BYTES
+        );
     } finally {
         server.child.kill();
     }
@@ -141,10 +173,15 @@ test('without .env the dev server serves the originals', async () => {
         assert.equal(map.tiles?.path, 'maps/tiles/bakurani');
 
         /* Tiles are still served locally when they are not remote. */
-        const tile = await fetch(
-            `http://localhost:${port}/maps/tiles/bakurani/zoom_0/0_0.webp`
-        );
+        await writeTileFixture();
+
+        const tile = await fetch(`http://localhost:${port}${tileURL}`);
         assert.ok(tile.ok, `expected a local tile, got ${tile.status}`);
+        assert.equal(tile.headers.get('content-type'), 'image/webp');
+        assert.deepEqual(
+            Buffer.from(await tile.arrayBuffer()),
+            TILE_BYTES
+        );
 
         assert.match(server.output(), /Shared sessions are off/);
     } finally {
