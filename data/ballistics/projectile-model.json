@@ -35,7 +35,7 @@
                         22.4
                     ]
                 ],
-                "measuredFlightTimesNote": "Video-timed at the firing range on 2026-09-02, muzzle flash to impact, about +-0.4 s; see docs/firing-range-measurements.md. The flight-time readout interpolates these directly because the vacuum fit above runs 1.5 to 4.8 s short and no physical model fits the mortar."
+                "measuredFlightTimesNote": "Video-timed at the firing range on 2026-09-02, muzzle flash to impact, about +-0.4 s; see docs/firing-range-measurements.md. The flight-time readout is a least-squares quadratic in mil through these five points, within 0.39 s of each, because the vacuum fit above runs 1.5 to 4.8 s short and no physical model fits the mortar. It is an empirical curve with no physics behind it."
             }
         },
         "spg": {
