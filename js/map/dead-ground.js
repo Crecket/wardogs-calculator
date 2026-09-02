@@ -14,8 +14,13 @@ function deadGroundArcs(weaponId) {
 }
 
 function deadGroundTrajectoryClears(fit, tan, ranges, deltas, index) {
+    const chord = modelShellHeight(fit, tan, ranges[index]) / ranges[index];
+
     for (let j = 0; j < index; j += 1) {
-        if (modelShellHeight(fit, tan, ranges[j]) < deltas[j]) {
+        if (
+            deltas[j] > chord * ranges[j] &&
+            modelShellHeight(fit, tan, ranges[j]) < deltas[j]
+        ) {
             return false;
         }
     }
@@ -236,44 +241,73 @@ function deadGroundHatch() {
 
     const pattern = ctx.createPattern(tile, 'repeat');
 
-    if (pattern && typeof DOMMatrix === 'function') {
-        pattern.setTransform(new DOMMatrix([1 / d, 0, 0, 1 / d, 0, 0]));
-    }
-
     DEAD_GROUND_HATCH = pattern;
     DEAD_GROUND_HATCH_SCALE = d;
 
     return pattern;
 }
 
-function traceDeadGroundWedge(at, scale, angle, half, startMetres, endMetres) {
-    const inner = metersToWorldDistance(startMetres) * scale;
-    const outer = metersToWorldDistance(endMetres) * scale;
+function traceDeadGroundWedge(path, angle, half, startMetres, endMetres) {
+    const inner = metersToWorldDistance(startMetres);
+    const outer = metersToWorldDistance(endMetres);
 
     const a0 = angle - half;
     const a1 = angle + half;
 
-    ctx.moveTo(
-        at.x + Math.cos(a0) * inner,
-        at.y - Math.sin(a0) * inner
+    path.moveTo(
+        Math.cos(a0) * inner,
+        -Math.sin(a0) * inner
     );
 
-    ctx.lineTo(
-        at.x + Math.cos(a0) * outer,
-        at.y - Math.sin(a0) * outer
+    path.lineTo(
+        Math.cos(a0) * outer,
+        -Math.sin(a0) * outer
     );
 
-    ctx.lineTo(
-        at.x + Math.cos(a1) * outer,
-        at.y - Math.sin(a1) * outer
+    path.lineTo(
+        Math.cos(a1) * outer,
+        -Math.sin(a1) * outer
     );
 
-    ctx.lineTo(
-        at.x + Math.cos(a1) * inner,
-        at.y - Math.sin(a1) * inner
+    path.lineTo(
+        Math.cos(a1) * inner,
+        -Math.sin(a1) * inner
     );
 
-    ctx.closePath();
+    path.closePath();
+}
+
+let DEAD_GROUND_PATH = null;
+let DEAD_GROUND_PATH_SOLVED = null;
+
+function deadGroundPath(solved) {
+    if (DEAD_GROUND_PATH && DEAD_GROUND_PATH_SOLVED === solved) {
+        return DEAD_GROUND_PATH;
+    }
+
+    const bearings = solved.bearings.length;
+    const half = Math.PI / bearings;
+    const path = new Path2D();
+
+    for (let b = 0; b < bearings; b += 1) {
+        const intervals = solved.bearings[b];
+        const angle = b * 2 * Math.PI / bearings;
+
+        for (let i = 0; i < intervals.length; i += 2) {
+            traceDeadGroundWedge(
+                path,
+                angle,
+                half,
+                intervals[i],
+                intervals[i + 1]
+            );
+        }
+    }
+
+    DEAD_GROUND_PATH = path;
+    DEAD_GROUND_PATH_SOLVED = solved;
+
+    return path;
 }
 
 function drawDeadGround(at, scale) {
@@ -289,30 +323,24 @@ function drawDeadGround(at, scale) {
         return;
     }
 
-    const bearings = solved.bearings.length;
-    const half = Math.PI / bearings;
+    const path = deadGroundPath(solved);
+    const hatch = deadGroundHatch();
 
-    ctx.beginPath();
+    if (hatch && typeof DOMMatrix === 'function') {
+        const inverse = 1 / (renderScale() * scale);
 
-    for (let b = 0; b < bearings; b += 1) {
-        const intervals = solved.bearings[b];
-        const angle = b * 2 * Math.PI / bearings;
-
-        for (let i = 0; i < intervals.length; i += 2) {
-            traceDeadGroundWedge(
-                at,
-                scale,
-                angle,
-                half,
-                intervals[i],
-                intervals[i + 1]
-            );
-        }
+        hatch.setTransform(new DOMMatrix([inverse, 0, 0, inverse, 0, 0]));
     }
 
-    ctx.fillStyle = 'rgba(10,12,16,.5)';
-    ctx.fill();
+    ctx.save();
+    ctx.translate(at.x, at.y);
+    ctx.scale(scale, scale);
 
-    ctx.fillStyle = deadGroundHatch();
-    ctx.fill();
+    ctx.fillStyle = 'rgba(10,12,16,.5)';
+    ctx.fill(path);
+
+    ctx.fillStyle = hatch;
+    ctx.fill(path);
+
+    ctx.restore();
 }

@@ -348,15 +348,15 @@ function familyLocate(family, radians) {
     };
 }
 
-function familyBlend(family, radians, sample) {
+function familyBlend(family, radians, sample, argument) {
     const at = familyLocate(family, radians);
 
     if (!at) {
         return null;
     }
 
-    const a = sample(family.paths[at.index]);
-    const b = sample(family.paths[at.index + 1]);
+    const a = sample(family.paths[at.index], argument);
+    const b = sample(family.paths[at.index + 1], argument);
 
     if (a === null || b === null) {
         return null;
@@ -366,15 +366,15 @@ function familyBlend(family, radians, sample) {
 }
 
 function familyRange(family, radians, deltaZMeters) {
-    return familyBlend(family, radians, path => trajectoryRangeAt(path, deltaZMeters));
+    return familyBlend(family, radians, trajectoryRangeAt, deltaZMeters);
 }
 
 function familyTime(family, radians, deltaZMeters) {
-    return familyBlend(family, radians, path => trajectoryTimeAt(path, deltaZMeters));
+    return familyBlend(family, radians, trajectoryTimeAt, deltaZMeters);
 }
 
 function familyHeight(family, radians, xMeters) {
-    return familyBlend(family, radians, path => trajectoryHeightAt(path, xMeters));
+    return familyBlend(family, radians, trajectoryHeightAt, xMeters);
 }
 
 function familyOptimum(family, deltaZMeters) {
@@ -546,7 +546,40 @@ function modelShellHeight(fit, tan, xMeters) {
     return height === null ? TRAJECTORY_FLOOR_METERS : height;
 }
 
+const ARC_ANGLE_STOPS_BY_FIT = new WeakMap();
+
 function arcAngleStops(weapon, fit) {
+    const memo = fit === null || typeof fit !== 'object'
+        ? undefined
+        : ARC_ANGLE_STOPS_BY_FIT.get(fit);
+
+    if (
+        memo &&
+        memo.weapon === weapon &&
+        memo.minElevationMil === weapon?.minElevationMil &&
+        memo.maxElevationMil === weapon?.maxElevationMil
+    ) {
+        return memo.stops;
+    }
+
+    const stops = arcAngleStopsUncached(weapon, fit);
+
+    if (fit !== null && typeof fit === 'object') {
+        ARC_ANGLE_STOPS_BY_FIT.set(
+            fit,
+            {
+                weapon,
+                minElevationMil: weapon?.minElevationMil,
+                maxElevationMil: weapon?.maxElevationMil,
+                stops
+            }
+        );
+    }
+
+    return stops;
+}
+
+function arcAngleStopsUncached(weapon, fit) {
     const offset = Number(fit?.angleOffsetDeg);
     const perMil = Number(fit?.anglePerMilDeg);
     const minMil = Number(weapon?.minElevationMil);
