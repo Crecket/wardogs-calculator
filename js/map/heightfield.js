@@ -67,7 +67,8 @@ function decodeHeightfield(header, buffer) {
         originX: header.grid.originX,
         originY: header.grid.originY,
         stepGameUnits: header.grid.stepGameUnits,
-        minZMeters: header.minZMeters
+        minZMeters: header.minZMeters,
+        maxZMeters: header.maxZMeters
     };
 }
 

@@ -155,6 +155,19 @@ function terrainRangeRing(gun, mapId) {
         declaredMax * 2
     );
 
+    const highestReach = Number.isFinite(field.maxZMeters)
+        ? weaponReachRange(weapon, field.maxZMeters - zGun)
+        : null;
+
+    const marchStart = highestReach === null
+        ? RANGE_RING_MARCH_METRES
+        : Math.max(
+            RANGE_RING_MARCH_METRES,
+            Math.floor(
+                (declaredMax + (highestReach - levelMax)) / RANGE_RING_MARCH_METRES
+            ) * RANGE_RING_MARCH_METRES
+        );
+
     const radii = new Float64Array(RANGE_RING_BEARINGS);
 
     for (let b = 0; b < RANGE_RING_BEARINGS; b += 1) {
@@ -192,7 +205,7 @@ function terrainRangeRing(gun, mapId) {
         };
 
         let edge = null;
-        let previous = RANGE_RING_MARCH_METRES;
+        let previous = marchStart;
 
         const bisect = (from, to) => {
             let inside = from;
@@ -212,7 +225,7 @@ function terrainRangeRing(gun, mapId) {
         };
 
         for (
-            let r = RANGE_RING_MARCH_METRES;
+            let r = marchStart;
             r <= marchLimit;
             r += RANGE_RING_MARCH_METRES
         ) {
