@@ -14,14 +14,21 @@ function flightCtx() {
     return ctx;
 }
 
-test('the mortar interpolates the measured timings and clamps at the ends', () => {
+test('the mortar fits a smooth curve through the measured timings', () => {
     const ctx = flightCtx();
-    assert.equal(callRuntime(ctx, 'flightTimeSecondsForMil("mortar", "single", 150)'), 16.5);
-    assert.equal(callRuntime(ctx, 'flightTimeSecondsForMil("mortar", "single", 850)'), 22.4);
-    assert.ok(Math.abs(callRuntime(ctx, 'flightTimeSecondsForMil("mortar", "single", 525)') - 19.15) < 1e-9);
-    assert.equal(callRuntime(ctx, 'flightTimeSecondsForMil("mortar", "single", 120)'), 16.5);
-    assert.equal(callRuntime(ctx, 'flightTimeSecondsForMil("mortar", "single", 950)'), 22.4);
-    assert.equal(callRuntime(ctx, 'flightTimeSecondsForMil("mortar", "single", 600, -100)'), 20);
+    const at = (mil, dz) => callRuntime(ctx, `flightTimeSecondsForMil("mortar", "single", ${mil}${dz === undefined ? '' : `, ${dz}`})`);
+    const measured = [[150, 16.5], [450, 18.3], [600, 20], [750, 20.75], [850, 22.4]];
+
+    measured.forEach(([mil, seconds]) => {
+        assert.ok(Math.abs(at(mil) - seconds) < 0.4, `${mil}: ${at(mil)} vs ${seconds}`);
+    });
+
+    for (let mil = 120; mil < 950; mil += 10) {
+        assert.ok(at(mil + 10) > at(mil), `not rising at ${mil}`);
+    }
+
+    assert.ok(at(120) > 16 && at(950) < 24);
+    assert.equal(at(600, -100), at(600));
 });
 
 test('the SPH-2 derives its seconds from the drag model and they move with height', () => {

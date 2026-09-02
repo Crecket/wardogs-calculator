@@ -11,8 +11,12 @@
  * trajectory gives the time at which it descends through the target's
  * height, dz being target minus gun as in the terrain correction.
  *
- * The mortar's seconds are interpolated straight from the timings measured
- * at the firing range on 2026-09-02 (measuredFlightTimes in the same file),
+ * The mortar's seconds come from a least-squares quadratic through the
+ * timings measured at the firing range on 2026-09-02 (measuredFlightTimes
+ * in the same file). The timings are good to about ±0.4 s and their
+ * dial-to-dial slope alternates well outside that, so a curve smooth and
+ * monotone across the dial describes the weapon better than joining the
+ * five points; it sits within 0.39 s of every one of them,
  * because no physical model fits that weapon and its range table needs
  * none — see docs/firing-range-measurements.md. Those measurements were
  * taken without a known height difference, so dz does not move them.
@@ -49,7 +53,13 @@ function flightTimeMil(solution) {
         : null;
 }
 
-function measuredFlightTimeSeconds(fit, mil) {
+const FLIGHT_TIME_CURVES = new WeakMap();
+
+function flightTimeCurve(fit) {
+    if (FLIGHT_TIME_CURVES.has(fit)) {
+        return FLIGHT_TIME_CURVES.get(fit);
+    }
+
     const samples = Array.isArray(fit?.measuredFlightTimes)
         ? fit.measuredFlightTimes
             .map(pair => [Number(pair?.[0]), Number(pair?.[1])])
@@ -57,8 +67,67 @@ function measuredFlightTimeSeconds(fit, mil) {
             .sort((a, b) => a[0] - b[0])
         : [];
 
+    let curve = null;
+
+    if (samples.length >= 3) {
+        const moment = power => samples.reduce((sum, [mil]) => sum + Math.pow(mil, power), 0);
+        const weighted = power => samples.reduce((sum, [mil, seconds]) => sum + Math.pow(mil, power) * seconds, 0);
+        const matrix = [
+            [moment(0), moment(1), moment(2), weighted(0)],
+            [moment(1), moment(2), moment(3), weighted(1)],
+            [moment(2), moment(3), moment(4), weighted(2)]
+        ];
+
+        for (let col = 0; col < 3; col += 1) {
+            let pivot = col;
+
+            for (let row = col + 1; row < 3; row += 1) {
+                if (Math.abs(matrix[row][col]) > Math.abs(matrix[pivot][col])) {
+                    pivot = row;
+                }
+            }
+
+            [matrix[col], matrix[pivot]] = [matrix[pivot], matrix[col]];
+
+            if (Math.abs(matrix[col][col]) < 1e-12) {
+                curve = null;
+                break;
+            }
+
+            for (let row = 0; row < 3; row += 1) {
+                if (row === col) {
+                    continue;
+                }
+
+                const factor = matrix[row][col] / matrix[col][col];
+
+                for (let c = col; c < 4; c += 1) {
+                    matrix[row][c] -= factor * matrix[col][c];
+                }
+            }
+
+            if (col === 2) {
+                curve = [matrix[0][3] / matrix[0][0], matrix[1][3] / matrix[1][1], matrix[2][3] / matrix[2][2]];
+            }
+        }
+    }
+
+    const result = { samples, curve };
+
+    FLIGHT_TIME_CURVES.set(fit, result);
+
+    return result;
+}
+
+function measuredFlightTimeSeconds(fit, mil) {
+    const { samples, curve } = flightTimeCurve(fit);
+
     if (!samples.length) {
         return null;
+    }
+
+    if (curve) {
+        return curve[0] + curve[1] * mil + curve[2] * mil * mil;
     }
 
     if (mil <= samples[0][0]) {
