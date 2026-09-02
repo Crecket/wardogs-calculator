@@ -1,0 +1,22 @@
+{
+    "format": "wardogs-hillshade-v1",
+    "mapId": "ozeti",
+    "sampleSpacingMeters": 8,
+    "sunAzimuthDegrees": 315,
+    "sunAltitudeDegrees": 45,
+    "zFactor": 2.6151,
+    "gain": 1,
+    "reliefMeters": 382,
+    "boundsReliefMeters": 388,
+    "grid": {
+        "width": 1069,
+        "height": 972,
+        "originX": 57.58,
+        "originY": 99.56,
+        "stepX": 0.08,
+        "stepY": 0.08
+    },
+    "file": "hillshade.png",
+    "bytes": 957231,
+    "sha256": "fd81ae03b8d317f04d2dd2e4797e60a5df4ce258ae022d1add2dc8a906466bd9"
+}

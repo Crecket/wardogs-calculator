@@ -1,0 +1,19 @@
+{
+    "name": "wardogs-sync",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "wrangler dev --port 8799",
+        "deploy": "wrangler deploy",
+        "tail": "wrangler tail",
+        "test:smoke": "node test/smoke.mjs",
+        "test:browser": "node test/browser.mjs",
+        "test:disabled": "node test/disabled.mjs",
+        "test:guns": "node test/guns.mjs",
+        "test:cursors": "node test/cursors.mjs",
+        "test:obs": "node test/obs.mjs"
+    },
+    "devDependencies": {
+        "wrangler": "^4.0.0"
+    }
+}

@@ -29,9 +29,29 @@ wardogs-calculator/
 │   ├── sync-locales.mjs
 │   ├── zh-cn-seo.mjs
 │   ├── version-assets.mjs
-│   └── dev-server.mjs
-├── src/pages/
+│   ├── dev-server.mjs
+│   ├── install-terrain-release.ps1
+│   └── verify-terrain-release.ps1
+│
+├── src/
+│   └── pages/
+│       ├── index.html
+│       ├── locales/
+│       ├── mobile/
+│       │   └── index.html
+│       └── obs/
+│           └── overlay.html   # Readout markup for the OBS route
+│
 ├── styles/
+│
+├── sync/                     # Shared-session server (deployed separately)
+│   ├── src/
+│   │   ├── index.js          # Worker: room creation + WebSocket routing
+│   │   ├── room.js           # Durable Object: one per room
+│   │   └── ops.js            # Op validation
+│   ├── test/
+│   └── wrangler.jsonc
+│
 ├── package.json
 ├── style.css
 ├── mobile.css
@@ -43,7 +63,15 @@ wardogs-calculator/
 
 `dist/` is generated during the build process and is not committed to the repository.
 
-CSS source is split into focused modules under `styles/desktop/` and `styles/mobile/`. The root `style.css` and `mobile.css` files are development entry points; production receives bundled `dist/style.css` and `dist/mobile.css`.
+`sync/` is a self-contained Cloudflare Worker with its own `package.json` and
+deployment. It is not part of the site build and is never copied into `dist/`.
+The site only contacts it when `collab.url` is set in `config/app.json`; see
+[Shared Sessions](collaboration.md).
+
+CSS source is split into focused modules under `styles/desktop/` and `styles/mobile/`.
+The root `style.css`, `mobile.css` and `obs.css` files are development entry points
+that import those modules; production receives bundled `dist/style.css`,
+`dist/mobile.css` and `dist/obs.css`.
 
 The application intentionally uses no frontend framework. Runtime code is HTML5, modular CSS, Vanilla JavaScript, Canvas, Pointer Events, Fetch API, JSON and browser storage. Node.js is used only for build/development scripts.
 
@@ -92,7 +120,10 @@ Responsibilities:
    - copies shared assets, JS, locales, maps, config and data;
    - bundles desktop/mobile CSS;
    - creates the normal desktop routes;
-   - creates mobile locale routes from `locales/index.json`.
+   - creates mobile locale routes from `locales/index.json`;
+   - creates the `/obs/` overlay route from the desktop shell plus
+     `src/pages/obs/overlay.html`, see `scripts/lib/obs-page.mjs` and
+     [OBS overlay](features.md#obs-overlay).
 2. `sync-locales.mjs`
    - generates the official `/zh-cn/` desktop route from the canonical desktop shell;
    - synchronizes canonical, `hreflang`, Open Graph locale metadata and sitemap data from the locale registry;
@@ -107,6 +138,8 @@ The final artifact includes:
 ```text
 dist/
 ├── index.html
+├── obs/
+│   └── index.html
 ├── ru/
 ├── de/
 ├── zh-cn/

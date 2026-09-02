@@ -43,7 +43,8 @@
     -webkit-user-select: none;
 }
 
-.mobile-app .cursor-coords {
+.mobile-app .cursor-coords,
+.mobile-app .mil-cursor {
     display: none !important;
 }
 
@@ -86,12 +87,21 @@
 
 .mobile-solution-hud {
     position: absolute;
-    top: 42px;
-    left: 10px;
+    top: var(--mobile-tools-top);
+    left: var(--mobile-edge);
     z-index: 10;
 
-    /* Leave a dedicated lane for the mobile Map Tools toggle. */
-    width: min(292px, calc(100vw - 72px));
+    /* Leave a dedicated lane for the mobile Map Tools rail. */
+    width: min(
+        292px,
+        calc(
+            100vw -
+            var(--mobile-edge) -
+            var(--mobile-tools-rail-width) -
+            var(--mobile-edge) -
+            var(--mobile-edge)
+        )
+    );
     padding: 5px;
 
     border: 1px solid var(--border-light);
@@ -210,6 +220,86 @@
     line-height: 1.05;
 }
 
+/* Flight time. Same badge row as desktop, sized for the HUD. */
+.mobile-solution-flight {
+    margin-top: 5px;
+}
+
+.mobile-solution-flight-label {
+    display: block;
+    margin-bottom: 3px;
+
+    color: var(--muted);
+    font-size: 7px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.mobile-solution-flight-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.mobile-solution-flight .flight-badge {
+    padding: 4px 7px;
+    gap: 5px;
+}
+
+.mobile-solution-flight .flight-badge-arc {
+    font-size: 8px;
+}
+
+.mobile-solution-flight .flight-badge-value {
+    font-size: 12px;
+}
+
+/*
+ * Terrain elevation note. Same role as .solution-terrain-note on desktop:
+ * it qualifies the MIL above it, so it wraps rather than truncating.
+ */
+.mobile-terrain-note {
+    margin-top: 4px;
+    padding: 4px 6px;
+
+    border-left: 3px solid var(--muted);
+    border-radius: 4px;
+    background:
+        color-mix(
+            in srgb,
+            var(--input-bg) 46%,
+            transparent
+        );
+
+    color: var(--text);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.mobile-terrain-note[hidden] {
+    display: none;
+}
+
+.mobile-terrain-note[data-warn]::before {
+    content: "\26A0";
+    margin-right: 4px;
+    color: #f0b24a;
+    font-size: 10px;
+}
+
+.mobile-terrain-note[data-state="mixed"] {
+    border-left-color: #f0b24a;
+    background: color-mix(in srgb, #f0b24a 15%, transparent);
+}
+
+.mobile-terrain-note[data-state="loading"] {
+    color: var(--muted);
+    font-weight: 500;
+}
+
 .mobile-range-status {
     margin-top: 4px;
     padding: 4px 2px 0;
@@ -229,9 +319,13 @@
 
 .mobile-app .mobile-mode-switch {
     position: absolute;
-    right: 10px;
-    bottom: calc(var(--mobile-sheet-peek) + env(safe-area-inset-bottom) + 10px);
-    left: 10px;
+    right: var(--mobile-edge);
+    bottom: calc(
+        var(--mobile-sheet-peek) +
+        env(safe-area-inset-bottom) +
+        var(--mobile-edge)
+    );
+    left: var(--mobile-edge);
     z-index: 18;
 
     grid-template-columns: 1fr 1fr;

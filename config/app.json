@@ -3,8 +3,10 @@
     "shortcuts": {
       "ruler": "r",
       "pencil": "p",
+      "shapes": "g",
       "eraser": "e",
       "marker": "m",
+      "targeting": "t",
       "coordinateSearch": "f",
       "layers": "l",
       "clearTool": "escape",
@@ -12,6 +14,9 @@
       "redo": "ctrl+y",
       "redoAlt": "ctrl+shift+z"
     }
+  },
+  "collab": {
+    "url": null
   },
   "site": {
     "lastModified": "2026-08-30",
@@ -28,6 +33,16 @@
     "camera": {
       "maxZoom": 100,
       "panSpeed": 800
+    },
+    "rings": {
+      "fob": {
+        "halfSide": 60,
+        "color": "#5fa8d3"
+      },
+      "mainZone": {
+        "radius": 500,
+        "color": "#82c596"
+      }
     }
   }
 }

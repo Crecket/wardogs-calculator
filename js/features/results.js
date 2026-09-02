@@ -17,10 +17,55 @@ function formatMilSolution(solution) {
     return `${Math.round(solution.mil ?? minMil)}`;
 }
 
+function fillModelledSolutions(weapon, distanceMeters, solutions, shot) {
+    if (!shot || shot.state !== 'ready') {
+        return solutions;
+    }
+
+    const filled = { ...solutions };
+    let changed = false;
+
+    for (const arc of ['single', 'low', 'high']) {
+        const assessed = shot.arcs[arc];
+
+        if (
+            filled[arc] ||
+            !assessed ||
+            assessed.status !== 'hit' ||
+            assessed.masked ||
+            assessed.tableRow ||
+            assessed.mil === null
+        ) {
+            continue;
+        }
+
+        filled[arc] = {
+            mil: assessed.mil,
+            minMil: assessed.mil,
+            maxMil: assessed.mil,
+            tan: assessed.tan,
+            modelled: true
+        };
+
+        changed = true;
+    }
+
+    return changed ? filled : solutions;
+}
+
+function formatMilValue(solution) {
+    const text = formatMilSolution(solution);
+
+    return solution?.modelled || solution?.extrapolated ? `≈ ${text}` : text;
+}
+
 function resolveElevationSolutions(
     weapon,
     distanceMeters,
-    solutions
+    solutions,
+    origin,
+    target,
+    prime
 ) {
     if (
         typeof getTerrainBallisticSolutions !==
@@ -39,8 +84,9 @@ function resolveElevationSolutions(
                 distanceMeters,
                 solutions,
                 mapId: S.map,
-                origin: S.origin,
-                target: S.target
+                origin,
+                target,
+                prime
             });
 
         return {
@@ -64,15 +110,358 @@ function resolveElevationSolutions(
     }
 }
 
-function formatTerrainBallisticDetail(meta) {
+function firingGeometry(origin, target) {
+    const dx =
+        target.x -
+        origin.x;
+
+    const dy =
+        target.y -
+        origin.y;
+
+    const dWorld =
+        Math.hypot(
+            dx,
+            dy
+        );
+
+    const dMeters =
+        worldDistanceToMeters(dWorld);
+
+    let bearing =
+        Math.atan2(
+            dx,
+            dy
+        ) *
+        180 /
+        Math.PI;
+
     if (
-        typeof formatTerrainBallisticsStatus !==
-        'function'
+        bearing <
+        0
     ) {
+        bearing +=
+            360;
+    }
+
+    return {
+        dx,
+        dy,
+        dWorld,
+        dMeters,
+        bearing
+    };
+}
+
+function solveFiringElevation(
+    weapon,
+    distanceMeters,
+    origin,
+    target,
+    prime
+) {
+    const flatSolutions = getWeaponElevationSolutions(weapon, distanceMeters);
+
+    const resolved = resolveElevationSolutions(
+        weapon,
+        distanceMeters,
+        flatSolutions,
+        origin,
+        target,
+        prime
+    );
+
+    const shot =
+        typeof assessShot === 'function'
+            ? assessShot(weapon, origin, target, S.map)
+            : null;
+
+    const solutions = fillModelledSolutions(
+        weapon,
+        distanceMeters,
+        resolved.solutions,
+        shot
+    );
+
+    return {
+        solutions,
+        terrainMeta: resolved.terrainMeta,
+        shot,
+        solved: Boolean(solutions.single || solutions.low || solutions.high),
+        modelled: Boolean(
+            solutions.single?.modelled ||
+            solutions.low?.modelled ||
+            solutions.high?.modelled
+        )
+    };
+}
+
+function correctionNoteFragment(meta) {
+    if (!meta || meta.pendingTerrain) {
         return '';
     }
 
-    return formatTerrainBallisticsStatus(meta);
+    if (meta.envelopeClamped) {
+        return tr('noteElevationLimit');
+    }
+
+    const unwarned =
+        (Array.isArray(meta.arcsWithheld) ? meta.arcsWithheld.length : 0) +
+        (Array.isArray(meta.arcsUnavailable) ? meta.arcsUnavailable.length : 0);
+
+    if (unwarned) {
+        return tr('noteUncorrected');
+    }
+
+    return '';
+}
+
+function terrainNoteGroups(shot) {
+    const names = {
+        low: tr('lowArc'),
+        high: tr('highArc'),
+        single: tr('noteArc')
+    };
+
+    const groups = { masked: [], tooClose: [], tooFar: [] };
+    let total = 0;
+
+    for (const arc of ['single', 'low', 'high']) {
+        const assessed = shot.arcs[arc];
+
+        if (!assessed || assessed.status === 'noModel') {
+            continue;
+        }
+
+        total += 1;
+
+        if (assessed.status === 'hit' && assessed.masked) {
+            groups.masked.push(names[arc]);
+        } else if (assessed.status === 'tooClose') {
+            groups.tooClose.push(names[arc]);
+        } else if (
+            assessed.status === 'tooFar' ||
+            assessed.status === 'belowMinElevation' ||
+            assessed.status === 'aboveMaxElevation'
+        ) {
+            groups.tooFar.push(names[arc]);
+        }
+    }
+
+    return { groups, total };
+}
+
+function terrainNoteWarns(shot) {
+    if (shot?.state !== 'ready' || !shot.arcs) {
+        return false;
+    }
+
+    const { groups } = terrainNoteGroups(shot);
+
+    return Boolean(
+        groups.masked.length ||
+        groups.tooClose.length ||
+        groups.tooFar.length
+    );
+}
+
+function terrainNoteText(shot, meta) {
+    if (!shot || shot.state === 'nodata') {
+        return '';
+    }
+
+    if (shot.state === 'pending') {
+        return tr('crossSectionLoadingTerrain');
+    }
+
+    if (shot.state === 'offmap') {
+        return tr('noteOffMap');
+    }
+
+    const { groups, total } = terrainNoteGroups(shot);
+
+    const keys = { masked: 'noteMasked', tooClose: 'noteTooClose', tooFar: 'noteTooFar' };
+    const clauses = [];
+
+    for (const group of ['masked', 'tooClose', 'tooFar']) {
+        if (!groups[group].length) {
+            continue;
+        }
+
+        const arcs = groups[group].length >= total
+            ? tr('noteAllArcs')
+            : groups[group].join(' + ');
+
+        clauses.push(tr(keys[group]).replace('{arcs}', arcs));
+    }
+
+    const correction = correctionNoteFragment(meta);
+
+    if (correction) {
+        clauses.push(correction);
+    }
+
+    if (!clauses.length) {
+        return '';
+    }
+
+    const dz = `${shot.deltaZ >= 0 ? '+' : ''}${shot.deltaZ.toFixed(1)}`;
+
+    return [tr('noteDeltaZ').replace('{dz}', dz), ...clauses].join(' · ');
+}
+
+function rangeStatusView(elevation) {
+    if (elevation.shot?.state === 'pending') {
+        return { text: tr('reachPending'), color: '#9aa4ae' };
+    }
+
+    const verdict = elevation.shot?.state === 'ready'
+        ? elevation.shot.verdict
+        : null;
+
+    if (verdict === 'masked') {
+        return { text: tr('reachMasked'), color: '#f0b24a' };
+    }
+
+    if (verdict === 'tooClose') {
+        return { text: tr('reachTooClose'), color: '#d86666' };
+    }
+
+    if (verdict === 'tooFar' || verdict === 'unreachable') {
+        return { text: tr('outRange'), color: '#d86666' };
+    }
+
+    if (!elevation.solved) {
+        return { text: tr('outRange'), color: '#d86666' };
+    }
+
+    return elevation.modelled
+        ? { text: tr('inRangeModelled'), color: '#f0b24a' }
+        : { text: tr('inRange'), color: '#82c596' };
+}
+
+function terrainNoteState(shot, meta) {
+    if (shot?.state === 'pending') {
+        return 'loading';
+    }
+
+    return meta?.applied ? 'mixed' : 'uncorrected';
+}
+
+function renderTerrainNote(shot, meta, text) {
+    const note = $('terrainNote');
+
+    if (!note) {
+        return;
+    }
+
+    setText(note, text);
+
+    if (note.hidden !== !text) {
+        note.hidden = !text;
+    }
+
+    if (text) {
+        note.dataset.state = terrainNoteState(shot, meta);
+    }
+
+    if (text && terrainNoteWarns(shot)) {
+        note.dataset.warn = 'true';
+    } else {
+        delete note.dataset.warn;
+    }
+}
+
+function flightBadgeNode(host, index) {
+    const existing = host.children[index];
+
+    if (existing) {
+        return existing;
+    }
+
+    const pill = document.createElement('span');
+    pill.className = 'flight-badge';
+
+    const label = document.createElement('span');
+    label.className = 'flight-badge-arc';
+    pill.appendChild(label);
+
+    const value = document.createElement('strong');
+    value.className = 'flight-badge-value';
+    pill.appendChild(value);
+
+    host.appendChild(pill);
+
+    return pill;
+}
+
+/*
+ * One badge per arc, below the metric grid rather than inside the MIL card:
+ * at the sub-line's 8 px the seconds were unreadable, and this is a value in
+ * its own right rather than a footnote to the MIL.
+ *
+ * Built with the DOM rather than innerHTML — the arc labels are translated
+ * strings and the numbers are computed. The row re-runs on every pointer
+ * move, so the pills are reused and only their text is rewritten.
+ */
+function renderFlightTime(weapon, solutions, shot) {
+    const row = $('flightTimes');
+    const host = $('flightTimeBadges');
+
+    if (!row || !host) {
+        return;
+    }
+
+    const badges =
+        typeof flightTimeBadges === 'function' &&
+        shot?.state !== 'pending'
+            ? flightTimeBadges(
+                weapon,
+                solutions,
+                shot?.state === 'ready' && Number.isFinite(shot.deltaZ)
+                    ? shot.deltaZ
+                    : 0
+            )
+            : [];
+
+    if (row.hidden !== !badges.length) {
+        row.hidden = !badges.length;
+    }
+
+    const heading = row.querySelector('.solution-flight-label');
+
+    if (heading) {
+        setText(
+            heading,
+            badges.length > 1
+                ? tr('flightTimePerArc')
+                : tr('flightTime')
+        );
+    }
+
+    const arcs = String(badges.length);
+
+    if (host.dataset.arcs !== arcs) {
+        host.dataset.arcs = arcs;
+    }
+
+    while (host.children.length > badges.length) {
+        host.lastElementChild.remove();
+    }
+
+    badges.forEach((badge, index) => {
+        const pill = flightBadgeNode(host, index);
+        const label = pill.firstElementChild;
+        const value = pill.lastElementChild;
+
+        setText(label, badge.labelKey ? tr(badge.labelKey) : '');
+
+        if (label.hidden !== !badge.labelKey) {
+            label.hidden = !badge.labelKey;
+        }
+
+        setText(value, formatFlightTime(badge.seconds));
+    });
 }
 
 function renderElevationResult(weapon, distanceMeters) {
@@ -80,27 +469,26 @@ function renderElevationResult(weapon, distanceMeters) {
     const detail = $('milAlt');
 
     if (!value) {
-        return;
+        return {
+            solved: false,
+            modelled: false
+        };
     }
 
-    const flatSolutions =
-        getWeaponElevationSolutions(
-            weapon,
-            distanceMeters
-        );
-
     const resolved =
-        resolveElevationSolutions(
+        solveFiringElevation(
             weapon,
             distanceMeters,
-            flatSolutions
+            S.origin,
+            S.target
         );
 
     const solutions =
         resolved.solutions;
 
     const terrainDetail =
-        formatTerrainBallisticDetail(
+        terrainNoteText(
+            resolved.shot,
             resolved.terrainMeta
         );
 
@@ -108,26 +496,51 @@ function renderElevationResult(weapon, distanceMeters) {
     let secondary = '';
 
     if (solutions.single) {
-        primary = formatMilSolution(solutions.single);
+        primary = formatMilValue(solutions.single);
     } else if (solutions.low && solutions.high) {
         primary =
-            `${formatMilSolution(solutions.low)} / ` +
-            `${formatMilSolution(solutions.high)}`;
+            `${formatMilValue(solutions.low)} / ` +
+            `${formatMilValue(solutions.high)}`;
         secondary = `${tr('lowArc')} / ${tr('highArc')}`;
     } else if (solutions.low) {
-        primary = formatMilSolution(solutions.low);
+        primary = formatMilValue(solutions.low);
         secondary = tr('lowArc');
     } else if (solutions.high) {
-        primary = formatMilSolution(solutions.high);
+        primary = formatMilValue(solutions.high);
         secondary = tr('highArc');
-    } else if (solutions.inRange) {
-        secondary = tr('noFiringSolution');
     }
 
-    if (terrainDetail) {
+    const solved =
+        resolved.solved;
+
+    const modelled =
+        resolved.modelled;
+
+    if (!solved) {
+        secondary = tr('noFiringSolution');
+    } else if (modelled) {
         secondary = secondary
-            ? `${secondary} · ${terrainDetail}`
-            : terrainDetail;
+            ? `${secondary} · ${tr('milModelled')}`
+            : tr('milModelled');
+    }
+
+    renderTerrainNote(
+        resolved.shot,
+        resolved.terrainMeta,
+        terrainDetail
+    );
+
+    renderFlightTime(
+        weapon,
+        solutions,
+        resolved.shot
+    );
+
+    if (typeof renderCrossSection === 'function') {
+        renderCrossSection(
+            weapon,
+            distanceMeters
+        );
     }
 
     setText(
@@ -143,7 +556,19 @@ function renderElevationResult(weapon, distanceMeters) {
         if (detail.hidden !== !secondary) {
             detail.hidden = !secondary;
         }
+
+        if (modelled) {
+            detail.dataset.modelled = 'true';
+        } else {
+            delete detail.dataset.modelled;
+        }
     }
+
+    return {
+        solved,
+        modelled,
+        shot: resolved.shot
+    };
 }
 
 function result() {
@@ -154,41 +579,26 @@ function result() {
         return;
     }
 
-    const dx =
-        S.target.x -
-        S.origin.x;
-
-    const dy =
-        S.target.y -
-        S.origin.y;
-
-    const dWorld =
-        Math.hypot(
-            dx,
-            dy
+    const geometry =
+        firingGeometry(
+            S.origin,
+            S.target
         );
 
+    const dx =
+        geometry.dx;
+
+    const dy =
+        geometry.dy;
+
     const dMeters =
-        worldDistanceToMeters(dWorld);
+        geometry.dMeters;
 
     const d =
         dMeters / 1000;
 
-    let a =
-        Math.atan2(
-            dx,
-            dy
-        ) *
-        180 /
-        Math.PI;
-
-    if (
-        a <
-        0
-    ) {
-        a +=
-            360;
-    }
+    const a =
+        geometry.bearing;
 
     setText(
         $('angle'),
@@ -247,10 +657,11 @@ function result() {
         ' m'
     );
 
-    renderElevationResult(
-        weapon,
-        dMeters
-    );
+    const elevation =
+        renderElevationResult(
+            weapon,
+            dMeters
+        );
 
     if (
         typeof syncSphLevelWarning ===
@@ -267,10 +678,6 @@ function result() {
         weapon.maxRange ??
         weapon.range;
 
-    const inRange =
-        d + 1e-9 >= minRange &&
-        d <= maxRange + 1e-9;
-
     setText(
         $('range'),
         minRange > 0
@@ -278,20 +685,10 @@ function result() {
             : `${Math.round(maxRange * 1000)} m`
     );
 
-    setText(
-        $('rangeStatus'),
-        inRange
-            ? tr('inRange')
-            : tr('outRange')
-    );
+    const statusView = rangeStatusView(elevation);
 
-    setStyle(
-        $('rangeStatus'),
-        'color',
-        inRange
-            ? '#82c596'
-            : '#d86666'
-    );
+    setText($('rangeStatus'), statusView.text);
+    setStyle($('rangeStatus'), 'color', statusView.color);
 
     const mapName =
         S.map ===
@@ -317,15 +714,11 @@ function result() {
         'function'
     ) {
         trackCalculationState(
-            inRange
+            elevation.solved
         );
     }
 }
 
-
-/* =========================
-   SAVED TARGET FIRING INFO
-   ========================= */
 
 let savedTargetSummaryRefreshTimer = null;
 let savedTargetSummaryState = '';
@@ -362,47 +755,16 @@ function getSavedTargetElevationSummary(
     origin,
     targetPoint
 ) {
-    const flatSolutions =
-        getWeaponElevationSolutions(
+    const firing =
+        solveFiringElevation(
             weapon,
-            distanceMeters
+            distanceMeters,
+            origin,
+            targetPoint
         );
 
-    let solutions =
-        flatSolutions;
-
-    if (
-        typeof getTerrainBallisticSolutions ===
-        'function'
-    ) {
-        try {
-            const resolved =
-                getTerrainBallisticSolutions({
-                    weapon,
-                    distanceMeters,
-                    solutions:
-                        flatSolutions,
-                    mapId:
-                        S.map,
-                    origin,
-                    target:
-                        targetPoint
-                });
-
-            solutions =
-                resolved?.solutions ??
-                flatSolutions;
-        } catch (error) {
-            /*
-             * Saved-target cards are a convenience view.
-             * A terrain resolver failure must never make
-             * the target list unusable; flat-table values
-             * remain the fallback just like the main result.
-             */
-            solutions =
-                flatSolutions;
-        }
-    }
+    const extended =
+        firing.solutions;
 
     let primary =
         '—';
@@ -410,57 +772,62 @@ function getSavedTargetElevationSummary(
     let secondary =
         '';
 
-    if (solutions.single) {
+    if (extended.single) {
         primary =
-            formatMilSolution(
-                solutions.single
+            formatMilValue(
+                extended.single
             );
 
     } else if (
-        solutions.low &&
-        solutions.high
+        extended.low &&
+        extended.high
     ) {
         primary =
-            `${formatMilSolution(solutions.low)} / ` +
-            `${formatMilSolution(solutions.high)}`;
+            `${formatMilValue(extended.low)} / ` +
+            `${formatMilValue(extended.high)}`;
 
         secondary =
             `${tr('lowArc')} / ${tr('highArc')}`;
 
-    } else if (solutions.low) {
+    } else if (extended.low) {
         primary =
-            formatMilSolution(
-                solutions.low
+            formatMilValue(
+                extended.low
             );
 
         secondary =
             tr('lowArc');
 
-    } else if (solutions.high) {
+    } else if (extended.high) {
         primary =
-            formatMilSolution(
-                solutions.high
+            formatMilValue(
+                extended.high
             );
 
         secondary =
             tr('highArc');
+    }
 
-    } else if (solutions.inRange) {
-        secondary =
-            tr('noFiringSolution');
+    const solved =
+        firing.solved;
 
-    } else {
+    const modelled =
+        firing.modelled;
+
+    if (!solved) {
         secondary =
             tr('outRange');
+    } else if (modelled) {
+        secondary =
+            secondary
+                ? `${secondary} · ${tr('milModelled')}`
+                : tr('milModelled');
     }
 
     return {
         primary,
         secondary,
-        inRange:
-            Boolean(
-                solutions.inRange
-            )
+        inRange: solved
     };
 }
 
@@ -648,7 +1015,7 @@ function renderSavedTargetFiringInfo(
         )
         ?.remove();
 
-    info
+    item
         .querySelector(
             '.saved-target-solution'
         )
@@ -699,8 +1066,7 @@ function renderSavedTargetFiringInfo(
     const distanceMetric =
         createSavedTargetMetric(
             tr('distance'),
-            `${Math.round(firingInfo.distanceMeters)} m`,
-            `${firingInfo.distanceKm.toFixed(2)} km`
+            `${Math.round(firingInfo.distanceMeters)} m`
         );
 
     const azimuthMetric =
@@ -737,7 +1103,10 @@ function renderSavedTargetFiringInfo(
     );
 
     info.append(
-        originCoords,
+        originCoords
+    );
+
+    item.append(
         solution
     );
 

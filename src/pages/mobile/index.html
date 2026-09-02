@@ -56,6 +56,11 @@
                         <small aria-hidden="true">&nbsp;</small>
                     </div>
                 </div>
+                <div class="mobile-solution-flight" id="flightTimes" hidden>
+                    <span class="mobile-solution-flight-label" data-i18n="flightTime">Time of flight</span>
+                    <div class="mobile-solution-flight-badges" id="flightTimeBadges"></div>
+                </div>
+                <div class="mobile-terrain-note" id="terrainNote" hidden></div>
                 <div class="mobile-range-status" id="rangeStatus">In range</div>
             </div>
 
@@ -69,8 +74,14 @@
                 <span class="cursor-x">x0.00</span>
             </div>
 
+            <div class="mil-cursor" id="milCursor">
+                <div class="mil-cursor-range"></div>
+                <div class="mil-cursor-arcs"></div>
+            </div>
+
             <div class="map-tools" id="mapTools">
                 <div class="map-tool-popover map-tool-palette" id="pencilPalette"></div>
+<div class="map-tool-popover map-tool-shape-palette" id="shapePalette"></div>
                 <div class="map-tool-popover map-tool-marker-picker" id="markerPicker"></div>
                 <div class="map-tool-popover map-tool-coordinate-search" id="coordinateSearchPopover">
                     <div class="map-tool-popover-title" id="coordinateSearchTitle">Coordinate search</div>
@@ -83,15 +94,23 @@
                 </div>
                 <div class="map-tool-popover map-tool-layers" id="mapLayersPopover"></div>
 <div class="map-tool-popover map-tool-data-transfer" id="mapDataTransferPopover"></div>
+<div class="map-tool-popover map-tool-collab" id="collabPopover"></div>
                 <button aria-controls="mapToolsBar" aria-expanded="false" aria-label="Map tools" class="mobile-map-tools-toggle" id="mobileMapToolsToggle" title="Map tools" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 12h2"/><path d="M10 12h10"/><circle cx="8" cy="12" r="2"/><path d="M4 17h8"/><path d="M16 17h4"/><circle cx="14" cy="17" r="2"/></svg>
 </button>
 <div class="map-tools-bar" id="mapToolsBar">
+                    <button aria-label="Targeting mode" class="map-tool-button map-tool-primary" data-tool="targeting" id="mapToolTargeting" title="Targeting mode" type="button">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="5.5"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3"/><path d="M18 15.5v5M15.5 18h5"/></svg>
+                    </button>
+                    <span aria-hidden="true" class="map-tools-divider"></span>
                     <button aria-label="Ruler" class="map-tool-button" data-tool="ruler" id="mapToolRuler" title="Ruler" type="button">
                         <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5 17.5 4 20 6.5 6.5 20 4 17.5Z"/><path d="m13 8.5 2.5 2.5"/><path d="m10 11.5 1.8 1.8"/><path d="m7 14.5 2.5 2.5"/></svg>
                     </button>
                     <button aria-label="Pencil" class="map-tool-button" data-tool="pencil" id="mapToolPencil" title="Pencil" type="button">
                         <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4.2-1 10.6-10.6-3.2-3.2L5 15.8 4 20Z"/><path d="m14.8 6 3.2 3.2"/></svg>
+                    </button>
+                    <button aria-label="Shapes" class="map-tool-button" data-tool="shapes" id="mapToolShapes" title="Shapes" type="button">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="10.5" width="10" height="10" rx="1"/><circle cx="16" cy="7.5" r="4.5"/></svg>
                     </button>
                     <button aria-label="Eraser" class="map-tool-button" data-tool="eraser" id="mapToolEraser" title="Eraser" type="button">
                         <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 14.5 8-8a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L10 19H6.5L4.5 17a1.8 1.8 0 0 1 0-2.5Z"/><path d="m9.5 9.5 5 5"/><path d="M10 19h9"/></svg>
@@ -107,6 +126,9 @@
                     </button>
 <button aria-label="Import / Export" class="map-tool-button" data-tool="dataTransfer" id="mapToolDataTransfer" title="Import / Export" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v10"/><path d="m4 11 3 3 3-3"/><path d="M17 20V10"/><path d="m14 13 3-3 3 3"/></svg>
+</button>
+<button aria-label="Shared session" class="map-tool-button" data-tool="collab" hidden id="mapToolCollab" title="Shared session" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4"/><path d="m8.2 13.2 7.6 4.4"/></svg>
 </button>
                 </div>
             </div>
@@ -126,6 +148,18 @@
 
         <div class="mobile-sheet-content">
             <section class="mobile-panel active" data-mobile-panel="solution">
+                <!-- GUNS -->
+                <div class="mobile-card guns-panel">
+                    <div class="guns-header">
+                        <h2 data-i18n="gunsPanel">Guns</h2>
+                        <span class="saved-targets-count" id="gunsCount">1</span>
+                    </div>
+                    <div class="saved-targets-list" id="gunsList"></div>
+                    <div class="saved-target-actions">
+                        <button class="save-target-button" data-i18n="addGun" id="addGun" type="button">Add gun</button>
+                    </div>
+                </div>
+
                 <div class="mobile-card">
                     <h2 data-i18n="weapon">Weapon</h2>
                     <label data-i18n="weaponType" for="weapon">Weapon type</label>
@@ -226,7 +260,7 @@
                     <div class="saved-target-options">
                         <label class="save-artillery-option">
                             <input id="saveArtilleryPosition" type="checkbox"/>
-                            <span data-i18n="saveArtilleryPosition">Save artillery position</span>
+                            <span data-i18n="saveArtilleryPosition">New targets move the artillery too</span>
                         </label>
                     </div>
                     <div class="saved-target-actions">
@@ -246,6 +280,7 @@
 <footer id="siteFooter"></footer>
 
 <script src="js/core/core.js"></script>
+<script src="js/features/guns.js"></script>
 <script src="js/core/resources.js"></script>
 <script src="js/core/config.js"></script>
 <script src="js/core/analytics.js"></script>
@@ -255,20 +290,34 @@
 <script src="js/ui/footer.js"></script>
 <script src="js/ui/layout.js"></script>
 <script src="js/features/saved-targets.js"></script>
+<script src="js/features/collab.js"></script>
 <script src="js/features/motd.js"></script>
 <script src="js/features/weapons.js"></script>
 <script src="js/map/assets.js"></script>
 <script src="js/map/maps.js"></script>
 <script src="js/map/map-view.js"></script>
+<script src="js/map/image-decode.js"></script>
 <script src="js/map/tiles.js"></script>
+<script src="js/map/heightfield.js"></script>
 <script src="js/map/contours.js"></script>
+<script src="js/map/hillshade.js"></script>
 <script src="js/map/overlays.js"></script>
+<script src="js/map/guns-overlay.js"></script>
+<script src="js/ballistics/model.js"></script>
+<script src="js/ballistics/reachability.js"></script>
+<script src="js/map/range-ring.js"></script>
+<script src="js/map/dead-ground.js"></script>
 <script src="js/map/map-tools.js"></script>
+<script src="js/map/map-shapes.js"></script>
 <script src="js/map/grid.js"></script>
+<script src="js/map/collab-cursors.js"></script>
+<script src="js/map/collab-flash.js"></script>
 <script src="js/map/renderer.js"></script>
 <script src="js/features/coordinates.js"></script>
 <script src="js/features/point-locks.js"></script>
+<script src="js/features/flight-time.js"></script>
 <script src="js/features/results.js"></script>
+<script src="js/features/reach-badges.js"></script>
 <script src="js/ui/inputs.js"></script>
 <script src="js/ui/cursor.js"></script>
 <script src="js/events.js"></script>

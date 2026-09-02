@@ -222,7 +222,7 @@
         if (!isSimplifiedChinese()) return;
 
         const warning =
-            document.getElementById('sphLevelWarning');
+            $('sphLevelWarning');
 
         if (!warning) return;
 
@@ -252,55 +252,22 @@
 
     function installTerrainChineseOverrides() {
         if (
-            typeof window.formatTerrainBallisticsStatus !== 'function' ||
-            window.formatTerrainBallisticsStatus.__zhCnWrapped
+            typeof window.syncSphLevelWarning !== 'function' ||
+            window.syncSphLevelWarning.__zhCnWrapped
         ) {
             return;
         }
 
-        const originalFormat =
-            window.formatTerrainBallisticsStatus;
+        const originalSync =
+            window.syncSphLevelWarning;
 
-        const localizedFormat = function formatLocalizedTerrainStatus(meta) {
-            if (!isSimplifiedChinese()) {
-                return originalFormat(meta);
-            }
-
-            if (!meta?.available) return '';
-
-            if (meta.pendingTerrain) {
-                return zhText(
-                    'terrainLoading',
-                    '正在加载地形高程'
-                );
-            }
-
-            if (!Number.isFinite(meta.deltaZ)) {
-                return '';
-            }
-
-            const dz =
-                `${meta.deltaZ >= 0 ? '+' : ''}${meta.deltaZ.toFixed(1)}`;
-
-            return zhText(
-                'terrainStatus',
-                'ΔZ {dz} m · MIL 未自动修正'
-            ).replace('{dz}', dz);
+        window.syncSphLevelWarning = function syncLocalizedSphWarning() {
+            const result = originalSync();
+            patchSphWarningChinese();
+            return result;
         };
 
-        localizedFormat.__zhCnWrapped = true;
-        window.formatTerrainBallisticsStatus = localizedFormat;
-
-        if (typeof window.syncSphLevelWarning === 'function') {
-            const originalSync =
-                window.syncSphLevelWarning;
-
-            window.syncSphLevelWarning = function syncLocalizedSphWarning() {
-                const result = originalSync();
-                patchSphWarningChinese();
-                return result;
-            };
-        }
+        window.syncSphLevelWarning.__zhCnWrapped = true;
 
         patchSphWarningChinese();
     }

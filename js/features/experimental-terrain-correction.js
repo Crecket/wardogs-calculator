@@ -25,7 +25,6 @@
         },
         loadPromise: null,
         baseResolver: null,
-        baseFormatter: null,
         lastDisplayMeta: null,
         lastError: null,
         rerenderQueued: false
@@ -1920,7 +1919,7 @@
 
         const deltaZ =
             Number(
-                resolved?.meta?.deltaZ
+                resolved?.meta?.correctionDeltaZ
             );
 
         if (
@@ -2296,7 +2295,7 @@
                     state.available &&
                     isSupportedWeapon &&
                     finite(
-                        baseMeta?.deltaZ
+                        baseMeta?.correctionDeltaZ
                     );
 
                 if (
@@ -2375,98 +2374,6 @@
                         }
                     }
                 };
-            };
-    }
-
-    function installFormatter() {
-        if (
-            typeof window
-                .formatTerrainBallisticsStatus !==
-            'function'
-        ) {
-            return;
-        }
-
-        if (
-            state.baseFormatter
-        ) {
-            return;
-        }
-
-        state.baseFormatter =
-            window
-                .formatTerrainBallisticsStatus;
-
-        window
-            .formatTerrainBallisticsStatus =
-            function experimentalTerrainStatus(
-                meta
-            ) {
-                state.lastDisplayMeta =
-                    meta || null;
-
-                syncPanel();
-
-                const experimental =
-                    meta
-                        ?.experimentalTerrainCorrection;
-
-                if (
-                    !experimental ||
-                    !experimental.available
-                ) {
-                    return (
-                        state.baseFormatter(
-                            meta
-                        )
-                    );
-                }
-
-                if (
-                    meta?.pendingTerrain
-                ) {
-                    return (
-                        state.baseFormatter(
-                            meta
-                        )
-                    );
-                }
-
-                const deltaZ =
-                    finite(meta?.deltaZ)
-                        ? (
-                            `${Number(meta.deltaZ) >= 0 ? '+' : ''}` +
-                            `${Number(meta.deltaZ).toFixed(1)}`
-                        )
-                        : null;
-
-                let status =
-                    text().statusOff;
-
-                if (
-                    experimental.loading
-                ) {
-                    status =
-                        text()
-                            .candidateLoading;
-                } else if (
-                    state.enabled &&
-                    experimental.applied
-                ) {
-                    status =
-                        text()
-                            .statusOn;
-                } else if (
-                    state.enabled
-                ) {
-                    status =
-                        text()
-                            .statusFallback;
-                }
-
-                return deltaZ === null
-                    ? status
-                    : `ΔZ ${deltaZ} m · ${status}`;
             };
     }
 
@@ -2601,12 +2508,10 @@
             }
 
             .experimental-terrain-value small {
-                overflow: hidden;
                 color: var(--muted, #9aa4ab);
                 font-size: 8px;
-                line-height: 1.15;
-                text-overflow: ellipsis;
-                white-space: nowrap;
+                line-height: 1.3;
+                overflow-wrap: anywhere;
             }
 
             .experimental-terrain-value.is-safe strong {
@@ -2636,7 +2541,7 @@
 
     function ensurePanel() {
         let root =
-            document.getElementById(
+            $(
                 'experimentalTerrainCorrection'
             );
 
@@ -2645,10 +2550,10 @@
         }
 
         const resultCard =
-            document.querySelector(
+            $q(
                 '.solution-result'
             ) ||
-            document.querySelector(
+            $q(
                 '.mobile-result-details'
             );
 
@@ -2672,7 +2577,6 @@
         root.innerHTML = `
             <div class="experimental-terrain-correction-header">
                 <div class="experimental-terrain-correction-title"></div>
-                <span class="experimental-terrain-correction-badge">EXPERIMENTAL</span>
             </div>
             <label class="experimental-terrain-correction-toggle">
                 <input id="experimentalTerrainCorrectionToggle" type="checkbox">
@@ -2684,7 +2588,7 @@
         `;
 
         const warning =
-            document.getElementById(
+            $(
                 'sphLevelWarning'
             );
 
@@ -3055,7 +2959,6 @@
                 readStoredEnabled();
 
             wrapResolver();
-            installFormatter();
             ensurePanel();
             syncPanel();
 

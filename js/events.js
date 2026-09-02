@@ -102,6 +102,24 @@ function bindEvents() {
             S.weapon =
                 $('weapon').value;
 
+            /*
+             * The row for the selected gun names its weapon, so the list
+             * has to redraw with it.
+             */
+            if (
+                typeof renderGuns ===
+                'function'
+            ) {
+                renderGuns();
+            }
+
+            if (
+                typeof collabSyncShared ===
+                'function'
+            ) {
+                collabSyncShared();
+            }
+
             if (
                 typeof trackAnalytics ===
                 'function'
@@ -121,6 +139,18 @@ function bindEvents() {
     $('apply').addEventListener(
         'click',
         () => {
+
+            /*
+             * A room's map is fixed at creation: saved targets carry no
+             * map id, so resizing under them would silently misplace
+             * every one for every peer.
+             */
+            if (
+                typeof collabHandlesHistory === 'function' &&
+                collabHandlesHistory()
+            ) {
+                return;
+            }
 
             S.map =
                 'custom';
@@ -187,41 +217,25 @@ function bindEvents() {
 
     $('originMode').addEventListener(
         'click',
-        () => {
-
-            S.mode =
-                'origin';
-
-            $('originMode')
-                .classList.add(
-                'active'
-            );
-
-            $('targetMode')
-                .classList.remove(
-                'active'
-            );
-        }
+        () => setPointMode('origin')
     );
 
     $('targetMode').addEventListener(
         'click',
-        () => {
-
-            S.mode =
-                'target';
-
-            $('targetMode')
-                .classList.add(
-                'active'
-            );
-
-            $('originMode')
-                .classList.remove(
-                'active'
-            );
-        }
+        () => setPointMode('target')
     );
+
+    $('originForcePin')
+        ?.addEventListener(
+            'click',
+            () => toggleForcePlacementFor('origin')
+        );
+
+    $('targetForcePin')
+        ?.addEventListener(
+            'click',
+            () => toggleForcePlacementFor('target')
+        );
 
     ['ox', 'oy'].forEach(
         id => {
@@ -338,8 +352,16 @@ function bindEvents() {
 
             pushMapToolHistory();
 
-            const oldOrigin =
-                S.origin;
+            /*
+             * S.origin is a live reference to the active gun's position, so
+             * capturing it directly would alias the gun: the setter below
+             * would overwrite the very object we are about to hand to
+             * S.target. Copy at capture.
+             */
+            const oldOrigin = {
+                x: S.origin.x,
+                y: S.origin.y
+            };
 
             S.origin =
                 S.target;
@@ -487,14 +509,40 @@ function bindEvents() {
                 return;
             }
 
-            const d1 =
-                Math.hypot(
-                    p.x -
-                    S.origin.x,
+            const pointHitThreshold =
+                metersToWorldDistance(300);
 
-                    p.y -
-                    S.origin.y
-                );
+            /*
+             * Any drawn gun is grabbable, not just the selected one:
+             * clicking a neighbour picks that gun up rather than
+             * teleporting the current one onto it.
+             */
+            const gunPicking =
+                typeof gunAtPoint === 'function';
+
+            const hitGun =
+                gunPicking
+                    ? gunAtPoint(
+                        p,
+                        pointHitThreshold
+                    )
+                    : null;
+
+            const originPoint =
+                gunPicking
+                    ? hitGun?.position || null
+                    : S.origin;
+
+            const d1 =
+                originPoint
+                    ? Math.hypot(
+                        p.x -
+                        originPoint.x,
+
+                        p.y -
+                        originPoint.y
+                    )
+                    : Infinity;
 
             const d2 =
                 Math.hypot(
@@ -505,10 +553,8 @@ function bindEvents() {
                     S.target.y
                 );
 
-            const pointHitThreshold =
-                metersToWorldDistance(300);
-
             if (
+                !isForcePlacementEnabled() &&
                 Math.min(d1, d2) <
                 pointHitThreshold
             ) {
@@ -527,9 +573,50 @@ function bindEvents() {
                     return;
                 }
 
+                /*
+                 * Select before the write below: S.origin resolves through
+                 * the active gun, so the selection has to move first or
+                 * the drag would edit the gun you just clicked away from.
+                 */
+                if (
+                    nearestPoint === 'origin' &&
+                    hitGun &&
+                    hitGun.id !== S.activeGunId
+                ) {
+                    selectGun(hitGun.id);
+                }
+
                 drag = nearestPoint;
 
             } else {
+
+                const hitSavedTarget =
+                    typeof savedTargetAtPoint === 'function'
+                        ? savedTargetAtPoint(
+                            p,
+                            pointHitThreshold
+                        )
+                        : null;
+
+                if (hitSavedTarget) {
+
+                    drag = null;
+
+                    if (
+                        !isPointMapLocked(
+                            'target'
+                        )
+                    ) {
+                        restoreTarget(
+                            hitSavedTarget
+                        );
+                    }
+
+                    updateCursor(e);
+
+                    return;
+                }
+
                 if (
                     isPointMapLocked(
                         S.mode
@@ -570,6 +657,13 @@ function bindEvents() {
         e => {
 
             if (pan) {
+
+                if (
+                    typeof hideMilCursor ===
+                    'function'
+                ) {
+                    hideMilCursor();
+                }
 
                 S.panX =
                     pan.originX +
@@ -612,11 +706,28 @@ function bindEvents() {
                 );
 
             if (
+                e.target === c &&
+                typeof collabOnPointerWorld ===
+                'function'
+            ) {
+                collabOnPointerWorld(
+                    toolWorld
+                );
+            }
+
+            if (
                 handleMapToolMouseMove(
                     e,
                     toolWorld
                 )
             ) {
+                if (
+                    typeof hideMilCursor ===
+                    'function'
+                ) {
+                    hideMilCursor();
+                }
+
                 drag = null;
                 return;
             }
@@ -624,6 +735,21 @@ function bindEvents() {
             updatePresetMarkerHover(
                 e
             );
+
+            if (
+                typeof updateMilCursor ===
+                'function'
+            ) {
+                if (drag) {
+                    hideMilCursor();
+                } else {
+                    updateMilCursor(
+                        e,
+                        toolWorld,
+                        rect
+                    );
+                }
+            }
 
             if (!drag) {
                 return;
@@ -670,11 +796,25 @@ function bindEvents() {
                 null
             );
 
+            if (
+                typeof collabOnPointerLeft ===
+                'function'
+            ) {
+                collabOnPointerLeft();
+            }
+
             if (!pan) {
 
                 $('cursorCoords')
                     .style.display =
                     'none';
+            }
+
+            if (
+                typeof hideMilCursor ===
+                'function'
+            ) {
+                hideMilCursor();
             }
         }
     );
@@ -714,6 +854,15 @@ function bindEvents() {
         e => {
 
             e.preventDefault();
+
+            /*
+             * With the marker tool active, the wheel turns the FOB build
+             * area under the cursor instead of zooming. Everywhere else —
+             * every other tool, every other spot on the map — it zooms.
+             */
+            if (handleMapToolWheel(e)) {
+                return;
+            }
 
             const rect =
                 c.getBoundingClientRect();

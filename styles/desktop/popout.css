@@ -1,0 +1,177 @@
+/* =========================
+   SOLUTION POP-OUT
+   ========================= */
+
+.section.has-panel-popout {
+    position: relative;
+}
+
+.header-controls .panel-popout-button {
+    width: 36px;
+    min-width: 36px;
+
+    height: 36px;
+    min-height: 36px;
+
+    padding: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 50%;
+
+    background: var(--input-bg);
+
+    border: 1px solid var(--border-light);
+
+    color: var(--muted);
+
+    cursor: pointer;
+
+    transition:
+            border-color .2s ease,
+            background-color .2s ease,
+            color .2s ease;
+}
+
+.header-controls .obs-launch-button {
+    width: 36px;
+    min-width: 36px;
+
+    height: 36px;
+    min-height: 36px;
+
+    padding: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 50%;
+
+    background: var(--input-bg);
+
+    border: 1px solid var(--border-light);
+
+    color: var(--muted);
+
+    cursor: pointer;
+
+    transition:
+            border-color .2s ease,
+            background-color .2s ease,
+            color .2s ease;
+}
+
+.header-controls .obs-launch-button:hover {
+    color: var(--text);
+}
+
+.header-controls .obs-launch-button.is-unavailable {
+    opacity: .42;
+
+    cursor: not-allowed;
+}
+
+.header-controls .obs-launch-button.is-unavailable:hover {
+    color: var(--muted);
+}
+
+.header-controls .panel-popout-button:hover {
+    color: var(--text);
+}
+
+.panel-popout-placeholder .hint {
+    margin: 0 0 9px;
+}
+
+.panel-popout-return {
+    width: 100%;
+}
+
+
+/* =========================
+   POP-OUT WINDOW
+   ========================= */
+
+/*
+ * The pop-out is dragged into a corner of a second monitor, so everything
+ * inside it scales with the window: at 240 px wide the numbers still have to
+ * be readable across a desk.
+ */
+body.solution-popout-body {
+    min-height: 100vh;
+
+    margin: 0;
+
+    padding: 8px;
+
+    background: var(--body-bg);
+    color: var(--text);
+
+    font-family:
+            "Segoe UI",
+            system-ui,
+            -apple-system,
+            sans-serif;
+}
+
+body.solution-popout-body .section {
+    margin-bottom: 0;
+}
+
+body.solution-popout-body .section h2,
+body.solution-popout-body .hint,
+body.solution-popout-body .panel-popout-button {
+    display: none;
+}
+
+body.solution-popout-body #sphLevelWarning {
+    display: none;
+}
+
+body.solution-popout-body .solution-result {
+    padding: clamp(5px, 1.8vw, 10px);
+}
+
+body.solution-popout-body .solution-primary-grid {
+    gap: clamp(4px, 1.4vw, 8px);
+}
+
+body.solution-popout-body .solution-metric {
+    min-height: clamp(52px, 22vh, 96px);
+    padding: clamp(4px, 1.4vw, 9px) 4px;
+}
+
+body.solution-popout-body .solution-metric-label {
+    font-size: clamp(8px, 2.2vw, 13px);
+}
+
+body.solution-popout-body .solution-metric-value,
+body.solution-popout-body
+.solution-metric-highlight
+.solution-metric-value {
+    font-size: clamp(16px, 6.2vw, 42px);
+}
+
+body.solution-popout-body .solution-metric-sub {
+    font-size: clamp(8px, 2vw, 12px);
+}
+
+body.solution-popout-body .solution-flight-label,
+body.solution-popout-body .flight-badge-arc,
+body.solution-popout-body .flight-badge-value {
+    font-size: clamp(9px, 2.4vw, 14px);
+}
+
+body.solution-popout-body .solution-secondary-item,
+body.solution-popout-body .solution-secondary-item b {
+    font-size: clamp(9px, 2.4vw, 14px);
+}

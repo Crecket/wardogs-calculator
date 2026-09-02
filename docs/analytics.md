@@ -4,6 +4,25 @@ The project uses Umami for lightweight, privacy-conscious usage analytics.
 
 The tracker is loaded by the desktop and mobile page shells. Application code sends custom events through `js/core/analytics.js` instead of calling `window.umami.track()` directly.
 
+## Analytics are off by default
+
+`npm run build` strips the Umami tag from the built pages and sets
+`window.__WARDOGS_ANALYTICS_DISABLED__`, so a clone reports nothing anywhere —
+the website id committed in the page shells belongs to upstream's dashboard, and
+a fork must not report into it. `npm run dev` already behaved this way
+(`WARDOGS_DISABLE_ANALYTICS`); the build now matches it.
+
+To collect your own, put your Umami website id in `.env`:
+
+```sh
+ANALYTICS_WEBSITE_ID=00000000-0000-0000-0000-000000000000
+```
+
+The build then keeps the tag and rewrites `data-website-id` to that value. The
+tracked page shells never change, which is what keeps them merge-clean against
+upstream — the same approach as `COLLAB_URL` and `TILE_BASE_URL`, see
+[deployment](deployment.md).
+
 ## Custom events
 
 The current event set intentionally focuses on meaningful user actions rather than high-frequency UI input:

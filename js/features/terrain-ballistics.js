@@ -8,6 +8,8 @@
     const CONFIG_URL =
         'data/ballistics/terrain-context.json';
 
+    const DEFAULT_SUPPRESSION_MISS_METERS = 10;
+
     const state = {
         initialized: false,
         enabled: false,
@@ -16,7 +18,11 @@
         rerenderQueued: false,
         lastWarning: null,
         confirmedOrigin: null,
-        levelControl: null
+        levelControl: null,
+        correctionEnabled: false,
+        correctedMaps: new Set(),
+        suppressionMissMeters: DEFAULT_SUPPRESSION_MISS_METERS,
+        correction: null
     };
 
     function terrainLog(...args) {
@@ -41,56 +47,42 @@
 
     const UI_TEXT = {
         en: {
-            terrainLoading: 'terrain loading',
-            terrainStatus: 'ΔZ {dz} m · MIL not auto-corrected',
             warningTitle: 'LEVEL THE SPH-2 BEFORE FIRING',
             warningBody: 'Vehicle tilt changes the actual range. Park the SPH-2 on the flattest ground available. In the gunner HUD, find the vehicle silhouette below STABILIZED / ASL: the two small side markers show lateral tilt. Reposition the vehicle until the markers are as centered and aligned as possible. Front/back slope also affects range, so avoid parking uphill or downhill.'
         },
         ru: {
-            terrainLoading: 'загрузка высот',
-            terrainStatus: 'ΔZ {dz} м · MIL без автокоррекции',
             warningTitle: 'ВЫРОВНЯЙТЕ SPH-2 ПЕРЕД СТРЕЛЬБОЙ',
             warningBody: 'Наклон машины меняет фактическую дальность. Ставьте SPH-2 на максимально ровную поверхность. В прицеле наводчика найдите силуэт машины под STABILIZED / ASL: две боковые засечки показывают боковой наклон. Переставляйте машину, пока засечки не будут максимально по центру и на одном уровне. Наклон вперёд-назад тоже влияет на дальность — не ставьте орудие на подъёме или спуске.'
         },
         uk: {
-            terrainLoading: 'завантаження висот',
-            terrainStatus: 'ΔZ {dz} м · MIL без автокорекції',
             warningTitle: 'ВИРІВНЯЙТЕ SPH-2 ПЕРЕД ПОСТРІЛОМ',
             warningBody: 'Нахил машини змінює фактичну дальність. Ставте SPH-2 на максимально рівну поверхню. У прицілі навідника знайдіть силует машини під STABILIZED / ASL: дві бокові позначки показують поперечний нахил. Переставляйте машину, доки позначки не будуть максимально по центру та на одному рівні. Нахил уперед-назад також впливає на дальність — уникайте стоянки на підйомі або спуску.'
         },
         de: {
-            terrainLoading: 'Höhendaten werden geladen',
-            terrainStatus: 'ΔZ {dz} m · MIL ohne Autokorrektur',
             warningTitle: 'SPH-2 VOR DEM SCHUSS NIVELLIEREN',
             warningBody: 'Die Fahrzeugneigung verändert die tatsächliche Reichweite. Stelle die SPH-2 auf möglichst ebenen Boden. Im Richtschützen-HUD befindet sich unter STABILIZED / ASL die Fahrzeugsilhouette; die beiden kleinen Seitenmarken zeigen die seitliche Neigung. Versetze das Fahrzeug, bis die Marken möglichst mittig und auf gleicher Höhe stehen. Auch Neigung nach vorn/hinten beeinflusst die Reichweite — vermeide Steigungen und Gefälle.'
         },
         fr: {
-            terrainLoading: 'chargement des altitudes',
-            terrainStatus: 'ΔZ {dz} m · MIL sans correction auto',
             warningTitle: 'METTEZ LE SPH-2 À NIVEAU AVANT DE TIRER',
             warningBody: 'L’inclinaison du véhicule modifie la portée réelle. Placez le SPH-2 sur le terrain le plus plat possible. Dans le HUD du tireur, repérez la silhouette du véhicule sous STABILIZED / ASL : les deux petits repères latéraux indiquent l’inclinaison latérale. Repositionnez le véhicule jusqu’à ce que les repères soient aussi centrés et alignés que possible. La pente avant/arrière affecte aussi la portée — évitez de stationner en montée ou en descente.'
         },
         es: {
-            terrainLoading: 'cargando alturas',
-            terrainStatus: 'ΔZ {dz} m · MIL sin corrección automática',
             warningTitle: 'NIVELA EL SPH-2 ANTES DE DISPARAR',
             warningBody: 'La inclinación del vehículo cambia el alcance real. Coloca el SPH-2 en el terreno más plano posible. En el HUD del artillero, busca la silueta del vehículo bajo STABILIZED / ASL: las dos pequeñas marcas laterales muestran la inclinación lateral. Reposiciona el vehículo hasta que las marcas estén lo más centradas y alineadas posible. La pendiente hacia delante/atrás también afecta al alcance; evita aparcar cuesta arriba o cuesta abajo.'
         },
         pl: {
-            terrainLoading: 'ładowanie wysokości',
-            terrainStatus: 'ΔZ {dz} m · MIL bez autokorekty',
             warningTitle: 'WYPOZIOMUJ SPH-2 PRZED STRZAŁEM',
             warningBody: 'Przechył pojazdu zmienia rzeczywisty zasięg. Ustaw SPH-2 na możliwie płaskim terenie. W HUD celowniczego znajdź sylwetkę pojazdu pod STABILIZED / ASL: dwie małe boczne kreski pokazują przechył boczny. Przestaw pojazd, aż znaczniki będą możliwie wycentrowane i na tej samej wysokości. Nachylenie przód/tył również wpływa na zasięg — unikaj ustawiania działa pod górę lub z górki.'
         },
         pt: {
-            terrainLoading: 'a carregar altitudes',
-            terrainStatus: 'ΔZ {dz} m · MIL sem correção automática',
             warningTitle: 'NIVELA O SPH-2 ANTES DE DISPARAR',
             warningBody: 'A inclinação do veículo altera o alcance real. Coloca o SPH-2 no terreno mais plano possível. No HUD do artilheiro, procura a silhueta do veículo por baixo de STABILIZED / ASL: as duas pequenas marcas laterais mostram a inclinação lateral. Reposiciona o veículo até as marcas ficarem o mais centradas e alinhadas possível. A inclinação para a frente/trás também afeta o alcance — evita estacionar numa subida ou descida.'
         },
+        'zh-cn': {
+            warningTitle: '射击前请将 SPH-2 停放水平',
+            warningBody: '车体倾斜会改变实际射程。请将 SPH-2 停在尽可能平坦的地面上。在炮手 HUD 中，找到 STABILIZED / ASL 下方的车辆轮廓图：两侧的小标记显示横向倾斜。调整车辆位置，直到两个标记尽可能居中且对齐。前后坡度同样影响射程，请避免停在上坡或下坡上。'
+        },
         cat: {
-            terrainLoading: 'LOADING HEIGHT MEOWGIC',
-            terrainStatus: 'ΔZ {dz} m · NO AUTO-MIL MEOWGIC',
             warningTitle: 'LEVEL THE MEOWTILLERY BEFORE FIRING',
             warningBody: 'TILTED CAT TANK = WEIRD RANGE. PARK THE SPH-2 ON THE FLATTEST GROUND YOU CAN FIND. IN THE GUNNER HUD, LOOK UNDER STABILIZED / ASL FOR THE VEHICLE SILHOUETTE: THE TWO LITTLE SIDE TICKS SHOW SIDE TILT. MOVE THE BIG CAT UNTIL THE TICKS ARE AS CENTERED AND LEVEL AS POSSIBLE. NOSE-UP / NOSE-DOWN SLOPE ALSO CHANGES RANGE. MEOW.'
         }
@@ -159,12 +151,42 @@
                 font-size: 10px;
                 line-height: 1.45;
             }
+
+            body:not(.mobile-app) button.sph-level-warning-title {
+                width: 100%;
+                min-height: 0;
+                margin: 0;
+                padding: 0;
+                border: 0;
+                border-radius: 0;
+                background: none;
+                text-align: left;
+                cursor: pointer;
+            }
+
+            body:not(.mobile-app)
+            .sph-level-warning:not(.is-open)
+            .sph-level-warning-body {
+                display: none;
+            }
+
+            .sph-level-warning-caret {
+                margin-left: auto;
+                flex: 0 0 auto;
+                font-size: 10px;
+                line-height: 1;
+                transition: transform .15s ease;
+            }
+
+            .sph-level-warning.is-open .sph-level-warning-caret {
+                transform: rotate(180deg);
+            }
         `;
         document.head.appendChild(style);
     }
 
     function ensureSphLevelWarning() {
-        let root = document.getElementById('sphLevelWarning');
+        let root = $('sphLevelWarning');
 
         if (root) {
             return root;
@@ -177,19 +199,19 @@
 
         const resultCard =
             isMobile
-                ? document.querySelector(
+                ? $q(
                     '.mobile-result-details'
                 )
-                : document.querySelector(
+                : $q(
                     '.solution-result'
                 );
 
         const fallbackCard =
             resultCard ||
-            document.querySelector(
+            $q(
                 '.mobile-result-details'
             ) ||
-            document.querySelector(
+            $q(
                 '.solution-result'
             );
 
@@ -204,8 +226,16 @@
         root.className = 'sph-level-warning';
         root.setAttribute('role', 'note');
 
-        const title = document.createElement('div');
+        const title = document.createElement(
+            isMobile ? 'div' : 'button'
+        );
+
         title.className = 'sph-level-warning-title';
+
+        if (!isMobile) {
+            title.type = 'button';
+            title.setAttribute('aria-expanded', 'false');
+        }
 
         const icon = document.createElement('span');
         icon.className = 'sph-level-warning-icon';
@@ -219,6 +249,29 @@
         body.className = 'sph-level-warning-body';
 
         title.append(icon, titleText);
+
+        if (!isMobile) {
+
+            const caret = document.createElement('span');
+
+            caret.className = 'sph-level-warning-caret';
+            caret.setAttribute('aria-hidden', 'true');
+            caret.textContent = '▾';
+
+            title.append(caret);
+
+            title.addEventListener('click', () => {
+
+                const open =
+                    root.classList.toggle('is-open');
+
+                title.setAttribute(
+                    'aria-expanded',
+                    String(open)
+                );
+            });
+        }
+
         root.append(title, body);
 
         fallbackCard.insertAdjacentElement('afterend', root);
@@ -255,27 +308,6 @@
         if (body) {
             body.textContent = text.warningBody;
         }
-    }
-
-    function formatTerrainBallisticsStatus(meta) {
-        if (!meta?.available) {
-            return '';
-        }
-
-        const text = uiText();
-
-        if (meta.pendingTerrain) {
-            return text.terrainLoading;
-        }
-
-        if (!Number.isFinite(meta.deltaZ)) {
-            return '';
-        }
-
-        const dz =
-            `${meta.deltaZ >= 0 ? '+' : ''}${meta.deltaZ.toFixed(1)}`;
-
-        return text.terrainStatus.replace('{dz}', dz);
     }
 
     async function fetchJson(url) {
@@ -453,15 +485,70 @@
             }
 
             state.config = config;
+
+            state.correction = null;
+
+            const correctionUrl = config.releasePolicy?.heightCorrection;
+
+            if (correctionUrl) {
+                try {
+                    const correction = await fetchJson(correctionUrl);
+
+                    if (
+                        correction?.schema !== 'wardogs-height-correction-v1'
+                    ) {
+                        throw new Error(
+                            `Unsupported height correction schema: ${correction?.schema}`
+                        );
+                    }
+
+                    state.correction = correction;
+
+                    terrainLog(
+                        'height correction loaded',
+                        `source=${correction.modelSource}`
+                    );
+                } catch (error) {
+                    terrainWarn(
+                        'Could not load the height correction grid; the flat table remains authoritative.',
+                        error
+                    );
+                }
+            }
             state.enabled = state.terrains.size > 0;
 
             if (!state.enabled) {
                 throw new Error('No Terrain3D map manifests could be loaded');
             }
 
-            if (!config.calibration?.ready) {
+            const policy = config.releasePolicy ?? {};
+
+            state.correctionEnabled = Boolean(
+                policy.automaticMilCorrection
+            );
+
+            /*
+             * Maps whose coordinate alignment we actually trust. A numeric
+             * correction tolerates a misalignment far worse than a caption
+             * does, so an absent or empty list corrects nothing rather than
+             * defaulting to every map.
+             */
+            state.correctedMaps = new Set(
+                Array.isArray(policy.correctedMaps)
+                    ? policy.correctedMaps
+                    : []
+            );
+
+            const suppression = Number(policy.suppressionMissMeters);
+
+            state.suppressionMissMeters =
+                Number.isFinite(suppression) && suppression >= 0
+                    ? suppression
+                    : DEFAULT_SUPPRESSION_MISS_METERS;
+
+            if (!state.correctionEnabled) {
                 terrainWarn(
-                    'Runtime hook is installed but calibration.ready=false; flat-table fallback remains authoritative.'
+                    'Runtime hook is installed but releasePolicy.automaticMilCorrection=false; the flat table remains authoritative.'
                 );
             }
 
@@ -889,10 +976,21 @@
             return null;
         }
 
-        const q00 = Number(row0[bx.i0]);
-        const q10 = Number(row0[bx.i1]);
-        const q01 = Number(row1[bx.i0]);
-        const q11 = Number(row1[bx.i1]);
+        /*
+         * The grid writes null for a cell the model cannot reach, and
+         * Number(null) is 0 rather than NaN. Left to the plain conversion an
+         * unreachable corner reads as "no correction needed" -- silently, and
+         * worse, a single null corner drags a real bilinear result toward
+         * zero. Map the empties to NaN so the finite check below rejects
+         * them.
+         */
+        const cell = value =>
+            value === null || value === undefined ? NaN : Number(value);
+
+        const q00 = cell(row0[bx.i0]);
+        const q10 = cell(row0[bx.i1]);
+        const q01 = cell(row1[bx.i0]);
+        const q11 = cell(row1[bx.i1]);
 
         if (![q00, q10, q01, q11].every(Number.isFinite)) {
             return null;
@@ -916,6 +1014,112 @@
             high: solutions?.high
                 ? { ...solutions.high }
                 : null
+        };
+    }
+
+    const ARCS = ['single', 'low', 'high'];
+
+    /*
+     * Classifies one arc, and corrects it when that is both possible and
+     * worth doing. `outcome` is what the caption keys off:
+     *
+     *   corrected  - the correction was applied
+     *   negligible - the miss is under the suppression threshold, so
+     *                leaving the arc alone changes nothing worth saying
+     *   offgrid    - no correction could be computed: the target sits off
+     *                the grid's coverage. This is a correction-coverage
+     *                fact, not a reachability fact -- reachability comes
+     *                only from assessShot
+     *   nogrid     - no model ships for this arc
+     *
+     * Only the last two are worth a warning. Warning about `negligible`
+     * trains the reader to ignore the caption, which costs more than the
+     * three metres it was reporting.
+     */
+    function classifyArc(solution, grid, distanceMeters, deltaZMeters, weapon) {
+        if (!solution) {
+            return null;
+        }
+
+        if (!grid) {
+            return { solution, outcome: 'nogrid', missMeters: null };
+        }
+
+        const distances = Array.isArray(grid.distancesMeters)
+            ? grid.distancesMeters.map(Number)
+            : null;
+
+        const last = distances?.length
+            ? distances[distances.length - 1]
+            : null;
+
+        const lookupDistance =
+            Number.isFinite(last) &&
+            distanceMeters > last &&
+            distanceMeters - last <= 18
+                ? last
+                : distanceMeters;
+
+        const miss = interpolateHeightCorrection(
+            {
+                distancesMeters: grid.distancesMeters,
+                deltaZMeters: grid.deltaZMeters,
+                milCorrections: grid.missMeters
+            },
+            lookupDistance,
+            deltaZMeters
+        );
+
+        const deltaMil = interpolateHeightCorrection(
+            grid,
+            lookupDistance,
+            deltaZMeters
+        );
+
+        if (!Number.isFinite(miss) || !Number.isFinite(deltaMil)) {
+            return { solution, outcome: 'offgrid', missMeters: null };
+        }
+
+        if (Math.abs(miss) < state.suppressionMissMeters) {
+            return { solution, outcome: 'negligible', missMeters: miss };
+        }
+
+        const minStop = Number(weapon?.minElevationMil);
+        const maxStop = Number(weapon?.maxElevationMil);
+
+        const clampMil = value => {
+            let clamped = value;
+
+            if (Number.isFinite(minStop) && clamped < minStop) {
+                clamped = minStop;
+            }
+
+            if (Number.isFinite(maxStop) && clamped > maxStop) {
+                clamped = maxStop;
+            }
+
+            return clamped;
+        };
+
+        const rawMinMil = solution.minMil + deltaMil;
+        const rawMaxMil = solution.maxMil + deltaMil;
+        const rawMil = Number.isFinite(solution.mil)
+            ? solution.mil + deltaMil
+            : solution.mil;
+
+        const minMil = clampMil(rawMinMil);
+        const maxMil = clampMil(rawMaxMil);
+        const mil = Number.isFinite(rawMil) ? clampMil(rawMil) : rawMil;
+
+        const envelopeClamped =
+            minMil !== rawMinMil ||
+            maxMil !== rawMaxMil ||
+            mil !== rawMil;
+
+        return {
+            solution: { ...solution, mil, minMil, maxMil, envelopeClamped },
+            outcome: 'corrected',
+            missMeters: miss
         };
     }
 
@@ -956,10 +1160,12 @@
             return fallback;
         }
 
-        primeTerrainForPoints(
-            terrain,
-            [context.origin, context.target]
-        );
+        if (context.prime !== false) {
+            primeTerrainForPoints(
+                terrain,
+                [context.origin, context.target]
+            );
+        }
 
         const originZ =
             terrainHeightAtPointSync(terrain, context.origin);
@@ -983,22 +1189,91 @@
             };
         }
 
-        return {
-            /*
-             * RELEASE SAFETY INVARIANT:
-             * Terrain3D never changes MIL in this build.
-             */
-            solutions: context.solutions,
-            meta: {
-                available: true,
-                pendingTerrain: false,
-                applied: false,
-                reason: 'information-only',
-                mapId: terrain.mapId,
-                originZ,
-                targetZ,
-                deltaZ: targetZ - originZ
+        const deltaZ = targetZ - originZ;
+
+        const grids =
+            state.correction?.weapons?.[context.weapon?.id] ?? null;
+
+        const allowed =
+            state.correctionEnabled &&
+            state.correctedMaps.has(terrain.mapId);
+
+        const meta = {
+            available: true,
+            pendingTerrain: false,
+            applied: false,
+            reason: 'information-only',
+            mapId: terrain.mapId,
+            originZ,
+            targetZ,
+            correctionDeltaZ: deltaZ,
+            arcsCorrected: [],
+            arcsUncorrected: [],
+            arcsWithheld: [],
+            arcsUnavailable: [],
+            missMeters: null,
+            envelopeClamped: false
+        };
+
+        /*
+         * Arcs are classified even when the correction will not be applied.
+         * Whether the caption should warn depends on how big the uncorrected
+         * miss would be, and that is only knowable by asking the grid.
+         */
+        const corrected = cloneSolutions(context.solutions);
+        let worstMiss = null;
+        let changed = false;
+
+        for (const arc of ARCS) {
+            const result = classifyArc(
+                corrected[arc],
+                grids?.[arc] ?? null,
+                context.distanceMeters,
+                deltaZ,
+                context.weapon
+            );
+
+            if (!result) {
+                continue;
             }
+
+            if (result.outcome === 'corrected' && allowed) {
+                corrected[arc] = result.solution;
+                meta.arcsCorrected.push(arc);
+                changed = true;
+            } else {
+                meta.arcsUncorrected.push(arc);
+
+                if (result.outcome === 'corrected') {
+                    /* Correctable, and a real miss, but policy said no. */
+                    meta.arcsWithheld.push(arc);
+                } else if (
+                    result.outcome === 'offgrid' ||
+                    result.outcome === 'nogrid'
+                ) {
+                    meta.arcsUnavailable.push(arc);
+                }
+            }
+
+            if (
+                Number.isFinite(result.missMeters) &&
+                (worstMiss === null ||
+                    Math.abs(result.missMeters) > Math.abs(worstMiss))
+            ) {
+                worstMiss = result.missMeters;
+            }
+        }
+
+        meta.missMeters = worstMiss;
+        meta.applied = changed;
+        meta.reason = changed ? 'terrain-corrected' : 'information-only';
+        meta.envelopeClamped = meta.arcsCorrected.length
+            ? meta.arcsCorrected.some(arc => corrected[arc]?.envelopeClamped) === true
+            : false;
+
+        return {
+            solutions: changed ? corrected : context.solutions,
+            meta
         };
     }
 
@@ -1013,9 +1288,11 @@
             initialized: state.initialized,
             enabled: state.enabled,
             ready: state.terrains.size > 0,
-            calibrated: false,
-            autoCorrectionEnabled: false,
-            mode: 'terrain-information-only',
+            calibrated: Boolean(state.config?.calibration?.ready),
+            autoCorrectionEnabled: state.correctionEnabled,
+            mode: state.correctionEnabled
+                ? 'terrain-corrected'
+                : 'terrain-information-only',
             supportedMaps: [...state.terrains.keys()],
             cachedChunks
         };
@@ -1029,9 +1306,6 @@
 
     window.getTerrainBallisticsState =
         getTerrainBallisticsState;
-
-    window.formatTerrainBallisticsStatus =
-        formatTerrainBallisticsStatus;
 
     window.syncSphLevelWarning =
         syncSphLevelWarning;

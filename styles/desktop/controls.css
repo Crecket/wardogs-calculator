@@ -278,6 +278,133 @@ button:disabled {
     line-height: 1.15;
 }
 
+/*
+ * Flight time. A row of badges under the metric grid rather than a line
+ * inside the MIL card: at the sub-line's 8 px the seconds could not be read,
+ * and the arc labels are long enough in some locales to need real width.
+ *
+ * The row is a fixed grid — two equal columns for the two-arc weapons, one
+ * for the mortar — so a wider number never reflows it from a 2-up to a 1-up
+ * while the pointer moves. The arc names are the short "Low" / "High" and
+ * the heading above carries the rest.
+ */
+.solution-flight {
+    margin-top: 8px;
+}
+
+.solution-flight-label {
+    display: block;
+    margin-bottom: 4px;
+
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.solution-flight-badges {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+}
+
+.solution-flight-badges[data-arcs="1"] {
+    grid-template-columns: 1fr;
+}
+
+.flight-badge {
+    min-width: 0;
+
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+
+    padding: 5px 9px;
+
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background:
+        color-mix(
+            in srgb,
+            var(--input-bg) 42%,
+            transparent
+        );
+}
+
+.flight-badge-arc {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.flight-badge-value {
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -.015em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/*
+ * Terrain elevation note. It sits between the firing-solution cards and the
+ * delta readouts because it qualifies the MIL above it rather than adding a
+ * fourth measurement. It wraps: the string carries a signed ΔZ and a
+ * correction state, and truncating either one makes it worse than absent.
+ *
+ * The warning state borrows #f0b24a and the 4px left rule from
+ * .sph-level-warning, so the two read as one family of caveat.
+ */
+.solution-terrain-note {
+    margin-top: 7px;
+    padding: 6px 8px;
+
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background:
+        color-mix(
+            in srgb,
+            var(--input-bg) 42%,
+            transparent
+        );
+
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.solution-terrain-note[hidden] {
+    display: none;
+}
+
+.solution-terrain-note[data-warn]::before {
+    content: "\26A0";
+    margin-right: 5px;
+    color: #f0b24a;
+    font-size: 11px;
+}
+
+/*
+ * One arc corrected and another not is the state most worth reading, so it
+ * gets the same treatment as the level warning.
+ */
+.solution-terrain-note[data-state="loading"] {
+    color: var(--muted);
+    font-weight: 500;
+}
+
 .solution-secondary-grid {
     margin-top: 7px;
 
@@ -382,4 +509,51 @@ button:disabled {
 .mode .point-map-locked::after {
     content: "  🔒";
     font-size: 10px;
+}
+
+/* =========================
+   FORCE PLACEMENT
+   ========================= */
+
+.mode-option {
+    position: relative;
+}
+
+.mode-option > button:not(.mode-force-pin) {
+    width: 100%;
+}
+
+.mode-force-pin {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+
+    width: 21px;
+    min-height: 0;
+    height: 21px;
+    padding: 0;
+
+    border: 0;
+    border-radius: 3px;
+
+    background: none;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--text);
+
+    opacity: .3;
+    cursor: pointer;
+}
+
+.mode-force-pin:hover {
+    border: 0;
+    opacity: .75;
+}
+
+.mode-force-pin.active {
+    color: var(--accent);
+    opacity: 1;
 }

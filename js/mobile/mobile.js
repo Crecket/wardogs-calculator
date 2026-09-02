@@ -47,13 +47,43 @@ function mobilePointerMidpoint(a, b) {
 }
 
 function getMobileUserMarkerAt(x, y) {
-    const origin = toScreen(S.origin.x, S.origin.y);
+    /*
+     * Any drawn gun is grabbable, not just the selected one, so tapping a
+     * neighbour picks that gun up rather than teleporting the current one
+     * onto it.
+     */
+    const gunPicking =
+        typeof gunAtScreen === 'function';
+
+    const hitGun =
+        gunPicking
+            ? gunAtScreen(
+                x,
+                y,
+                MOBILE_POINT_HIT_RADIUS
+            )
+            : null;
+
+    const originPoint =
+        gunPicking
+            ? hitGun?.position || null
+            : S.origin;
+
     const target = toScreen(S.target.x, S.target.y);
 
-    const originDistance = Math.hypot(
-        x - origin.x,
-        y - origin.y
-    );
+    const origin = originPoint
+        ? toScreen(
+            originPoint.x,
+            originPoint.y
+        )
+        : null;
+
+    const originDistance = origin
+        ? Math.hypot(
+            x - origin.x,
+            y - origin.y
+        )
+        : Infinity;
 
     const targetDistance = Math.hypot(
         x - target.x,
@@ -69,9 +99,23 @@ function getMobileUserMarkerAt(x, y) {
         return null;
     }
 
-    return originDistance <= targetDistance
-        ? 'origin'
-        : 'target';
+    if (originDistance <= targetDistance) {
+        /*
+         * Select before returning: S.origin resolves through the active
+         * gun, so the drag that follows has to be pointed at the gun that
+         * was actually tapped.
+         */
+        if (
+            hitGun &&
+            hitGun.id !== S.activeGunId
+        ) {
+            selectGun(hitGun.id);
+        }
+
+        return 'origin';
+    }
+
+    return 'target';
 }
 
 function setMobileMode(type) {
@@ -101,7 +145,8 @@ function startMobilePinch() {
         typeof MAP_TOOL_STATE !== 'undefined' &&
         (
             MAP_TOOL_STATE.rulerDragging ||
-            MAP_TOOL_STATE.pencilDragging
+            MAP_TOOL_STATE.pencilDragging ||
+            MAP_TOOL_STATE.shapeDragging
         )
     ) {
         handleMapToolMouseUp();
@@ -225,7 +270,7 @@ function handleMobilePointerDown(event) {
 
     if (
         typeof MAP_TOOL_STATE !== 'undefined' &&
-        ['ruler', 'pencil', 'eraser', 'marker'].includes(
+        ['ruler', 'pencil', 'shapes', 'eraser', 'marker'].includes(
             MAP_TOOL_STATE.tool
         )
     ) {
@@ -243,10 +288,14 @@ function handleMobilePointerDown(event) {
         }
     }
 
-    const markerType = getMobileUserMarkerAt(
-        point.x,
-        point.y
-    );
+    const markerType =
+        typeof MAP_TOOL_STATE !== 'undefined' &&
+        MAP_TOOL_STATE.tool === 'targeting'
+            ? null
+            : getMobileUserMarkerAt(
+                point.x,
+                point.y
+            );
 
     if (markerType) {
         if (
@@ -405,8 +454,28 @@ function finishMobileTap(event, gesture) {
     const point = mobileCanvasPoint(event);
 
     if (
+        typeof MAP_TOOL_STATE !== 'undefined' &&
+        MAP_TOOL_STATE.tool === 'targeting'
+    ) {
+        const placed = toWorld(
+            point.x,
+            point.y
+        );
+
+        if (isWorldPointInsideMap(placed)) {
+            createSavedTargetAtPoint(placed);
+
+            if (typeof setMapTool === 'function') {
+                setMapTool(null);
+            }
+        }
+
+        return;
+    }
+
+    if (
         typeof MAP_TOOL_STATE === 'undefined' ||
-        !['ruler', 'pencil', 'eraser', 'marker'].includes(
+        !['ruler', 'pencil', 'shapes', 'eraser', 'marker'].includes(
             MAP_TOOL_STATE.tool
         )
     ) {
@@ -431,6 +500,32 @@ function finishMobileTap(event, gesture) {
             );
             return;
         }
+    }
+
+    const hitSavedTarget =
+        typeof savedTargetAtScreen === 'function'
+            ? savedTargetAtScreen(
+                point.x,
+                point.y,
+                MOBILE_POINT_HIT_RADIUS
+            )
+            : null;
+
+    if (hitSavedTarget) {
+
+        if (
+            isPointMapLocked(
+                'target'
+            )
+        ) {
+            return;
+        }
+
+        restoreTarget(
+            hitSavedTarget
+        );
+
+        return;
     }
 
     const world = toWorld(

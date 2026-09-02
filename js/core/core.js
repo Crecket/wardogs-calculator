@@ -46,6 +46,9 @@ const SAVED_TARGETS_KEY =
 const SAVE_ARTILLERY_KEY =
     'wardogs-save-artillery-position';
 
+const MAP_POINTS_KEY =
+    'wardogs-map-points';
+
 
 /* =========================
    ZOOM
@@ -199,8 +202,17 @@ function renderScale() {
    DOM
    ========================= */
 
+let POPOUT_DOCUMENT = null;
+
 const $ = id =>
-    document.getElementById(id);
+    document.getElementById(id) ||
+    POPOUT_DOCUMENT?.getElementById(id) ||
+    null;
+
+const $q = selector =>
+    document.querySelector(selector) ||
+    POPOUT_DOCUMENT?.querySelector(selector) ||
+    null;
 
 /*
  * Writing the same string back still dirties layout, and the readouts are

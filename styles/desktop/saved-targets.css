@@ -8,7 +8,7 @@
     top: 14px;
     right: 14px;
 
-    width: 300px;
+    width: 340px;
 
     max-width: calc(100% - 28px);
 
@@ -132,6 +132,8 @@
 
     display: flex;
 
+    flex-wrap: wrap;
+
     align-items: center;
 
     justify-content: space-between;
@@ -170,6 +172,51 @@
     border-color: var(--accent-border);
 }
 
+.saved-target.active.partial {
+    border-style: dashed;
+}
+
+.saved-target.partial .saved-target-artillery.with-artillery {
+    color: #d7a452;
+}
+
+
+/* =========================
+   SAVED TARGET INDEX
+   ========================= */
+
+.saved-target-index {
+    min-width: 18px;
+    height: 18px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 4px;
+
+    background: var(--active-bg);
+
+    border: 1px solid var(--border-light);
+
+    color: var(--muted);
+
+    font:
+            10px ui-monospace,
+            SFMono-Regular,
+            Consolas,
+            monospace;
+}
+
+.saved-target.active .saved-target-index {
+    color: var(--accent);
+
+    border-color: var(--accent-border);
+}
+
 
 /* =========================
    SAVED TARGET INFO
@@ -201,6 +248,38 @@
     font-weight: 600;
 }
 
+.saved-target-name.editing {
+    outline: none;
+
+    overflow: visible;
+
+    text-overflow: clip;
+
+    white-space: pre;
+
+    padding: 1px 4px;
+
+    margin: -1px -4px;
+
+    border-radius: 4px;
+
+    background: rgba(255, 255, 255, 0.08);
+
+    box-shadow: inset 0 0 0 1px rgba(215, 164, 82, 0.8);
+
+    cursor: text;
+}
+
+.saved-target-meta {
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+}
+
 .saved-target-coords {
     color: var(--muted);
 
@@ -215,6 +294,48 @@
     overflow: hidden;
 
     text-overflow: ellipsis;
+}
+
+.saved-target-artillery {
+    width: 18px;
+    min-width: 18px;
+
+    height: 18px;
+    min-height: 18px;
+
+    margin: 0;
+    padding: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border: 1px solid transparent;
+
+    border-radius: 4px;
+
+    background: none;
+
+    cursor: pointer;
+}
+
+.saved-target-artillery:hover {
+    border-color: var(--accent-border);
+
+    background: var(--input-hover-bg);
+}
+
+.saved-target-artillery.with-artillery {
+    color: var(--accent);
+}
+
+.saved-target-artillery.target-only {
+    color: var(--muted);
+
+    opacity: .45;
 }
 
 
@@ -411,6 +532,14 @@
     color: var(--accent);
 }
 
+.saved-target-actions-inline .saved-target-sync {
+    color: var(--accent);
+}
+
+.saved-target-actions-inline .saved-target-sync[hidden] {
+    display: none;
+}
+
 .saved-target-transfer-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -462,6 +591,73 @@
 
 
 /* =========================
+   GUNS PANEL
+   ========================= */
+
+/*
+ * The gun list floats over the top-left of the map, opposite the saved
+ * targets, and borrows their whole vocabulary — panel chrome, rows and
+ * buttons.
+ */
+
+.guns-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 8px;
+
+    margin-bottom: 10px;
+}
+
+.guns-header h2 {
+    margin: 0;
+}
+
+.saved-targets.guns-panel {
+    left: 14px;
+    right: auto;
+
+    width: 310px;
+}
+
+.guns-panel .saved-targets-list {
+    max-height: 200px;
+}
+
+.guns-panel .saved-target {
+    min-height: 44px;
+
+    padding: 7px 9px;
+}
+
+.guns-panel .saved-target-actions-inline {
+    min-width: 0;
+}
+
+.guns-panel .gun-visibility {
+    font-size: 12px;
+
+    line-height: 1;
+}
+
+/*
+ * Hidden guns still list, so the row itself has to say so — otherwise the
+ * only signal is a small glyph in the corner.
+ */
+.guns-panel .gun-row.hidden .saved-target-info {
+    opacity: .45;
+}
+
+.guns-panel .save-target-button:disabled {
+    opacity: .45;
+
+    cursor: not-allowed;
+}
+
+/* =========================
    SAVED TARGET FULL FIRING INFO
    ========================= */
 
@@ -509,6 +705,8 @@
 
 .saved-target-solution {
     display: grid;
+
+    flex: 0 0 100%;
 
     grid-template-columns:
         repeat(
@@ -628,6 +826,124 @@
     padding-top: 1px;
 }
 
+
+/* =========================
+   REACH BADGES
+   ========================= */
+
+.saved-target-head {
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 8px;
+}
+
+.saved-target-head .saved-target-name {
+    min-width: 0;
+
+    flex: 1 1 auto;
+}
+
+.saved-target-reach[hidden] {
+    display: none;
+}
+
+.saved-target-reach {
+    flex: 0 0 auto;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 3px;
+}
+
+.saved-target-reach-badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 2px;
+
+    min-width: 15px;
+
+    height: 14px;
+
+    padding: 0 3px;
+
+    border: 1px solid transparent;
+
+    font:
+        9px ui-monospace,
+        SFMono-Regular,
+        Consolas,
+        monospace;
+
+    line-height: 1;
+}
+
+.saved-target-reach-badge .reach-glyph {
+    font-size: 10px;
+}
+
+.saved-target-reach-badge .reach-count {
+    opacity: .85;
+}
+
+.saved-target-reach-badge.reach-pending {
+    border-radius: 8px;
+
+    border-color: var(--border);
+
+    color: var(--muted);
+}
+
+.saved-target-reach-badge.reach-ok {
+    border-radius: 8px;
+
+    border-color:
+        color-mix(
+            in srgb,
+            #6fbf7a 55%,
+            var(--border)
+        );
+
+    color: #6fbf7a;
+}
+
+.saved-target-reach-badge.reach-partial {
+    border-radius: 8px;
+
+    border-color:
+        color-mix(
+            in srgb,
+            #e09b4a 55%,
+            var(--border)
+        );
+
+    color: #e09b4a;
+}
+
+.saved-target-reach-badge.reach-out {
+    border-radius: 2px;
+
+    border-color:
+        color-mix(
+            in srgb,
+            #d86666 46%,
+            var(--border)
+        );
+
+    color: #d86666;
+}
+
 @media (max-width: 520px) {
     .saved-targets {
         top: 10px;
@@ -638,18 +954,5 @@
 
         max-width:
             calc(100% - 20px);
-    }
-
-    .saved-target-solution {
-        grid-template-columns:
-            repeat(
-                2,
-                minmax(0, 1fr)
-            );
-    }
-
-    .saved-target-metric-mil {
-        grid-column:
-            1 / -1;
     }
 }

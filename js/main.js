@@ -197,6 +197,8 @@ async function init() {
 
         await loadWeapons();
 
+        loadProjectileModel();
+
         await loadMapAssets();
 
         await loadMaps();
@@ -206,6 +208,12 @@ async function init() {
         initMapTools();
 
         initLayout();
+
+        /*
+         * Before the clamp below, so points restored from a previous
+         * visit are pulled inside the map's bounds like any other.
+         */
+        loadMapPoints();
 
         /*
          * Sync initial state with the
@@ -240,6 +248,7 @@ async function init() {
 
         updatePresetLock();
         updatePointLocksUI();
+        updateForcePlacementUI();
 
         applyLanguage();
 
@@ -253,6 +262,28 @@ async function init() {
         resize();
 
         renderSavedTargets();
+
+        if (typeof initGunsUI === 'function') {
+            initGunsUI();
+        }
+
+        /*
+         * Last: joining from a #room= link replaces map content, so it
+         * must run after the solo state is fully loaded and rendered.
+         */
+        if (
+            typeof initCollab ===
+            'function'
+        ) {
+            initCollab();
+        }
+
+        if (
+            typeof initObs ===
+            'function'
+        ) {
+            initObs();
+        }
 
     } catch (error) {
 

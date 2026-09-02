@@ -1,4 +1,10 @@
 .idea
 dist/
 dist-mobile/
+.env
+.wrangler/
+node_modules/
+maps/tiles/
 Trace-*.json
+.superpowers/
+.claude/worktrees/

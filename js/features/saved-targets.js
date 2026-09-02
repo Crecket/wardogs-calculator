@@ -19,44 +19,122 @@ const SAVED_TARGET_IMPORT_LIMIT = 500;
  */
 const SAVED_TARGET_MATCH_EPSILON = 1e-6;
 
+let savedTargetRenameId = null;
+
+let targetingHintVisible = false;
+
 /*
- * Which saved targets the list highlights is derived from where the
- * target actually sits, never tracked separately, so every writer of
- * S.target keeps the highlight honest without having to know about it.
+ * Which saved target the list highlights is derived from where the
+ * target actually sits, never tracked separately. In a collab room the
+ * target moves because a peer moved it just as often as because we
+ * clicked a row, and a tracked selection only ever knew about the
+ * latter.
  */
-function activeSavedTargetIds() {
+function savedTargetPointMatches(point, x, y) {
 
-    const active = new Set();
+    return (
+        Boolean(point) &&
+        Number.isFinite(point.x) &&
+        Number.isFinite(point.y) &&
+        Math.abs(
+            Number(x) -
+            point.x
+        ) < SAVED_TARGET_MATCH_EPSILON &&
+        Math.abs(
+            Number(y) -
+            point.y
+        ) < SAVED_TARGET_MATCH_EPSILON
+    );
+}
 
-    if (
-        !S.target ||
-        !Number.isFinite(S.target.x) ||
-        !Number.isFinite(S.target.y)
-    ) {
-        return active;
-    }
+function savedTargetMatchState() {
+
+    const levels = new Map();
 
     savedTargets.forEach(
         target => {
 
             if (
-                Math.abs(
-                    Number(target.x) -
-                    S.target.x
-                ) < SAVED_TARGET_MATCH_EPSILON &&
-                Math.abs(
-                    Number(target.y) -
-                    S.target.y
-                ) < SAVED_TARGET_MATCH_EPSILON
+                !savedTargetPointMatches(
+                    S.target,
+                    target.x,
+                    target.y
+                )
             ) {
-                active.add(
-                    String(target.id)
-                );
+                return;
             }
+
+            const origin =
+                target.saveArtillery
+                    ? savedTargetOrigin(target)
+                    : null;
+
+            const full =
+                !origin ||
+                savedTargetPointMatches(
+                    S.origin,
+                    origin.x,
+                    origin.y
+                );
+
+            levels.set(
+                String(target.id),
+                full
+                    ? 'full'
+                    : 'partial'
+            );
         }
     );
 
-    return active;
+    return levels;
+}
+
+function activeSavedTargetIds() {
+    return new Set(
+        savedTargetMatchState().keys()
+    );
+}
+
+function savedTargetSyncHidden(id, state) {
+
+    if (!state.size) {
+        return false;
+    }
+
+    return state.get(
+        String(id)
+    ) !== 'partial';
+}
+
+function applySavedTargetRowState(item, state) {
+
+    const level =
+        state.get(
+            item.dataset.targetId
+        );
+
+    item.classList.toggle(
+        'active',
+        level !== undefined
+    );
+
+    item.classList.toggle(
+        'partial',
+        level === 'partial'
+    );
+
+    const sync =
+        item.querySelector(
+            '.saved-target-sync'
+        );
+
+    if (sync) {
+        sync.hidden =
+            savedTargetSyncHidden(
+                item.dataset.targetId,
+                state
+            );
+    }
 }
 
 /*
@@ -74,21 +152,87 @@ function refreshSavedTargetHighlight() {
         return;
     }
 
-    const activeIds =
-        activeSavedTargetIds();
+    const state =
+        savedTargetMatchState();
 
     container
         .querySelectorAll('.saved-target')
         .forEach(
             item => {
-                item.classList.toggle(
-                    'active',
-                    activeIds.has(
-                        item.dataset.targetId
-                    )
+                applySavedTargetRowState(
+                    item,
+                    state
                 );
             }
         );
+}
+
+function savedTargetNearest(distanceTo, threshold) {
+
+    if (!savedTargets.length) {
+        return null;
+    }
+
+    const activeIds =
+        activeSavedTargetIds();
+
+    let best = null;
+
+    let bestDistance = threshold;
+
+    for (const target of savedTargets) {
+
+        if (
+            activeIds.has(
+                String(target.id)
+            )
+        ) {
+            continue;
+        }
+
+        const x =
+            Number(target.x);
+
+        const y =
+            Number(target.y);
+
+        if (
+            !Number.isFinite(x) ||
+            !Number.isFinite(y)
+        ) {
+            continue;
+        }
+
+        const distance =
+            distanceTo(x, y);
+
+        if (distance <= bestDistance) {
+            best = target;
+            bestDistance = distance;
+        }
+    }
+
+    return best;
+}
+
+function savedTargetAtPoint(point, threshold) {
+    return savedTargetNearest(
+        (x, y) => Math.hypot(
+            point.x - x,
+            point.y - y
+        ),
+        threshold
+    );
+}
+
+function savedTargetAtScreen(x, y, radiusPx) {
+    return savedTargetNearest(
+        (targetX, targetY) => {
+            const at = toScreen(targetX, targetY);
+            return Math.hypot(x - at.x, y - at.y);
+        },
+        radiusPx
+    );
 }
 
 function generateTargetId() {
@@ -156,12 +300,231 @@ function loadSavedTargets() {
 
 function persistSavedTargets() {
 
+    /*
+     * See saveMapToolState: a shared session never writes room content
+     * over your own saved targets.
+     */
+    if (
+        typeof collabSuppressesLocalPersistence === 'function' &&
+        collabSuppressesLocalPersistence()
+    ) {
+        return;
+    }
+
     localStorage.setItem(
         SAVED_TARGETS_KEY,
         JSON.stringify(
             savedTargets
         )
     );
+}
+
+/* =========================
+   ARTILLERY / TARGET POSITIONS
+   ========================= */
+
+/*
+ * Where the two points sit is worth keeping across a reload: coming back
+ * to a gun laid on the wrong side of the map means placing it again every
+ * single time.
+ *
+ * A room is the exception. There the points belong to the room, not to
+ * this browser, so the write is suppressed (see saveMapToolState) and the
+ * document the server sends on join is what wins — always the latest,
+ * never a stale local copy.
+ *
+ * The map id rides along because the coordinates are meaningless on a
+ * different map, and a mismatch drops them rather than dropping the gun
+ * somewhere arbitrary.
+ */
+const MAP_POINTS_WRITE_DELAY_MS = 300;
+
+let mapPointsWriteTimer = null;
+
+function persistMapPoints() {
+
+    if (
+        typeof collabSuppressesLocalPersistence === 'function' &&
+        collabSuppressesLocalPersistence()
+    ) {
+        return;
+    }
+
+    /*
+     * inputs() runs on every frame of a drag, so the write trails the
+     * gesture instead of hitting localStorage a hundred times across it.
+     */
+    if (mapPointsWriteTimer) {
+        return;
+    }
+
+    mapPointsWriteTimer = setTimeout(
+        () => {
+            mapPointsWriteTimer = null;
+            writeMapPoints();
+        },
+        MAP_POINTS_WRITE_DELAY_MS
+    );
+}
+
+function writeMapPoints() {
+
+    if (
+        typeof collabSuppressesLocalPersistence === 'function' &&
+        collabSuppressesLocalPersistence()
+    ) {
+        return;
+    }
+
+    try {
+        localStorage.setItem(
+            MAP_POINTS_KEY,
+            JSON.stringify({
+                map: S.map,
+
+                /*
+                 * Gun 1 is still written as a singular `origin` so a user
+                 * who lands back on an older cached build keeps their
+                 * artillery position instead of losing it. Drop this after
+                 * one release.
+                 */
+                origin: {
+                    x: S.guns[0].position.x,
+                    y: S.guns[0].position.y
+                },
+
+                target: {
+                    x: S.target.x,
+                    y: S.target.y
+                },
+
+                /*
+                 * visible and activeGunId are deliberately absent: they are
+                 * view state, and a reload starts from a clean view the way
+                 * zoom and pan already do.
+                 */
+                guns: S.guns.map(gun => ({
+                    id: gun.id,
+                    name: gun.name,
+                    x: gun.position.x,
+                    y: gun.position.y,
+                    weapon: gun.weapon
+                }))
+            })
+        );
+    } catch (error) {
+        console.warn(
+            'Failed to save map points:',
+            error
+        );
+    }
+}
+
+function readStoredPoint(value) {
+
+    return (
+        value &&
+        Number.isFinite(Number(value.x)) &&
+        Number.isFinite(Number(value.y))
+    )
+        ? {
+            x: Number(value.x),
+            y: Number(value.y)
+        }
+        : null;
+}
+
+function loadMapPoints() {
+
+    try {
+        const raw =
+            localStorage.getItem(
+                MAP_POINTS_KEY
+            );
+
+        if (!raw) {
+            return;
+        }
+
+        const parsed =
+            JSON.parse(raw);
+
+        if (parsed?.map !== S.map) {
+            return;
+        }
+
+        /*
+         * S.target is assigned before the guns are rebuilt on purpose:
+         * S.origin's setter writes through activeGun(), so nothing here may
+         * touch S.origin while S.guns is mid-replacement.
+         */
+        const target =
+            readStoredPoint(parsed.target);
+
+        if (target) {
+            S.target = target;
+        }
+
+        /*
+         * A record written before guns existed carries only `origin`. It
+         * becomes gun 1 rather than being discarded — the position is the
+         * thing the user cares about, and losing it on upgrade would be a
+         * silent regression.
+         */
+        const stored = Array.isArray(parsed.guns) && parsed.guns.length
+            ? parsed.guns
+            : [{
+                ...readStoredPoint(parsed.origin),
+                name: S.guns[0].name,
+                weapon: S.guns[0].weapon
+            }];
+
+        const restored = stored
+            .slice(0, GUN_LIMIT)
+            .map(entry => {
+                const point = readStoredPoint(entry);
+
+                if (!point) {
+                    return null;
+                }
+
+                const gun = createGun({
+                    x: point.x,
+                    y: point.y,
+                    weapon: entry.weapon || null,
+                    name: entry.name
+                });
+
+                /*
+                 * Keep the stored id where it is usable, so a gun keeps its
+                 * identity across a reload and a room rejoin does not
+                 * duplicate it. Anything the server would reject is
+                 * replaced by the freshly minted one.
+                 */
+                if (
+                    typeof entry.id === 'string' &&
+                    /^[a-z0-9][a-z0-9_-]{0,63}$/i.test(entry.id)
+                ) {
+                    gun.id = entry.id;
+                }
+
+                clamp(gun.position);
+
+                return gun;
+            })
+            .filter(Boolean);
+
+        if (restored.length) {
+            S.guns = restored;
+            S.activeGunId = S.guns[0].id;
+        }
+
+    } catch (error) {
+        console.warn(
+            'Failed to load map points:',
+            error
+        );
+    }
 }
 
 function getSaveArtilleryPreference() {
@@ -251,18 +614,30 @@ function savedTargetTransferStatus(
     );
 }
 
+function savedTargetOrigin(target) {
+
+    const x =
+        Number(target?.origin?.x);
+
+    const y =
+        Number(target?.origin?.y);
+
+    if (
+        !Number.isFinite(x) ||
+        !Number.isFinite(y)
+    ) {
+        return null;
+    }
+
+    return {
+        x,
+        y
+    };
+}
+
 function savedTargetForExport(target) {
-    const saveArtillery =
-        Boolean(
-            target.saveArtillery &&
-            target.origin &&
-            Number.isFinite(
-                Number(target.origin.x)
-            ) &&
-            Number.isFinite(
-                Number(target.origin.y)
-            )
-        );
+    const origin =
+        savedTargetOrigin(target);
 
     return {
         name:
@@ -272,20 +647,12 @@ function savedTargetForExport(target) {
                 : '',
         x: Number(target.x),
         y: Number(target.y),
-        saveArtillery,
-        origin:
-            saveArtillery
-                ? {
-                    x:
-                        Number(
-                            target.origin.x
-                        ),
-                    y:
-                        Number(
-                            target.origin.y
-                        )
-                }
-                : null
+        saveArtillery:
+            Boolean(
+                target.saveArtillery &&
+                origin
+            ),
+        origin
     };
 }
 
@@ -420,17 +787,8 @@ function normalizeImportedSavedTarget(
         return null;
     }
 
-    const hasOrigin =
-        Boolean(
-            target.saveArtillery &&
-            target.origin &&
-            Number.isFinite(
-                Number(target.origin.x)
-            ) &&
-            Number.isFinite(
-                Number(target.origin.y)
-            )
-        );
+    const origin =
+        savedTargetOrigin(target);
 
     return {
         id: generateTargetId(),
@@ -441,20 +799,12 @@ function normalizeImportedSavedTarget(
             ),
         x: Number(target.x),
         y: Number(target.y),
-        saveArtillery: hasOrigin,
-        origin:
-            hasOrigin
-                ? {
-                    x:
-                        Number(
-                            target.origin.x
-                        ),
-                    y:
-                        Number(
-                            target.origin.y
-                        )
-                }
-                : null
+        saveArtillery:
+            Boolean(
+                target.saveArtillery &&
+                origin
+            ),
+        origin
     };
 }
 
@@ -572,6 +922,16 @@ async function importSavedTargets() {
         );
 
         persistSavedTargets();
+
+        if (
+            typeof collabOnBulkAdd ===
+            'function'
+        ) {
+            collabOnBulkAdd({
+                targets: imported.targets
+            });
+        }
+
         renderSavedTargets();
 
         savedTargetTransferStatus(
@@ -635,17 +995,14 @@ function saveCurrentTarget() {
 
         saveArtillery,
 
-        origin:
-            saveArtillery
-                ? {
-                    x: Number(
-                        S.origin.x
-                    ),
-                    y: Number(
-                        S.origin.y
-                    )
-                }
-                : null
+        origin: {
+            x: Number(
+                S.origin.x
+            ),
+            y: Number(
+                S.origin.y
+            )
+        }
     };
 
     savedTargets.push(
@@ -653,6 +1010,13 @@ function saveCurrentTarget() {
     );
 
     persistSavedTargets();
+
+    if (
+        typeof collabOnTargetAdded ===
+        'function'
+    ) {
+        collabOnTargetAdded(target);
+    }
 
     if (
         typeof trackAnalytics ===
@@ -670,6 +1034,84 @@ function saveCurrentTarget() {
     renderSavedTargets();
 }
 
+function createSavedTargetAtPoint(point) {
+
+    commitPendingSavedTargetRename();
+
+    const x =
+        Number(point?.x);
+
+    const y =
+        Number(point?.y);
+
+    if (
+        !Number.isFinite(x) ||
+        !Number.isFinite(y)
+    ) {
+        return null;
+    }
+
+    const target = {
+
+        id:
+            generateTargetId(),
+
+        name:
+            createTargetName(),
+
+        x,
+
+        y,
+
+        saveArtillery:
+            false,
+
+        origin: {
+            x: Number(
+                S.origin.x
+            ),
+            y: Number(
+                S.origin.y
+            )
+        }
+    };
+
+    clamp(target);
+
+    savedTargets.push(
+        target
+    );
+
+    persistSavedTargets();
+
+    if (
+        typeof collabOnTargetAdded ===
+        'function'
+    ) {
+        collabOnTargetAdded(target);
+    }
+
+    if (
+        typeof trackAnalytics ===
+        'function'
+    ) {
+        trackAnalytics(
+            'target-placed',
+            {
+                map: S.map
+            }
+        );
+    }
+
+    savedTargetRenameId =
+        target.id;
+
+    renderSavedTargets();
+    draw();
+
+    return target;
+}
+
 function deleteTarget(id) {
 
     const index =
@@ -682,12 +1124,20 @@ function deleteTarget(id) {
         return;
     }
 
-    savedTargets.splice(
-        index,
-        1
-    );
+    const [removed] =
+        savedTargets.splice(
+            index,
+            1
+        );
 
     persistSavedTargets();
+
+    if (
+        typeof collabOnTargetRemoved ===
+        'function'
+    ) {
+        collabOnTargetRemoved(removed);
+    }
 
     renderSavedTargets();
 }
@@ -721,12 +1171,270 @@ function editTargetName(id) {
         return;
     }
 
+    renameSavedTarget(
+        id,
+        trimmed
+    );
+}
+
+function renameSavedTarget(id, name) {
+
+    const target =
+        savedTargets.find(
+            item =>
+                item.id === id
+        );
+
+    if (
+        !target ||
+        target.name === name
+    ) {
+        renderSavedTargets();
+        return;
+    }
+
+    const previousName =
+        target.name;
+
     target.name =
-        trimmed;
+        name;
 
     persistSavedTargets();
 
+    if (
+        typeof collabOnTargetRenamed ===
+        'function'
+    ) {
+        collabOnTargetRenamed(
+            id,
+            previousName,
+            name
+        );
+    }
+
     renderSavedTargets();
+}
+
+function finishSavedTargetRename(id, value) {
+
+    if (savedTargetRenameId !== id) {
+        return;
+    }
+
+    savedTargetRenameId = null;
+
+    const trimmed =
+        String(value || '').trim();
+
+    if (!trimmed) {
+        renderSavedTargets();
+        return;
+    }
+
+    renameSavedTarget(
+        id,
+        trimmed
+    );
+}
+
+function commitPendingSavedTargetRename() {
+
+    if (savedTargetRenameId === null) {
+        return;
+    }
+
+    const element =
+        $('savedTargetsList')
+            ?.querySelector(
+                `.saved-target[data-target-id="${savedTargetRenameId}"] .saved-target-name`
+            );
+
+    finishSavedTargetRename(
+        savedTargetRenameId,
+        element
+            ? element.textContent
+            : ''
+    );
+}
+
+function cancelSavedTargetRename() {
+
+    if (savedTargetRenameId === null) {
+        return;
+    }
+
+    savedTargetRenameId = null;
+
+    renderSavedTargets();
+}
+
+function focusSavedTargetRename(element) {
+
+    element.focus();
+
+    const range =
+        document.createRange();
+
+    range.selectNodeContents(element);
+
+    const selection =
+        window.getSelection();
+
+    if (!selection) {
+        return;
+    }
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function updateTargetingModeHint() {
+
+    const active =
+        typeof MAP_TOOL_STATE !== 'undefined' &&
+        MAP_TOOL_STATE.tool === 'targeting';
+
+    if (active) {
+        savedTargetTransferStatus(
+            'targetingModeHint'
+        );
+
+        targetingHintVisible = true;
+        return;
+    }
+
+    if (targetingHintVisible) {
+        savedTargetTransferStatus();
+        targetingHintVisible = false;
+    }
+}
+
+function toggleTargetArtillery(id) {
+
+    const target =
+        savedTargets.find(
+            item =>
+                item.id === id
+        );
+
+    if (!target) {
+        return;
+    }
+
+    const previous = {
+        ...target,
+        origin:
+            target.origin
+                ? { ...target.origin }
+                : null
+    };
+
+    const next =
+        !target.saveArtillery;
+
+    if (
+        next &&
+        !savedTargetOrigin(target)
+    ) {
+
+        target.origin = {
+            x: Number(S.origin.x),
+            y: Number(S.origin.y)
+        };
+    }
+
+    target.saveArtillery = next;
+
+    persistSavedTargets();
+
+    if (
+        typeof collabOnTargetMoved ===
+        'function'
+    ) {
+        collabOnTargetMoved(
+            { ...target },
+            previous
+        );
+    }
+
+    renderSavedTargets();
+}
+
+function syncTargetToCurrent(id) {
+
+    const target =
+        savedTargets.find(
+            item =>
+                item.id === id
+        );
+
+    if (
+        !target ||
+        !S.target ||
+        !Number.isFinite(S.target.x) ||
+        !Number.isFinite(S.target.y) ||
+        savedTargetSyncHidden(
+            id,
+            savedTargetMatchState()
+        )
+    ) {
+        return;
+    }
+
+    const previous = {
+        ...target,
+        origin:
+            target.origin
+                ? { ...target.origin }
+                : null
+    };
+
+    target.x =
+        Number(S.target.x);
+
+    target.y =
+        Number(S.target.y);
+
+    if (target.saveArtillery) {
+
+        target.origin = {
+            x: Number(S.origin.x),
+            y: Number(S.origin.y)
+        };
+    }
+
+    persistSavedTargets();
+
+    if (
+        typeof collabOnTargetMoved ===
+        'function'
+    ) {
+        collabOnTargetMoved(
+            { ...target },
+            previous
+        );
+    }
+
+    if (
+        typeof trackAnalytics ===
+        'function'
+    ) {
+        trackAnalytics(
+            'target-synced',
+            {
+                withArtillery:
+                    Boolean(
+                        target.saveArtillery
+                    )
+            }
+        );
+    }
+
+    renderSavedTargets();
+
+    if (typeof draw === 'function') {
+        draw();
+    }
 }
 
 function restoreTarget(target) {
@@ -742,17 +1450,13 @@ function restoreTarget(target) {
         y: Number(target.y)
     };
 
-    if (
-        target.saveArtillery &&
-        target.origin &&
-        typeof target.origin.x === 'number' &&
-        typeof target.origin.y === 'number'
-    ) {
+    const origin =
+        target.saveArtillery
+            ? savedTargetOrigin(target)
+            : null;
 
-        S.origin = {
-            x: Number(target.origin.x),
-            y: Number(target.origin.y)
-        };
+    if (origin) {
+        S.origin = origin;
     }
 
     clamp(S.target);
@@ -766,10 +1470,7 @@ function restoreTarget(target) {
             'target-restored',
             {
                 withArtillery:
-                    Boolean(
-                        target.saveArtillery &&
-                        target.origin
-                    )
+                    Boolean(origin)
             }
         );
     }
@@ -777,6 +1478,15 @@ function restoreTarget(target) {
     inputs();
     renderSavedTargets();
 }
+
+const SAVED_TARGET_ARTILLERY_ICON =
+    '<svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13"' +
+    ' fill="none" stroke="currentColor" stroke-width="1.9"' +
+    ' stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M4 19h9"/>' +
+    '<path d="M7 19 20 6"/>' +
+    '<circle cx="6.6" cy="19" r="2"/>' +
+    '</svg>';
 
 function renderSavedTargets() {
 
@@ -825,11 +1535,11 @@ function renderSavedTargets() {
         return;
     }
 
-    const activeIds =
-        activeSavedTargetIds();
+    const state =
+        savedTargetMatchState();
 
     savedTargets.forEach(
-        target => {
+        (target, index) => {
 
             const item =
                 document.createElement(
@@ -842,16 +1552,6 @@ function renderSavedTargets() {
             item.dataset.targetId =
                 target.id;
 
-            if (
-                activeIds.has(
-                    String(target.id)
-                )
-            ) {
-                item.classList.add(
-                    'active'
-                );
-            }
-
             item.addEventListener(
                 'click',
                 () => {
@@ -860,6 +1560,17 @@ function renderSavedTargets() {
                     );
                 }
             );
+
+            const number =
+                document.createElement(
+                    'span'
+                );
+
+            number.className =
+                'saved-target-index';
+
+            number.textContent =
+                String(index + 1);
 
             const info =
                 document.createElement(
@@ -880,6 +1591,79 @@ function renderSavedTargets() {
             name.textContent =
                 target.name;
 
+            const renaming =
+                target.id ===
+                savedTargetRenameId;
+
+            if (renaming) {
+
+                name.className =
+                    'saved-target-name editing';
+
+                name.contentEditable =
+                    'true';
+
+                name.spellcheck =
+                    false;
+
+                name.addEventListener(
+                    'mousedown',
+                    event => {
+                        event.stopPropagation();
+                    }
+                );
+
+                name.addEventListener(
+                    'click',
+                    event => {
+                        event.stopPropagation();
+                    }
+                );
+
+                name.addEventListener(
+                    'keydown',
+                    event => {
+
+                        if (event.key === 'Enter') {
+
+                            event.preventDefault();
+
+                            finishSavedTargetRename(
+                                target.id,
+                                name.textContent
+                            );
+
+                            return;
+                        }
+
+                        if (event.key === 'Escape') {
+
+                            event.preventDefault();
+
+                            cancelSavedTargetRename();
+                        }
+                    }
+                );
+
+                name.addEventListener(
+                    'blur',
+                    () => {
+                        finishSavedTargetRename(
+                            target.id,
+                            name.textContent
+                        );
+                    }
+                );
+            }
+
+            const meta =
+                document.createElement(
+                    'div'
+                );
+
+            meta.className =
+                'saved-target-meta';
+
             const coords =
                 document.createElement(
                     'span'
@@ -891,12 +1675,71 @@ function renderSavedTargets() {
             coords.textContent =
                 `X ${formatGameCoordinate(target.x)} · Y ${formatGameCoordinate(target.y)}`;
 
+            const carriesArtillery =
+                Boolean(
+                    target.saveArtillery &&
+                    savedTargetOrigin(target)
+                );
+
+            const artillery =
+                document.createElement(
+                    'button'
+                );
+
+            artillery.type =
+                'button';
+
+            artillery.className =
+                carriesArtillery
+                    ? 'saved-target-artillery with-artillery'
+                    : 'saved-target-artillery target-only';
+
+            artillery.innerHTML =
+                SAVED_TARGET_ARTILLERY_ICON;
+
+            artillery.title =
+                carriesArtillery
+                    ? tr('targetWithArtilleryHint')
+                    : tr('targetOnlyHint');
+
+            artillery.setAttribute(
+                'aria-pressed',
+                String(carriesArtillery)
+            );
+
+            artillery.setAttribute(
+                'aria-label',
+                carriesArtillery
+                    ? tr('targetWithArtillery')
+                    : tr('targetOnly')
+            );
+
+            artillery.addEventListener(
+                'click',
+                event => {
+
+                    event.stopPropagation();
+
+                    toggleTargetArtillery(
+                        target.id
+                    );
+                }
+            );
+
+            meta.appendChild(
+                coords
+            );
+
+            meta.appendChild(
+                artillery
+            );
+
             info.appendChild(
                 name
             );
 
             info.appendChild(
-                coords
+                meta
             );
 
             const actions =
@@ -906,6 +1749,41 @@ function renderSavedTargets() {
 
             actions.className =
                 'saved-target-actions-inline';
+
+            const sync =
+                document.createElement(
+                    'button'
+                );
+
+            sync.type =
+                'button';
+
+            sync.className =
+                'saved-target-icon-button saved-target-sync';
+
+            sync.textContent =
+                '\u27f3';
+
+            sync.title =
+                tr('syncTarget');
+
+            sync.setAttribute(
+                'aria-label',
+                tr('syncTarget')
+            );
+
+
+            sync.addEventListener(
+                'click',
+                event => {
+
+                    event.stopPropagation();
+
+                    syncTargetToCurrent(
+                        target.id
+                    );
+                }
+            );
 
             const exportButton =
                 document.createElement(
@@ -1008,6 +1886,10 @@ function renderSavedTargets() {
             );
 
             actions.appendChild(
+                sync
+            );
+
+            actions.appendChild(
                 exportButton
             );
 
@@ -1020,6 +1902,10 @@ function renderSavedTargets() {
             );
 
             item.appendChild(
+                number
+            );
+
+            item.appendChild(
                 info
             );
 
@@ -1027,9 +1913,21 @@ function renderSavedTargets() {
                 actions
             );
 
+            applySavedTargetRowState(
+                item,
+                state
+            );
+
             container.appendChild(
                 item
             );
+
+            if (renaming) {
+                focusSavedTargetRename(
+                    name
+                );
+            }
         }
     );
 }
+

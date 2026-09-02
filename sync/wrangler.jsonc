@@ -1,0 +1,51 @@
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "name": "wardogs-sync",
+    "main": "src/index.js",
+    "compatibility_date": "2026-04-07",
+
+    "observability": {
+        "enabled": true
+    },
+
+    // Wrangler creates the DNS record itself on deploy, since olm.pet is
+    // already on Cloudflare nameservers. Delete this block to fall back to
+    // the free wardogs-sync.<subdomain>.workers.dev hostname instead.
+    "routes": [
+        {
+            "pattern": "wardogs-map-sync.olm.pet",
+            "custom_domain": true
+        }
+    ],
+
+    "durable_objects": {
+        "bindings": [
+            {
+                "name": "ROOM",
+                "class_name": "Room"
+            }
+        ]
+    },
+
+    // SQLite-backed: required on the Workers Free plan, and the only
+    // backend where a room's drawings can exceed the 128 KiB per-value
+    // cap that key-value storage would impose.
+    "migrations": [
+        {
+            "tag": "v1",
+            "new_sqlite_classes": ["Room"]
+        }
+    ],
+
+    "vars": {
+        // Comma-separated list of browser origins allowed to CREATE rooms.
+        // "*" allows any.
+        //
+        // Joining is deliberately not gated by this: the room code is the
+        // credential, and links get opened from contexts this list cannot
+        // enumerate. Requests with no Origin header (curl, native clients,
+        // the test suite) are allowed through — an origin allowlist is a
+        // browser-tab defence, not authentication.
+        "ALLOWED_ORIGINS": "https://wardogs-map.olm.pet,http://localhost:8000,http://127.0.0.1:8000"
+    }
+}

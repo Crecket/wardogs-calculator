@@ -190,3 +190,7 @@ Each point has a compact Lock action. Locking a point prevents touch taps and dr
 The map HUD prioritizes Distance, MIL, and Azimuth equally in a compact three-column solution panel. Range status remains visible below the primary values, while ΔX/ΔY stay in the expanded Result sheet as secondary details.
 
 The SPH-2 leveling warning is localized in Simplified Chinese and remains informational only. Terrain3D elevation context does not automatically change MIL in this release.
+
+### Second-monitor pop-out
+
+The desktop firing-solution pop-out (see `docs/features.md`) is not offered on the mobile interface: there is no second window to put it in, and the mobile shell already shows the solution in its own HUD above the map. `js/features/panel-popout.js` is not loaded by the mobile page, and it refuses to initialize on a `mobile-app` body in any case.

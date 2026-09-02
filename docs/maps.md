@@ -178,6 +178,11 @@ maps/index.json
 maps/tiles/my-map/
 ```
 
+   `maps/tiles/` is gitignored in this fork — the pyramids are served from R2
+   rather than committed. New tiles work locally straight away, but reaching a
+   deployed site means uploading them: see
+   [Uploading tiles](deployment.md#uploading-tiles).
+
 4. Configure the coordinate bounds.
 
 The map renderer is designed to be map-independent, so additional maps can be added without modifying the core rendering logic.

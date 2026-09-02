@@ -5,7 +5,8 @@
 .mobile-app .sidebar-toggle,
 .mobile-app footer,
 .mobile-app .toolbar,
-.mobile-app .legend {
+.mobile-app .legend,
+.mobile-app .cross-section {
     display: none !important;
 }
 
@@ -554,6 +555,8 @@
 @media (max-width: 370px) {
     body.mobile-app {
         --mobile-sheet-peek: 88px;
+        --mobile-tools-button: 38px;
+        --mobile-tools-rail-width: 89px;
     }
 
     .mobile-brand-copy > span {
@@ -566,19 +569,15 @@
         flex-basis: 28px;
     }
 
-    .mobile-solution-hud {
-        width: calc(100vw - 72px);
-    }
-
     .mobile-solution-metric > b,
     .mobile-solution-metric-highlight > b {
         font-size: 13px;
     }
 
     .mobile-app .map-tool-button {
-        width: 38px;
-        height: 38px;
-        min-height: 38px;
+        width: var(--mobile-tools-button);
+        height: var(--mobile-tools-button);
+        min-height: var(--mobile-tools-button);
     }
 
     .mobile-side-menu {
@@ -591,14 +590,16 @@
         height: 74vh;
     }
 
-    .mobile-app .map-tools {
-        top: 38px;
+    body.mobile-app {
+        --mobile-tools-top: 38px;
+        --mobile-tools-button: 36px;
+        --mobile-tools-rail-width: 85px;
     }
 
     .mobile-app .map-tool-button {
-        width: 36px;
-        height: 36px;
-        min-height: 36px;
+        width: var(--mobile-tools-button);
+        height: var(--mobile-tools-button);
+        min-height: var(--mobile-tools-button);
     }
 }
 

@@ -162,3 +162,194 @@ canvas.preset-marker-hover {
 }
 
 
+
+
+/* =========================
+   MIL UNDER CURSOR
+   ========================= */
+
+.mil-cursor {
+    position: absolute;
+
+    left: 0;
+    top: 0;
+
+    display: none;
+
+    min-width: 96px;
+
+    padding: 6px 8px;
+
+    border: 0;
+
+    border-radius: 5px;
+
+    background:
+            color-mix(
+                    in srgb,
+                    var(--header-bg) 93%,
+                    transparent
+            );
+
+    color: var(--accent);
+
+    font:
+            12px ui-monospace,
+            SFMono-Regular,
+            Consolas,
+            monospace;
+
+    pointer-events: none;
+
+    white-space: nowrap;
+
+    z-index: 5;
+
+    transform:
+            translate(12px, 12px);
+}
+
+.mil-cursor-range {
+    margin-bottom: 3px;
+
+    opacity: 0.75;
+}
+
+.mil-cursor-row {
+    display: flex;
+
+    gap: 8px;
+
+    align-items: baseline;
+
+    justify-content: space-between;
+}
+
+.mil-cursor-arc {
+    opacity: 0.75;
+}
+
+.mil-cursor-value {
+    font-weight: 700;
+}
+
+
+.cross-section {
+    position: absolute;
+
+    left: 10px;
+    bottom: 46px;
+
+    width: 380px;
+
+    max-width: calc(100% - 20px);
+
+    padding: 4px 4px 5px;
+
+    border: 1px solid var(--border-light);
+
+    border-radius: 7px;
+
+    background:
+            color-mix(
+                    in srgb,
+                    var(--header-bg) 92%,
+                    transparent
+            );
+
+    box-shadow:
+            0 4px 16px
+            rgba(0, 0, 0, .26);
+
+    backdrop-filter: blur(8px);
+
+    -webkit-backdrop-filter: blur(8px);
+
+    z-index: 6;
+}
+
+.cross-section-header {
+    min-height: 24px;
+
+    padding: 0 2px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+}
+
+.cross-section-title {
+    color: var(--muted);
+
+    opacity: .75;
+
+    font-size: 9px;
+
+    letter-spacing: .06em;
+
+    text-transform: uppercase;
+}
+
+.cross-section-toggle {
+    width: 24px;
+    min-width: 24px;
+
+    height: 24px;
+    min-height: 24px;
+
+    margin: 0;
+    margin-left: auto;
+
+    padding: 0;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid var(--border-light);
+
+    border-radius: 5px;
+
+    background: var(--input-bg);
+
+    color: var(--muted);
+
+    font-size: 12px;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.cross-section-toggle:hover,
+.cross-section-toggle:focus-visible {
+    border-color: var(--accent-border);
+
+    background: var(--input-hover-bg);
+
+    color: var(--accent);
+}
+
+.cross-section-canvas {
+    width: 100%;
+    height: 238px;
+
+    margin-top: 2px;
+
+    display: block;
+}
+
+.cross-section-caption {
+    margin-top: 3px;
+
+    padding: 0 2px;
+
+    color: var(--muted);
+
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.cross-section[data-collapsed="true"] .cross-section-canvas,
+.cross-section[data-collapsed="true"] .cross-section-caption {
+    display: none;
+}

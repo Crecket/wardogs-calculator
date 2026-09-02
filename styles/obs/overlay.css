@@ -1,0 +1,281 @@
+/* =========================
+   OBS OVERLAY ROUTE
+   ========================= */
+
+/*
+ * Loaded only by /obs/. Everything here is scoped to .obs-mode or to the
+ * [data-obs] root, so the stylesheet is inert if it is ever linked from
+ * another page.
+ *
+ * The chrome is hidden by exclusion rather than by naming each panel: a
+ * browser source must show the map and the readout and nothing else, and a
+ * rule that lists what stays keeps working when the shell grows a control.
+ */
+
+[data-obs],
+body.obs-mode {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: transparent;
+}
+
+body.obs-mode {
+    --obs-scale: 1;
+    --obs-base-scale: 1;
+    --obs-text-scale: 1;
+    --obs-ink: #ffffff;
+    --obs-accent: #f0be6b;
+    --obs-panel: rgba(8, 10, 12, .74);
+    --obs-edge: rgba(240, 190, 107, .85);
+
+    cursor: none;
+    user-select: none;
+}
+
+body.obs-mode * {
+    pointer-events: none !important;
+}
+
+body.obs-mode *:focus,
+body.obs-mode *:focus-visible {
+    outline: none !important;
+}
+
+body.obs-mode > *:not(main):not(.obs-overlay),
+body.obs-mode main > *:not(.workspace),
+body.obs-mode .workspace > *:not(.map),
+body.obs-mode .map > *:not(canvas) {
+    display: none !important;
+}
+
+body.obs-mode main,
+body.obs-mode .workspace {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    gap: 0;
+    border: 0;
+}
+
+body.obs-mode .map {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+body.obs-mode canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+}
+
+/*
+ * Transparent is the default because a browser source composites over
+ * gameplay. The map's own tiles stay opaque where they cover; what goes
+ * away is the page ground around them.
+ */
+[data-obs]:not([data-obs-bg="opaque"]) {
+    --map-bg: transparent;
+    --panel-bg: transparent;
+}
+
+[data-obs][data-obs-bg="opaque"] {
+    background: #0d1012;
+}
+
+
+/* =========================
+   READOUT
+   ========================= */
+
+.obs-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+    font-variant-numeric: tabular-nums;
+}
+
+.obs-overlay[data-panel="none"] .obs-readout {
+    display: none;
+}
+
+.obs-readout {
+    --obs-scale:
+        calc(
+            var(--obs-base-scale) *
+            var(--obs-text-scale)
+        );
+
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: calc(12px * var(--obs-scale));
+    padding: calc(20px * var(--obs-scale)) calc(26px * var(--obs-scale));
+    border: calc(2px * var(--obs-scale)) solid var(--obs-edge);
+    border-radius: calc(12px * var(--obs-scale));
+    background: var(--obs-panel);
+    color: var(--obs-ink);
+}
+
+.obs-overlay[data-corner="tl"] .obs-readout,
+.obs-overlay[data-corner="tl"] .obs-status {
+    top: calc(36px * var(--obs-scale));
+    left: calc(36px * var(--obs-scale));
+}
+
+.obs-overlay[data-corner="tr"] .obs-readout,
+.obs-overlay[data-corner="tr"] .obs-status {
+    top: calc(36px * var(--obs-scale));
+    right: calc(36px * var(--obs-scale));
+}
+
+.obs-overlay[data-corner="bl"] .obs-readout,
+.obs-overlay[data-corner="bl"] .obs-status {
+    bottom: calc(36px * var(--obs-scale));
+    left: calc(36px * var(--obs-scale));
+}
+
+.obs-overlay[data-corner="br"] .obs-readout,
+.obs-overlay[data-corner="br"] .obs-status {
+    bottom: calc(36px * var(--obs-scale));
+    right: calc(36px * var(--obs-scale));
+}
+
+.obs-gun {
+    font-size: calc(20px * var(--obs-scale));
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--obs-accent);
+}
+
+.obs-gun:empty {
+    display: none;
+}
+
+.obs-metrics {
+    display: flex;
+    align-items: flex-start;
+    gap: calc(34px * var(--obs-scale));
+}
+
+.obs-metric {
+    display: flex;
+    flex-direction: column;
+    gap: calc(2px * var(--obs-scale));
+    min-width: calc(150px * var(--obs-scale));
+}
+
+.obs-metric-label {
+    font-size: calc(17px * var(--obs-scale));
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--obs-accent);
+}
+
+/*
+ * Sized for a 1080p capture that a viewer may watch at a quarter of that.
+ * Heavy weight and a hard shadow rather than a thin outline: a 1 px edge is
+ * the first thing a low-bitrate encoder throws away.
+ */
+.obs-metric-value {
+    font-size: calc(62px * var(--obs-scale));
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: .01em;
+    text-shadow: 0 calc(3px * var(--obs-scale)) calc(10px * var(--obs-scale)) rgba(0, 0, 0, .95);
+}
+
+.obs-metric-sub {
+    font-size: calc(19px * var(--obs-scale));
+    font-weight: 600;
+    color: #cfd8de;
+}
+
+.obs-metric-sub:empty {
+    display: none;
+}
+
+.obs-metric-sub[data-state="out"] {
+    color: #ff8f8f;
+}
+
+.obs-metric-sub[data-state="in"] {
+    color: #8fdcaa;
+}
+
+.obs-metric-sub[data-state="warn"] {
+    color: #f0b24a;
+}
+
+.obs-flight {
+    display: flex;
+    align-items: baseline;
+    gap: calc(14px * var(--obs-scale));
+    font-size: calc(19px * var(--obs-scale));
+}
+
+.obs-flight-label {
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--obs-accent);
+}
+
+.obs-flight-values {
+    font-size: calc(26px * var(--obs-scale));
+    font-weight: 800;
+}
+
+.obs-overlay[data-panel="compact"] .obs-flight,
+.obs-overlay[data-panel="compact"] .obs-metric-range,
+.obs-overlay[data-panel="compact"] .obs-metric-sub {
+    display: none;
+}
+
+.obs-status {
+    position: absolute;
+    padding: calc(10px * var(--obs-scale)) calc(16px * var(--obs-scale));
+    border: calc(2px * var(--obs-scale)) solid var(--obs-edge);
+    border-radius: calc(10px * var(--obs-scale));
+    background: var(--obs-panel);
+    color: var(--obs-ink);
+    font-size: calc(22px * var(--obs-scale));
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+/*
+ * The readout and the status line share a corner, so the status sits above
+ * the readout when both are visible rather than under it.
+ */
+.obs-overlay[data-corner="bl"] .obs-status,
+.obs-overlay[data-corner="br"] .obs-status {
+    bottom: auto;
+    top: calc(36px * var(--obs-scale));
+}
+
+.obs-terrain-note {
+    font-size: calc(14px * var(--obs-scale));
+    opacity: .85;
+    color: #f0b24a;
+}
+
+.obs-terrain-note[data-state="loading"] {
+    color: #9aa4ae;
+}

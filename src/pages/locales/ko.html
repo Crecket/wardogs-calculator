@@ -89,8 +89,14 @@
 <div class="section">
 <h2 data-i18n="pointSelection">지점 선택</h2>
 <div class="mode">
+<div class="mode-option">
 <button class="active" data-i18n="artillery" id="originMode">포 위치</button>
+<button aria-pressed="false" class="mode-force-pin" id="originForcePin" type="button"><svg aria-hidden="true" height="15" viewBox="0 0 24 24" width="15"><path d="M17 9V7a5 5 0 0 0-10 0v2H6a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10a1 1 0 0 0-1-1h-1ZM9 7a3 3 0 0 1 6 0v2H9V7Zm4 9.7V18a1 1 0 0 1-2 0v-1.3a2 2 0 1 1 2 0Z" fill="currentColor"/></svg></button>
+</div>
+<div class="mode-option">
 <button data-i18n="target" id="targetMode">목표</button>
+<button aria-pressed="false" class="mode-force-pin" id="targetForcePin" type="button"><svg aria-hidden="true" height="15" viewBox="0 0 24 24" width="15"><path d="M17 9V7a5 5 0 0 0-10 0v2H6a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10a1 1 0 0 0-1-1h-1ZM9 7a3 3 0 0 1 6 0v2H9V7Zm4 9.7V18a1 1 0 0 1-2 0v-1.3a2 2 0 1 1 2 0Z" fill="currentColor"/></svg></button>
+</div>
 </div>
 <label data-i18n="artilleryXY">포 좌표 X / Y</label>
 <div class="grid2">
@@ -177,6 +183,11 @@
           x0.00
         </span>
 </div>
+<!-- MIL UNDER CURSOR -->
+<div class="mil-cursor" id="milCursor">
+<div class="mil-cursor-range"></div>
+<div class="mil-cursor-arcs"></div>
+</div>
 <!-- SAVED TARGETS -->
 <div class="saved-targets">
 <div class="saved-targets-header">
@@ -189,7 +200,7 @@
 <div class="saved-target-options">
 <label class="save-artillery-option">
 <input id="saveArtilleryPosition" type="checkbox"/>
-<span data-i18n="saveArtilleryPosition">포 위치 저장</span>
+<span data-i18n="saveArtilleryPosition">새 표적이 포병 위치도 함께 이동</span>
 </label>
 </div>
 <div class="saved-target-actions">
@@ -204,6 +215,7 @@
 <!-- MAP TOOLS -->
 <div class="map-tools" id="mapTools">
 <div class="map-tool-popover map-tool-palette" id="pencilPalette"></div>
+<div class="map-tool-popover map-tool-shape-palette" id="shapePalette"></div>
 <div class="map-tool-popover map-tool-marker-picker" id="markerPicker"></div>
 <div class="map-tool-popover map-tool-coordinate-search" id="coordinateSearchPopover">
 <div class="map-tool-popover-title" id="coordinateSearchTitle">좌표 검색</div>
@@ -217,11 +229,18 @@
 <div class="map-tool-popover map-tool-layers" id="mapLayersPopover"></div>
 <div class="map-tool-popover map-tool-data-transfer" id="mapDataTransferPopover"></div>
 <div class="map-tools-bar">
+<button aria-label="타겟팅 모드" class="map-tool-button map-tool-primary" data-tool="targeting" id="mapToolTargeting" title="타겟팅 모드" type="button">
+<span aria-hidden="true">⊕</span>
+</button>
+<span aria-hidden="true" class="map-tools-divider"></span>
 <button aria-label="거리 측정" class="map-tool-button" data-tool="ruler" id="mapToolRuler" title="거리 측정" type="button">
 <span aria-hidden="true">📏</span>
 </button>
 <button aria-label="그리기" class="map-tool-button" data-tool="pencil" id="mapToolPencil" title="그리기" type="button">
 <span aria-hidden="true">✎</span>
+</button>
+<button aria-label="Shapes" class="map-tool-button" data-tool="shapes" id="mapToolShapes" title="Shapes" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="10.5" width="10" height="10" rx="1"/><circle cx="16" cy="7.5" r="4.5"/></svg>
 </button>
 <button aria-label="지우개" class="map-tool-button" data-tool="eraser" id="mapToolEraser" title="지우개" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -246,6 +265,15 @@
 <span aria-hidden="true" class="map-tool-fullscreen-icon">⛶</span>
 </button>
 </div>
+</div>
+<!-- CROSS SECTION -->
+<div class="cross-section" data-collapsed="false" hidden id="crossSection">
+<div class="cross-section-header">
+<span class="cross-section-title" data-i18n="crossSection">Cross-section</span>
+<button aria-expanded="true" class="cross-section-toggle" id="crossSectionToggle" type="button">▴</button>
+</div>
+<canvas class="cross-section-canvas" id="crossSectionCanvas"></canvas>
+<div class="cross-section-caption" id="crossSectionCaption"></div>
 </div>
 <!-- LEGEND -->
 <div class="legend">
@@ -282,15 +310,29 @@
 <script src="js/map/maps.js"></script>
 <script src="js/map/map-view.js"></script>
 <script src="js/map/camera-keys.js"></script>
+<script src="js/map/image-decode.js"></script>
 <script src="js/map/tiles.js"></script>
+<script src="js/map/heightfield.js"></script>
 <script src="js/map/contours.js"></script>
+<script src="js/map/hillshade.js"></script>
 <script src="js/map/overlays.js"></script>
+<script src="js/map/guns-overlay.js"></script>
+<script src="js/ballistics/model.js"></script>
+<script src="js/ballistics/reachability.js"></script>
+<script src="js/map/range-ring.js"></script>
+<script src="js/map/dead-ground.js"></script>
+<script src="js/map/cross-section.js"></script>
 <script src="js/map/map-tools.js"></script>
+<script src="js/map/map-shapes.js"></script>
 <script src="js/map/grid.js"></script>
+<script src="js/map/collab-flash.js"></script>
 <script src="js/map/renderer.js"></script>
 <script src="js/features/coordinates.js"></script>
 <script src="js/features/point-locks.js"></script>
+<script src="js/features/force-placement.js"></script>
 <script src="js/features/results.js"></script>
+<script src="js/features/mil-cursor.js"></script>
+<script src="js/features/panel-popout.js"></script>
 <script src="js/ui/inputs.js"></script>
 <script src="js/ui/cursor.js"></script>
 <script src="js/events.js"></script>

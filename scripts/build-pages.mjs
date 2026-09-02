@@ -1,7 +1,15 @@
 import { cp, mkdir, readFile, rm, writeFile, readdir, stat } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SEO_ALTERNATE_NAMES, SEO_PAGE_CONTENT } from './seo-content.mjs';
+import { buildObsPage } from './lib/obs-page.mjs';
+import {
+    analyticsWebsiteId,
+    collabUrl,
+    patchAppConfig,
+    patchMapConfig,
+    tileBaseUrl
+} from './lib/site-config.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
@@ -33,7 +41,12 @@ const desktopStyleFiles = [
     'styles/desktop/chrome.css',
     'styles/desktop/map-tools.css',
     'styles/desktop/motd.css',
+    'styles/desktop/popout.css',
     'styles/desktop/seo.css'
+];
+
+const obsStyleFiles = [
+    'styles/obs/overlay.css'
 ];
 
 const mobileStyleFiles = [
@@ -53,10 +66,22 @@ async function exists(path) {
     }
 }
 
-async function copyIfExists(source, target) {
+async function copyIfExists(source, target, filter) {
     if (!(await exists(source))) return;
-    await cp(source, target, { recursive: true });
+    await cp(source, target, { recursive: true, filter });
 }
+
+/*
+ * Deployment settings come from the environment or .env — see
+ * scripts/lib/site-config.mjs for why they are not committed.
+ *
+ *     COLLAB_URL=wss://sync.example.com \
+ *     TILE_BASE_URL=https://tiles.example.com npm run build
+ *
+ * The tile pyramids are ~43,700 files and 1.4 GB, more than most static
+ * hosts will take (Cloudflare Pages caps a deployment at 20,000 files).
+ * Pointing them at object storage drops the built site to a few hundred.
+ */
 
 async function bundleStyleFiles(files, outputName) {
     let css = '';
@@ -85,13 +110,32 @@ async function bundleStyles() {
         mobileStyleFiles,
         'mobile.css'
     );
+
+    await bundleStyleFiles(
+        obsStyleFiles,
+        'obs.css'
+    );
 }
 
 async function copySharedStatic() {
+    const tilesDir = join(root, 'maps', 'tiles');
+
+    /*
+     * With tiles served remotely there is no reason to copy 1.4 GB of them
+     * into the artifact.
+     */
+    const skipTiles = tileBaseUrl()
+        ? source => source !== tilesDir &&
+            !source.startsWith(tilesDir + sep)
+        : undefined;
+
     for (const dir of sourceDirs) {
         await copyIfExists(
             join(root, dir),
-            join(dist, dir)
+            join(dist, dir),
+            dir === 'maps'
+                ? skipTiles
+                : undefined
         );
     }
 
@@ -544,8 +588,47 @@ function addMobileAlternate(html, language) {
     );
 }
 
+const ANALYTICS_TAG_PATTERN =
+    /\s*<script[^>]*src=["']https:\/\/cloud\.umami\.is\/script\.js["'][^>]*><\/script>/gi;
+
+/*
+ * Analytics are off unless ANALYTICS_WEBSITE_ID says otherwise.
+ *
+ * The tracker tag is committed in the page shells, so a build that did
+ * nothing here would report a fork's traffic into upstream's dashboard.
+ * Stripping it in the built copy rather than editing the shells keeps
+ * those files byte-identical to upstream, the same way COLLAB_URL and
+ * TILE_BASE_URL are kept out of the tracked config — see
+ * scripts/lib/site-config.mjs.
+ *
+ * The flag matches the dev server's, so a build with analytics off
+ * behaves exactly like local development: js/core/analytics.js drops
+ * events instead of queueing them for a tracker that never arrives.
+ */
+function prepareAnalytics(html) {
+    const websiteId = analyticsWebsiteId();
+
+    if (websiteId) {
+        return html.replace(
+            ANALYTICS_TAG_PATTERN,
+            tag => tag.replace(
+                /data-website-id=["'][^"']*["']/i,
+                `data-website-id="${websiteId}"`
+            )
+        );
+    }
+
+    return html
+        .replace(ANALYTICS_TAG_PATTERN, '')
+        .replace(
+            '<head>',
+            '<head>\n' +
+            '<script>window.__WARDOGS_ANALYTICS_DISABLED__ = true;</script>'
+        );
+}
+
 async function writeDesktopPage(source, target, appConfig, language) {
-    const html = await readFile(source, 'utf8');
+    const html = prepareAnalytics(await readFile(source, 'utf8'));
     const prepared = addMobileAlternate(
         applySeoV2(
             refreshSeoMetadata(
@@ -600,9 +683,89 @@ async function buildDesktopPages() {
     }
 }
 
+/*
+ * Repoints every map's tiles.path at TILE_BASE_URL, in the built copy only.
+ *
+ * No client change is needed for this: tile URLs go through resourceURL(),
+ * which is `new URL(path, BASE_PATH)`, and an absolute URL ignores the base.
+ */
+async function applyTileBaseUrl() {
+    const base = tileBaseUrl();
+
+    if (!base) {
+        return;
+    }
+
+    const mapsDir = join(dist, 'maps');
+    const entries = await readdir(mapsDir).catch(() => []);
+
+    let repointed = 0;
+
+    for (const entry of entries) {
+        if (!entry.endsWith('.json')) {
+            continue;
+        }
+
+        const path = join(mapsDir, entry);
+
+        const patched = patchMapConfig(
+            JSON.parse(await readFile(path, 'utf8'))
+        );
+
+        if (!patched) {
+            continue;
+        }
+
+        await writeFile(
+            path,
+            JSON.stringify(patched, null, 2) + '\n',
+            'utf8'
+        );
+
+        repointed++;
+    }
+
+    console.log(
+        `Tiles served from ${base} (${repointed} map${repointed === 1 ? '' : 's'} repointed)`
+    );
+}
+
 async function readAppConfig() {
     const path = join(root, 'config', 'app.json');
     return JSON.parse(await readFile(path, 'utf8'));
+}
+
+/*
+ * The shared-session service URL is deployment-specific, so config/app.json
+ * keeps it null and a build supplies it:
+ *
+ *     COLLAB_URL=wss://your-worker.example.com npm run build
+ *
+ * Committing a real URL instead would point every build of this repo at one
+ * person's Cloudflare account — including anyone who forked it.
+ */
+async function applyCollabUrl() {
+    if (!collabUrl()) {
+        return;
+    }
+
+    const path = join(dist, 'config', 'app.json');
+
+    const patched = patchAppConfig(
+        JSON.parse(await readFile(path, 'utf8'))
+    );
+
+    if (!patched) {
+        return;
+    }
+
+    await writeFile(
+        path,
+        JSON.stringify(patched, null, 2) + '\n',
+        'utf8'
+    );
+
+    console.log(`Shared sessions enabled against ${collabUrl()}`);
 }
 
 async function getDesktopLanguages() {
@@ -777,9 +940,11 @@ async function buildMobilePages() {
         await getMobileLanguages();
 
     for (const language of languages) {
-        const html = renderMobileLocale(
-            template,
-            language
+        const html = prepareAnalytics(
+            renderMobileLocale(
+                template,
+                language
+            )
         );
 
         if (language === 'en') {
@@ -816,6 +981,22 @@ async function buildMobilePages() {
 }
 
 /*
+ * The OBS overlay route. Derived from the desktop shell rather than written
+ * as a page of its own — see scripts/lib/obs-page.mjs.
+ */
+async function buildObsRoute() {
+    const target = join(dist, 'obs');
+
+    await mkdir(target, { recursive: true });
+
+    await writeFile(
+        join(target, 'index.html'),
+        await buildObsPage(),
+        'utf8'
+    );
+}
+
+/*
  * One repository, one Pages artifact, one custom domain.
  * Desktop and mobile page shells share the same JS, locales,
  * maps, tiles, configuration and localStorage origin.
@@ -837,10 +1018,13 @@ await mkdir(
 );
 
 await copySharedStatic();
+await applyCollabUrl();
+await applyTileBaseUrl();
 await bundleStyles();
 await buildDesktopPages();
 await buildSitemap();
 await buildMobilePages();
+await buildObsRoute();
 
 console.log(`Built desktop + mobile site into ${dist}`);
 console.log(`Mobile entry: ${join(dist, 'mobile', 'index.html')}`);
