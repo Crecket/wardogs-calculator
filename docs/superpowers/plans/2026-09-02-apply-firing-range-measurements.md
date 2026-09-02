@@ -38,7 +38,7 @@ That 0.05625 is exactly 6400 mils to a circle. It was fitted freely first (0.056
 
 ## Cautions
 
-**A single quadratic drag coefficient does not fit the whole SPH-2 envelope.** The best fit over twelve dials and three flight times reaches **19.7 m RMS**, against roughly 76 m for the shipped tables — four times better, and a large improvement — but structure remains. The worst residual is −36 m at 150 mil, the shallowest shot in the set. Adding a linear drag term makes the fit worse rather than better, so the real drag law has shape that two parameters cannot capture. Do not present the fitted numbers as exact.
+**A single quadratic drag coefficient does not fit the whole SPH-2 envelope.** The best fit over twelve dials and three flight times reaches **19.7 m RMS**, against roughly 73 m for the shipped tables — four times better, and a large improvement — but structure remains. The worst residual is −36 m at 150 mil, the shallowest shot in the set. Adding a linear drag term makes the fit worse rather than better, so the real drag law has shape that two parameters cannot capture. Do not present the fitted numbers as exact.
 
 **No physical model for the mortar is available, and none is needed.** Attempts to fit one left 14 m and 1.25 s of residual and wanted 208 m/s with a drag coefficient five times the SPH-2's — for a slower, lighter projectile. Physically implausible, so the model form is wrong rather than mistuned. Since the mortar's range table is already accurate, the only thing needing correction is flight time, and five measured timings across the dial can serve that directly without a model behind them.
 
