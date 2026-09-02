@@ -17,8 +17,7 @@ const FAMILY_SOLVE_ITERATIONS = 40;
 let PROJECTILE_MODEL = null;
 
 function loadProjectileModel() {
-    return fetch('data/ballistics/projectile-model.json')
-        .then(response => response.ok ? response.json() : null)
+    return fetchJSON('data/ballistics/projectile-model.json')
         .then(model => {
             PROJECTILE_MODEL =
                 model?.schema === PROJECTILE_MODEL_SCHEMA

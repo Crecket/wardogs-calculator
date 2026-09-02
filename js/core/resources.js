@@ -2,11 +2,34 @@
    RESOURCES
    ========================= */
 
+let ASSET_VERSION;
+
+function assetVersion() {
+    if (ASSET_VERSION === undefined) {
+        ASSET_VERSION =
+            typeof document === 'object'
+                ? document
+                    .querySelector('meta[name="asset-version"]')
+                    ?.getAttribute('content') || null
+                : null;
+    }
+
+    return ASSET_VERSION;
+}
+
 function resourceURL(path) {
-    return new URL(
+    const url = new URL(
         path,
         BASE_PATH
-    ).href;
+    );
+
+    const version = assetVersion();
+
+    if (version && !url.searchParams.has('v')) {
+        url.searchParams.set('v', version);
+    }
+
+    return url.href;
 }
 
 async function fetchJSON(path) {

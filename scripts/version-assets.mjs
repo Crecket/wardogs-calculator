@@ -155,11 +155,33 @@ function addVersion(url, version) {
     );
 }
 
+function stampAssetVersion(
+    html,
+    version
+) {
+    const tag = `<meta content="${version}" name="asset-version"/>`;
+
+    if (/<meta[^>]+name="asset-version"[^>]*>/i.test(html)) {
+        return html.replace(
+            /<meta[^>]+name="asset-version"[^>]*>/i,
+            tag
+        );
+    }
+
+    return html.replace(
+        /<meta charset="[^"]*"\/?>/i,
+        match => `${match}${tag}`
+    );
+}
+
 function versionHtml(
     html,
     version
 ) {
-    return html.replace(
+    return stampAssetVersion(
+        html,
+        version
+    ).replace(
         /\b(src|href)="([^"]+)"/gi,
         (
             match,
