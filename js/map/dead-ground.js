@@ -14,8 +14,13 @@ function deadGroundArcs(weaponId) {
 }
 
 function deadGroundTrajectoryClears(fit, tan, ranges, deltas, index) {
+    const chord = modelShellHeight(fit, tan, ranges[index]) / ranges[index];
+
     for (let j = 0; j < index; j += 1) {
-        if (modelShellHeight(fit, tan, ranges[j]) < deltas[j]) {
+        if (
+            deltas[j] > chord * ranges[j] &&
+            modelShellHeight(fit, tan, ranges[j]) < deltas[j]
+        ) {
             return false;
         }
     }
