@@ -8,9 +8,9 @@ const REACH_ARCS = ['single', 'low', 'high'];
  * what makes that true. The rings stay whole-weapon.
  *
  * Branch, not elevation fraction, decides: a fit is the low arc when
- * it solves the shallow root, which arcAngleStops caps at the 45°
- * crossover. Weapons whose every arc is a high-branch fit (the
- * mortar, 58.1°-84.4°) have no low arc and so cast no dead ground.
+ * it solves the shallow root, which arcAngleStops caps at the model's
+ * own maximum-range angle. Weapons whose every arc is a high-branch fit
+ * (the mortar) have no low arc and so cast no dead ground.
  */
 function lowArcName(weaponId) {
     for (const arc of REACH_ARCS) {
@@ -198,7 +198,6 @@ function reachabilityProfile(field, origin, target, distanceMeters) {
 }
 
 function trajectoryClearsProfile(fit, tan, profile) {
-    const v = Number(fit.muzzleVelocity);
     const ground = profile.ground;
     const last = ground.length - 1;
     const zGun = ground[0];
@@ -209,7 +208,7 @@ function trajectoryClearsProfile(fit, tan, profile) {
     );
 
     for (let i = firstIndex; i < last; i += 1) {
-        if (zGun + modelShellHeight(tan, v, i * profile.stepMeters) < ground[i]) {
+        if (zGun + modelShellHeight(fit, tan, i * profile.stepMeters) < ground[i]) {
             return false;
         }
     }

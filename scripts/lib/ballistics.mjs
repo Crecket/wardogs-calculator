@@ -1,122 +1,79 @@
 /*
- * A vacuum trajectory model for the shipped firing tables.
+ * Node-side access to the runtime projectile model.
  *
- * The elevation angle is affine in mil, theta = a + b * mil, and range
- * follows R = v^2 sin(2 theta) / g. Both are approximations: fitting the
- * SPG's two arcs jointly is four times worse than fitting them apart, which
- * is the vacuum model absorbing real drag differently on each branch. See
- * the design doc section 4.
+ * The trajectory integrator lives in js/ballistics/model.js so that every
+ * surface in the app reads one implementation; this module loads that file
+ * into a VM context and re-exports the pieces the build scripts and tests
+ * need, rather than keeping a second copy of the physics here.
  *
  * Nothing here is used to produce a MIL directly. Callers take the
- * DIFFERENCE between two points on the same model curve, so most of that
- * absolute error cancels and flat ground is corrected by exactly zero.
+ * DIFFERENCE between two points on the same model curve, so most of the
+ * model's absolute error cancels and flat ground is corrected by exactly zero.
+ *
+ * fitArc is the one thing that is not a runtime re-export: a least-squares
+ * vacuum fit used only for arcs whose source is "vacuum-fit".
  */
 
-export const GRAVITY = 9.81;
+import { loadRuntime, callRuntime } from './runtime-globals.mjs';
+
+const runtime = loadRuntime(['js/ballistics/model.js']);
+
+const fromRuntime = name => callRuntime(runtime, name);
+
+export const GRAVITY = fromRuntime('BALLISTICS_GRAVITY');
+export const MODEL_SCHEMA = fromRuntime('PROJECTILE_MODEL_SCHEMA');
+
+const modelArcLaunchTan = fromRuntime('modelArcLaunchTan');
+const modelArcMil = fromRuntime('modelArcMil');
+const modelArcTanForMil = fromRuntime('modelArcTanForMil');
+const modelRangeAtAngle = fromRuntime('modelRangeAtAngle');
+const modelOptimalTan = fromRuntime('modelOptimalTan');
+const modelFlightTime = fromRuntime('modelFlightTime');
 
 const DEG = 180 / Math.PI;
 
-export function rangeForTan(muzzleVelocity, tanTheta) {
-    const sin2Theta = 2 * tanTheta / (1 + tanTheta * tanTheta);
-
-    return muzzleVelocity * muzzleVelocity * sin2Theta / GRAVITY;
+export function launchTan(arcModel, rangeMeters, deltaZMeters) {
+    return modelArcLaunchTan(arcModel, rangeMeters, deltaZMeters);
 }
 
-/*
- * Launch angle whose trajectory passes through (rangeMeters, deltaZMeters).
- *
- * With t = tan(theta) and k = g R^2 / 2 v^2 the trajectory equation becomes
- * k t^2 - R t + (dZ + k) = 0. The high branch takes the larger root.
- */
-export function solveTan(
-    muzzleVelocity,
-    rangeMeters,
-    deltaZMeters,
-    branch
-) {
-    if (
-        !Number.isFinite(muzzleVelocity) ||
-        !Number.isFinite(rangeMeters) ||
-        !Number.isFinite(deltaZMeters) ||
-        rangeMeters <= 0
-    ) {
-        return null;
-    }
+export function rangeAtMil(arcModel, mil, deltaZMeters = 0) {
+    const tan = modelArcTanForMil(arcModel, mil);
 
-    const k =
-        GRAVITY * rangeMeters * rangeMeters /
-        (2 * muzzleVelocity * muzzleVelocity);
-
-    const discriminant =
-        rangeMeters * rangeMeters -
-        4 * k * (deltaZMeters + k);
-
-    if (discriminant < 0) {
-        return null;
-    }
-
-    const root = Math.sqrt(discriminant);
-
-    return branch === 'high'
-        ? (rangeMeters + root) / (2 * k)
-        : (rangeMeters - root) / (2 * k);
+    return tan === null
+        ? null
+        : modelRangeAtAngle(arcModel, Math.atan(tan), deltaZMeters);
 }
 
-/*
- * Furthest horizontal distance reachable at any launch angle, for a target
- * deltaZMeters above the muzzle.
- *
- * This is solveTan's discriminant solved for R. Setting
- * R^2 - 4k(dZ + k) = 0 with k = g R^2 / 2 v^2 gives
- * R = (v/g) * sqrt(v^2 - 2 g dZ), so the two agree by construction: inside
- * this distance solveTan finds an angle, outside it returns null.
- *
- * Null means no angle reaches that height at all — the target sits above the
- * ballistic ceiling v^2 / 2g.
- */
-export function maxRangeMeters(muzzleVelocity, deltaZMeters) {
-    if (
-        !Number.isFinite(muzzleVelocity) ||
-        muzzleVelocity <= 0 ||
-        !Number.isFinite(deltaZMeters)
-    ) {
+export function flightTimeAtMil(arcModel, mil, deltaZMeters = 0) {
+    const tan = modelArcTanForMil(arcModel, mil);
+
+    return tan === null
+        ? null
+        : modelFlightTime(arcModel, tan, deltaZMeters);
+}
+
+export function maxRangeMeters(arcModel, deltaZMeters) {
+    if (!Number.isFinite(deltaZMeters)) {
         return null;
     }
 
-    const inner =
-        muzzleVelocity * muzzleVelocity -
-        2 * GRAVITY * deltaZMeters;
+    const optimal = modelOptimalTan(arcModel, deltaZMeters);
 
-    if (inner <= 0) {
-        return null;
-    }
-
-    return muzzleVelocity * Math.sqrt(inner) / GRAVITY;
+    return optimal === null
+        ? null
+        : modelRangeAtAngle(arcModel, Math.atan(optimal), deltaZMeters);
 }
 
 export function milFromTan(arcModel, tanTheta) {
-    return (
-        Math.atan(tanTheta) * DEG - arcModel.angleOffsetDeg
-    ) / arcModel.anglePerMilDeg;
+    return modelArcMil(arcModel, tanTheta);
 }
 
 /*
  * Mil to ADD to the flat-table value. Zero on flat ground by construction.
  */
 export function milCorrection(arcModel, rangeMeters, deltaZMeters) {
-    const aimed = solveTan(
-        arcModel.muzzleVelocity,
-        rangeMeters,
-        deltaZMeters,
-        arcModel.branch
-    );
-
-    const flat = solveTan(
-        arcModel.muzzleVelocity,
-        rangeMeters,
-        0,
-        arcModel.branch
-    );
+    const aimed = launchTan(arcModel, rangeMeters, deltaZMeters);
+    const flat = launchTan(arcModel, rangeMeters, 0);
 
     if (aimed === null || flat === null) {
         return null;
@@ -132,45 +89,28 @@ export function milCorrection(arcModel, rangeMeters, deltaZMeters) {
  * is the quantity a player can act on and mil-per-metre is not.
  */
 export function missMeters(arcModel, rangeMeters, deltaZMeters) {
-    const tanTheta = solveTan(
-        arcModel.muzzleVelocity,
-        rangeMeters,
-        0,
-        arcModel.branch
-    );
+    const flat = launchTan(arcModel, rangeMeters, 0);
 
-    if (tanTheta === null) {
+    if (flat === null) {
         return null;
     }
 
-    const v = arcModel.muzzleVelocity;
-    const cosSquared = 1 / (1 + tanTheta * tanTheta);
-    const a = GRAVITY / (2 * v * v * cosSquared);
-    const discriminant = tanTheta * tanTheta - 4 * a * deltaZMeters;
+    const landing = modelRangeAtAngle(arcModel, Math.atan(flat), deltaZMeters);
 
-    if (discriminant < 0) {
-        return null;
-    }
+    return landing === null ? null : rangeMeters - landing;
+}
 
-    const root = Math.sqrt(discriminant);
-    const crossings = [
-        (tanTheta - root) / (2 * a),
-        (tanTheta + root) / (2 * a)
-    ].filter(x => x > 0);
+export function rangeForTan(muzzleVelocity, tanTheta) {
+    const sin2Theta = 2 * tanTheta / (1 + tanTheta * tanTheta);
 
-    if (!crossings.length) {
-        return null;
-    }
-
-    /* The descending crossing is the far one. */
-    return rangeMeters - Math.max(...crossings);
+    return muzzleVelocity * muzzleVelocity * sin2Theta / GRAVITY;
 }
 
 /*
- * Least squares over the affine mil mapping. The two angle parameters are
- * searched on a grid; muzzle velocity is solved in closed form for each
- * candidate, because for fixed angles R = (v^2/g) sin(2 theta) is linear in
- * v^2/g and the optimum is a ratio of sums.
+ * Least squares over the affine mil mapping, in vacuum. The two angle
+ * parameters are searched on a grid; muzzle velocity is solved in closed
+ * form for each candidate, because for fixed angles R = (v^2/g) sin(2 theta)
+ * is linear in v^2/g and the optimum is a ratio of sums.
  */
 const ANGLE_OFFSET_MIN_DEG = -90;
 const ANGLE_OFFSET_MAX_DEG = 90;
@@ -205,7 +145,7 @@ export function fitArc(rows, branch) {
             let usable = true;
 
             for (const [distance, mil] of samples) {
-                const theta = (offset + perMil * mil) * Math.PI / 180;
+                const theta = (offset + perMil * mil) / DEG;
                 const sin2Theta = Math.sin(2 * theta);
 
                 if (sin2Theta <= 1e-6) {
@@ -227,7 +167,7 @@ export function fitArc(rows, branch) {
             let squared = 0;
 
             for (const [distance, mil] of samples) {
-                const theta = (offset + perMil * mil) * Math.PI / 180;
+                const theta = (offset + perMil * mil) / DEG;
                 const predicted = k * Math.sin(2 * theta);
 
                 squared += (distance - predicted) ** 2;
@@ -239,6 +179,7 @@ export function fitArc(rows, branch) {
                 best = {
                     branch,
                     muzzleVelocity: Math.sqrt(k * GRAVITY),
+                    dragPerMeter: 0,
                     angleOffsetDeg: offset,
                     anglePerMilDeg: perMil,
                     rmsMeters: rms

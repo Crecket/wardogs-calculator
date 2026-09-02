@@ -1,14 +1,15 @@
 {
-    "schema": "wardogs-projectile-model-v1",
-    "source": "vacuum-fit",
-    "sourceNote": "Least-squares vacuum fit to data/weapons.json. Superseded by pak extraction; see docs/superpowers/specs/2026-08-26-elevation-correction-design.md section 8.",
-    "generatedAt": "2026-08-26",
+    "schema": "wardogs-projectile-model-v2",
+    "sourceNote": "Per-arc source. firing-range-fit: fitted to the 2026-09-02 in-game measurements in docs/firing-range-measurements.md. vacuum-fit: least-squares vacuum fit to data/weapons.json by scripts/fit-ballistics.mjs, which rewrites only arcs of that source. dragPerMeter is the quadratic drag coefficient k in a = -k |v| v; the launch angle is angleOffsetDeg + anglePerMilDeg * mil.",
+    "generatedAt": "2026-09-02",
     "gravity": 9.81,
     "weapons": {
         "mortar": {
             "single": {
                 "branch": "high",
+                "source": "vacuum-fit",
                 "muzzleVelocity": 86.7,
+                "dragPerMeter": 0,
                 "angleOffsetDeg": 52.5,
                 "anglePerMilDeg": 0.0375,
                 "rmsMeters": 8.11
@@ -17,17 +18,23 @@
         "spg": {
             "low": {
                 "branch": "low",
-                "muzzleVelocity": 160.1,
-                "angleOffsetDeg": 12.75,
-                "anglePerMilDeg": 0.058,
-                "rmsMeters": 14.11
+                "source": "firing-range-fit",
+                "muzzleVelocity": 262.4,
+                "dragPerMeter": 0.00039,
+                "angleOffsetDeg": 2.254,
+                "anglePerMilDeg": 0.05625,
+                "rmsMeters": 19.7,
+                "sourceNote": "One continuous elevation scale shared with the high arc, 0.05625 deg/mil being exactly 6400 mils to a circle. Fitted over twelve measured dials from 150 to 1380 mil plus three flight times: 19.7 m RMS, worst residual about -37 m at 150 mil, flight times within 0.35 s. Nothing below 150 mil was measured; the 35 and 100 mil dials are extrapolated."
             },
             "high": {
                 "branch": "high",
-                "muzzleVelocity": 160.4,
-                "angleOffsetDeg": 14.5,
-                "anglePerMilDeg": 0.048,
-                "rmsMeters": 8.11
+                "source": "firing-range-fit",
+                "muzzleVelocity": 262.4,
+                "dragPerMeter": 0.00039,
+                "angleOffsetDeg": 2.254,
+                "anglePerMilDeg": 0.05625,
+                "rmsMeters": 19.7,
+                "sourceNote": "Same fit as the low arc, on the steep side of the model's maximum-range angle. The 1380 mil row is the weakest measurement, the mean of two shots in a dial whose five repeats spread 45 m."
             }
         }
     }

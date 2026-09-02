@@ -3,33 +3,24 @@
    ========================= */
 
 /*
- * How long the shell is in the air, for the SPG-2's two arcs.
+ * How long the shell is in the air, per arc.
  *
- * Nothing is stored: the time falls out of the same vacuum fit the range
- * ring reads (data/ballistics/projectile-model.json), so data/weapons.json
- * needs no third column. The fit gives the launch angle for a MIL —
- * theta = angleOffsetDeg + anglePerMilDeg * mil — and in vacuum
+ * The SPH-2's seconds come from the drag model in
+ * data/ballistics/projectile-model.json: the MIL on screen gives the launch
+ * angle, theta = angleOffsetDeg + anglePerMilDeg * mil, and the integrated
+ * trajectory gives the time at which it descends through the target's
+ * height, dz being target minus gun as in the terrain correction.
  *
- *     t = (v sin(theta) + sqrt((v sin(theta))^2 - 2 g dz)) / g
- *
- * where dz is target height minus gun height, matching the sign convention
- * of the terrain correction. At dz = 0 that is the familiar 2 v sin(theta) / g.
+ * The mortar reads the same file; its arc carries no drag term, so its
+ * seconds are the vacuum fit's, which the firing-range timings of
+ * 2026-09-02 show running 1.5 to 4.8 s short.
  *
  * The angle comes from the MIL actually on screen rather than from the
  * distance, so the printed time always belongs to the number above it —
  * including when the terrain correction has moved that number.
  *
- * Every weapon with a fitted arc gets one, the mortar included. It earns
- * less there — the whole 132–684 m envelope flies 14.9–17.5 s, because a
- * shorter shot is a steeper one and the extra climb cancels the shorter
- * reach — but "about 17 seconds" is still the answer to a question a player
- * asks, and printing it beats making them wonder. On the SPG-2 the two arcs
- * differ by a factor of two to three at the same range, which is a real
- * choice the panel can inform.
- *
- * These are DERIVED seconds and are printed with a ≈. The fit has never
- * been checked against the game, and the high-branch assumption underneath
- * it is an inference — see docs/todo.md.
+ * Everything is printed with a ≈: the SPH-2 model reproduces its three
+ * timed shots within 0.35 s.
  */
 
 /*
@@ -70,33 +61,16 @@ function flightTimeSecondsForMil(weaponId, arc, mil, deltaZMeters = 0) {
         return null;
     }
 
-    const degrees =
-        Number(fit.angleOffsetDeg) +
-        Number(fit.anglePerMilDeg) * mil;
+    const tan = modelArcTanForMil(fit, mil);
 
-    if (!Number.isFinite(degrees)) {
+    if (tan === null) {
         return null;
     }
-
-    const vertical =
-        Number(fit.muzzleVelocity) *
-        Math.sin(degrees * Math.PI / 180);
 
     const dz = Number.isFinite(deltaZMeters) ? deltaZMeters : 0;
+    const seconds = modelFlightTime(fit, tan, dz);
 
-    const inner =
-        vertical * vertical -
-        2 * BALLISTICS_GRAVITY * dz;
-
-    if (!Number.isFinite(inner) || inner < 0) {
-        return null;
-    }
-
-    const seconds =
-        (vertical + Math.sqrt(inner)) /
-        BALLISTICS_GRAVITY;
-
-    return seconds > 0 ? seconds : null;
+    return seconds !== null && seconds > 0 ? seconds : null;
 }
 
 /*

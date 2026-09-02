@@ -3,21 +3,21 @@ import assert from 'node:assert/strict';
 import { loadRuntime, callRuntime, setRuntimeGlobal } from './runtime-globals.mjs';
 
 const model = {
-    schema: 'wardogs-projectile-model-v1',
+    schema: 'wardogs-projectile-model-v2',
     weapons: {
         spg: {
-            low: { branch: 'low', muzzleVelocity: 160.1, angleOffsetDeg: 12.75, anglePerMilDeg: 0.058 },
-            high: { branch: 'high', muzzleVelocity: 160.4, angleOffsetDeg: 14.5, anglePerMilDeg: 0.048 }
+            low: { branch: 'low', muzzleVelocity: 262.4, dragPerMeter: 0.00039, angleOffsetDeg: 2.254, anglePerMilDeg: 0.05625 },
+            high: { branch: 'high', muzzleVelocity: 262.4, dragPerMeter: 0.00039, angleOffsetDeg: 2.254, anglePerMilDeg: 0.05625 }
         },
         mortar: {
-            single: { branch: 'high', muzzleVelocity: 86.7, angleOffsetDeg: 52.5, anglePerMilDeg: 0.0375 }
+            single: { branch: 'high', muzzleVelocity: 86.7, dragPerMeter: 0, angleOffsetDeg: 52.5, anglePerMilDeg: 0.0375 }
         }
     }
 };
 
 const spg = {
-    id: 'spg', minRange: 0.78, maxRange: 2.629, minElevationMil: 20, maxElevationMil: 1390,
-    ballistics: { low: [[1181, 20], [2629, 600]], high: [[735, 1400], [2629, 610]] }
+    id: 'spg', minRange: 0.78, maxRange: 2.629, minElevationMil: 35, maxElevationMil: 1390,
+    ballistics: { low: [[822, 35], [2639, 630]], high: [[815, 1390], [2638, 640]] }
 };
 
 const mortar = {

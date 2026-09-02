@@ -3,18 +3,18 @@ import assert from 'node:assert/strict';
 import { loadRuntime, callRuntime, setRuntimeGlobal } from './runtime-globals.mjs';
 
 const model = {
-    schema: 'wardogs-projectile-model-v1',
+    schema: 'wardogs-projectile-model-v2',
     weapons: {
         spg: {
-            low: { branch: 'low', muzzleVelocity: 160.1, angleOffsetDeg: 12.75, anglePerMilDeg: 0.058 },
-            high: { branch: 'high', muzzleVelocity: 160.4, angleOffsetDeg: 14.5, anglePerMilDeg: 0.048 }
+            low: { branch: 'low', muzzleVelocity: 262.4, dragPerMeter: 0.00039, angleOffsetDeg: 2.254, anglePerMilDeg: 0.05625 },
+            high: { branch: 'high', muzzleVelocity: 262.4, dragPerMeter: 0.00039, angleOffsetDeg: 2.254, anglePerMilDeg: 0.05625 }
         }
     }
 };
 
 const spg = {
-    id: 'spg', minRange: 0.78, maxRange: 2.629, minElevationMil: 20, maxElevationMil: 1390,
-    ballistics: { low: [[1181, 20], [2629, 600]], high: [[735, 1400], [2629, 610]] }
+    id: 'spg', minRange: 0.78, maxRange: 2.629, minElevationMil: 35, maxElevationMil: 1390,
+    ballistics: { low: [[822, 35], [2639, 630]], high: [[815, 1390], [2638, 640]] }
 };
 
 function flatProfile(distanceMeters) {
@@ -48,12 +48,23 @@ function sectionCtx() {
     return ctx;
 }
 
-test('the 917 m SPG low arc is drawn as a tooClose overshoot, never a green hit', () => {
+test('the 800 m SPG shot is drawn as a tooClose overshoot on both arcs, never a green hit', () => {
     const ctx = sectionCtx();
-    const low = callRuntime(ctx, 'crossSectionShot(__spg, "low", __profile)');
+    setRuntimeGlobal(ctx, '__near', flatProfile(800));
+    const low = callRuntime(ctx, 'crossSectionShot(__spg, "low", __near)');
     assert.equal(low.status, 'tooClose');
     assert.equal(low.kind, 'over');
-    assert.equal(callRuntime(ctx, '__low = crossSectionShot(__spg, "low", __profile); crossSectionShotCaption(__low)'), 'crossSectionOver');
+    assert.equal(callRuntime(ctx, '__low = crossSectionShot(__spg, "low", __near); crossSectionShotCaption(__low)'), 'crossSectionOver');
+    const high = callRuntime(ctx, 'crossSectionShot(__spg, "high", __near)');
+    assert.equal(high.status, 'tooClose');
+    assert.equal(high.kind, 'over');
+});
+
+test('the 917 m SPG shot hits on both arcs', () => {
+    const ctx = sectionCtx();
+    const low = callRuntime(ctx, 'crossSectionShot(__spg, "low", __profile)');
+    assert.equal(low.status, 'hit');
+    assert.equal(low.kind, 'hit');
     const high = callRuntime(ctx, 'crossSectionShot(__spg, "high", __profile)');
     assert.equal(high.status, 'hit');
     assert.equal(high.kind, 'hit');
@@ -74,7 +85,7 @@ test('the shared verdict, not the drawing march, decides blocked versus hit', ()
 
     const ridged = flatProfile(917);
     for (let i = 100; i < 120; i += 1) {
-        ridged.ground[i] = 1400;
+        ridged.ground[i] = 2000;
     }
     setRuntimeGlobal(ctx, '__ridged', ridged);
 
@@ -102,11 +113,19 @@ test('the shared verdict, not the drawing march, decides blocked versus hit', ()
 
 test('the ceiling-capped table sliver draws honest model shortfall, not a mask', () => {
     const ctx = sectionCtx();
-    setRuntimeGlobal(ctx, '__edge', flatProfile(2620));
-    const low = callRuntime(ctx, 'crossSectionShot(__spg, "low", __edge)');
+    setRuntimeGlobal(ctx, 'PROJECTILE_MODEL', {
+        schema: 'wardogs-projectile-model-v2',
+        weapons: { toy: { low: { branch: 'low', muzzleVelocity: 100, dragPerMeter: 0, angleOffsetDeg: 0, anglePerMilDeg: 0.05 } } }
+    });
+    setRuntimeGlobal(ctx, '__toy', {
+        id: 'toy', minRange: 0.1, maxRange: 1.1, minElevationMil: 200, maxElevationMil: 1600,
+        ballistics: { low: [[100, 200], [1100, 800]] }
+    });
+    setRuntimeGlobal(ctx, '__edge', flatProfile(1050));
+    const low = callRuntime(ctx, 'crossSectionShot(__toy, "low", __edge)');
     assert.equal(low.status, 'hit');
     assert.equal(low.ceilingCapped, true);
     assert.equal(low.masked, false);
     assert.equal(low.kind, 'short');
-    assert.ok(Math.abs(low.shortfallMeters - 7) < 8, String(low.shortfallMeters));
+    assert.ok(Math.abs(low.shortfallMeters - 30) < 8, String(low.shortfallMeters));
 });

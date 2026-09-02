@@ -95,7 +95,7 @@ function crossSectionFirstIndex(profile) {
     );
 }
 
-function crossSectionMarch(profile, tan, muzzleVelocity, firstIndex) {
+function crossSectionMarch(profile, tan, fit, firstIndex) {
     const zGun = profile.ground[profile.gunIndex];
     const heights = new Float64Array(CROSS_SECTION_TOTAL_SAMPLES);
 
@@ -106,8 +106,8 @@ function crossSectionMarch(profile, tan, muzzleVelocity, firstIndex) {
         heights[i] =
             zGun +
             modelShellHeight(
+                fit,
                 tan,
-                muzzleVelocity,
                 (i - profile.gunIndex) * profile.stepMeters
             );
 
@@ -155,9 +155,8 @@ function crossSectionStopTan(weapon, fit, status) {
 
 function crossSectionShot(weapon, arc, profile, shared) {
     const fit = crossSectionFit(weapon.id, arc);
-    const muzzleVelocity = Number(fit?.muzzleVelocity);
 
-    if (!fit || !Number.isFinite(muzzleVelocity) || muzzleVelocity <= 0) {
+    if (!fit) {
         return null;
     }
 
@@ -188,7 +187,7 @@ function crossSectionShot(weapon, arc, profile, shared) {
         return null;
     }
 
-    const march = crossSectionMarch(profile, tan, muzzleVelocity, firstIndex);
+    const march = crossSectionMarch(profile, tan, fit, firstIndex);
 
     const capped = assessed.ceilingCapped === true;
     const clean = assessed.status === 'hit' && !capped;
@@ -224,7 +223,7 @@ function crossSectionShot(weapon, arc, profile, shared) {
 
         impactMeters = (endIndex - profile.gunIndex) * profile.stepMeters;
     } else if (capped) {
-        const modelImpactMeters = modelRangeAtAngle(muzzleVelocity, Math.atan(tan), deltaZ);
+        const modelImpactMeters = modelRangeAtAngle(fit, Math.atan(tan), deltaZ);
 
         if (modelImpactMeters !== null && modelImpactMeters < profile.distanceMeters - 1e-6) {
             kind = 'short';

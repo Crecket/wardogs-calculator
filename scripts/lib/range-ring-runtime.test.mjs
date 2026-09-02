@@ -3,17 +3,17 @@ import assert from 'node:assert/strict';
 import { loadRuntime, callRuntime, setRuntimeGlobal } from './runtime-globals.mjs';
 
 const model = {
-    schema: 'wardogs-projectile-model-v1',
+    schema: 'wardogs-projectile-model-v2',
     weapons: {
-        mortar: { single: { branch: 'high', muzzleVelocity: 86.7, angleOffsetDeg: 52.5, anglePerMilDeg: 0.0375 } },
+        mortar: { single: { branch: 'high', muzzleVelocity: 86.7, dragPerMeter: 0, angleOffsetDeg: 52.5, anglePerMilDeg: 0.0375 } },
         spg: {
-            low: { branch: 'low', muzzleVelocity: 160.1, angleOffsetDeg: 12.75, anglePerMilDeg: 0.058 },
-            high: { branch: 'high', muzzleVelocity: 160.4, angleOffsetDeg: 14.5, anglePerMilDeg: 0.048 }
+            low: { branch: 'low', muzzleVelocity: 262.4, dragPerMeter: 0.00039, angleOffsetDeg: 2.254, anglePerMilDeg: 0.05625 },
+            high: { branch: 'high', muzzleVelocity: 262.4, dragPerMeter: 0.00039, angleOffsetDeg: 2.254, anglePerMilDeg: 0.05625 }
         }
     }
 };
 
-const spg = { id: 'spg', minRange: 0.78, maxRange: 2.629, range: 2.629, minElevationMil: 20, maxElevationMil: 1390 };
+const spg = { id: 'spg', minRange: 0.78, maxRange: 2.629, range: 2.629, minElevationMil: 35, maxElevationMil: 1390 };
 const mortar = { id: 'mortar', minRange: 0.132, maxRange: 0.684, range: 0.684, minElevationMil: 150, maxElevationMil: 850 };
 
 function ringCtx(field) {
@@ -31,7 +31,7 @@ function ringCtx(field) {
 
 test('weapon reach helpers take the best arc and honour the mortar clamp', () => {
     const ctx = ringCtx(null);
-    assert.ok(Math.abs(callRuntime(ctx, 'weaponReachRange(WEAPONS.spg, 0)') - 2622.6) < 0.1);
+    assert.ok(Math.abs(callRuntime(ctx, 'weaponReachRange(WEAPONS.spg, 0)') - 2638.6) < 0.1);
     assert.ok(Math.abs(callRuntime(ctx, 'weaponReachRange(WEAPONS.mortar, 0)') - 687.2) < 0.1);
     assert.ok(Math.abs(callRuntime(ctx, 'weaponReachRange(WEAPONS.mortar, -100)') - 744.4) < 1);
 });

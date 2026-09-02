@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { loadRuntime, callRuntime, setRuntimeGlobal } from './runtime-globals.mjs';
 
 const model = {
-    schema: 'wardogs-projectile-model-v1',
+    schema: 'wardogs-projectile-model-v2',
     weapons: {
-        mortar: { single: { branch: 'high', muzzleVelocity: 86.7, angleOffsetDeg: 52.5, anglePerMilDeg: 0.0375 } },
+        mortar: { single: { branch: 'high', muzzleVelocity: 86.7, dragPerMeter: 0, angleOffsetDeg: 52.5, anglePerMilDeg: 0.0375 } },
         spg: {
-            low: { branch: 'low', muzzleVelocity: 160.1, angleOffsetDeg: 12.75, anglePerMilDeg: 0.058 },
-            high: { branch: 'high', muzzleVelocity: 160.4, angleOffsetDeg: 14.5, anglePerMilDeg: 0.048 }
+            low: { branch: 'low', muzzleVelocity: 262.4, dragPerMeter: 0.00039, angleOffsetDeg: 2.254, anglePerMilDeg: 0.05625 },
+            high: { branch: 'high', muzzleVelocity: 262.4, dragPerMeter: 0.00039, angleOffsetDeg: 2.254, anglePerMilDeg: 0.05625 }
         }
     }
 };
@@ -19,8 +19,8 @@ const mortar = {
 };
 
 const spg = {
-    id: 'spg', minRange: 0.78, maxRange: 2.629, minElevationMil: 20, maxElevationMil: 1390,
-    ballistics: { low: [[1181, 20], [2629, 556]], high: [[780, 1390], [2629, 636]] }
+    id: 'spg', minRange: 0.78, maxRange: 2.629, minElevationMil: 35, maxElevationMil: 1390,
+    ballistics: { low: [[822, 35], [2639, 630]], high: [[815, 1390], [2638, 640]] }
 };
 
 function deadGroundCtx() {
@@ -55,7 +55,7 @@ test('a 250 m ridge at 1500 m casts spg dead ground from the ridge outward', () 
 
     const intervals = callRuntime(
         ctx,
-        `deadGroundBearingIntervals(__spg, deadGroundArcs("spg"), __ranges, __deltas, ${count}, 1181)`
+        `deadGroundBearingIntervals(__spg, deadGroundArcs("spg"), __ranges, __deltas, ${count}, 822)`
     );
 
     assert.ok(intervals.length >= 2, String(intervals));
@@ -71,7 +71,7 @@ test('flat ground casts no spg dead ground', () => {
 
     const intervals = callRuntime(
         ctx,
-        `deadGroundBearingIntervals(__spg, deadGroundArcs("spg"), __ranges, __deltas, ${count}, 1181)`
+        `deadGroundBearingIntervals(__spg, deadGroundArcs("spg"), __ranges, __deltas, ${count}, 822)`
     );
 
     assert.equal(intervals.length, 0);
