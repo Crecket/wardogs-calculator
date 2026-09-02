@@ -1715,6 +1715,15 @@ function handleMapToolShortcut(event) {
     }
 
     if (key === shortcuts.pencil) {
+        if (
+            MAP_TOOL_STATE.tool === 'pencil' &&
+            isMapToolMenuOpen('pencilPalette')
+        ) {
+            closeMapToolMenus();
+            setMapTool('pencil');
+            return true;
+        }
+
         MAP_TOOL_STATE.tool = 'pencil';
         updateMapToolsUI();
         toggleMapToolMenu('pencilPalette');
@@ -1722,6 +1731,15 @@ function handleMapToolShortcut(event) {
     }
 
     if (key === shortcuts.shapes) {
+        if (
+            MAP_TOOL_STATE.tool === 'shapes' &&
+            isMapToolMenuOpen('shapePalette')
+        ) {
+            closeMapToolMenus();
+            setMapTool('shapes');
+            return true;
+        }
+
         MAP_TOOL_STATE.tool = 'shapes';
         updateMapToolsUI();
         toggleMapToolMenu('shapePalette');
@@ -1735,6 +1753,15 @@ function handleMapToolShortcut(event) {
     }
 
     if (key === shortcuts.marker) {
+        if (
+            MAP_TOOL_STATE.tool === 'marker' &&
+            isMapToolMenuOpen('markerPicker')
+        ) {
+            closeMapToolMenus();
+            setMapTool('marker');
+            return true;
+        }
+
         MAP_TOOL_STATE.tool = 'marker';
         updateMapToolsUI();
         toggleMapToolMenu('markerPicker');
@@ -1748,6 +1775,15 @@ function handleMapToolShortcut(event) {
     }
 
     if (key === shortcuts.coordinateSearch) {
+        if (
+            MAP_TOOL_STATE.tool === 'coordinateSearch' &&
+            isMapToolMenuOpen('coordinateSearchPopover')
+        ) {
+            closeMapToolMenus();
+            setMapTool('coordinateSearch');
+            return true;
+        }
+
         MAP_TOOL_STATE.tool = 'coordinateSearch';
         updateMapToolsUI();
         updateCoordinateSearchDefaults();
@@ -1757,6 +1793,15 @@ function handleMapToolShortcut(event) {
     }
 
     if (key === shortcuts.layers) {
+        if (
+            MAP_TOOL_STATE.tool === 'layers' &&
+            isMapToolMenuOpen('mapLayersPopover')
+        ) {
+            closeMapToolMenus();
+            setMapTool('layers');
+            return true;
+        }
+
         MAP_TOOL_STATE.tool = 'layers';
         updateMapToolsUI();
         buildMapLayers();
@@ -2140,6 +2185,18 @@ function initMapTools() {
             event.stopPropagation();
 
             if (
+                MAP_TOOL_STATE.tool ===
+                'pencil' &&
+                isMapToolMenuOpen(
+                    'pencilPalette'
+                )
+            ) {
+                closeMapToolMenus();
+                setMapTool('pencil');
+                return;
+            }
+
+            if (
                 MAP_TOOL_STATE.tool !==
                 'pencil'
             ) {
@@ -2158,6 +2215,18 @@ function initMapTools() {
         'click',
         event => {
             event.stopPropagation();
+
+            if (
+                MAP_TOOL_STATE.tool ===
+                'shapes' &&
+                isMapToolMenuOpen(
+                    'shapePalette'
+                )
+            ) {
+                closeMapToolMenus();
+                setMapTool('shapes');
+                return;
+            }
 
             if (
                 MAP_TOOL_STATE.tool !==
@@ -2229,6 +2298,16 @@ function initMapTools() {
         'click',
         event => {
             event.stopPropagation();
+
+            if (
+                MAP_TOOL_STATE.tool === 'coordinateSearch' &&
+                isMapToolMenuOpen('coordinateSearchPopover')
+            ) {
+                closeMapToolMenus();
+                setMapTool('coordinateSearch');
+                return;
+            }
+
             MAP_TOOL_STATE.tool = 'coordinateSearch';
             updateMapToolsUI();
             updateCoordinateSearchDefaults();
@@ -2241,6 +2320,16 @@ function initMapTools() {
         'click',
         event => {
             event.stopPropagation();
+
+            if (
+                MAP_TOOL_STATE.tool === 'layers' &&
+                isMapToolMenuOpen('mapLayersPopover')
+            ) {
+                closeMapToolMenus();
+                setMapTool('layers');
+                return;
+            }
+
             MAP_TOOL_STATE.tool = 'layers';
             updateMapToolsUI();
             buildMapLayers();
@@ -2252,6 +2341,16 @@ function initMapTools() {
         'click',
         event => {
             event.stopPropagation();
+
+            if (
+                MAP_TOOL_STATE.tool === 'dataTransfer' &&
+                isMapToolMenuOpen('mapDataTransferPopover')
+            ) {
+                closeMapToolMenus();
+                setMapTool('dataTransfer');
+                return;
+            }
+
             MAP_TOOL_STATE.tool = 'dataTransfer';
             updateMapToolsUI();
             buildMapDataTransfer();
@@ -2263,6 +2362,16 @@ function initMapTools() {
         'click',
         event => {
             event.stopPropagation();
+
+            if (
+                MAP_TOOL_STATE.tool === 'collab' &&
+                isMapToolMenuOpen('collabPopover')
+            ) {
+                closeMapToolMenus();
+                setMapTool('collab');
+                return;
+            }
+
             MAP_TOOL_STATE.tool = 'collab';
             updateMapToolsUI();
 
