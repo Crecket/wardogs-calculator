@@ -56,8 +56,6 @@
   "mapToolRuler": "Лінійка",
   "mapToolPencil": "Олівець",
   "mapToolMarkers": "Мітки",
-  "mapToolTargeting": "Режим цілевказання",
-  "targetingModeHint": "Кліки по карті зберігають нову ціль. Активна ціль залишається на місці.",
   "mapToolNoMarkerAssets": "Немає доступних іконок",
   "markerLabelFob": "FOB",
   "markerLabelTank": "Танк",

@@ -52,8 +52,6 @@
   "mapToolRuler": "测距尺",
   "mapToolPencil": "绘图",
   "mapToolMarkers": "标记",
-  "mapToolTargeting": "标定模式",
-  "targetingModeHint": "点击地图会保存新的目标，当前目标保持不变。",
   "mapToolNoMarkerAssets": "没有可用标记",
   "mapToolColorDanger": "危险 / 敌方",
   "mapToolColorWarning": "警告 / 争夺",
