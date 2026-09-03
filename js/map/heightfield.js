@@ -159,6 +159,49 @@ function ensureHeightfieldLoaded(mapId) {
 }
 
 /*
+ * How steep the ground is under a point, in degrees.
+ *
+ * A gun on a slope sits with its hull pitched, and the barrel goes with it.
+ * The 2026-09-03 firing-range measurements put that at up to 95 m of range
+ * error on the high arc — larger than any error in the ballistics — and the
+ * app cannot correct it, because nothing here knows the hull's attitude.
+ * Warning is all that is available; see docs/firing-range-measurements.md.
+ *
+ * The central difference spans two grid cells, 64 m on the shipped 32 m
+ * field. That smooths a real slope down — the hillside measured at 47
+ * degrees against the 2 m collision data reads 31 here — so this reads low
+ * on steep ground and is only ever an indication, never a correction.
+ */
+const HEIGHTFIELD_SLOPE_CELLS = 1;
+
+function heightfieldSlopeDegrees(field, gameX, gameY) {
+    if (!field) {
+        return null;
+    }
+
+    const step = field.stepGameUnits * HEIGHTFIELD_SLOPE_CELLS;
+
+    const east = heightfieldSample(field, gameX + step, gameY);
+    const west = heightfieldSample(field, gameX - step, gameY);
+    const north = heightfieldSample(field, gameX, gameY + step);
+    const south = heightfieldSample(field, gameX, gameY - step);
+
+    if (east === null || west === null || north === null || south === null) {
+        return null;
+    }
+
+    const metres = 2 * step * getCoordinateMetersPerUnit();
+
+    if (!(metres > 0)) {
+        return null;
+    }
+
+    return Math.atan(
+        Math.hypot((east - west) / metres, (north - south) / metres)
+    ) * 180 / Math.PI;
+}
+
+/*
  * Bilinear, mirroring sampleGrid in scripts/lib/heightfield.mjs. Rows run
  * south to north, so the row index is a plain add.
  */

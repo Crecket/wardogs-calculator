@@ -218,6 +218,7 @@
   "noteArc": "arc",
   "noteAllArcs": "all arcs",
   "noteMasked": "{arcs}: masked by terrain",
+  "noteGunSlope": "gun on {slope}° ground — hull tilt can shift the fall of shot, most on the high arc",
   "noteTooClose": "{arcs}: inside minimum range",
   "noteTooFar": "{arcs}: out of reach at this height",
   "noteUncorrected": "not corrected for height",

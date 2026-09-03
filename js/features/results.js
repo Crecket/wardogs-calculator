@@ -251,6 +251,36 @@ function terrainNoteGroups(shot) {
     return { groups, total };
 }
 
+/*
+ * Degrees of ground slope past which the gun's own tilt is worth warning
+ * about. Measured firing positions on level ground read 0.2 to 2.4 degrees
+ * on this field and the hillside that cost up to 95 m read 31, so the gap
+ * is wide and the threshold sits well clear of both.
+ */
+const GUN_SLOPE_WARN_DEGREES = 8;
+
+function gunGroundSlopeDegrees() {
+    if (typeof heightfieldSlopeDegrees !== 'function') {
+        return null;
+    }
+
+    const field = typeof cachedHeightfield === 'function'
+        ? cachedHeightfield(S.map)
+        : null;
+
+    if (!field || !S.origin) {
+        return null;
+    }
+
+    return heightfieldSlopeDegrees(field, S.origin.x, S.origin.y);
+}
+
+function gunSlopeWarns() {
+    const slope = gunGroundSlopeDegrees();
+
+    return slope !== null && slope >= GUN_SLOPE_WARN_DEGREES;
+}
+
 function terrainNoteWarns(shot) {
     if (shot?.state !== 'ready' || !shot.arcs) {
         return false;
@@ -261,7 +291,8 @@ function terrainNoteWarns(shot) {
     return Boolean(
         groups.masked.length ||
         groups.tooClose.length ||
-        groups.tooFar.length
+        groups.tooFar.length ||
+        gunSlopeWarns()
     );
 }
 
@@ -293,6 +324,15 @@ function terrainNoteText(shot, meta) {
             : groups[group].join(' + ');
 
         clauses.push(tr(keys[group]).replace('{arcs}', arcs));
+    }
+
+    if (gunSlopeWarns()) {
+        clauses.push(
+            tr('noteGunSlope').replace(
+                '{slope}',
+                Math.round(gunGroundSlopeDegrees())
+            )
+        );
     }
 
     const correction = correctionNoteFragment(meta);
