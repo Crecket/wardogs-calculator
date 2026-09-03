@@ -7,7 +7,7 @@ Elevations were added on 2026-09-03, after `apollyon-sys` pointed out in PR #15 
 ## Summary
 
 - **The SPH-2's shipped range table is wrong**, by up to 150 m on the low arc and 65 m on the high arc, in opposite directions.
-- **The mortar's shipped range table is correct**, every dial within +1.0 to +7.5 m. Its flight times are not — up to 4.8 s short.
+- **The mortar's shipped range table is correct**, every dial within +1.0 to +7.5 m, and the four near-level shots confirm it without needing any height correction. Its flight times are not — up to 4.8 s short. Its response to target height turns out to be *unmeasured*: correcting the three elevated shots with the only model available makes their agreement with the table worse, not better.
 - **The weapon has essentially no dispersion.** Repeats with the barrel held still land within 7 m at 2.2 km. Spread comes from traversing the barrel.
 - **The ground was not level.** Every low-arc SPH-2 shot landed 42–61 m below the gun. The replacement fit was built assuming it was, so its quoted 19.7 m accuracy does not survive contact with the real terrain — it is 56.7 m. A refit is the outstanding work.
 
@@ -212,13 +212,29 @@ Fired from origin M, `98.41, 110.39`, for every shot.
 | M6 | 650 | 95.57, 108.52 | −861.99 | 340.0 m | +0.04 m | 236.6° | — | 339 m | +1.0 m |
 | M7 | 600 | 95.10, 108.28 | −862.24 | 392.5 m | −0.21 m | 237.5° | — | 385 m | +7.5 m |
 
-**M3's dial is inferred, not reported.** It was called as 650 mil but reads 46 m long of the table at that dial, against errors of 1–8 m everywhere else. M6 and M7 later fired both dials on a cleaner lane and returned 340.0 m and 392.5 m, matching the table at 650 and 600 respectively, so the inference is that the dial was misread and M3 was fired at 600. That is what the row records — but it is an inference from the table, so **M3 cannot then count as evidence for the table**. Terrain cannot account for the alternative: at that arc the round descends near 79° and range moves only 0.2 m per metre of height, so a 240 m drop would be needed.
+**M3's dial is inferred, not reported.** It was called as 650 mil but reads 46 m long of the table at that dial, against errors of 1–8 m everywhere else. M6 and M7 later fired both dials on a cleaner lane and returned 340.0 m and 392.5 m, matching the table at 650 and 600 respectively, so the inference is that the dial was misread and M3 was fired at 600. That is what the row records — but it is an inference from the table, so **M3 cannot then count as evidence for the table**. Terrain cannot account for the alternative: at that arc range moves about 0.27 m per metre of height, so explaining 46 m would need a drop of roughly 170 m, and M3's impact is 34 m *above* the gun.
 
 ### The range table is correct
 
 Six independent shots across six dials, every error between +1.0 m and +7.5 m, all the same sign. **`data/weapons.json`'s mortar table needs no change.** This is the opposite of the SPH-2, whose low table is out by up to 150 m over a comparable span.
 
-The elevations do not disturb this. M2 and M3 landed 34–38 m above the gun, but at 79–85° descent that is worth under 8 m of range — inside the errors already in the table. Recomputing the table's residual against real ΔZ moves it from 7.6 m to 12.7 m, both far below anything that would justify changing a shipped table.
+**The elevations sharpen this rather than disturbing it, but not in the way one would expect.** Four of the seven shots — M4, M6 and M7 within a metre of level, M5 within a metre — are a clean test of the table with no height correction required at all, and they give +1.0, +2.6, +3.5 and +7.4 m. That alone settles the table.
+
+The other three landed 10–38 m above the gun, and correcting them is where it gets interesting. The only height model available for the mortar is the vacuum fit, and it says those rises cost 6.1 m, 14.8 m and 9.4 m of range respectively — so M2's ΔZ alone is worth more than the entire error budget of the table. Applying that correction moves the three shots *away* from the table, not toward it:
+
+| # | Dial | ΔZ | Error, height ignored | Error, corrected by the vacuum model |
+| --- | --- | --- | --- | --- |
+| M1 | 150 | +9.67 m | +5.8 m | +11.9 m |
+| M2 | 450 | +38.11 m | +1.3 m | +16.1 m |
+| M3 | 600 | +34.19 m | +0.7 m | +10.1 m |
+| M4 | 750 | −0.84 m | +2.7 m | +2.6 m |
+| M5 | 850 | +0.63 m | +3.4 m | +3.5 m |
+| M6 | 650 | +0.04 m | +1.0 m | +1.0 m |
+| M7 | 600 | −0.21 m | +7.5 m | +7.4 m |
+
+RMS against the table goes from 4.0 m to 9.1 m, and the damage falls entirely on the three elevated shots.
+
+The natural reading is not that the table is wrong. **It is that the mortar's real response to target height is weaker than the vacuum model predicts.** M6 and M7 re-fired M3's exact dials (650 and 600) on a level lane and matched the table to +1.0 m and +7.5 m; if the table were out by the 10–16 m the correction implies, those two shots would have shown it. This is one more symptom of the model form being wrong for this weapon rather than merely mistuned — see "No usable physical fit" below — and it means the mortar's height response is itself unmeasured, not merely unmodelled.
 
 ### The flight times are not
 
@@ -242,6 +258,46 @@ Quadratic drag does not describe this weapon. The best fit over four range/time 
 
 **The practical consequence is that no fit is needed.** The range table is already accurate, so the only thing the app has to correct is flight time, and the five measurements above can be interpolated directly rather than derived from a model that cannot be justified.
 
+## What to measure next
+
+Now that elevations resolve, the most valuable shots are no longer more dials on flat ground — they are the same dials at very different heights. Two reasons.
+
+**The current data cannot separate drag from height response.** Every low-arc shot landed at ΔZ ≈ −45 m and every high-arc shot between 0 and +21 m, so arc and elevation are almost perfectly correlated across the set. No fit can tell whether the low-arc bias is a wrong drag coefficient or a wrong response to height, because in this data the two are the same variable. Firing one dial at several heights separates them.
+
+**The elevation signal is currently the same size as the model's error.** At 300 mil the measured ΔZ of −44 m is worth 68 m of range; the fit's own residual against real terrain is 56.7 m. A −250 m valley shot at the same dial is worth 320 m, and a +250 m shot is worth −834 m. That is five to twelve times the leverage per shot.
+
+### Predicted values, to be falsified
+
+From the shipped fit (262.4 m/s, 3.90 × 10⁻⁴ /m). Any shot that lands far off these is the informative one.
+
+| Dial | Arc | ΔZ −300 | ΔZ −200 | ΔZ −100 | ΔZ 0 | ΔZ +100 | ΔZ +200 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 150 | low | 2228 m | 2074 m | 1880 m | 1604 m | no solution | no solution |
+| 300 | low | 2570 m | 2467 m | 2346 m | 2201 m | 2012 m | 1721 m |
+| 600 | low | 2808 m | 2756 m | 2699 m | 2636 m | 2566 m | 2487 m |
+| 1200 | high | 1635 m | 1619 m | 1603 m | 1586 m | 1569 m | 1550 m |
+
+Flight time at 300 mil over the same span runs 18.2 s at ΔZ −300 down to 10.0 s at +200 — an eight-second swing that video timing resolves easily, against three timings today that all sit at ΔZ ≈ −48 m.
+
+**Shallow dials cannot shoot far uphill.** The maximum ΔZ that still has a solution is about +90 m at 150 mil, +250 m at 300 mil, and beyond +600 m from 600 mil upward. Uphill tests below 300 mil are therefore limited by the weapon, not by the terrain.
+
+### Priority order
+
+1. **One dial, three heights.** 300 mil into a deep valley (≈ −200 m), onto level ground, and onto high ground (≈ +200 m). Three shots, and they break the arc/elevation confound on their own. Highest value in the list.
+2. **Shallow dials downhill.** 150 and 200 mil into the deepest valley available. Sensitivity is 3.51 m of range per metre of ΔZ at 150 mil against 0.09 at 1380 — a fortyfold spread, so the shallow end carries almost all the information.
+3. **Anything uphill.** Every shot in this document is downhill. The uphill response is untested and is the larger effect: +250 m costs 834 m of range at 300 mil where −250 m gains 320 m.
+4. **Flight times at large ΔZ.** Time whatever gets fired under 1–3. The height response of flight time is currently unconstrained by any measurement.
+5. **Mortar into a valley, timed.** This is worth more than it first looks. The three elevated mortar shots suggest the weapon's real height response is *weaker* than the vacuum model predicts (see "The range table is correct"), but three shots at +10 to +38 m cannot settle it. At ΔZ −200 m on 450 mil the model expects roughly +67 m of range — far outside the table's +1 to +7.5 m accuracy — so a valley shot separates the two readings immediately, and it measures the height response of flight time at the same time, which is the reason the mortar badge is height-blind today.
+6. **35 and 100 mil, anywhere with a clear lane.** Still the only wholly unmeasured part of the dial, and the two available extrapolations disagree by 250 m at the floor.
+
+### How to shoot them
+
+- **Aim at flat ground at altitude** — a plateau, a shelf, a valley floor — not a steep mountain face. On a slope the impact point itself becomes unstable (at 31° descent the impact moves 1.9 m per metre of drop), and the metre the coordinate readout is good to turns into a metre or more of height error on a 45° face, on top of the few metres already inherent in the sampling.
+- **Record only what was recorded before**: dial, gun coordinate, impact coordinate, and video timestamps where a shot is timed. Elevations do not need reading in game; they are sampled from the terrain afterwards.
+- **Hold the barrel still between repeats.** Traverse is worth roughly 12 m of spread on the high arc and is the single largest nuisance term in the existing data.
+- **Note the ground the round landed on**, as before. "Road, flat" and "riverbank" both earned their place in the analysis above.
+
+
 ## Open questions
 
 - **A refit of the SPH-2 against real terrain.** The blocker is gone — target heights are known — so what remains is refitting muzzle velocity and drag against the real ΔZ per shot and re-checking the three flight times. Bounded in usefulness by the few-metre gun-height uncertainty noted under Conditions.
@@ -250,3 +306,4 @@ Quadratic drag does not describe this weapon. The best fit over four range/time 
 - **The coordinate scale**, assumed to be 100 m per unit like the shipped maps. The 2 m chunks agreeing with the 32 m heightfield to within 4.1 m shows the game-unit-to-metre mapping is *consistent*, which is not proof of the 100 figure itself.
 - **The declared minimum range.** `minRangeKm` of 0.78 is the shipped table's 1390 mil entry, and the nearest measurement, 1380 mil, reads 65 m longer than its row, so the value is unverified and if anything understated.
 - **A mortar flight-time model.** Interpolation covers the five measured dials; nothing covers the gaps between them or the response to target height.
+- **The mortar's response to target height at all.** The three elevated shots hint that it is weaker than the vacuum model predicts, but they span only +10 to +38 m and the correction that fits them worst is the one the model supplies. Until this is measured, neither the mortar's range nor its flight time should be corrected for height.
