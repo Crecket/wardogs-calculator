@@ -199,6 +199,207 @@ The three flight times move the same way: against real ΔZ the model errs **+0.7
 
 This also offers an explanation for the residual structure noted above — the worst residual being 150 mil, the shallowest shot in the set. The shallowest shot is the one most sensitive to an unmodelled ΔZ, so the leftover shape may be terrain rather than a drag law a two-parameter model cannot capture. A refit against the real geometry would settle it. That refit has not been done; whether it should happen before Early Access on 2026-09-10 restores the pak files and settles the parameters outright is an open question, not decided here.
 
+### Second session, 2026-09-03 — deliberately varied elevation
+
+Fired specifically to break the arc/elevation confound described above, from two new positions, with impacts chosen at wildly different heights rather than on the one flat lane. **This section is still being collected.**
+
+| Origin | Coordinate | Ground z | Note |
+| --- | --- | --- | --- |
+| D | `97.58, 109.63` | −862.03 m | Same level patch as the original range positions. |
+| E | `89.68, 97.13` | −824.23 m | On a hill, 37.8 m above the range floor. Steep: the ground moves 4.1 m within 2 m of the gun, so gun height here carries a few metres of uncertainty — about ±3 m of range at these dials. |
+| F | `97.95, 109.54` | −861.82 m | Level (0.6–3.4°), and a **different tank**. Fired as the control described below. |
+
+| # | Origin | Dial | Impact | Impact z | ΔZ | Range | Bearing | Slope hit | TOF |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| N1 | D | 50 | 94.89, 111.72 | −815.83 | +46.19 m | 340.6 m | 307.8° | 26° | — |
+| N2 | D | 300 | 82.71, 94.13 | −870.15 | −8.12 m | 2147.9 m | 223.8° | 21° | — |
+| N3 | D | 300 | 83.25, 99.77 | −720.00 | +142.03 m | 1739.4 m | 235.5° | 26° | — |
+| N4 | D | 300 | 83.20, 99.68 | −714.72 | +147.31 m | 1748.7 m | 235.3° | 26° | 10.001 s |
+| N5 | D | 300 | 82.77, 94.17 | −871.14 | −9.11 m | 2140.9 m | 223.8° | 21° | — |
+| E1 | E | 540 | 76.46, 74.31 | −941.41 | −117.17 m | 2637.3 m | 210.1° | 11° | 23.200 s |
+| E2 | E | 440 | 75.64, 75.82 | −919.61 | −95.38 m | 2551.9 m | 213.4° | 6° | 20.200 s |
+| E3 | E | 35 | 81.09, 84.36 | −926.19 | −101.95 m | 1539.0 m | 213.9° | 13° | 8.000 s |
+| E4 | E | 100 | 80.16, 83.22 | −930.23 | −106.00 m | 1685.6 m | 214.4° | 11° | — |
+| E5 | E | 100 | 80.28, 83.21 | −930.16 | −105.92 m | 1679.7 m | 214.0° | 16° | 9.300 s |
+| E6 | E | 1380 | 85.45, 90.71 | −906.17 | −81.93 m | 768.8 m | 213.4° | 23° | 37.700 s |
+| E7 | E | 1000 | 77.89, 79.58 | −950.72 | −126.49 m | 2114.3 m | 213.9° | 2° | 33.800 s |
+| E8 | E | 1380 | 85.33, 91.06 | −908.71 | −84.48 m | 746.8 m | 213.0° | 15° | — |
+| E9 | E | 1380 | 85.30, 90.91 | −908.08 | −83.85 m | 760.7 m | 213.2° | 17° | — |
+| E10 | E | 800 | 75.83, 76.31 | −917.29 | −93.06 m | 2500.6 m | 213.6° | 8° | — |
+| E11 | E | 850 | 72.03, 80.86 | −833.37 | −9.14 m | 2400.5 m | 231.4° | 17° | — |
+| E12 | E | 1090 | 87.53, 78.60 | −851.44 | −27.21 m | 1865.4 m | 186.6° | 10° | — |
+| E13 | E | 1000 | 70.31, 89.14 | −716.02 | +108.21 m | 2095.3 m | 247.6° | 26° | — |
+| E14 | E | 1000 | 70.39, 89.29 | −707.95 | +116.28 m | 2082.2 m | 247.9° | 27° | — |
+| E15 | E | 800 | 66.88, 87.80 | −759.23 | +65.00 m | 2463.5 m | 247.7° | 6° | — |
+| E16 | E | 800 | 67.10, 87.67 | −761.44 | +62.79 m | 2448.2 m | 247.3° | 7° | — |
+| F1 | F | 800 | 107.10, 131.74 | −642.02 | **+219.80 m** | 2401.2 m | 22.4° | 43° | — |
+| F2 | F | 800 | 78.43, 94.07 | −747.93 | +113.90 m | 2490.7 m | 231.6° | 16° | — |
+
+#### Most of these are terrain intercepts, not range measurements
+
+The N-series all struck rising ground, so comparing their distance against the model's range — the distance at which the trajectory descends through the impact height on an open plane — measures the wrong thing. They are scored instead by asking where the model's trajectory first meets the sampled terrain along the same bearing:
+
+| # | Dial | Actual impact | Model intercept | Model error |
+| --- | --- | --- | --- | --- |
+| N1 | 50 | 341 m | 260 m | **+81 m** (model short) |
+| N2 | 300 | 2148 m | 2215 m | −67 m |
+| N3 | 300 | 1739 m | 1800 m | −61 m |
+| N4 | 300 | 1749 m | 1800 m | −51 m |
+| N5 | 300 | 2141 m | 2215 m | −74 m |
+
+E1 and E2 landed on gentle ground and need no such treatment: for both, the intercept and the plain range-at-ΔZ agree to within 2 m (2695 against 2694, and 2595 against 2593), which is what a clean range measurement looks like. E2 at 6° is the least ambiguous shot in this document.
+
+| # | Dial | ΔZ | Measured | Model at real ΔZ | Residual |
+| --- | --- | --- | --- | --- | --- |
+| E3 | 35 | −101.95 m | 1539.0 m | 1386 m | **+153 m** |
+| E4 | 100 | −106.00 m | 1685.6 m | 1691 m | **−6 m** |
+| E5 | 100 | −105.92 m | 1679.7 m | 1691 m | **−11 m** |
+
+High arc, same treatment. E7 landed on 2° ground, the flattest impact anywhere in this document:
+
+| # | Dial | ΔZ | Measured | Model at real ΔZ | Residual |
+| --- | --- | --- | --- | --- | --- |
+| E10 | 800 | −93.06 m | 2500.6 m | 2577 m | −76 m |
+| E11 | 850 | −9.14 m | 2400.5 m | 2477 m | −77 m |
+| E7 | 1000 | −126.49 m | 2114.3 m | 2217 m | −103 m |
+| E12 | 1090 | −27.21 m | 1865.4 m | 1950 m | −85 m |
+| E6 | 1380 | −81.93 m | 768.8 m | 867 m | −98 m |
+| E9 | 1380 | −83.85 m | 760.7 m | 868 m | −107 m |
+| E8 | 1380 | −84.48 m | 746.8 m | 868 m | −121 m |
+| E15 | 800 | +65.00 m | 2463.5 m | 2510 m | −47 m |
+| E16 | 800 | +62.79 m | 2448.2 m | 2511 m | −63 m |
+| E13 | 1000 | +108.21 m | 2095.3 m | 2152 m | −56 m |
+| E14 | 1000 | +116.28 m | 2082.2 m | 2149 m | −67 m |
+| E2 | 440 | −95.38 m | 2551.9 m | 2593 m | −41 m |
+| E1 | 540 | −117.17 m | 2637.3 m | 2694 m | −57 m |
+
+#### Elevation is not what the model gets wrong
+
+At 300 mil the residual is −51 to −77 m whether the round landed 9 m below the gun or 147 m above it. Adding the first session's 300 mil shots at −44 m, the dial holds its error across a **264 m span of ΔZ**:
+
+| ΔZ at 300 mil | −44 m | −9 m | −9 m | +142 m | +147 m |
+| --- | --- | --- | --- | --- | --- |
+| residual | −76 m | −67 m | −74 m | −61 m | −51 m |
+
+**The model's response to target height is therefore approximately correct**, which is the first direct evidence either way and the thing the first session could not test at all.
+
+#### The dial is what the model gets wrong, and its error changes sign
+
+The residual instead tracks elevation on the dial, consistently across both sessions and three gun positions — and it does not merely shrink with elevation, it **crosses zero somewhere between 50 and 150 mil**:
+
+| Dial | 35 | 50 | **100** | 150 | 200 | 300 | 440 | 450 | 540 | 600 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Residual | **+153 m** | **+81 m** | **−6, −11 m** | −100 m | −117 m | −51 to −77 m | −41 m | −61 m | −57 m | −49 m |
+
+**The crossing is at 100 mil, and it is sharp.** Two shots there land within 11 m of the model and 6 m of each other, with flight time inside 0.07 s — the model's single most accurate dial. Fifty mil below it the shell outruns the model by 153 m; fifty mil above it the model outruns the shell by 100 m. The residual then bottoms out near −117 m at 200 mil before recovering to about −50 m across the rest of the dial.
+
+The shape is therefore not a trend but a curve with a zero crossing and a minimum, spanning 270 m from best to worst.
+
+This decides how the fit should be repaired. Height response is validated, so the structure cannot be blamed on unmodelled terrain; it is shape in the drag law that two parameters cannot express, exactly as "The derived model" above suspected when adding a linear drag term made the fit worse rather than better. **A refit that only retunes muzzle velocity and drag cannot fix an error that changes sign and then reverses again** — no choice of those two parameters produces a residual that crosses zero at 100 mil, troughs at 200, and recovers by 440. The model form has to change, or the tables have to be built from measurements rather than from a fit.
+
+One caveat on the trough. The 150 and 200 mil residuals are the only figures in this curve that come solely from the first session, at a different gun position and a ΔZ near −45 m rather than −105 m. Every other dial has been shot from at least two positions. Re-shooting those two dials from origin E would confirm the deepest feature of the curve; until then it rests on one session.
+
+#### The bottom of the dial is inverted, not merely imprecise
+
+E3 at **35 mil — the dial floor** — is the strongest evidence in this document that the sub-150 extrapolation is wrong in kind rather than in degree. The round flew 1539 m where the model predicts 1386 m: **153 m further**, against every dial from 150 upward falling short. Its flight time is 8.000 s against a predicted 7.03 s, 0.97 s slow, which points the same way.
+
+N1 at 50 mil said the same thing first (+81 m) but struck a 26° slope at only 341 m, where the intercept is very sensitive. E3 is the better measurement — 13° of slope at 1539 m — and it agrees, so two independent shots at two dials now put the low end on the opposite side of the model.
+
+This also disposes of both extrapolations quoted under "Against the shipped firing table". Neither bracketed the truth: a line through the measured low-arc errors reached −185 m at the floor and the fitted model sat −434 m below the table there, while the measurement says the shell goes **further** than the model, not less far. Correcting E3 back to level ground puts the true 35 mil range near 975 m against the shipped table's 822 m — though that conversion leans on the same model the shot has just falsified, so treat the direction as established and the magnitude as not.
+
+#### Resolved: the high arc is short because the gun was parked on a slope
+
+The second session's high-arc shots do not agree with the first session's, and the disagreement is large, systematic, and currently unexplained.
+
+| | Session 1 (origin C, level pad) | Session 2 (origin E, hillside) |
+| --- | --- | --- |
+| High-arc mean residual | **−1 m** | **−95 m** |
+| Spread | −30 to +31 m | −121 to −76 m |
+| Dials covered | 800, 910, 1000, 1030, 1200, 1300, 1380 | 800, 850, 1000, 1090, 1380 ×3 |
+
+The first session's high arc straddles zero: on a level pad the model is good there. From origin E every high-arc shot falls 76–121 m short, at every dial, and the low arc from the same position over the same afternoon agrees with the first session perfectly well (440 and 540 mil give −41 and −57 m against −61 and −49 m at the neighbouring dials in session 1).
+
+The sharpest single comparison needs no model at all:
+
+> Session 1: **800 mil at ΔZ −4.8 m** landed 2511.0 m.
+> Session 2: **850 mil at ΔZ −9.1 m** landed 2400.5 m.
+
+Near-identical height, 50 mil apart on the dial, and the second lands 46 m shorter than the model's own difference between those dials accounts for.
+
+**Three explanations were tested and none survives.**
+
+*Target height.* Ruled out from inside session 2: 800 mil at ΔZ −93 m and 850 mil at ΔZ −9 m return the same −76 m residual. Eighty-four metres of height difference produce no difference in the error at all.
+
+*A tilted vehicle.* Origin E sits on steep ground — the terrain moves 4.1 m within 2 m of the gun — so a nose-up vehicle firing at a higher true angle than commanded is the natural suspect, and it is exactly the effect `docs/todo.md` records as unmodelled. Fitting one barrel-pitch offset across every session-2 shot gives +20 mil, and it fails: it repairs the high arc (RMS 96 m to 27 m at +25 mil) while making the low arc worse (75 m to 85 m), because on the low arc extra elevation adds range where on the high arc it removes it. No single offset satisfies both, so if attitude is involved it is not the whole story.
+
+*A displaced gun position.* Moving the gun far enough to add 95 m to the high-arc ranges would add the same to the low-arc ranges, which already agree. Ruled out on the same evidence.
+
+**What the anomaly is not.** It is not arc-branch confusion in the analysis: both fitted arcs carry identical parameters, and the forward range from a dial is identical whichever is used. It is not scatter: three 1380 mil shots at the same ΔZ span 22 m, well inside the effect. It is not terrain sampling: E7, the shot with the largest residual, landed on 2° ground.
+
+**The firing position is on a 35–50° slope, and the first session's was not.** Sampling the local gradient at each gun spot over several footprints:
+
+| Position | 4 m | 8 m | 16 m | 32 m |
+| --- | --- | --- | --- | --- |
+| E, every session-2 shot | 34.5° | 46.8° | 50.7° | 36.9° |
+| C, session 1 | 0.0° | 0.0° | 0.0° | 1.0° |
+| D, the 300-series | 2.1° | 0.9° | 1.9° | 1.9° |
+
+That is the cleanest correlate found: the position with a 95 m high-arc deficit is the only one on a slope, and the arc most sensitive to launch angle is the only arc affected. It also explains why one constant offset failed, because the pitch a slope imparts along the barrel depends on which way the hull faces. Downhill at origin E is bearing 281°, and the shots span 187° to 248°, so the effective pitch differs from shot to shot.
+
+Firing the same dial at two bearings supports it:
+
+| Dial | Bearing 214° (67° off downhill) | Bearing 248° (33° off downhill) |
+| --- | --- | --- |
+| 800 | −76 m | −47, −63 m |
+| 1000 | −103 m | −56, −67 m |
+
+Aiming nearer the downhill line shrinks the error at both dials, which is the direction a nose-down hull predicts on the high arc.
+
+**It is not proven, and this position cannot prove it.** Every shot from origin E confounds the two candidate causes: the 248° shots all landed on high ground and the 214° shots all on low ground, so target height explains the same pattern equally well, at a consistent 0.13 to 0.17 m per metre across both dials. Nothing fired from here can separate bearing from height. A caution on magnitude, too: the sampled gradient would imply 15–33° of hull pitch, which is absurd, where the best-fitting single offset is 1.1°. The game plainly does not tilt a vehicle to the full terrain gradient, and 2 m terrain data overstates the slope under a hull that spans several metres. The direction of this evidence is strong; its size is not to be read literally.
+
+**The control settles it.** Shot F1 fired 800 mil from origin F — level ground, 0.6° to 3.4°, and in a *different tank* — and returned a residual of **−35 m**, against −30 m for the same dial from origin C in the first session, and −47 to −76 m for the same dial from the slope.
+
+| 800 mil fired from | Ground slope | Bearing | ΔZ | Residual |
+| --- | --- | --- | --- | --- |
+| C, first session | 0.0–1.0° | 220° | −4.8 m | −30 m |
+| **F, control** | **0.6–3.4°** | 22° | +219.8 m | **−35 m** |
+| **F, control** | **0.6–3.4°** | 232° | +113.9 m | **+3 m** |
+| E, the hillside | 34–51° | 248° | +65, +63 m | −47, −63 m |
+| E, the hillside | 34–51° | 214° | −93 m | −76 m |
+
+Level ground reproduces the first session and at best is exact; the slope never is. Swapping the tank changed nothing, which rules out the vehicle itself. **Vehicle attitude is therefore a first-order term on the high arc, worth roughly 40 to 80 m at 800 mil and up to 95 m across the arc** — an order of magnitude larger than the 12 m that "Dispersion" above bounded it at from traverse alone, and far larger than the model's own residual.
+
+**There is almost no truly level ground on this map, which is the practical point.** The two control shots came from the flattest spot available at 3.4°, and they still differ from one another by 38 m at the same dial while facing opposite ways — F2 fired 100° off the downhill line and landed within 3 m of the model, F1 fired 110° off it the other way and fell 35 m short. Even the first session's pad, the only ground found at 0.0°, produced −30 m. So attitude is not an edge case that applies on hillsides; it is a term present in nearly every shot, small when the ground is near level and dominant when it is not.
+
+Two consequences follow.
+
+The high-arc residuals from origin E must not be used to refit anything: they measure the hull's attitude, not the shell's flight. The refit inputs are the first session's high-arc shots and the second session's **low-arc** shots, which agree with each other across positions.
+
+And the effect is not something the calculator can correct. It has no way to know the hull's pitch, so on sloped ground the high arc will read long by up to about 95 m no matter how good the ballistics become. Given how little level ground the map offers, the honest framing for a user is that the high arc carries an attitude error of tens of metres unless the gun is parked deliberately flat — which is advice the app can give even though it cannot compute the correction.
+
+One caveat on F1 itself: it struck 43° ground at ΔZ +219.8 m, the largest height difference in this document and 210 m outside the map's declared playable bounds, so its −35 m carries perhaps ±15 m. F2, on 16° ground, is the better of the two. The conclusion rests on the separation between the level and sloped groups, which is larger than either shot's uncertainty.
+
+
+#### Flight time is in better shape than range
+
+| Shot | Dial | ΔZ | Measured | Model | Error |
+| --- | --- | --- | --- | --- | --- |
+| shot 9 (session 1) | 300 | −47.2 m | 14.22 s | 14.97 s | +0.75 s |
+| shot 4 (session 1) | 600 | −49.6 m | 23.43 s | 23.83 s | +0.40 s |
+| shot 18 (session 1) | 1200 | −48.0 m | 35.40 s | 35.43 s | +0.03 s |
+| N4 | 300 | +147.3 m | 10.001 s | 10.62 s | +0.62 s |
+| E2 | 440 | −95.4 m | 20.200 s | 19.91 s | −0.29 s |
+| E1 | 540 | −117.2 m | 23.200 s | 22.92 s | −0.28 s |
+| E3 | 35 | −102.0 m | 8.000 s | 7.03 s | **−0.97 s** |
+| E5 | 100 | −105.9 m | 9.300 s | 9.23 s | −0.07 s |
+| E7 | 1000 | −126.5 m | 33.800 s | 33.14 s | −0.66 s |
+| E6 | 1380 | −81.9 m | 37.700 s | 37.30 s | −0.40 s |
+
+Every error from 300 mil upward is within 0.75 s, and the video timing is itself only good to ±0.4 s; the two downhill shots from origin E agree with each other to 0.01 s. **Over most of the dial, time of flight is close to the limit of what this method can measure, while range is out by 40–120 m** — the opposite of where the effort was expected to be needed.
+
+The exception is E3 at the dial floor, 0.97 s fast, which is the largest timing error in the set and sits where the range error is also largest and inverted. Both readings are consistent with the shell simply travelling further and longer at 35 mil than the model allows.
+
+
 ### The firing lane crosses a ridge
 
 The ground between the gun and the impacts does not fall away smoothly. Sampled from origin C toward shot 9:
