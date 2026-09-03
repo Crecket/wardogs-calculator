@@ -13,13 +13,46 @@ function deadGroundArcs(weaponId) {
     return [{ name, fit }];
 }
 
+function deadGroundShellHeight(family, node, weight, xMeters) {
+    const a = trajectoryHeightAt(family.paths[node], xMeters);
+    const b = trajectoryHeightAt(family.paths[node + 1], xMeters);
+
+    if (a === null || b === null) {
+        return TRAJECTORY_FLOOR_METERS;
+    }
+
+    return a + (b - a) * weight;
+}
+
 function deadGroundTrajectoryClears(fit, tan, ranges, deltas, index) {
-    const chord = modelShellHeight(fit, tan, ranges[index]) / ranges[index];
+    const family = trajectoryFamily(fit);
+    const position = family ? familyLocate(family, Math.atan(tan)) : NaN;
+
+    if (Number.isNaN(position)) {
+        const chord = TRAJECTORY_FLOOR_METERS / ranges[index];
+
+        for (let j = 0; j < index; j += 1) {
+            if (
+                deltas[j] > chord * ranges[j] &&
+                TRAJECTORY_FLOOR_METERS < deltas[j]
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    const node = familyIndex(position);
+    const weight = familyWeight(position);
+
+    const chord =
+        deadGroundShellHeight(family, node, weight, ranges[index]) / ranges[index];
 
     for (let j = 0; j < index; j += 1) {
         if (
             deltas[j] > chord * ranges[j] &&
-            modelShellHeight(fit, tan, ranges[j]) < deltas[j]
+            deadGroundShellHeight(family, node, weight, ranges[j]) < deltas[j]
         ) {
             return false;
         }

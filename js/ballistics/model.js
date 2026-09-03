@@ -337,35 +337,40 @@ function familyLocate(family, radians) {
         radians < family.minRadians - 1e-12 ||
         radians > family.maxRadians + 1e-12
     ) {
-        return null;
+        return NaN;
     }
 
     const step = FAMILY_STEP_DEGREES * Math.PI / 180;
     const position = (radians - family.minRadians) / step;
     const last = family.paths.length - 1;
-    const index = Math.min(last - 1, Math.max(0, Math.floor(position)));
 
-    return {
-        index,
-        weight: Math.min(1, Math.max(0, position - index))
-    };
+    return Math.min(last - 1, Math.max(0, position));
+}
+
+function familyIndex(position) {
+    return Math.floor(position);
+}
+
+function familyWeight(position) {
+    return Math.min(1, Math.max(0, position - Math.floor(position)));
 }
 
 function familyBlend(family, radians, sample, argument) {
-    const at = familyLocate(family, radians);
+    const position = familyLocate(family, radians);
 
-    if (!at) {
+    if (Number.isNaN(position)) {
         return null;
     }
 
-    const a = sample(family.paths[at.index], argument);
-    const b = sample(family.paths[at.index + 1], argument);
+    const index = familyIndex(position);
+    const a = sample(family.paths[index], argument);
+    const b = sample(family.paths[index + 1], argument);
 
     if (a === null || b === null) {
         return null;
     }
 
-    return a + (b - a) * at.weight;
+    return a + (b - a) * familyWeight(position);
 }
 
 function familyRange(family, radians, deltaZMeters) {
@@ -426,20 +431,21 @@ function familySolveNode(family, index, deltaZMeters, stamp) {
 }
 
 function familySolveRange(family, radians, deltaZMeters, stamp) {
-    const at = familyLocate(family, radians);
+    const position = familyLocate(family, radians);
 
-    if (!at) {
+    if (Number.isNaN(position)) {
         return null;
     }
 
-    const a = familySolveNode(family, at.index, deltaZMeters, stamp);
-    const b = familySolveNode(family, at.index + 1, deltaZMeters, stamp);
+    const index = familyIndex(position);
+    const a = familySolveNode(family, index, deltaZMeters, stamp);
+    const b = familySolveNode(family, index + 1, deltaZMeters, stamp);
 
     if (a === null || b === null) {
         return null;
     }
 
-    return a + (b - a) * at.weight;
+    return a + (b - a) * familyWeight(position);
 }
 
 function familySolve(family, rangeMeters, deltaZMeters, branch) {

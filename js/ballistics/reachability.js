@@ -22,7 +22,28 @@ function lowArcName(weaponId) {
     return null;
 }
 
+const ARC_DECLARED_RANGE_BY_WEAPON = new WeakMap();
+
 function arcDeclaredRange(weapon, arc) {
+    if (weapon === null || typeof weapon !== 'object') {
+        return arcDeclaredRangeUncached(weapon, arc);
+    }
+
+    let memo = ARC_DECLARED_RANGE_BY_WEAPON.get(weapon);
+
+    if (!memo) {
+        memo = new Map();
+        ARC_DECLARED_RANGE_BY_WEAPON.set(weapon, memo);
+    }
+
+    if (!memo.has(arc)) {
+        memo.set(arc, arcDeclaredRangeUncached(weapon, arc));
+    }
+
+    return memo.get(arc);
+}
+
+function arcDeclaredRangeUncached(weapon, arc) {
     const weaponMin = (weapon?.minRange ?? 0) * 1000;
     const weaponMax = (weapon?.maxRange ?? weapon?.range ?? 0) * 1000;
 
