@@ -12,6 +12,9 @@
     },
     "ozeti": {
       "terrainManifest": "data/terrain/ozeti/manifest.json"
+    },
+    "zestafona": {
+      "terrainManifest": "data/terrain/zestafona/manifest.json"
     }
   },
   "releasePolicy": {

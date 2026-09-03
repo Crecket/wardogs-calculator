@@ -1,0 +1,28 @@
+{
+  "id": "zestafona",
+  "name": "Zestafona",
+  "w": 32,
+  "h": 32,
+  "bounds": {
+    "minX": 19.90,
+    "maxX": 124.89,
+    "minY": 50.70,
+    "maxY": 141.90
+  },
+  "tiles": {
+    "path": "maps/tiles/zestafona",
+    "tileSize": 256,
+    "minZoom": 0,
+    "maxZoom": 7,
+    "extension": "webp"
+  },
+  "markers": [
+  ],
+  "coordinateMetersPerUnit": 100,
+  "tileBounds": {
+    "minX": -0.03,
+    "maxX": 163.81,
+    "minY": -0.01,
+    "maxY": 163.83
+  }
+}

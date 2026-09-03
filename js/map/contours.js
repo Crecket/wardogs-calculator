@@ -24,7 +24,8 @@ const CONTOURS_FORMAT = 'wardogs-contours-v1';
  */
 const CONTOUR_MAP_IDS = [
     'bakurani',
-    'ozeti'
+    'ozeti',
+    'zestafona'
 ];
 
 /*
