@@ -115,6 +115,29 @@ The low arc (150–600 mil) drops 42–61 m at every dial; the high arc rises at
 | M6 | 650 | 95.57 | 108.52 | −861.99 | 340.0 m | +0.04 m | 340.0 m |
 | M7 | 600 | 95.10 | 108.28 | −862.24 | 392.5 m | −0.21 m | 392.5 m |
 
+### How precise these elevations are
+
+Two things bound what the table above can support, both measured from the same terrain data on 2026-09-03.
+
+**The gun pad is not level.** Sampling a 100 m by 100 m box around origin C gives a 9.2 m spread, from −870.71 m to −861.51 m. The gun coordinates are the game's own readout at two decimal places, so the gun's position is known to about a metre and its ground height to a few metres. That is immaterial against a 40–60 m ΔZ, but it is the floor on any accuracy figure a refit can honestly claim: quoting a fit to better than a few metres RMS would be quoting past the input data. It is also why origins B, C and M all read −862.03 m despite M sitting 68 m from the other two — they happen to share a level patch, not a single sample.
+
+**The firing lane crosses a ridge.** The profile from origin C to shot 9's impact does not fall away monotonically; it climbs to +35 m above the gun at about 1100 m before dropping to −44 m by 1645 m:
+
+| Distance along lane | ΔZ |
+| --- | --- |
+| 0 m | 0.0 m |
+| 274 m | +16.0 m |
+| 548 m | +4.5 m |
+| 822 m | +8.9 m |
+| 1096 m | +35.0 m |
+| 1370 m | −17.9 m |
+| 1645 m | −44.1 m |
+| 1919 m | −44.1 m |
+| 2193 m | −47.2 m |
+
+This independently corroborates the account under "Still unmeasured" that the 35 and 100 mil dials were blocked by a hill on the available firing line: the hill is measurably there, and a shell on a shallow dial would have to clear +35 m at 1100 m to reach the ground beyond it. It does not affect any impact ΔZ above — those are sampled at the impact point — but it does mean the lane is not the uniform down-slope the single ΔZ per shot might suggest.
+
+
 ### What this changes
 
 Feeding the real ΔZ above into the currently shipped SPH-2 fit (262.4 m/s, drag 3.90 × 10⁻⁴ /m, `source: "firing-range-fit"` in `data/ballistics/projectile-model.json`) instead of the flat-ground assumption the fit was built on:
