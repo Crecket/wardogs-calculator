@@ -21,7 +21,7 @@ The firing range is not a separate map. It is part of Bakurani, centred near `98
 
 Coordinates are the game's own readout, at two decimal places — about one metre. They convert to metres with the same `coordinateMetersPerUnit` of 100 that both shipped maps use. **That scale is unverified for this map**; nothing in the session measured it directly, and every range in this document inherits the assumption.
 
-Elevations are sampled from `data/terrain/bakurani/`'s raw 2 m Terrain3D collision chunks (`manifest.json`, `evidence: "VERIFIED"`). Heights are metres on the map's own offset datum, roughly −862 m here; only differences are meaningful. **ΔZ is impact height minus gun height**, so a negative ΔZ means the round landed below the gun.
+Elevations are sampled from `data/terrain/bakurani/`'s raw 2 m Terrain3D collision chunks (`manifest.json`, `evidence: "VERIFIED"`) by `scripts/analyse-shots.mjs`, which takes a list of shots and resolves each one — gun height and slope, impact height and slope, ΔZ, range, bearing, model residual, flight-time error. It also makes the two judgements that decide whether a shot can be used at all: whether the gun stood on level ground, and whether the round reached its range or struck rising ground first. Heights are metres on the map's own offset datum, roughly −862 m here; only differences are meaningful. **ΔZ is impact height minus gun height**, so a negative ΔZ means the round landed below the gun.
 
 Two independent checks say the coordinate mapping is right, which matters because the manifest records a past Y-sign error:
 
