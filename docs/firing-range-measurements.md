@@ -6,7 +6,7 @@ Raw in-game shot data gathered at the firing range, plus what it says about the 
 
 ## Conditions
 
-The firing range is its own map. It is not Bakurani or Ozeti, so there is no entry in `maps/` and no heightfield in `data/terrain/` — target elevations are unknown for every shot below, and nothing here can validate the elevation correction.
+**Correction, 2026-09-03:** the firing range is not a separate map. `apollyon-sys` (PR #15) identified it as part of Bakurani, centred around `98.49, 109.80` — inside the coverage of `data/terrain/bakurani/`, which is why every gun origin below (97.7–99.5, 110.1–110.4) resolves to real ground. Everything below this point in the document was written before that was known, and the paragraph immediately above described the range as a separate map with no heightfield; that was wrong. Target elevations are not unknown — see "Terrain elevations" below, which supersedes the flat-ground assumption everywhere it appears in this document.
 
 Coordinates are the game's own readout. They are converted to metres with the same `coordinateMetersPerUnit` of 100 that both shipped maps use. **That scale is unverified for this map.** Nothing in the session measured it, and the only shot that might have been compared against a declared range is shot 1, which is rejected below. Every range in this document inherits the assumption.
 
@@ -52,6 +52,86 @@ Three gun origins appear in the data:
 | 26 | 1380 | C | 92.03 | 103.27 | 890.4 m | 219.8° | — | on a hill |
 
 Raw video timestamps: shot 4 fired 1.25 s, landed 24.680 s. Shot 9 fired 1.28 s, landed 15.5 s. Shot 18 fired 1.2 s, landed 36.6 s.
+
+## Terrain elevations — added 2026-09-03
+
+Every gun origin and impact point above, sampled against `data/terrain/bakurani/`'s raw 2 m Terrain3D collision chunks (`manifest.json`, `evidence: "VERIFIED"`) rather than assumed flat. Heights are metres on the map's own offset datum (roughly −862 m here — see the note at the top of `scripts/lib/terrain-source.mjs`); only differences (ΔZ) are meaningful. ΔZ is impact z minus gun z, so negative means the round landed below the gun.
+
+**Cross-checked against the shipped 32 m `heightfield.bin` first**, since that is what the app itself samples at runtime: 13 points spot-checked, worst difference 4.1 m, most under 2 m — consistent with downsampling from 2 m to 32 m, not a mapping error. The coordinate mapping and the elevations below are trustworthy.
+
+### Origins
+
+| Origin | x | y | z (m) |
+| --- | --- | --- | --- |
+| A | 99.49 | 110.33 | −863.57 |
+| B | 97.73 | 110.10 | −862.03 |
+| C | 97.73 | 110.11 | −862.03 |
+| M | 98.41 | 110.39 | −862.03 |
+
+### SPG (spg / SPH-2)
+
+| # | Dial | Origin z | Impact x | Impact y | Impact z | Flat range | ΔZ | Slant range |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 35 | −863.57 | 101.34 | 118.06 | −865.40 | 794.8 m | −1.83 m | 794.8 m |
+| 2 | 150 | −863.57 | 100.46 | 124.23 | −815.02 | 1393.4 m | +48.55 m | 1394.2 m |
+| 3 | 200 | −863.57 | 100.61 | 126.73 | −807.06 | 1643.8 m | +56.51 m | 1644.8 m |
+| 4 | 600 | −862.03 | 81.95 | 89.20 | −911.60 | 2618.8 m | −49.57 m | 2619.3 m |
+| 5 | 300 | −862.03 | 84.38 | 92.43 | −922.78 | 2214.6 m | −60.75 m | 2215.4 m |
+| 6 | 300 | −862.03 | 83.99 | 92.99 | −904.57 | 2195.2 m | −42.54 m | 2195.6 m |
+| 7 | 300 | −862.03 | 84.08 | 93.01 | −904.35 | 2188.0 m | −42.33 m | 2188.4 m |
+| 8 | 300 | −862.03 | 84.02 | 93.02 | −904.43 | 2191.0 m | −42.40 m | 2191.4 m |
+| 9 | 300 | −862.03 | 84.13 | 92.91 | −909.22 | 2192.7 m | −47.20 m | 2193.2 m |
+| 10 | 150 | −862.03 | 87.50 | 97.26 | −906.67 | 1642.5 m | −44.65 m | 1643.1 m |
+| 11 | 200 | −862.03 | 86.17 | 95.74 | −912.58 | 1844.3 m | −50.55 m | 1845.0 m |
+| 12 | 450 | −862.03 | 82.25 | 90.51 | −905.34 | 2497.6 m | −43.31 m | 2498.0 m |
+| 13 | 1380 | −862.03 | 92.58 | 103.33 | −844.17 | 851.4 m | +17.86 m | 851.6 m |
+| 14 | 1380 | −862.03 | 91.66 | 103.68 | −867.65 | 884.2 m | −5.63 m | 884.3 m |
+| 15 | 1380 | −862.03 | 92.06 | 103.17 | −845.99 | 896.2 m | +16.03 m | 896.3 m |
+| 16 | 1000 | −862.03 | 83.67 | 93.38 | −896.55 | 2185.4 m | −34.52 m | 2185.6 m |
+| 17 | 800 | −862.03 | 81.36 | 91.07 | −866.81 | 2511.0 m | −4.78 m | 2511.0 m |
+| 18 | 1200 | −862.03 | 87.47 | 97.78 | −910.05 | 1604.0 m | −48.02 m | 1604.8 m |
+| 19 | 1300 | −862.03 | 89.93 | 100.65 | −858.69 | 1226.1 m | +3.34 m | 1226.1 m |
+| 20 | 910 | −862.03 | 82.35 | 92.10 | −890.57 | 2368.3 m | −28.55 m | 2368.5 m |
+| 21 | 1030 | −862.03 | 84.20 | 94.00 | −894.23 | 2103.8 m | −32.20 m | 2104.0 m |
+| 22 | 1300 | −862.03 | 89.96 | 100.66 | −857.60 | 1223.4 m | +4.43 m | 1223.4 m |
+| 23 | 1300 | −862.03 | 89.99 | 100.69 | −856.47 | 1219.2 m | +5.56 m | 1219.2 m |
+| 24 | 1300 | −862.03 | 89.98 | 100.60 | −856.61 | 1226.8 m | +5.41 m | 1226.8 m |
+| 25 | 1380 | −862.03 | 92.23 | 103.12 | −841.07 | 889.4 m | +20.95 m | 889.7 m |
+| 26 | 1380 | −862.03 | 92.03 | 103.27 | −849.81 | 890.4 m | +12.22 m | 890.5 m |
+
+Shot 5's "landed in a riverbank" note is now quantified: it dropped 15–18 m further than its four 300 mil siblings (−60.75 m against −42.3 to −47.2 m), which is why it read 23 m long against them.
+
+The low arc (150–600 mil) drops 42–61 m at every dial; the high arc rises at 1300–1380 mil (+3 to +21 m) and is close to flat everywhere else. This is arc-correlated, not random, which matters for the fit below.
+
+### Mortar (all fired from origin M, z = −862.03)
+
+| # | Dial | Impact x | Impact y | Impact z | Flat range | ΔZ | Slant range |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| M1 | 150 | 93.90 | 105.17 | −852.36 | 689.8 m | +9.67 m | 689.9 m |
+| M2 | 450 | 95.06 | 106.54 | −823.92 | 510.3 m | +38.11 m | 511.8 m |
+| M3 | 600 | 95.89 | 107.47 | −827.84 | 385.7 m | +34.19 m | 387.2 m |
+| M4 | 750 | 96.82 | 108.57 | −862.87 | 241.7 m | −0.84 m | 241.7 m |
+| M5 | 850 | 97.52 | 109.37 | −861.39 | 135.4 m | +0.63 m | 135.4 m |
+| M6 | 650 | 95.57 | 108.52 | −861.99 | 340.0 m | +0.04 m | 340.0 m |
+| M7 | 600 | 95.10 | 108.28 | −862.24 | 392.5 m | −0.21 m | 392.5 m |
+
+### What this changes
+
+Feeding the real ΔZ above into the currently shipped SPH-2 fit (262.4 m/s, drag 3.90 × 10⁻⁴ /m, `source: "firing-range-fit"` in `data/ballistics/projectile-model.json`) instead of the flat-ground assumption the fit was built on:
+
+```
+RMS   using real ΔZ : 56.7 m
+      assuming flat : 19.7 m   ← the figure quoted elsewhere in this document
+```
+
+and the low-arc residuals turn systematically negative (roughly −100 m at 150 mil, −117 m at 200 mil, −77 m at 300 mil): the model over-predicts range once correctly credited with the drop. **The 19.7 m RMS quoted under "Derived model" below is therefore not an accuracy figure against the actual terrain** — it is the residual of a fit against measurements whose elevation was assumed away, and every low-arc dial in that fit absorbed roughly 40–60 m of unmodelled drop into muzzle velocity and drag instead.
+
+The three measured flight times are affected the same way: at real ΔZ the model errs +0.75 s at 300 mil and +0.40 s at 600 mil, against the 0.02–0.34 s this document reports elsewhere for the flat-ground case.
+
+The mortar range table's conclusion is unaffected: M2 and M3 rose 34–38 m, but at that arc's 79–85° descent the sensitivity already noted in this document (about 0.2 m of range per metre of height) turns that into under 8 m, inside the existing +1 to +7.5 m errors. **The mortar table still needs no change.**
+
+This is a plausible explanation for the residual structure flagged under "Derived model" below — "the worst residual is 150 mil at −36 m, the shallowest shot" — since the shallowest shot is also the one most sensitive to an unmodelled ΔZ. A refit of the SPH-2's muzzle velocity and drag against the real slant geometry above has not been done yet; whether it should happen ahead of Early Access on 2026-09-10 (which restores the pak files and settles the parameters directly) is an open question, not decided here.
+
 
 ### Shots 1–3 are not usable
 
@@ -173,7 +253,7 @@ Quadratic drag does not describe this weapon. The best fit over four range/time 
 ## Still unmeasured
 
 - **The bottom of the SPG low arc**, 35 and 100 mil — no clear firing lane at the range; everything below 150 mil is extrapolated.
-- **The elevation correction**, which needs known target heights and so cannot be done at this range at all.
+- **A refit against real terrain.** Target heights are no longer unknown — the range sits inside `data/terrain/bakurani/`'s coverage (see "Terrain elevations" above) — so what remains is doing the refit of the SPH-2's muzzle velocity and drag against the real ΔZ per shot, and re-checking the three flight times against it.
 - **Vehicle attitude** as a correctable quantity. It is now bounded at roughly 12 m on the high arc for 5° of traverse once the outlying shot 13 is set aside, but the tilt itself was never read off the game, so there is nothing to correct *with*.
-- **The coordinate scale** of the range map, assumed to be 100 m per unit like the shipped maps and never checked.
+- **The coordinate scale** of the range map, assumed to be 100 m per unit like the shipped maps and never checked directly — though the 2 m Terrain3D chunks lining up with the shipped 32 m heightfield to within 4.1 m at these coordinates (see "Terrain elevations" above) is evidence the game-unit-to-metre mapping is consistent, not proof of the 100 m/unit figure specifically.
 - **The declared minimum range.** `minRangeKm` of 0.78 is the shipped table's 1390 mil entry, and the nearest measurement, 1380 mil, reads 65 m longer than its row, so the value is unverified and if anything understated.
