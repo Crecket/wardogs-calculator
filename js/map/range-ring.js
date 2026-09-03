@@ -33,17 +33,25 @@ const RANGE_RING_MEMO_METRES = 8;
 
 const RANGE_RING_CACHE = new Map();
 
-function weaponReachRange(weapon, deltaZMeters) {
-    let best = null;
+function weaponReachArcs(weapon) {
+    const fits = [];
 
     for (const arc of REACH_ARCS) {
         const fit = projectileModelArc(weapon?.id, arc);
 
-        if (!fit) {
-            continue;
+        if (fit) {
+            fits.push(fit);
         }
+    }
 
-        const range = arcMaxRangeModel(weapon, fit, deltaZMeters);
+    return fits;
+}
+
+function weaponReachRange(weapon, deltaZMeters, fits = weaponReachArcs(weapon)) {
+    let best = null;
+
+    for (let i = 0; i < fits.length; i += 1) {
+        const range = arcMaxRangeModel(weapon, fits[i], deltaZMeters);
 
         if (range !== null && (best === null || range > best)) {
             best = range;
@@ -119,7 +127,8 @@ function terrainRangeRing(gun, mapId) {
     ensureHeightfieldLoaded(mapId);
 
     const field = cachedHeightfield(mapId);
-    const levelMax = weaponReachRange(weapon, 0);
+    const fits = weaponReachArcs(weapon);
+    const levelMax = weaponReachRange(weapon, 0, fits);
 
     if (!field || !levelMax) {
         return null;
@@ -150,13 +159,13 @@ function terrainRangeRing(gun, mapId) {
      * sample. An exact bound, so a bearing that never crosses still ends.
      */
     const marchLimit = Math.min(
-        (weaponReachRange(weapon, field.minZMeters - zGun) ?? declaredMax) +
+        (weaponReachRange(weapon, field.minZMeters - zGun, fits) ?? declaredMax) +
             Math.max(0, declaredMax - levelMax),
         declaredMax * 2
     );
 
     const highestReach = Number.isFinite(field.maxZMeters)
-        ? weaponReachRange(weapon, field.maxZMeters - zGun)
+        ? weaponReachRange(weapon, field.maxZMeters - zGun, fits)
         : null;
 
     const marchStart = highestReach === null
@@ -195,7 +204,7 @@ function terrainRangeRing(gun, mapId) {
                 return null;
             }
 
-            const modelled = weaponReachRange(weapon, z - zGun);
+            const modelled = weaponReachRange(weapon, z - zGun, fits);
 
             if (modelled === null) {
                 return false;

@@ -44,8 +44,8 @@ Fresh solves, desktop (mobile is within a few percent):
 
 | solve | 1x before | 1x after | 4x after | 6x after |
 | --- | --- | --- | --- | --- |
-| `terrainRangeRing`, new gun position | 13.6 ms | 5.6 ms | 20 ms | 33 ms |
-| `terrainDeadGround`, ring cached | 159 ms | 110 ms | 434 ms | 672 ms |
+| `terrainRangeRing`, new gun position | 13.6 ms | 4.6 ms | 20 ms | 27 ms |
+| `terrainDeadGround`, ring cached | 159 ms | 59 ms | 434 ms | 388 ms |
 | `assessShot`, new target | 0.1 ms | 0.1 ms | | |
 | `crossSectionModel` | 0.1 ms | 0.1 ms | | |
 | `trajectoryFamily`, cold | 19 ms | 18 ms | 73 ms | 113 ms |
@@ -100,3 +100,16 @@ Measured numbers are from the tables above; estimates are marked.
 ## Model note found on the way
 
 The family interpolates between adjacent 0.25 degree paths separately for range (`familyRange` blends the two crossing distances) and for height (`familyHeight` blends the two heights at a fixed x). The blended height curve therefore does not pass through the blended range at the target height; for the SPH-2 low arc the mismatch is metres at the impact. Every consumer is consistent with itself, and the dead-ground pruning above anchors on the height blend for that reason, but anyone tightening the model should know the two are not one curve.
+
+## Where the solve stands after the memoisation pass
+
+Measured on this branch against the merge it came from, desktop, medians over three repetitions, proven exact by `--compare` (max ring radius difference 0.00 m, max wedge edge difference 0.00 m, zero bearings whose wedge count changed):
+
+| solve | 1x before | 1x after | 6x before | 6x after |
+| --- | --- | --- | --- | --- |
+| `terrainDeadGround`, ring cached | 98 ms | 59 ms | 619 ms | 388 ms |
+| `terrainRangeRing`, new gun position | 5.8 ms | 4.6 ms | 33 ms | 27 ms |
+
+That is roughly 40 percent off the dead-ground solve for no change in output, from memoising the level arc ranges and the declared ranges on the weapon, resolving the ring's fitted arcs once per solve, evaluating each family node once per solve, and returning a position from `familyLocate` rather than an object allocated on every call.
+
+**It is not close to the frame budget.** 388 ms at 6x is 23 frames at 60 fps. Arithmetic alone will not close that gap: the remaining work is the angle sweep, which replaces the per-sample solve entirely, and then suppressing the solve during a drag so the cost is paid once on settle rather than every 8 m of travel. Whether a worker is needed on top depends on what the angle sweep leaves; see `docs/webworker-perf.md`.
