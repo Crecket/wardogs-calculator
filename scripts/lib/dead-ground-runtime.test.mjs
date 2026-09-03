@@ -150,7 +150,9 @@ test('the debounce only elapses once the gun stops moving', async () => {
 
         assert.equal(settled(ctx), false, 'a gun still in motion never settles');
 
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve =>
+            setTimeout(resolve, callRuntime(ctx, 'DEAD_GROUND_SETTLE_MS') / 3)
+        );
 
         settled(ctx);
     }
@@ -199,7 +201,9 @@ test('the reveal alpha starts at zero and eases to one', async () => {
 
     assert.equal(callRuntime(ctx, 'deadGroundRevealAlpha()'), 0);
 
-    await new Promise(resolve => setTimeout(resolve, 60));
+    await new Promise(resolve =>
+        setTimeout(resolve, callRuntime(ctx, 'DEAD_GROUND_FADE_MS') / 3)
+    );
 
     const mid = callRuntime(ctx, 'deadGroundRevealAlpha()');
 

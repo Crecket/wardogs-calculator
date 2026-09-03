@@ -240,9 +240,9 @@ function terrainDeadGround(gun, mapId) {
     return solved;
 }
 
-const DEAD_GROUND_SETTLE_MS = 250;
+const DEAD_GROUND_SETTLE_MS = 100;
 
-const DEAD_GROUND_FADE_MS = 220;
+const DEAD_GROUND_FADE_MS = 140;
 
 const DEAD_GROUND_REVEAL = {
     signature: null,
