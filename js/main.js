@@ -209,6 +209,8 @@ async function init() {
 
         initLayout();
 
+        initFpsMeter();
+
         /*
          * Before the clamp below, so points restored from a previous
          * visit are pulled inside the map's bounds like any other.
