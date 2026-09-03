@@ -6,7 +6,7 @@ Elevations were added on 2026-09-03, after `apollyon-sys` pointed out in PR #15 
 
 ## Summary
 
-- **The SPH-2's shipped range table is wrong**, by up to 150 m on the low arc and 65 m on the high arc, in opposite directions.
+- **The SPH-2's shipped range table is wrong**, by up to 150 m on the low arc and 65 m on the high arc, in opposite directions — and once the shots are corrected back to level ground the low-arc error roughly doubles, to something near 288 m at 150 mil.
 - **The mortar's shipped range table is correct**, every dial within +1.0 to +7.5 m, and the four near-level shots confirm it without needing any height correction. Its flight times are not — up to 4.8 s short. Its response to target height turns out to be *unmeasured*: correcting the three elevated shots with the only model available makes their agreement with the table worse, not better.
 - **The weapon has essentially no dispersion.** Repeats with the barrel held still land within 7 m at 2.2 km. Spread comes from traversing the barrel.
 - **The ground was not level.** Every low-arc SPH-2 shot landed 42–61 m below the gun. The replacement fit was built assuming it was, so its quoted 19.7 m accuracy does not survive contact with the real terrain — it is 56.7 m. A refit is the outstanding work.
@@ -142,6 +142,27 @@ Terrain is ruled out for all of it. At 1380 mil the round descends at 85° and r
 | 1380 | high | 889.9 m | 825 m | +65 m |
 
 The table is accurate either side of 45° elevation and degrades monotonically with distance from it — long below, short above. How far the low arc degrades below 150 mil is unknown: a straight line through the five measured low-arc errors reaches only about −185 m at the 35 mil floor, while the fitted model sits −434 m below the table there. The two disagree by 250 m and nothing measured lies between them, so no figure should be quoted for that end until it is re-shot.
+
+**The errors above understate the low arc, because a firing table is a level-ground table and these shots were not level.** Every low-arc round fell 43–51 m and flew further for it, so the raw measured range flatters the table. Correcting each shot back to its flat-ground equivalent roughly doubles the low-arc error:
+
+| Dial | Arc | ΔZ | What the drop is worth | Error above | Error, level-corrected |
+| --- | --- | --- | --- | --- | --- |
+| 150 | low | −44.6 m | +138 m | −150 m | **−288 m** |
+| 200 | low | −50.5 m | +119 m | −135 m | **−253 m** |
+| 300 | low | −43.6 m | +67 m | −81 m | −149 m |
+| 450 | low | −43.3 m | +41 m | −40 m | −82 m |
+| 600 | low | −49.6 m | +32 m | −10 m | −42 m |
+| 800 | high | −4.8 m | +2 m | −2 m | −4 m |
+| 910 | high | −28.6 m | +10 m | +26 m | +17 m |
+| 1000 | high | −34.5 m | +10 m | +38 m | +29 m |
+| 1030 | high | −32.2 m | +8 m | +32 m | +23 m |
+| 1200 | high | −48.0 m | +8 m | +57 m | +49 m |
+| 1300 | high | +4.7 m | −1 m | +59 m | +59 m |
+| 1380 | high | +16.6 m | −1 m | +65 m | +66 m |
+
+RMS against the table goes from 72 m to 126 m, and the worst case from 150 m to 288 m. The high arc barely moves, because at those descent angles height is worth almost nothing.
+
+**Read the magnitudes with care.** The "what the drop is worth" column comes from the fitted model, and that model is itself biased by having been fitted to these same shots as though they were level — so the corrected figures are indicative, not settled. The *direction* is not in doubt: a round that falls 45 m always flies further than one that does not, so the true level-ground errors are larger than the raw column, not smaller. Pinning the magnitude is one of the things a refit, or shots at deliberately varied height, would deliver.
 
 The 1380 row is the weakest. Its 889.9 m is the mean of shots 25 and 26 only, and that dial's five shots span 45 m once traverse and shot 13 are included, so its +65 m is not separable from the scatter. The high table being short is carried by the 910 through 1300 rows, which 1380 is consistent with but does not independently confirm.
 
