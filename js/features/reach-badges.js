@@ -133,6 +133,18 @@ function reachScheduleSolve() {
         return;
     }
 
+    if (!deadGroundSettled()) {
+        reachSolvePending = true;
+
+        setTimeout(() => {
+            reachSolvePending = false;
+
+            reachScheduleSolve();
+        }, DEAD_GROUND_SETTLE_MS);
+
+        return;
+    }
+
     const gun = reachUnsolvedGun();
 
     if (!gun) {

@@ -240,6 +240,72 @@ function terrainDeadGround(gun, mapId) {
     return solved;
 }
 
+const DEAD_GROUND_SETTLE_MS = 250;
+
+const DEAD_GROUND_FADE_MS = 220;
+
+const DEAD_GROUND_REVEAL = {
+    signature: null,
+    timer: 0,
+    settled: false,
+    fadeStart: 0
+};
+
+function deadGroundSignature() {
+    const guns = Array.isArray(S.guns) && S.guns.length
+        ? S.guns
+        : [{ weapon: S.weapon, position: S.origin }];
+
+    let signature = S.map;
+
+    for (const gun of guns) {
+        signature += '/' + rangeRingMemoKey(gun, S.map);
+    }
+
+    return signature;
+}
+
+function deadGroundSettled() {
+    const signature = deadGroundSignature();
+
+    if (signature !== DEAD_GROUND_REVEAL.signature) {
+        DEAD_GROUND_REVEAL.signature = signature;
+        DEAD_GROUND_REVEAL.settled = false;
+        DEAD_GROUND_REVEAL.fadeStart = 0;
+
+        if (DEAD_GROUND_REVEAL.timer) {
+            clearTimeout(DEAD_GROUND_REVEAL.timer);
+        }
+
+        DEAD_GROUND_REVEAL.timer = setTimeout(
+            () => {
+                DEAD_GROUND_REVEAL.timer = 0;
+                DEAD_GROUND_REVEAL.settled = true;
+
+                draw();
+            },
+            DEAD_GROUND_SETTLE_MS
+        );
+    }
+
+    return DEAD_GROUND_REVEAL.settled;
+}
+
+function deadGroundRevealAlpha() {
+    if (!DEAD_GROUND_REVEAL.fadeStart) {
+        DEAD_GROUND_REVEAL.fadeStart = performance.now();
+
+        return 0;
+    }
+
+    const t = Math.min(
+        1,
+        (performance.now() - DEAD_GROUND_REVEAL.fadeStart) / DEAD_GROUND_FADE_MS
+    );
+
+    return 1 - (1 - t) * (1 - t);
+}
+
 const DEAD_GROUND_HATCH_STEP = 7;
 
 let DEAD_GROUND_HATCH = null;
@@ -344,6 +410,10 @@ function deadGroundPath(solved) {
 }
 
 function drawDeadGround(at, scale) {
+    if (!deadGroundSettled()) {
+        return;
+    }
+
     const solved = terrainDeadGround(
         {
             weapon: S.weapon,
@@ -353,6 +423,16 @@ function drawDeadGround(at, scale) {
     );
 
     if (!solved || !solved.any) {
+        return;
+    }
+
+    const alpha = deadGroundRevealAlpha();
+
+    if (alpha < 1) {
+        draw();
+    }
+
+    if (alpha <= 0) {
         return;
     }
 
@@ -366,6 +446,7 @@ function drawDeadGround(at, scale) {
     }
 
     ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.translate(at.x, at.y);
     ctx.scale(scale, scale);
 

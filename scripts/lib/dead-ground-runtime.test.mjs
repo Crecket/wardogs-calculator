@@ -95,3 +95,119 @@ test('a weapon with no low arc gets no dead ground at all', () => {
 
     assert.equal(intervals.length, 0);
 });
+
+
+function settleCtx() {
+    const draws = [];
+
+    const ctx = loadRuntime(
+        ['js/map/dead-ground.js'],
+        {
+            setTimeout,
+            clearTimeout,
+            performance,
+            rangeRingMemoKey: (gun, mapId) =>
+                `${mapId}|${gun.weapon}|${Math.round(gun.position.x)}|${Math.round(gun.position.y)}`,
+            draw: () => draws.push(1)
+        }
+    );
+
+    setRuntimeGlobal(ctx, 'S', {
+        map: 'testmap',
+        weapon: 'spg',
+        origin: { x: 5, y: 5 },
+        guns: [{ weapon: 'spg', position: { x: 5, y: 5 } }]
+    });
+
+    return { ctx, draws };
+}
+
+const settled = ctx => callRuntime(ctx, 'deadGroundSettled()');
+
+async function settleWindow(ctx) {
+    await new Promise(resolve =>
+        setTimeout(resolve, callRuntime(ctx, 'DEAD_GROUND_SETTLE_MS') + 60)
+    );
+}
+
+test('a moved gun is unsettled until the debounce elapses, then settles once', async () => {
+    const { ctx, draws } = settleCtx();
+
+    assert.equal(settled(ctx), false);
+    assert.equal(settled(ctx), false, 'repeat calls must not restart the debounce');
+
+    await settleWindow(ctx);
+
+    assert.equal(settled(ctx), true);
+    assert.equal(draws.length, 1, 'settling redraws exactly once');
+});
+
+test('the debounce only elapses once the gun stops moving', async () => {
+    const { ctx } = settleCtx();
+
+    for (let step = 0; step < 4; step += 1) {
+        callRuntime(ctx, `S.guns[0].position.x = ${10 + step * 10}`);
+
+        assert.equal(settled(ctx), false, 'a gun still in motion never settles');
+
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        settled(ctx);
+    }
+
+    await settleWindow(ctx);
+
+    assert.equal(settled(ctx), true);
+});
+
+test('moving the gun again unsettles it immediately and restarts the debounce', async () => {
+    const { ctx } = settleCtx();
+
+    settled(ctx);
+    await settleWindow(ctx);
+    assert.equal(settled(ctx), true);
+
+    callRuntime(ctx, 'S.guns[0].position.x = 900');
+
+    assert.equal(settled(ctx), false, 'the move hides the layer on the same frame');
+
+    await settleWindow(ctx);
+
+    assert.equal(settled(ctx), true);
+});
+
+test('a second gun moving unsettles the layer even when the active gun is still', async () => {
+    const { ctx } = settleCtx();
+
+    callRuntime(ctx, 'S.guns.push({ weapon: "spg", position: { x: 20, y: 20 } })');
+
+    settled(ctx);
+    await settleWindow(ctx);
+    assert.equal(settled(ctx), true);
+
+    callRuntime(ctx, 'S.guns[1].position.y = 400');
+
+    assert.equal(settled(ctx), false);
+});
+
+test('the reveal alpha starts at zero and eases to one', async () => {
+    const { ctx } = settleCtx();
+
+    settled(ctx);
+    await settleWindow(ctx);
+    settled(ctx);
+
+    assert.equal(callRuntime(ctx, 'deadGroundRevealAlpha()'), 0);
+
+    await new Promise(resolve => setTimeout(resolve, 60));
+
+    const mid = callRuntime(ctx, 'deadGroundRevealAlpha()');
+
+    assert.ok(mid > 0 && mid < 1, `expected a partial alpha, got ${mid}`);
+
+    await new Promise(resolve =>
+        setTimeout(resolve, callRuntime(ctx, 'DEAD_GROUND_FADE_MS') + 40)
+    );
+
+    assert.equal(callRuntime(ctx, 'deadGroundRevealAlpha()'), 1);
+});
