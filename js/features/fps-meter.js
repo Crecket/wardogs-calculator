@@ -162,9 +162,10 @@ function fpsMeterElement() {
 
     element.style.cssText = [
         'position:fixed',
-        'top:8px',
-        'left:8px',
-        'z-index:99999',
+        'right:8px',
+        'bottom:8px',
+        'z-index:2147483647',
+        'border:1px solid rgba(232,230,223,.35)',
         'padding:5px 8px',
         'border-radius:6px',
         'background:rgba(8,10,12,.82)',
@@ -282,6 +283,11 @@ function startFpsMeter() {
     wrapDrawNowForFpsMeter();
 
     renderFpsMeter();
+
+    console.info(
+        '[fps] meter on; toggleFpsMeter() to switch it off',
+        FPS_METER_STATE.element
+    );
 
     requestAnimationFrame(
         stepFpsMeter
