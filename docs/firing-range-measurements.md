@@ -480,6 +480,27 @@ Quadratic drag does not describe this weapon. The best fit over four range/time 
 
 **The practical consequence is that no fit is needed.** The range table is already accurate, so the only thing the app has to correct is flight time, and the five measurements above can be interpolated directly rather than derived from a model that cannot be justified.
 
+## The refit, and why it is not shipped yet
+
+Refitting muzzle velocity, drag and the angle offset against the thirteen level-ground shots with their real ΔZ — the first session's twelve dials plus F2 — improves enormously on the data it is given and cannot be validated on anything else.
+
+| Fit | v | k | offset | Trusted set: range / time | Held-out set: range / time |
+| --- | --- | --- | --- | --- | --- |
+| Currently shipped | 262.4 | 3.90 × 10⁻⁴ | 2.254° | 54.4 m / 0.49 s | 84.2 m / 0.53 s |
+| Range only | 249.6 | 3.671 × 10⁻⁴ | 1.833° | **11.4 m** / 0.40 s | 128.5 m / 0.95 s |
+| Range and time | 257.2 | 3.882 × 10⁻⁴ | 1.594° | 13.8 m / **0.31 s** | 123.7 m / 0.95 s |
+
+The trusted improvement is real and it comes from one change of method: the existing fit was computed against ground assumed level, and these are computed against the ground the shells actually hit. On the low arc the current fit's residuals of +100, +117 and +76 m at 150, 200 and 300 mil fall to −3, +19 and −10 m.
+
+**The held-out column cannot referee between them**, because every shot in it was fired from origin E, the 35–50° hillside, where hull attitude is worth up to 95 m. It measures the tank's pitch, not the fit's quality. Under those conditions the currently shipped fit happens to score best, which is not evidence that it is better — it was itself fitted to flat-assumed data, and that bias partly cancels the tilt.
+
+So the honest position is that a large improvement is available and unverifiable. Two further facts argue for waiting rather than shipping on faith:
+
+- **Nothing below 150 mil has ever been fired from level ground.** Both fits extrapolate there and disagree: at the 35 mil floor the shipped model says 822 m and the refit says roughly 750 m, against a single sloped measurement that fits neither. The dial floor is where the largest errors in this document live, and it is the least constrained part of either fit.
+- **The refits trade range accuracy against flight time.** The range-only fit halves its range residual and doubles its held-out timing error. Only a combined objective keeps both, and even then the low dials are unconstrained.
+
+**What would settle it: 35, 100, 440 and 540 mil fired from level ground.** Those four dials are the whole held-out set, all currently contaminated by tilt. Re-shooting them on flat ground turns an unverifiable refit into a verified one, and it is the last measurement this model needs before Early Access on 2026-09-10 makes the question moot by restoring the pak files.
+
 ## What to measure next
 
 Now that elevations resolve, the most valuable shots are no longer more dials on flat ground — they are the same dials at very different heights. Two reasons.
