@@ -256,6 +256,16 @@ function terrainNoteGroups(shot) {
  * about. Measured firing positions on level ground read 0.2 to 2.4 degrees
  * on this field and the hillside that cost up to 95 m read 31, so the gap
  * is wide and the threshold sits well clear of both.
+ *
+ * The slope is a trigger, never a quantity to show. What moves the shot is
+ * the pitch along the barrel, and that depends on which way the hull is
+ * parked and where the turret is pointing, neither of which is knowable
+ * here: a hull sitting across a slope is rolled rather than pitched and
+ * barely affected, and slewing the turret changes the component again
+ * without the ground under it changing at all. The 2026-09-03 measurements
+ * show that directly — fitting one barrel offset across those shots gave
+ * implied values from -124 to +62 mil, because the bearing varied. So the
+ * note says a shot may be off, and declines to say by how much or which way.
  */
 const GUN_SLOPE_WARN_DEGREES = 8;
 
@@ -327,12 +337,7 @@ function terrainNoteText(shot, meta) {
     }
 
     if (gunSlopeWarns()) {
-        clauses.push(
-            tr('noteGunSlope').replace(
-                '{slope}',
-                Math.round(gunGroundSlopeDegrees())
-            )
-        );
+        clauses.push(tr('noteGunSlope'));
     }
 
     const correction = correctionNoteFragment(meta);
