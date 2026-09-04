@@ -7,23 +7,6 @@ const DEFAULT_APP_CONFIG = {
         camera: {
             maxZoom: 100,
             panSpeed: 800
-        },
-
-        /*
-         * PLACEHOLDER SIZE — not a measured in-game value. The radius is
-         * in metres and exists so the circle renders at a sane size until
-         * someone confirms the real number; replace it in config/app.json
-         * rather than here.
-         *
-         * It is a fallback only. Real maps record their own centre and
-         * radius in maps/*.json, taken from the game's own control-zone
-         * values.
-         */
-        rings: {
-            mainZone: {
-                radius: 500,
-                color: '#82c596'
-            }
         }
     },
 
@@ -71,14 +54,6 @@ function mergeAppConfig(base, override) {
             camera: {
                 ...base.map.camera,
                 ...(override?.map?.camera || {})
-            },
-            rings: {
-                ...base.map.rings,
-                ...(override?.map?.rings || {}),
-                mainZone: {
-                    ...base.map.rings.mainZone,
-                    ...(override?.map?.rings?.mainZone || {})
-                }
             }
         },
 
@@ -137,55 +112,6 @@ function getMapToolShortcut(action) {
     )
         .trim()
         .toLowerCase();
-}
-
-/*
- * The main zone is measured by a `radius`, which each ring kind names for
- * itself in config/app.json rather than sharing one key that would only be
- * honest about some of them. The measurement comes back as `size`, so the
- * drawing code does not have to know which kind it was handed.
- */
-const RING_SIZE_KEYS = {
-    mainZone: 'radius'
-};
-
-function getRingConfig(kind) {
-
-    const fallback =
-        DEFAULT_APP_CONFIG.map.rings[kind];
-
-    if (!fallback) {
-        return null;
-    }
-
-    const sizeKey =
-        RING_SIZE_KEYS[kind];
-
-    const configured =
-        APP_CONFIG
-            ?.map
-            ?.rings
-            ?.[kind];
-
-    const size =
-        Number(
-            configured?.[sizeKey]
-        );
-
-    const color =
-        typeof configured?.color === 'string' &&
-        /^#[0-9a-fA-F]{6}$/.test(configured.color)
-            ? configured.color
-            : fallback.color;
-
-    return {
-        size:
-            Number.isFinite(size) &&
-            size > 0
-                ? size
-                : fallback[sizeKey],
-        color
-    };
 }
 
 function getCameraPanSpeed() {
