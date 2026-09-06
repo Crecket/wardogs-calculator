@@ -43,6 +43,7 @@ Desktop routes:
 /pt/
 /zh-cn/
 /ko/
+/ja/
 /cat/
 ```
 
@@ -59,6 +60,7 @@ Mobile routes:
 /mobile/pt/
 /mobile/zh-cn/
 /mobile/ko/
+/mobile/ja/
 /mobile/cat/
 ```
 
@@ -73,17 +75,15 @@ A device is routed to `/mobile/` when either:
 - `navigator.userAgentData.mobile` reports a mobile device, or
 - the primary pointer is coarse and the viewport is at most 900 CSS pixels wide.
 
-The current explicit language route is preserved. For example:
+The current explicit language route is preserved:
 
 ```text
-/ru/     -> /mobile/ru/
-/de/     -> /mobile/de/
-/zh-cn/  -> /mobile/zh-cn/
+/<locale>/ -> /mobile/<locale>/
 ```
 
 Query parameters and the URL hash are also preserved.
 
-A browser reporting `zh-CN` can select the Simplified Chinese locale automatically when no manual language preference has already been saved.
+A browser locale matching an entry in `locales/index.json` can select the corresponding language automatically when no manual language preference has already been saved.
 
 ### Requesting the desktop UI on a phone
 
@@ -131,10 +131,10 @@ Open:
 
 ```text
 http://localhost:8000/mobile/
-http://localhost:8000/mobile/zh-cn/
+http://localhost:8000/mobile/<locale>/
 ```
 
-The generated Simplified Chinese desktop/mobile routes are production-build outputs, so use `npm run build` when validating locale routing and SEO metadata.
+Generated desktop/mobile locale routes are production-build outputs, so use `npm run build` when validating locale routing and SEO metadata.
 
 Useful test viewports include:
 
@@ -147,7 +147,7 @@ Useful test viewports include:
 768x1024
 ```
 
-Chinese mobile QA should include at least one narrow-phone viewport because analytics show that Chinese traffic is strongly mobile-weighted.
+Mobile QA for every supported locale should include at least one narrow-phone viewport. Check long labels, the language selector, the bottom sheet and Map Tools for overflow.
 
 ## Deployment
 
@@ -161,7 +161,7 @@ npm run build
 
 and deploys the single `dist/` directory. The build produces desktop and mobile entry pages while copying large shared resources such as map tiles only once.
 
-The locale synchronization step then publishes `/zh-cn/` and `/mobile/zh-cn/`, synchronizes Chinese SEO metadata and sitemap coverage, and the asset-versioning step fingerprints the final JS/CSS references.
+The locale synchronization step publishes generated desktop and mobile locale routes, synchronizes localized SEO metadata and sitemap coverage, and the asset-versioning step fingerprints the final JS/CSS references.
 
 The only Pages custom domain remains:
 
@@ -189,4 +189,4 @@ Each point has a compact Lock action. Locking a point prevents touch taps and dr
 
 The map HUD prioritizes Distance, MIL, and Azimuth equally in a compact three-column solution panel. Range status remains visible below the primary values, while ΔX/ΔY stay in the expanded Result sheet as secondary details.
 
-The SPH-2 leveling warning is localized in Simplified Chinese and remains informational only. Terrain3D elevation context does not automatically change MIL in this release.
+The SPH-2 leveling warning uses the shared localization system and remains informational only. Terrain3D elevation context does not automatically change MIL in this release.

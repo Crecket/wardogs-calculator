@@ -21,13 +21,13 @@ wardogs-calculator/
 │       └── locale-overrides.js
 ├── locales/
 │   ├── index.json
-│   └── zh-cn.json
+│   └── *.json
 ├── maps/
 ├── scripts/
 │   ├── build-pages.mjs
 │   ├── build-contours.mjs
 │   ├── sync-locales.mjs
-│   ├── zh-cn-seo.mjs
+│   ├── seo-content.mjs
 │   ├── version-assets.mjs
 │   └── dev-server.mjs
 ├── src/pages/
@@ -71,7 +71,7 @@ To test on another device:
 npm run dev -- --host 0.0.0.0
 ```
 
-The source dev server continues to serve the legacy static desktop locale shells. **Generated production locales such as Simplified Chinese should be validated from a production build**, because their desktop route and SEO metadata are intentionally created by the locale synchronization step.
+The source dev server continues to serve legacy static desktop locale shells. **Generated production locale routes should be validated from a production build**, because their route files and SEO metadata are intentionally created by the locale synchronization step.
 
 ### Production build
 
@@ -103,10 +103,10 @@ Responsibilities:
    - creates the normal desktop routes;
    - creates mobile locale routes from `locales/index.json`.
 2. `sync-locales.mjs`
-   - generates the official `/zh-cn/` desktop route from the canonical desktop shell;
+   - creates or synchronizes generated locale routes from the canonical page shells and locale registry;
    - synchronizes canonical, `hreflang`, Open Graph locale metadata and sitemap data from the locale registry;
-   - applies Chinese product-intent SEO content and FAQ structured data;
-   - localizes `/mobile/zh-cn/` metadata;
+   - applies locale-specific SEO content and structured data when configured;
+   - localizes generated mobile-route metadata;
    - injects the shared locale runtime override before the app initializes.
 3. `version-assets.mjs`
    - fingerprints the final JS/CSS assets and updates every generated HTML route.
@@ -116,13 +116,11 @@ The final artifact includes:
 ```text
 dist/
 ├── index.html
-├── ru/
-├── de/
-├── zh-cn/
+├── <locale>/
 │   └── index.html
 ├── mobile/
 │   ├── index.html
-│   └── zh-cn/
+│   └── <locale>/
 │       └── index.html
 ├── assets/
 ├── js/
@@ -142,26 +140,26 @@ Before deploying, finish and verify both the tile and terrain uploads. Every
 registered terrain map, including locally added maps such as Zestafona, needs a
 remote `terrainManifest` URL once its binaries are excluded from the build.
 
-### Simplified Chinese validation
+### Localized route validation
 
 After `npm run build`, serve `dist/` and verify:
 
 ```text
-http://localhost:8000/zh-cn/
-http://localhost:8000/mobile/zh-cn/
+http://localhost:8000/<locale>/
+http://localhost:8000/mobile/<locale>/
 ```
 
-Check the UI, language selector, China flag, Mortar/SPH-2 naming, mobile menu, footer/legal copy, Terrain3D status and SPH-2 warning. Inspect generated HTML to confirm:
+Repeat the check for every supported locale. Check the UI, language selector, flag, weapon naming, mobile menu, footer/legal copy, Terrain3D status and SPH-2 warning. Inspect generated HTML to confirm:
 
 ```text
-lang="zh-CN"
-canonical -> https://wardogs-artillery.com/zh-cn/
-hreflang="zh-CN"
-og:locale = zh_CN
-FAQPage JSON-LD
+lang matches the locale registry
+canonical points to the matching desktop route
+hreflang matches the locale registry
+og:locale matches the locale registry
+locale-specific JSON-LD is present when configured
 ```
 
-Also confirm `dist/sitemap.xml` contains `/zh-cn/` and that every indexable desktop locale advertises the Chinese alternate.
+Also confirm `dist/sitemap.xml` contains every indexable desktop locale and that each indexable route advertises all registered alternates.
 
 ## Terrain3D verification
 
@@ -173,7 +171,7 @@ Terrain3D unavailable -> keep normal firing solution
 MIL                   -> existing firing tables remain authoritative
 ```
 
-Simplified Chinese localization must not change the terrain calibration, firing tables, release safety flags, or automatic-correction behavior.
+Localization changes must not change the terrain calibration, firing tables, release safety flags, or automatic-correction behavior.
 
 ## Development Workflow
 
@@ -200,8 +198,8 @@ Production:
 ```text
 https://wardogs-artillery.com/
 https://wardogs-artillery.com/mobile/
-https://wardogs-artillery.com/zh-cn/
-https://wardogs-artillery.com/mobile/zh-cn/
+https://wardogs-artillery.com/<locale>/
+https://wardogs-artillery.com/mobile/<locale>/
 ```
 
 GitHub Actions runs `npm run build`, uploads the single `dist/` artifact and
