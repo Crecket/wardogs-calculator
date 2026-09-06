@@ -49,6 +49,117 @@ const SAVE_ARTILLERY_KEY =
 const MAP_POINTS_KEY =
     'wardogs-map-points';
 
+const APP_SELECTIONS_KEY =
+    'wardogs-app-selections';
+
+
+/* =========================
+   PERSISTED APP SELECTIONS
+   ========================= */
+
+function loadAppSelections() {
+    try {
+        const raw =
+            localStorage.getItem(
+                APP_SELECTIONS_KEY
+            );
+
+        if (!raw) {
+            return;
+        }
+
+        const parsed =
+            JSON.parse(raw);
+
+        if (
+            typeof parsed?.map ===
+                'string' &&
+            parsed.map.trim()
+        ) {
+            S.map =
+                parsed.map.trim();
+        }
+
+        if (
+            typeof parsed?.weapon ===
+                'string' &&
+            parsed.weapon.trim()
+        ) {
+            S.weapon =
+                parsed.weapon.trim();
+        }
+    } catch (error) {
+        console.warn(
+            'Failed to load app selections:',
+            error
+        );
+    }
+}
+
+function persistAppSelections() {
+    try {
+        localStorage.setItem(
+            APP_SELECTIONS_KEY,
+            JSON.stringify({
+                map: S.map,
+                weapon: S.weapon
+            })
+        );
+    } catch (error) {
+        console.warn(
+            'Failed to save app selections:',
+            error
+        );
+    }
+}
+
+
+/* =========================
+   KEYBOARD SHORTCUTS
+   ========================= */
+
+/*
+ * event.key follows the active keyboard layout (KeyR becomes "к" on a
+ * Russian layout). Shortcut bindings describe physical keys, so prefer
+ * event.code for letters/digits and fall back to event.key for everything
+ * else. This keeps shortcuts layout-independent without changing displayed
+ * shortcut labels.
+ */
+function getKeyboardShortcutKey(event) {
+    const code =
+        String(event?.code || '');
+
+    if (/^Key[A-Z]$/.test(code)) {
+        return code.slice(3).toLowerCase();
+    }
+
+    if (/^Digit[0-9]$/.test(code)) {
+        return code.slice(5);
+    }
+
+    const codeKeys = {
+        Escape: 'escape',
+        ArrowUp: 'arrowup',
+        ArrowRight: 'arrowright',
+        ArrowDown: 'arrowdown',
+        ArrowLeft: 'arrowleft',
+        Equal: event?.shiftKey ? '+' : '=',
+        NumpadAdd: '+',
+        Minus: event?.shiftKey ? '_' : '-',
+        NumpadSubtract: '-',
+        Enter: 'enter',
+        NumpadEnter: 'enter',
+        Backspace: 'backspace',
+        Delete: 'delete'
+    };
+
+    return (
+        codeKeys[code] ||
+        String(event?.key || '')
+            .toLowerCase()
+    );
+}
+
 
 /* =========================
    ZOOM

@@ -186,8 +186,9 @@ function handleCameraKeyDown(event) {
     }
 
     const key =
-        String(event.key || '')
-            .toLowerCase();
+        getKeyboardShortcutKey(
+            event
+        );
 
     cameraSprintHeld =
         event.shiftKey;
@@ -217,8 +218,9 @@ function handleCameraKeyDown(event) {
 function handleCameraKeyUp(event) {
 
     const key =
-        String(event.key || '')
-            .toLowerCase();
+        getKeyboardShortcutKey(
+            event
+        );
 
     cameraSprintHeld =
         event.shiftKey;

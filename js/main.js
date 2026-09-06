@@ -195,6 +195,13 @@ async function init() {
 
         renderFooter();
 
+        /*
+         * Load the last selected ids before their registries are populated.
+         * loadWeapons() and loadMaps() validate them and fall back safely if
+         * an old selection no longer exists.
+         */
+        loadAppSelections();
+
         await loadWeapons();
 
         await loadMapAssets();
@@ -232,6 +239,9 @@ async function init() {
             clamp(S.origin);
             clamp(S.target);
         }
+
+        /* Persist validated fallbacks as well as valid restored selections. */
+        persistAppSelections();
 
         bindEvents();
 

@@ -60,18 +60,35 @@ function getMobileUserMarkerAt(x, y) {
         y - target.y
     );
 
-    const nearest = Math.min(
-        originDistance,
-        targetDistance
-    );
+    const nearestUnlockedPoint = [
+        {
+            type: 'origin',
+            distance: originDistance
+        },
+        {
+            type: 'target',
+            distance: targetDistance
+        }
+    ]
+        .filter(
+            point =>
+                !isPointMapLocked(
+                    point.type
+                )
+        )
+        .sort(
+            (a, b) =>
+                a.distance -
+                b.distance
+        )[0];
 
-    if (nearest > MOBILE_POINT_HIT_RADIUS) {
-        return null;
-    }
-
-    return originDistance <= targetDistance
-        ? 'origin'
-        : 'target';
+    return (
+        nearestUnlockedPoint &&
+        nearestUnlockedPoint.distance <=
+            MOBILE_POINT_HIT_RADIUS
+    )
+        ? nearestUnlockedPoint.type
+        : null;
 }
 
 function setMobileMode(type) {
@@ -101,7 +118,8 @@ function startMobilePinch() {
         typeof MAP_TOOL_STATE !== 'undefined' &&
         (
             MAP_TOOL_STATE.rulerDragging ||
-            MAP_TOOL_STATE.pencilDragging
+            MAP_TOOL_STATE.pencilDragging ||
+            MAP_TOOL_STATE.zoneDragging
         )
     ) {
         handleMapToolMouseUp();
@@ -225,7 +243,7 @@ function handleMobilePointerDown(event) {
 
     if (
         typeof MAP_TOOL_STATE !== 'undefined' &&
-        ['ruler', 'pencil', 'eraser', 'marker'].includes(
+        ['ruler', 'pencil', 'zone', 'polygon', 'eraser', 'marker'].includes(
             MAP_TOOL_STATE.tool
         )
     ) {
@@ -406,7 +424,7 @@ function finishMobileTap(event, gesture) {
 
     if (
         typeof MAP_TOOL_STATE === 'undefined' ||
-        !['ruler', 'pencil', 'eraser', 'marker'].includes(
+        !['ruler', 'pencil', 'zone', 'polygon', 'eraser', 'marker'].includes(
             MAP_TOOL_STATE.tool
         )
     ) {

@@ -141,6 +141,7 @@ function draw() {
      */
     if (isMapLayerVisible('zones')) {
         drawPresetZones(currentMap);
+        drawMapToolZones();
     }
 
     /*
@@ -149,6 +150,7 @@ function draw() {
      */
     if (isMapLayerVisible('polygons')) {
         drawPresetPolygons(currentMap);
+        drawMapToolPolygons();
     }
 
     /*

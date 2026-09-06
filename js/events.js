@@ -53,6 +53,8 @@ function bindEvents() {
                 loadMapPoints();
             }
 
+            persistAppSelections();
+
             clamp(
                 S.origin
             );
@@ -109,6 +111,8 @@ function bindEvents() {
             S.weapon =
                 $('weapon').value;
 
+            persistAppSelections();
+
             if (
                 typeof trackAnalytics ===
                 'function'
@@ -131,6 +135,8 @@ function bindEvents() {
 
             S.map =
                 'custom';
+
+            persistAppSelections();
 
             S.w =
                 Math.max(
@@ -515,26 +521,40 @@ function bindEvents() {
             const pointHitThreshold =
                 metersToWorldDistance(300);
 
-            if (
-                Math.min(d1, d2) <
-                pointHitThreshold
-            ) {
-                const nearestPoint =
-                    d1 < d2
-                        ? 'origin'
-                        : 'target';
-
-                if (
-                    isPointMapLocked(
-                        nearestPoint
-                    )
-                ) {
-                    drag = null;
-                    updateCursor(e);
-                    return;
+            /*
+             * Locked points are not hit-test targets. A click beside a
+             * locked gun/target must remain available for placing the active
+             * unlocked point instead of being swallowed by the nearer lock.
+             */
+            const nearestUnlockedPoint = [
+                {
+                    type: 'origin',
+                    distance: d1
+                },
+                {
+                    type: 'target',
+                    distance: d2
                 }
+            ]
+                .filter(
+                    point =>
+                        !isPointMapLocked(
+                            point.type
+                        )
+                )
+                .sort(
+                    (a, b) =>
+                        a.distance -
+                        b.distance
+                )[0];
 
-                drag = nearestPoint;
+            if (
+                nearestUnlockedPoint &&
+                nearestUnlockedPoint.distance <
+                    pointHitThreshold
+            ) {
+                drag =
+                    nearestUnlockedPoint.type;
 
             } else {
                 if (
