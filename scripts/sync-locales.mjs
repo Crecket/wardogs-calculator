@@ -297,16 +297,16 @@ function renderChineseSeoCluster() {
 function injectChineseSeoCluster(html) {
     const block = renderChineseSeoCluster();
 
-    if (/class="seo-content-cluster"/i.test(html)) {
+    if (/\bclass="[^"]*\bseo-content-cluster\b[^"]*"/i.test(html)) {
         return html.replace(
-            /<div class="section seo-content-cluster">[\s\S]*?<\/div>\s*<\/aside>/i,
+            /<div\b[^>]*\bclass="[^"]*\bseo-content-cluster\b[^"]*"[^>]*>[\s\S]*?<\/div>\s*<\/aside>/i,
             `${block}\n</aside>`
         );
     }
 
-    if (/class="seo-about-section"/i.test(html)) {
+    if (/\bclass="[^"]*\bseo-about-section\b[^"]*"/i.test(html)) {
         return html.replace(
-            /<div class="section seo-about-section">[\s\S]*?<\/div>\s*<\/aside>/i,
+            /<div\b[^>]*\bclass="[^"]*\bseo-about-section\b[^"]*"[^>]*>[\s\S]*?<\/div>\s*<\/aside>/i,
             `${block}\n</aside>`
         );
     }

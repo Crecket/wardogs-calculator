@@ -1,13 +1,14 @@
 export const ZH_CN_SEO = {
     title: 'WARDOGS 炮兵计算器 | 迫击炮、SPH-2 与战术地图',
     mobileTitle: 'WARDOGS 炮兵计算器 — 移动版',
-    description: '免费的 WARDOGS 炮兵与迫击炮计算器，支持 Mortar 和 SPH-2，提供 Bakurani、Ozeti 地图、等高线及实验性 Terrain3D MIL 修正。',
+    description: '免费的 WARDOGS 炮兵与迫击炮计算器，支持 Mortar 和 SPH-2，提供 Bakurani、Ozeti、Zestafona 地图、等高线及实验性 Terrain3D MIL 修正。',
     featureList: [
         'WARDOGS 迫击炮射击解算',
         'SPH-2 LOW / HIGH 射击解算',
         'SPH-2 实验性 Terrain3D MIL 修正',
         'Bakurani 互动战术地图与等高线',
         'Ozeti 互动战术地图与等高线',
+        'Zestafona 互动战术地图与等高线',
         '保存目标的完整射击信息',
         '测距尺与绘图工具',
         '战术地图标记'
@@ -38,9 +39,14 @@ export const ZH_CN_SEO = {
                 body: 'Ozeti 互动地图使用校准后的 WARDOGS 坐标和修正后的可玩区域对齐，可用于炮兵解算与战术规划。炮位、目标、保存目标、绘图、标记和地形等高线都使用同一坐标空间，并在数据覆盖范围内提供 Terrain3D 高程信息。'
             },
             {
+                id: 'zestafona-interactive-map',
+                heading: 'Zestafona 互动地图',
+                body: 'Zestafona 互动地图使用校准后的 WARDOGS 坐标，可用于设置炮位、目标和进行战术规划。多级地图瓦片、保存目标、测距尺、绘图、标记、地形等高线和 Terrain3D 高程信息均集成在同一工作区中。'
+            },
+            {
                 id: 'how-to-use',
                 heading: '使用方法',
-                body: '选择 Bakurani、Ozeti 或自定义地图，再选择 Mortar 或 SPH-2，设置炮位和目标，即可读取距离、方位角与 MIL。对于支持 Terrain3D 的 SPH-2 射击，可手动开启实验性修正，在 SAFE Terrain3D 候选和标准射表值之间进行直接比较。'
+                body: '选择 Bakurani、Ozeti、Zestafona 或自定义地图，再选择 Mortar 或 SPH-2，设置炮位和目标，即可读取距离、方位角与 MIL。对于支持 Terrain3D 的 SPH-2 射击，可手动开启实验性修正，在 SAFE Terrain3D 候选和标准射表值之间进行直接比较。'
             }
         ]
     },
@@ -57,7 +63,7 @@ export const ZH_CN_SEO = {
         },
         {
             question: '支持哪些 WARDOGS 地图？',
-            answer: '目前包含 Bakurani 和 Ozeti 互动地图，并提供自定义地图模式。两张预设地图均使用校准后的游戏坐标，支持战术地图工具和地形等高线，并在 Terrain3D 数据覆盖范围内提供高程信息。'
+            answer: '目前包含 Bakurani、Ozeti 和 Zestafona 互动地图，并提供自定义地图模式。三张预设地图均使用校准后的游戏坐标，支持战术地图工具和地形等高线，并在 Terrain3D 数据覆盖范围内提供高程信息。'
         },
         {
             question: 'Terrain3D 会修正 SPH-2 的高差 MIL 吗？',
