@@ -57,6 +57,11 @@ The project must be served over HTTP because maps, configuration, locales, Terra
 npm run dev
 ```
 
+Open `http://localhost:8000/`. Map imagery loads from the R2 custom domain, so an
+Internet connection and an R2 CORS rule allowing this exact origin are required.
+If you use `http://127.0.0.1:8000` or a LAN address, allow that origin as well.
+See [Tile hosting](maps.md#tile-hosting) for the asset paths and release workflow.
+
 Production analytics are disabled by default in the development server. Set `WARDOGS_DISABLE_ANALYTICS=false` only when explicitly testing the Umami integration.
 
 To test on another device:
@@ -89,7 +94,8 @@ Responsibilities:
 
 1. `build-pages.mjs`
    - clears `dist/`;
-   - copies shared assets, JS, locales, maps, config and data;
+   - copies shared assets, JS, locales, map JSON, config and data;
+   - excludes `maps/tiles/` because map imagery is served from R2;
    - bundles desktop/mobile CSS;
    - creates the normal desktop routes;
    - creates mobile locale routes from `locales/index.json`.
@@ -124,7 +130,9 @@ dist/
 └── sitemap.xml
 ```
 
-Large resources such as map tiles and Terrain3D chunks exist only once and are shared by desktop/mobile locale routes.
+Map tiles are loaded directly from `assets.wardogs-artillery.com` and are absent
+from `dist/`. Terrain3D chunks remain in `dist/data/terrain/`, shared by all
+desktop/mobile locale routes.
 
 ### Simplified Chinese validation
 
@@ -188,6 +196,10 @@ https://wardogs-artillery.com/zh-cn/
 https://wardogs-artillery.com/mobile/zh-cn/
 ```
 
-GitHub Actions runs `npm run build`, uploads the single `dist/` artifact and deploys it to GitHub Pages. The only custom domain remains `wardogs-artillery.com`.
+GitHub Actions runs `npm run build`, uploads the single `dist/` artifact and
+deploys it to GitHub Pages at `wardogs-artillery.com`. Map imagery is published
+separately to R2 and served through `assets.wardogs-artillery.com`; deploying the
+site does not upload tiles. Verify the complete tile release before deploying
+map JSON that references it.
 
 Do not manually edit files inside `dist/`; they are regenerated on every build.

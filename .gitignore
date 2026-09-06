@@ -2,3 +2,6 @@
 dist/
 dist-mobile/
 Trace-*.json
+
+# Tile pyramids are published to Cloudflare R2 separately.
+/maps/tiles/

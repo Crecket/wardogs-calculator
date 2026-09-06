@@ -164,6 +164,9 @@ function loadTile(
     const image =
         new Image();
 
+    // Keep the canvas readable when tiles come from the asset CDN.
+    image.crossOrigin = 'anonymous';
+
     image.decoding =
         'async';
 

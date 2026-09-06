@@ -6,6 +6,7 @@ import { SEO_ALTERNATE_NAMES, SEO_PAGE_CONTENT } from './seo-content.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const dist = join(root, 'dist');
+const localTilesDirectory = join(root, 'maps', 'tiles');
 
 const NON_INDEXABLE_PAGE_LANGUAGES =
     new Set(['cat']);
@@ -55,7 +56,11 @@ async function exists(path) {
 
 async function copyIfExists(source, target) {
     if (!(await exists(source))) return;
-    await cp(source, target, { recursive: true });
+    await cp(source, target, {
+        recursive: true,
+        // Tiles are served from R2; skip this directory before traversing it.
+        filter: (sourcePath) => sourcePath !== localTilesDirectory
+    });
 }
 
 async function bundleStyleFiles(files, outputName) {

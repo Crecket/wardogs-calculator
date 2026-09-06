@@ -17,10 +17,11 @@ Each map has its own JSON configuration and may define:
 
 ### Bakurani
 
-Bakurani uses a multi-resolution WebP tile pyramid:
+Bakurani uses a multi-resolution WebP tile pyramid published to Cloudflare R2.
+Object keys in the `wardogs-assets` bucket have this structure:
 
 ```text
-maps/tiles/bakurani/
+releases/assets-v1/maps/tiles/bakurani/
 ├── zoom_0/
 ├── zoom_1/
 ├── zoom_2/
@@ -57,7 +58,7 @@ Map configuration can define coordinate bounds:
     "coordinateMetersPerUnit": 100,
 
     "tiles": {
-        "path": "maps/tiles/bakurani",
+        "path": "https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles/bakurani",
         "tileSize": 256,
         "minZoom": 0,
         "maxZoom": 7,
@@ -73,6 +74,34 @@ Map configuration can define coordinate bounds:
 `coordinateMetersPerUnit` converts map-coordinate deltas into physical meters. For Bakurani, `100` means one coordinate unit equals 100 meters, so `0.01` coordinate equals 1 meter.
 
 Map calibration is based on available in-game reference data and may be refined as more accurate information becomes available.
+
+### Tile hosting
+
+Bakurani and Ozeti use absolute `tiles.path` URLs under
+`https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles/`.
+Desktop, mobile and localized pages share these URLs. Map JSON, marker images,
+Terrain3D manifests/chunks, contours and ballistic configuration keep their
+existing paths on the application host.
+
+The tile loader requests images with `crossOrigin = 'anonymous'`. R2 must return
+an `Access-Control-Allow-Origin` header matching the page origin for `GET` and
+`HEAD` requests. Allow `https://wardogs-artillery.com` and, for local development,
+`http://localhost:8000`. Add `http://127.0.0.1:8000` or a LAN origin if using those
+addresses; the port is part of the origin.
+
+`maps/tiles/` is local working data: Git ignores new files there and the build
+excludes the entire directory from `dist/`, even when a local tile copy exists.
+Already tracked tiles must be removed from Git's index separately after checking
+the CDN upload and the application. Ignoring files does not remove Git history.
+
+To update imagery, upload and verify a complete new release prefix first, then
+change the map JSON URLs (for example, to `releases/assets-v2/`). Keep published
+release objects unchanged so long-lived caches cannot mix old and new tiles.
+The example map's relative path can be used for local tile development; give any
+registered production map a published tile URL before deployment.
+
+These URLs are public. Moving tiles out of Git reduces the checkout and build
+size, but CORS does not prevent downloading or copying browser-visible assets.
 
 ---
 
@@ -172,13 +201,17 @@ maps/my-map.json
 maps/index.json
 ```
 
-3. Add map tiles if required:
+3. Generate tiles locally if required:
 
 ```text
 maps/tiles/my-map/
 ```
 
-4. Configure the coordinate bounds.
+4. Upload the tile pyramid to R2 under a versioned release prefix and set
+   `tiles.path` to its full public HTTPS URL. Local tiles are excluded from the
+   production build.
+
+5. Configure the coordinate bounds.
 
 The map renderer is designed to be map-independent, so additional maps can be added without modifying the core rendering logic.
 
