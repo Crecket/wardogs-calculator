@@ -77,10 +77,11 @@ Map calibration is based on available in-game reference data and may be refined 
 
 ### Tile hosting
 
-Bakurani and Ozeti use absolute `tiles.path` URLs under
+Bakurani, Ozeti and Zestafona use absolute `tiles.path` URLs under
 `https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles/`.
-Desktop, mobile and localized pages share these URLs. Map JSON, marker images,
-Terrain3D manifests/chunks, contours and ballistic configuration keep their
+Desktop, mobile and localized pages share these URLs. Terrain3D manifests and
+chunks use R2 as described in [Terrain3D hosting](terrain.md#terrain3d-hosting).
+Map JSON, marker images, contours and ballistic configuration keep their
 existing paths on the application host.
 
 The tile loader requests images with `crossOrigin = 'anonymous'`. R2 must return
@@ -107,7 +108,8 @@ size, but CORS does not prevent downloading or copying browser-visible assets.
 
 ## Terrain elevation data
 
-Map imagery and terrain elevation are separate data sources. Bakurani Terrain3D data is stored under:
+Map imagery and terrain elevation are separate data sources. A local Terrain3D
+working dataset is stored under its map directory, for example:
 
 ```text
 data/terrain/bakurani/
@@ -116,7 +118,12 @@ data/terrain/bakurani/
     └── *.bin
 ```
 
-The manifest describes how map coordinates resolve into terrain chunks and how stored height values are converted to elevation. The runtime loads only the chunks needed for the current Artillery and Target positions and caches them for later samples.
+The manifest describes how map coordinates resolve into terrain chunks and how stored height values are converted to elevation. The runtime loads only the chunks needed for the current Artillery and Target positions from R2 and caches them for later samples.
+
+Bakurani, Ozeti and Zestafona publish their manifest and chunks together under
+`releases/assets-v1/data/terrain/<map-id>/`. Full manifest URLs are registered
+in `data/ballistics/terrain-context.json`. Local `.bin` files are excluded from
+the build; manifests and generated contours remain in the repository.
 
 Terrain sampling is used to provide elevation context for SPH-2:
 

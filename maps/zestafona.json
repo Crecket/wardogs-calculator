@@ -10,7 +10,7 @@
     "maxY": 141.90
   },
   "tiles": {
-    "path": "maps/tiles/zestafona",
+    "path": "https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles/zestafona",
     "tileSize": 256,
     "minZoom": 0,
     "maxZoom": 7,

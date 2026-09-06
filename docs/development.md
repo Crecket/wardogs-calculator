@@ -57,10 +57,11 @@ The project must be served over HTTP because maps, configuration, locales, Terra
 npm run dev
 ```
 
-Open `http://localhost:8000/`. Map imagery loads from the R2 custom domain, so an
+Open `http://localhost:8000/`. Map imagery and Terrain3D elevation load from the R2 custom domain, so an
 Internet connection and an R2 CORS rule allowing this exact origin are required.
 If you use `http://127.0.0.1:8000` or a LAN address, allow that origin as well.
-See [Tile hosting](maps.md#tile-hosting) for the asset paths and release workflow.
+See [Tile hosting](maps.md#tile-hosting) and
+[Terrain3D hosting](terrain.md#terrain3d-hosting) for asset paths and releases.
 
 Production analytics are disabled by default in the development server. Set `WARDOGS_DISABLE_ANALYTICS=false` only when explicitly testing the Umami integration.
 
@@ -96,6 +97,8 @@ Responsibilities:
    - clears `dist/`;
    - copies shared assets, JS, locales, map JSON, config and data;
    - excludes `maps/tiles/` because map imagery is served from R2;
+   - excludes `data/terrain/**/*.bin` because terrain binaries are served from R2;
+   - keeps local terrain manifests and generated contours;
    - bundles desktop/mobile CSS;
    - creates the normal desktop routes;
    - creates mobile locale routes from `locales/index.json`.
@@ -130,9 +133,14 @@ dist/
 └── sitemap.xml
 ```
 
-Map tiles are loaded directly from `assets.wardogs-artillery.com` and are absent
-from `dist/`. Terrain3D chunks remain in `dist/data/terrain/`, shared by all
-desktop/mobile locale routes.
+Map tiles and Terrain3D chunks are loaded from `assets.wardogs-artillery.com`
+and are absent from `dist/`. The shared terrain registry points at versioned
+R2 manifests; chunk URLs resolve relative to each remote manifest. Local
+manifest copies and `contours.json` remain in `dist/data/terrain/`.
+
+Before deploying, finish and verify both the tile and terrain uploads. Every
+registered terrain map, including locally added maps such as Zestafona, needs a
+remote `terrainManifest` URL once its binaries are excluded from the build.
 
 ### Simplified Chinese validation
 
@@ -197,9 +205,9 @@ https://wardogs-artillery.com/mobile/zh-cn/
 ```
 
 GitHub Actions runs `npm run build`, uploads the single `dist/` artifact and
-deploys it to GitHub Pages at `wardogs-artillery.com`. Map imagery is published
-separately to R2 and served through `assets.wardogs-artillery.com`; deploying the
-site does not upload tiles. Verify the complete tile release before deploying
-map JSON that references it.
+deploys it to GitHub Pages at `wardogs-artillery.com`. Map imagery and Terrain3D
+manifests/binaries are published separately to R2 and served through
+`assets.wardogs-artillery.com`; deploying the site does not upload them. Verify
+the complete asset release before deploying registry URLs that reference it.
 
 Do not manually edit files inside `dist/`; they are regenerated on every build.

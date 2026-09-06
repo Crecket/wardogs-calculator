@@ -5,3 +5,7 @@ Trace-*.json
 
 # Tile pyramids are published to Cloudflare R2 separately.
 /maps/tiles/
+
+# Terrain binaries are published with their manifests to Cloudflare R2.
+# Keep local manifests and generated contours in Git for the toolchain.
+/data/terrain/**/*.bin
