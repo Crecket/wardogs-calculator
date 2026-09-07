@@ -116,11 +116,13 @@ Identical to the hillshade: playable bounds only, 8 m spacing, rows north to sou
 
 ### Wiring
 
-Follows the hillshade precedent exactly: `MAP_TOOL_STATE.layers` entries defaulting off, load hooks in both `setMapLayerVisible` and `setMapLayerGroupVisible`, entries in `buildMapLayers` gated on `mapHasFlatness` / `mapHasFiringPositions`, an icon each, locale keys across 12 locales, script tags in 11 page templates, and one call each in `renderer.js`.
+Follows the hillshade precedent exactly: `MAP_TOOL_STATE.layers` entries defaulting off, load hooks in both `setMapLayerVisible` and `setMapLayerGroupVisible`, entries in `buildMapLayers` gated on `mapHasFlatness` / `mapHasFiringPositions`, an icon each, script tags in 11 page templates, and one call each in `renderer.js`.
+
+Locale keys go in `en.json` only. `mapLayerHillshade` and `mapLayerCrossSection`, the two most recently added layer labels, exist in no other locale file and fall back to English at runtime; translating these two while those stay untranslated would leave a popover half in each language.
 
 Two additions beyond that precedent. `MAP_TOOL_STATE.arcs.firingPositions` holds `'low'` or `'any'`, defaults to `'low'`, and persists with the rest of the tool state. And `buildMapLayers` renders a two-button segmented control indented beneath the firing-positions row, disabled while the layer is off, which writes that key and triggers the load for the newly selected arc. Only the selected arc's PNG is ever fetched.
 
-New locale keys: `mapLayerGroupTerrain`, `mapLayerGroupFiring`, `mapLayerFlatness`, `mapLayerFiringPositions`, `mapLayerArcLow`, `mapLayerArcAny`.
+New keys in `locales/en.json`: `mapLayerGroupTerrain`, `mapLayerGroupFiring`, `mapLayerFlatness`, `mapLayerFiringPositions`, `mapLayerArcLow`, `mapLayerArcAny`.
 
 ## Testing
 
