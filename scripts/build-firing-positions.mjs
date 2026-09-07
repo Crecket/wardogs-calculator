@@ -23,10 +23,18 @@
  * that disagreed with the one the app gives when the player clicks that
  * spot would be worse than no layer at all.
  *
+ * The first two filters run here; the third is handed to a pool of workers,
+ * because it is 1.7 million terrain marches and everything else is noise
+ * beside it. Ordering the aim points to fail faster was measured and buys
+ * nothing — 99% of the cells that reach the third filter pass it — and
+ * bypassing assessShot's memo buys 5%. The work itself is irreducible, so
+ * the only lever left is not doing it on one core.
+ *
  * Options:
  *   --spacing <m>   cell spacing, metres            (default 8)
  *   --stencil <m>   spacing of the fitted samples   (default 2)
  *   --ring <m>      aim ring around each tower      (default 300)
+ *   --workers <n>   parallel clearance workers      (default: every core)
  */
 
 import { readFile, writeFile } from 'node:fs/promises';
@@ -61,6 +69,9 @@ import {
     setRuntimeGlobal
 } from './lib/runtime-globals.mjs';
 
+import { availableParallelism } from 'node:os';
+import { Worker } from 'node:worker_threads';
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const FIRING_POSITION_FORMAT = 'wardogs-firing-positions-v1';
@@ -76,7 +87,13 @@ const ARCS = ['low', 'any'];
 const SPAWN_ICONS = ['valkyra', 'manticore', 'lonestar'];
 
 function parseArgs(argv) {
-    const options = { spacing: 8, stencil: 2, ring: AIM_RING_METRES, maps: [] };
+    const options = {
+        spacing: 8,
+        stencil: 2,
+        ring: AIM_RING_METRES,
+        workers: availableParallelism(),
+        maps: []
+    };
 
     for (let i = 0; i < argv.length; i += 1) {
         const arg = argv[i];
@@ -149,12 +166,12 @@ async function loadHeightfield(terrainDir) {
 }
 
 /*
- * One vm context per map, holding the shipped reachability code with its
- * heightfield accessors replaced by the field this script decoded. The aim
- * loop is compiled inside the context and returned as a function, so a cell
- * costs one boundary crossing rather than one per aim point.
+ * The declared range envelopes, read from the shipped code rather than from
+ * data/weapons.json directly. Raw entries carry minRangeKm / maxRangeKm and
+ * arcDeclaredRange reads minRange / maxRange, so skipping normalizeWeapon
+ * silently widens the envelope instead of failing.
  */
-async function createReachability(field, aims) {
+async function declaredRanges() {
     const context = loadRuntime(
         [
             'js/map/heightfield.js',
@@ -186,60 +203,64 @@ async function createReachability(field, aims) {
     }
 
     setRuntimeGlobal(context, '__rawWeapon', raw);
-    setRuntimeGlobal(context, '__field', field);
-    setRuntimeGlobal(context, '__aims', aims);
+    callRuntime(context, 'var __weapon = normalizeWeapon(__rawWeapon);');
 
-    callRuntime(
-        context,
-        'mapHasHeightfield = () => true;' +
-        'ensureHeightfieldLoaded = () => {};' +
-        'cachedHeightfield = () => __field;' +
-        'var __weapon = normalizeWeapon(__rawWeapon);'
-    );
-
-    const declared = {
+    return {
         low: callRuntime(context, 'arcDeclaredRange(__weapon, "low")'),
         high: callRuntime(context, 'arcDeclaredRange(__weapon, "high")')
     };
+}
 
-    /*
-     * Returns [lowReaches, eitherReaches] for one cell, bailing out at the
-     * first aim point neither arc can make.
-     */
-    const reaches = callRuntime(context, `(function (gunX, gunY) {
-        var low = true;
+/*
+ * Runs the clearance filter over the candidate cells across a pool of
+ * workers, each striding through the list so the uneven cost of a cell
+ * evens out instead of stranding one worker on a hard block.
+ *
+ * The heightfield is half a megabyte, so every worker gets its own copy and
+ * no shared memory is needed. The 2 m chunks stay here: they are 58 MB and
+ * only the tilt filter, which already ran, ever reads them.
+ */
+function runClearance(field, aims, xs, ys, workerCount) {
+    const count = Math.max(1, Math.min(workerCount, xs.length || 1));
 
-        for (var i = 0; i < __aims.length; i += 1) {
-            var shot = assessShot(
-                __weapon,
-                { x: gunX, y: gunY },
-                __aims[i],
-                'build'
-            );
+    const heightfield = {
+        heights: field.heights.buffer,
+        width: field.width,
+        height: field.height,
+        originX: field.originX,
+        originY: field.originY,
+        stepGameUnits: field.stepGameUnits
+    };
 
-            var lowHits =
-                shot.arcs.low &&
-                shot.arcs.low.status === 'hit' &&
-                !shot.arcs.low.masked;
+    const workerPath = new URL('./lib/firing-positions-worker.mjs', import.meta.url);
 
-            var highHits =
-                shot.arcs.high &&
-                shot.arcs.high.status === 'hit' &&
-                !shot.arcs.high.masked;
+    return Promise.all(
+        Array.from({ length: count }, (value, offset) => new Promise(
+            (resolve, reject) => {
+                const worker = new Worker(workerPath, {
+                    workerData: {
+                        root,
+                        heightfield,
+                        aims,
+                        weaponId: WEAPON_ID,
+                        xs: xs.buffer,
+                        ys: ys.buffer,
+                        stride: count,
+                        offset
+                    }
+                });
 
-            if (!lowHits) {
-                low = false;
+                worker.on('message', resolve);
+                worker.on('error', reject);
+
+                worker.on('exit', code => {
+                    if (code !== 0) {
+                        reject(new Error(`Clearance worker exited with ${code}`));
+                    }
+                });
             }
-
-            if (!lowHits && !highHits) {
-                return [false, false];
-            }
-        }
-
-        return [low, true];
-    })`);
-
-    return { declared, reaches };
+        ))
+    );
 }
 
 function markerPoints(markers, icons) {
@@ -349,7 +370,7 @@ async function buildMap(mapId, options) {
 
     const sample = createTerrainSampler(manifest, chunks);
     const field = await loadHeightfield(terrainDir);
-    const { declared, reaches } = await createReachability(field, aims);
+    const declared = await declaredRanges();
 
     /*
      * The cheap gate is the union of the two arcs' envelopes. A cell outside
@@ -373,7 +394,15 @@ async function buildMap(mapId, options) {
     const stencil = new Float64Array(STENCIL_SAMPLES * STENCIL_SAMPLES);
 
     let inEnvelope = 0;
-    let flatEnough = 0;
+
+    /*
+     * The first two filters run here, in one pass, and what survives is the
+     * candidate list the workers are given. Both are cheap next to the
+     * third: a hypot per aim point, then twenty-five terrain samples.
+     */
+    const candidateX = [];
+    const candidateY = [];
+    const candidateIndex = [];
 
     for (let y = 0; y < height; y += 1) {
         const gameY = bounds.maxY - y * step;
@@ -417,17 +446,35 @@ async function buildMap(mapId, options) {
                 continue;
             }
 
-            flatEnough += 1;
+            candidateX.push(gameX);
+            candidateY.push(gameY);
+            candidateIndex.push(y * width + x);
+        }
+    }
 
-            const [low, any] = reaches(gameX, gameY);
-            const index = y * width + x;
+    const flatEnough = candidateIndex.length;
 
-            if (any) {
-                viable.any[index] = 1;
+    const clearance = await runClearance(
+        field,
+        aims,
+        Float64Array.from(candidateX),
+        Float64Array.from(candidateY),
+        options.workers
+    );
+
+    /*
+     * Every worker returns a full-length mask with only its own stride
+     * filled in, so the merge is a union and the order they finish in
+     * cannot change the answer.
+     */
+    for (const slice of clearance) {
+        for (let i = 0; i < candidateIndex.length; i += 1) {
+            if (slice.any[i]) {
+                viable.any[candidateIndex[i]] = 1;
             }
 
-            if (low) {
-                viable.low[index] = 1;
+            if (slice.low[i]) {
+                viable.low[candidateIndex[i]] = 1;
             }
         }
     }
@@ -500,6 +547,7 @@ async function buildMap(mapId, options) {
         aims: aims.length,
         inEnvelope: inEnvelope * cellKm2,
         flatEnough: flatEnough * cellKm2,
+        workers: Math.max(1, Math.min(options.workers, flatEnough || 1)),
         results
     };
 }
@@ -531,6 +579,7 @@ for (const mapId of mapIds) {
         `${result.aims} aim points, ` +
         `in envelope ${result.inEnvelope.toFixed(2)} km2, ` +
         `flat enough ${result.flatEnough.toFixed(2)} km2, ` +
+        `${result.workers} workers, ` +
         `${((Date.now() - started) / 1000).toFixed(0)}s`
     );
 
