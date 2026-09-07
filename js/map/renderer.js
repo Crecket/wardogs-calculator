@@ -302,6 +302,17 @@ function draw() {
     }
 
     /*
+     * Other lobby participants expose only their personal origin and
+     * target markers. Their range circles are deliberately never drawn.
+     */
+    if (
+        isMapLayerVisible('artillery') &&
+        lobby?.active
+    ) {
+        lobby.drawPeers();
+    }
+
+    /*
      * Layer 9:
      * preset icons are ALWAYS drawn last.
      *

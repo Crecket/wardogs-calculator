@@ -1,6 +1,6 @@
 # Collaborative lobbies
 
-Collaborative lobbies synchronise the artillery and target points, selected weapon, pencil drawings, zones, polygons and user markers. A room can optionally start with the creator's saved targets. The map is fixed for the room. Camera position, zoom, active tool, layer visibility, point locks, theme and language remain local.
+Collaborative lobbies synchronise pencil drawings, zones, polygons and user markers. A room can optionally start with the creator's saved targets. The map is fixed for the room, while every participant keeps a personal artillery point, target and selected weapon. Teammates see each other's labelled artillery-to-target overlays, but only the owner sees their weapon range circles. Camera position, zoom, active tool, layer visibility, point locks, theme and language remain local.
 
 The feature is disabled by default. When disabled, its browser runtime is not loaded, no lobby menu is rendered and no request is sent to the sync service.
 
@@ -19,7 +19,7 @@ All product limits live in `config/app.json` under `collab`:
 | `maxRoomsPerDay` | `250` | Global UTC-day room creation budget |
 | `maxChangeBatchesPerDay` | `20000` | Global UTC-day accepted change batches |
 | `maxChangeBatchesPerRoom` | `1000` | Accepted change batches in one room |
-| `batchDelayMs` | `1000` | Browser batching delay (clamped to 1–5 seconds) |
+| `batchDelayMs` | `300` | Browser batching and presence delay (clamped to 0.25–5 seconds) |
 | `allowedOrigins` | production and local origins | Exact browser origins allowed by the Worker |
 
 The Worker imports this file at build time. After changing a server-enforced limit or `enabled`, deploy the Worker again. Rebuild and deploy the static site after changing browser settings.
@@ -55,6 +55,8 @@ Prerequisites: a Cloudflare account, Node.js 22 or newer and the existing static
 
 6. Copy the resulting HTTPS Worker address to `collab.serverUrl` (without `/rooms`), run `npm run build` from the repository root, then deploy the static site as usual.
 
+For lobby protocol updates, deploy the Worker first and publish the static site immediately afterwards. Existing participants should reload and create a new room after this particular personal-position update; no new Durable Object migration or secret is required.
+
 The first deployment creates two SQLite-backed Durable Object classes via the migration in `sync/wrangler.jsonc`. The two rate-limit namespace numbers only need to be unique within the Cloudflare account; change them if another Worker already uses `73101` or `73102`.
 
 ## Local test
@@ -82,7 +84,7 @@ Open `http://localhost:8000`. Restore the production URL (or disable the feature
 
 ## Cost controls and 4,000 daily visitors
 
-Page views do not create lobby traffic. A visitor contacts the Worker only after pressing Create or Join. Changes are sent after a gesture finishes and are coalesced for one second; cursors, pointer movement, camera movement and layer changes are never synchronised. WebSockets use Durable Object hibernation and their one-minute ping/pong is configured as an automatic response.
+Page views do not create lobby traffic. A visitor contacts the Worker only after pressing Create or Join. Changes are sent after a gesture finishes and are coalesced for the configured delay; cursors, pointer movement, camera movement and layer changes are never synchronised. Personal artillery and target positions are ephemeral WebSocket presence data: they disappear when a participant disconnects and do not consume the durable room-change quota. WebSockets use Durable Object hibernation and their one-minute ping/pong is configured as an automatic response.
 
 The defaults are deliberately conservative:
 
@@ -99,6 +101,8 @@ Cloudflare's current Free-plan limits and billing model can change. Before launc
 ## Behaviour and recovery
 
 - Anyone holding an invitation can edit; this is a shared secret, not account authentication.
+- Artillery position, active target and selected weapon are personal. Other connected participants receive only the two labelled positions; their range circles are never rendered.
+- Player positions live only in WebSocket attachments. They are not stored in the room document or recovery export and disappear when that player disconnects.
 - Only the creating browser receives the owner key that can close the room for everyone. It is held in memory and is lost on reload.
 - The URL fragment `#room=...` prefills the menu but never auto-joins. This keeps navigation, reloads and analytics from silently opening connections.
 - There is no automatic reconnect. After a disconnect, editing is frozen until the user explicitly reconnects or leaves.
@@ -122,4 +126,4 @@ npm run build
 npm run test:scripts
 ```
 
-The suite covers validation limits, signed invitations, create/join/cap/close flows in a local Workers runtime, concurrent edits, safe undo, browser batching, disconnect behaviour and personal-state restoration.
+The suite covers validation limits, signed invitations, create/join/cap/close flows in a local Workers runtime, ephemeral player presence, labelled no-range peer rendering, concurrent annotation edits, safe undo, browser batching, disconnect behaviour and personal-state restoration.

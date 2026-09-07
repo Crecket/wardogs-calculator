@@ -4,6 +4,12 @@
   "main": "src/index.mjs",
   "compatibility_date": "2026-04-07",
   "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "lobby.wardogs-artillery.com",
+      "custom_domain": true
+    }
+  ],
   "observability": { "enabled": false },
   "durable_objects": {
     "bindings": [

@@ -1,7 +1,10 @@
 import { DurableObject } from 'cloudflare:workers';
 import { settings } from './config.mjs';
 import { hash } from './tokens.mjs';
-import { LIMITS, byteLength, normalizeDocument, normalizeOperations, applyOperations, same } from '../../js/collab/protocol.mjs';
+import {
+    LIMITS, byteLength, normalizeDocument, normalizeOperations, applyOperations,
+    normalizePlayerName, normalizePresence, same
+} from '../../js/collab/protocol.mjs';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -47,7 +50,17 @@ export class LobbyRoom extends DurableObject {
     }
     alive() { return this.record && this.record.expiresAt > Date.now(); }
     peers() { return this.ctx.getWebSockets().filter(ws => ws.readyState === 1); }
-    roster() { return this.peers().map(ws => { const a = ws.deserializeAttachment(); return { id: a.id, name: a.name }; }); }
+    roster() {
+        return this.peers().map(ws => {
+            const a = ws.deserializeAttachment();
+            return {
+                id: a.id,
+                name: a.name,
+                origin: a.origin || null,
+                target: a.target || null
+            };
+        });
+    }
     send(ws, payload) { try { ws.send(JSON.stringify(payload)); } catch { /* disconnected */ } }
     broadcast(payload) { const text = JSON.stringify(payload); for (const ws of this.peers()) { try { ws.send(text); } catch {} } }
     snapshot(ws, extra = {}) {
@@ -65,7 +78,10 @@ export class LobbyRoom extends DurableObject {
         const pair = new WebSocketPair();
         const ws = pair[1];
         this.ctx.acceptWebSocket(ws);
-        ws.serializeAttachment({ id: crypto.randomUUID(), name: '', tokens: 8, time: Date.now(), strikes: 0, lastId: null });
+        ws.serializeAttachment({
+            id: crypto.randomUUID(), name: '', origin: null, target: null,
+            tokens: 8, time: Date.now(), strikes: 0, lastId: null
+        });
         this.snapshot(ws);
         this.broadcast({ type: 'peers', roster: this.roster() });
         return new Response(null, { status: 101, webSocket: pair[0] });
@@ -92,9 +108,22 @@ export class LobbyRoom extends DurableObject {
         }
         let raw;
         try { raw = JSON.parse(message); } catch { this.send(ws, { type: 'error', code: 'bad-json' }); return; }
+        if (raw?.type === 'presence') {
+            const a = ws.deserializeAttachment();
+            let presence;
+            try { presence = normalizePresence(raw); }
+            catch { this.send(ws, { type: 'error', code: 'bad-presence' }); return; }
+            const next = { name: normalizePlayerName(raw.name), ...presence };
+            if (a.name === next.name && same(a.origin, next.origin) && same(a.target, next.target)) return;
+            Object.assign(a, next);
+            ws.serializeAttachment(a);
+            this.broadcast({ type: 'peers', roster: this.roster() });
+            return;
+        }
+        // Kept for clients that loaded immediately before a rolling deployment.
         if (raw?.type === 'name') {
             const a = ws.deserializeAttachment();
-            a.name = typeof raw.name === 'string' ? raw.name.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 24) : '';
+            a.name = normalizePlayerName(raw.name);
             ws.serializeAttachment(a);
             this.broadcast({ type: 'peers', roster: this.roster() });
             return;

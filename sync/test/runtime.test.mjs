@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { Miniflare } from 'miniflare';
 const origin = 'http://localhost:8000';
-const document = () => ({ mapId: 'bakurani', w: 16, h: 16, weapon: 'mortar', origin: { x: 5, y: 5 }, target: { x: 6, y: 6 }, drawings: [], markers: [], zones: [], polygons: [], savedTargets: [] });
+const document = () => ({ mapId: 'bakurani', w: 16, h: 16, drawings: [], markers: [], zones: [], polygons: [], savedTargets: [] });
+const marker = (id, x = 4, y = 3) => ({ id, mapId: 'bakurani', icon: 'infantry', x, y });
+const addMarker = (id = 'shared', x = 4, y = 3) => ({ key: 'markers', id, before: null, value: marker(id, x, y) });
 async function runtime(t, overrides = {}, env = {}) {
     const result = await build({
         entryPoints: [fileURLToPath(new URL('../src/index.mjs', import.meta.url))], bundle: true, write: false,
@@ -49,7 +51,7 @@ async function join(mf, code) {
     } };
 }
 test('Worker disabled switch and origin check are enforced server-side', async t => {
-    const mf = await runtime(t, {}, { LOBBIES_DEV: 'false' });
+    const mf = await runtime(t, { enabled: false }, { LOBBIES_DEV: 'false' });
     assert.equal((await create(mf)).status, 503);
     assert.equal((await create(mf, document(), { Origin: 'https://evil.test' })).status, 403);
 });
@@ -57,34 +59,47 @@ test('environment kill switch overrides enabled site config', async t => {
     const mf = await runtime(t, { enabled: true }, { LOBBIES_DISABLED: 'true' });
     assert.equal((await create(mf)).status, 503);
 });
-test('room admission limit, initial state, heartbeat and late-join state', async t => {
+test('room admission, ephemeral player presence, shared annotations and late joins', async t => {
     const mf = await runtime(t, { maxParticipants: 2 });
     const response = await create(mf); assert.equal(response.status, 201);
     const { code } = await response.json();
     const a = await join(mf, code), b = await join(mf, code);
     assert.equal(a.status, 101); assert.equal(b.status, 101);
-    assert.deepEqual((await a.next(m => m.type === 'snapshot')).doc, document());
+    const snapshotA = await a.next(m => m.type === 'snapshot');
+    assert.deepEqual(snapshotA.doc, document());
     await b.next(m => m.type === 'snapshot');
     assert.equal((await join(mf, code)).status, 409);
     a.send('ping'); assert.equal(await a.next(m => m === 'pong'), 'pong');
-    const ops = [{ key: 'target', before: { x: 6, y: 6 }, value: { x: 8, y: 8 } }];
+
+    a.send({ type: 'presence', name: 'Alpha', origin: { x: 5, y: 5 }, target: { x: 6, y: 6 } });
+    const alphaRoster = await b.next(m => m.type === 'peers' && m.roster.some(peer => peer.name === 'Alpha'));
+    assert.deepEqual(alphaRoster.roster.find(peer => peer.name === 'Alpha').target, { x: 6, y: 6 });
+    b.send({ type: 'presence', name: 'Bravo', origin: { x: 7, y: 7 }, target: { x: 8, y: 8 } });
+    await a.next(m => m.type === 'peers' && m.roster.some(peer => peer.name === 'Bravo'));
+
+    const ops = [addMarker()];
     a.send({ type: 'changes', id: 'one', ops });
-    assert.equal((await a.next(m => m.type === 'changes')).revision, 1);
+    const committed = await a.next(m => m.type === 'changes');
+    assert.equal(committed.revision, 1);
+    assert.equal(committed.remainingUpdates, 999);
     assert.equal((await b.next(m => m.type === 'changes')).revision, 1);
     b.ws.close(1000, 'left');
     await a.next(m => m.type === 'peers' && m.roster.length === 1);
     const c = await join(mf, code); assert.equal(c.status, 101);
-    assert.deepEqual((await c.next(m => m.type === 'snapshot')).doc.target, { x: 8, y: 8 });
+    const snapshotC = await c.next(m => m.type === 'snapshot');
+    assert.deepEqual(snapshotC.doc.markers, [marker('shared')]);
+    assert.deepEqual(snapshotC.roster.find(peer => peer.name === 'Alpha').origin, { x: 5, y: 5 });
 });
 test('conflicts, write cap and host-only close are enforced', async t => {
     const mf = await runtime(t, { maxChangeBatchesPerRoom: 1 });
     const { code, ownerKey } = await (await create(mf)).json();
     const a = await join(mf, code); await a.next(m => m.type === 'snapshot');
-    a.send({ type: 'changes', id: 'one', ops: [{ key: 'target', before: { x: 6, y: 6 }, value: { x: 8, y: 8 } }] });
+    const first = addMarker();
+    a.send({ type: 'changes', id: 'one', ops: [first] });
     assert.equal((await a.next(m => m.type === 'changes')).remainingUpdates, 0);
-    a.send({ type: 'changes', id: 'two', ops: [{ key: 'target', before: { x: 6, y: 6 }, value: { x: 9, y: 9 } }] });
+    a.send({ type: 'changes', id: 'two', ops: [addMarker('shared', 9, 9)] });
     assert.equal((await a.next(m => m.type === 'snapshot')).error, 'conflict');
-    a.send({ type: 'changes', id: 'three', ops: [{ key: 'target', before: { x: 8, y: 8 }, value: { x: 9, y: 9 } }] });
+    a.send({ type: 'changes', id: 'three', ops: [{ key: 'markers', id: 'shared', before: first.value, value: marker('shared', 9, 9) }] });
     assert.equal((await a.next(m => m.type === 'snapshot')).error, 'room-budget');
     a.send({ type: 'close', ownerKey: 'wrong' });
     assert.equal((await a.next(m => m.type === 'error')).code, 'not-owner');
@@ -106,7 +121,7 @@ test('global write credits conservatively stop new rooms after daily allowance i
     const codeB = (await (await create(mf)).json()).code;
     const a = await join(mf, codeA), b = await join(mf, codeB);
     await a.next(m => m.type === 'snapshot'); await b.next(m => m.type === 'snapshot');
-    const msg = { type: 'changes', id: 'one', ops: [{ key: 'target', before: { x: 6, y: 6 }, value: { x: 9, y: 9 } }] };
+    const msg = { type: 'changes', id: 'one', ops: [addMarker()] };
     a.send(msg); await a.next(m => m.type === 'changes');
     b.send(msg); assert.equal((await b.next(m => m.type === 'snapshot')).error, 'daily-budget');
 });

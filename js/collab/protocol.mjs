@@ -8,10 +8,10 @@ export const LIMITS = Object.freeze({
     markers: 128,
     zones: 32,
     polygons: 32,
-    savedTargets: 64
+    savedTargets: 64,
+    participants: 32
 });
 export const COLLECTIONS = ['drawings', 'markers', 'zones', 'polygons', 'savedTargets'];
-export const FIELDS = ['origin', 'target', 'weapon'];
 const SLUG = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/;
 const encoder = new TextEncoder();
 export const byteLength = value => encoder.encode(typeof value === 'string' ? value : JSON.stringify(value)).length;
@@ -29,6 +29,29 @@ function number(value, min = -1e6, max = 1e6) {
 function point(value) {
     if (!object(value)) fail('bad-point');
     return { x: number(value.x), y: number(value.y) };
+}
+export function normalizePlayerName(value) {
+    return typeof value === 'string'
+        ? value.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 24)
+        : '';
+}
+export function normalizePresence(raw) {
+    if (!object(raw)) fail('bad-presence');
+    return { origin: point(raw.origin), target: point(raw.target) };
+}
+export function normalizeRoster(raw) {
+    if (!Array.isArray(raw) || raw.length > LIMITS.participants) fail('too-many-participants');
+    const roster = raw.map(value => {
+        if (!object(value)) fail('bad-participant');
+        return {
+            id: slug(value.id),
+            name: normalizePlayerName(value.name),
+            origin: value.origin == null ? null : point(value.origin),
+            target: value.target == null ? null : point(value.target)
+        };
+    });
+    if (new Set(roster.map(peer => peer.id)).size !== roster.length) fail('duplicate-participant');
+    return roster;
 }
 function color(value) {
     if (typeof value !== 'string' || !/^#[\da-f]{6}$/i.test(value)) fail('bad-color');
@@ -60,17 +83,11 @@ export function normalizeItem(collection, value, mapId) {
         default: fail('bad-collection');
     }
 }
-function field(key, value) {
-    if (key === 'weapon') return value === null ? null : slug(value);
-    if (key === 'origin' || key === 'target') return point(value);
-    fail('bad-field');
-}
 export function normalizeDocument(raw) {
     if (!object(raw)) fail('bad-document');
     const mapId = slug(raw.mapId);
     const doc = {
-        mapId, w: number(raw.w, 1, 1000), h: number(raw.h, 1, 1000),
-        origin: point(raw.origin), target: point(raw.target), weapon: field('weapon', raw.weapon)
+        mapId, w: number(raw.w, 1, 1000), h: number(raw.h, 1, 1000)
     };
     for (const key of COLLECTIONS) {
         if (!Array.isArray(raw[key]) || raw[key].length > LIMITS[key]) fail('too-many-items');
@@ -84,9 +101,6 @@ export function normalizeDocument(raw) {
 export const operationKey = op => `${op.key}:${op.id || ''}`;
 export function diffDocuments(before, after) {
     const ops = [];
-    for (const key of FIELDS) {
-        if (!same(before[key], after[key])) ops.push({ key, before: before[key], value: after[key] });
-    }
     for (const key of COLLECTIONS) {
         const a = new Map(before[key].map(item => [item.id, item]));
         const b = new Map(after[key].map(item => [item.id, item]));
@@ -103,20 +117,15 @@ export function normalizeOperations(raw, mapId) {
     const seen = new Set();
     return raw.map(op => {
         if (!object(op)) fail('bad-operation');
-        let result;
-        if (FIELDS.includes(op.key)) {
-            result = { key: op.key, before: field(op.key, op.before), value: field(op.key, op.value) };
-        } else {
-            if (!COLLECTIONS.includes(op.key)) fail('bad-collection');
-            const id = slug(op.id);
-            const item = value => {
-                if (value === null) return null;
-                const normalized = normalizeItem(op.key, value, mapId);
-                if (normalized.id !== id) fail('bad-id');
-                return normalized;
-            };
-            result = { key: op.key, id, before: item(op.before), value: item(op.value) };
-        }
+        if (!COLLECTIONS.includes(op.key)) fail('bad-collection');
+        const id = slug(op.id);
+        const item = value => {
+            if (value === null) return null;
+            const normalized = normalizeItem(op.key, value, mapId);
+            if (normalized.id !== id) fail('bad-id');
+            return normalized;
+        };
+        const result = { key: op.key, id, before: item(op.before), value: item(op.value) };
         const identity = operationKey(result);
         if (seen.has(identity)) fail('duplicate-operation');
         seen.add(identity);
@@ -127,17 +136,15 @@ export function normalizeOperations(raw, mapId) {
 export function applyOperations(doc, ops, check = true) {
     const next = structuredClone(doc);
     for (const op of ops) {
-        if (FIELDS.includes(op.key)) {
-            if (check && !same(next[op.key], op.before)) fail('conflict');
-            next[op.key] = structuredClone(op.value);
+        const index = next[op.key].findIndex(item => item.id === op.id);
+        const current = index < 0 ? null : next[op.key][index];
+        if (check && !same(current, op.before)) fail('conflict');
+        if (op.value === null) {
+            if (index >= 0) next[op.key].splice(index, 1);
+        } else if (index < 0) {
+            next[op.key].push(structuredClone(op.value));
         } else {
-            const index = next[op.key].findIndex(item => item.id === op.id);
-            const current = index < 0 ? null : next[op.key][index];
-            if (check && !same(current, op.before)) fail('conflict');
-            if (op.value === null) {
-                if (index >= 0) next[op.key].splice(index, 1);
-            } else if (index < 0) next[op.key].push(structuredClone(op.value));
-            else next[op.key][index] = structuredClone(op.value);
+            next[op.key][index] = structuredClone(op.value);
         }
     }
     return check ? normalizeDocument(next) : next;
