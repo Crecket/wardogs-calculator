@@ -42,7 +42,7 @@ Draw order: tiles, hillshade, flatness, firing positions, contours, everything e
 
 ## The filter pipeline
 
-Three filters, ordered cheapest first, because the expensive one is a terrain march per aim point and only a few percent of the map reaches it. Survivor figures are Bakurani at 8 m under the low-arc rule.
+Three filters, ordered cheapest first, because the expensive one is a terrain march per aim point and only a few percent of the map reaches it. The first two run on the main thread; the third is spread across every core, since it is roughly 180 million terrain samples and everything else is noise beside it. Each worker calls the same `assessShot`, so parallelism costs nothing in agreement. Survivor figures are Bakurani at 8 m under the low-arc rule.
 
 1. **In range of every aim point.** Nine points per tower — the centre plus eight on a 300 m ring — so 45 on Bakurani and 36 on Ozeti. All must fall inside the arc's declared envelope. Survivors 6.82 km².
 2. **Hull tilt at most 8 degrees.** Least-squares plane through a 5×5 stencil of 2 m samples spanning the 8 m hull footprint. Survivors 2.57 km².
@@ -103,6 +103,7 @@ The group-level "select all" checkboxes change what they select, which is the po
 | `scripts/lib/firing-positions.mjs` | `aimPoints`, `outlineMask`. Pure geometry; no tilt. |
 | `scripts/build-flatness.mjs` | CLI wrapper, `npm run build-flatness`. |
 | `scripts/build-firing-positions.mjs` | CLI wrapper, `npm run build-firing-positions`. Bakes both arcs. Reports surviving area per map. |
+| `scripts/lib/firing-positions-worker.mjs` | One worker's share of the clearance filter, striding through the candidate cells. |
 | `js/map/flatness.js` | Same five functions as `hillshade.js`. Colourises band indices once at load. |
 | `js/map/firing-positions.js` | As above, cache keyed on map and arc. |
 | `data/terrain/<map>/flatness.{png,json}` | One byte per 8 m cell, band index 0–4. |

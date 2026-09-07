@@ -1522,7 +1522,7 @@ git commit -m "A firing position must reach a ring around each tower, because th
 
 The expensive one. Three filters in cheapest-first order over every 8 m cell of the map, run twice — once forcing the low arc, once allowing either — producing four files per map.
 
-Measured: about nine minutes for Bakurani and seven for Ozeti, on one core. That is why the filter order matters and why nothing here happens at runtime.
+Measured at 36s for Bakurani and 29s for Ozeti across 32 cores. Single-threaded it was 551s and 436s; see the note on what was and was not worth optimising.
 
 **Files:**
 - Create: `scripts/build-firing-positions.mjs`
@@ -2148,12 +2148,12 @@ Run: `npm run build-firing-positions`
 These figures were measured from the implementation above. They are acceptance criteria — a surviving area off by more than about 15% means a filter has changed meaning, and spawn shares that have gone flat across the three spawns mean one has stopped applying at all.
 
 ```
-bakurani: 1379x1379 cells, 45 aim points, in envelope 6.51 km2, flat enough 2.45 km2, ~550s
-  low 0.33 km2, Valkyra 51% Manticore 3% Lonestar 46%
-  any 2.43 km2, Valkyra 36% Manticore 25% Lonestar 39%
-ozeti: 1069x972 cells, 36 aim points, in envelope 5.02 km2, flat enough 2.48 km2, ~440s
-  low 0.27 km2, Valkyra 15% Manticore 55% Lonestar 30%
-  any 2.45 km2, Valkyra 50% Manticore 17% Lonestar 33%
+bakurani: 1379x1379 cells, 45 aim points, in envelope 6.51 km2, flat enough 2.45 km2, 32 workers, 36s
+  low 0.33 km2, 5 KB PNG, Valkyra 51% Manticore 3% Lonestar 46%
+  any 2.43 km2, 18 KB PNG, Valkyra 36% Manticore 25% Lonestar 39%
+ozeti: 1069x972 cells, 36 aim points, in envelope 5.02 km2, flat enough 2.48 km2, 32 workers, 29s
+  low 0.27 km2, 4 KB PNG, Valkyra 15% Manticore 55% Lonestar 30%
+  any 2.45 km2, 16 KB PNG, Valkyra 50% Manticore 17% Lonestar 33%
 ```
 
 Two things in that output are worth staring at, because they are what the arc toggle exists for:
@@ -2968,3 +2968,18 @@ git commit -m "The arc rule is the player's to choose, because it decides which 
 **Not implemented, deliberately.** The spec's per-spawn table is background rather than a feature — nothing in the app shows it. Task 6 prints it from the builder anyway, because it is the sharpest available check that the arc rule still moves the balance between teams the way the spec says it does. If those percentages come out flat across the three spawns, a filter has stopped doing its job.
 
 **The one place the two layers can disagree.** Both express "flat enough" as `tiltBand(t) < TILT_LIMIT_BAND`, evaluated in Task 2 for the ramp and Task 6 for the filter, from the same 5×5 stencil at the same 8 m grid. If either builder's stencil geometry is changed without the other, an outlined region will appear over red ground. Task 7's verification step checks for exactly that.
+
+## What the bake cost, and what was worth doing about it
+
+The first build ran single-threaded at 551s for Bakurani and 436s for Ozeti. Three things were measured before anything was changed, and two of the obvious ideas turned out to be worthless:
+
+| Change | Measured |
+| --- | --- |
+| As shipped | 13.99 ms/cell, 536s projected |
+| Test each cell's farthest aim point first | 14.14 ms/cell — **slower** |
+| Replace `assessShot`'s LRU with a sink | 13.30 ms/cell — 5% |
+| Spread the clearance filter over 32 cores | **36s** |
+
+Reordering the aim points cannot help, and the bake's own output says why: *flat enough* is 2.45 km² and *any mil* is 2.43 km², so 99% of the cells reaching the third filter pass it. There is almost no failure for an early exit to catch, and a cell that passes has to evaluate every aim point whatever order they come in. The memo is nearly free to remove but nearly worthless: 1.7M distinct keys means every lookup misses, but the lookup was never the cost.
+
+The cost is 1.7M terrain marches, each sampling the heightfield every 25 m — roughly 180 million bilinear samples. That work is irreducible without changing what the layer means. Rewriting the builder in a faster language was considered and rejected: it would buy perhaps 3–5x on one core, less than parallelism buys, in exchange for a second implementation of the projectile model and the terrain march that would drift from the app's the first time anyone touched the ballistics. Every worker instead builds its own vm over the same shipped `assessShot`, and both maps rebuild byte-identical.
