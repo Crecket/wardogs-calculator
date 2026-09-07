@@ -42,7 +42,7 @@ Draw order: tiles, hillshade, flatness, firing positions, contours, everything e
 
 Three filters, ordered cheapest first, because the expensive one is a terrain march per aim point and only a few percent of the map reaches it. Survivor figures are Bakurani at 8 m under the low-arc rule.
 
-1. **In range of every aim point.** 45 points: five tower centres plus eight each on a 300 m ring. All must fall inside the arc's declared envelope. Survivors 6.82 km².
+1. **In range of every aim point.** Nine points per tower — the centre plus eight on a 300 m ring — so 45 on Bakurani and 36 on Ozeti. All must fall inside the arc's declared envelope. Survivors 6.82 km².
 2. **Hull tilt at most 8 degrees.** Least-squares plane through a 5×5 stencil of 2 m samples spanning the 8 m hull footprint. Survivors 2.57 km².
 3. **Shell clears the terrain to every aim point.** Marched against the 32 m heightfield, the same source every other reachability verdict uses. Survivors 0.35 km².
 
@@ -54,7 +54,7 @@ Tilt reads the 2 m chunks through `createTerrainSampler`; clearance reads the 32
 
 ### Aim points
 
-Towers are the `icon: "tower"` entries in `maps/<id>.json`. Marker coordinates are stored in metres; game units are metres divided by `coordinateMetersPerUnit`, matching `storedMetersToWorldCoordinate`. Each tower contributes its centre plus eight points on a 300 m ring at 45 degree intervals, giving 45 points on both shipped maps.
+Towers are the `icon: "tower"` entries in `maps/<id>.json`. Marker coordinates are stored in metres; game units are metres divided by `coordinateMetersPerUnit`, matching `storedMetersToWorldCoordinate`. Each tower contributes its centre plus eight points on a 300 m ring at 45 degree intervals. Bakurani has five towers and Ozeti four, so the aim-point sets are 45 and 36 points; the tower count is read from the map, never assumed.
 
 The buffer exists because towers move between matches. Changing it moves every number in this document.
 
