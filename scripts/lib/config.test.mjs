@@ -66,6 +66,17 @@ test('the map allowlists match the terrain files on disk and each other', () => 
     assert.deepEqual(allowlist('js/map/hillshade.js', 'HILLSHADE_MAP_IDS'), withFile('hillshade.json'));
     assert.deepEqual(allowlist('js/map/flatness.js', 'FLATNESS_MAP_IDS'), withFile('flatness.json'));
 
+    assert.deepEqual(
+        allowlist('js/map/firing-positions.js', 'FIRING_POSITION_MAP_IDS'),
+        withFile('firing-positions-low.json')
+    );
+
+    assert.deepEqual(
+        withFile('firing-positions-low.json'),
+        withFile('firing-positions-any.json'),
+        'both arcs are baked for the same maps'
+    );
+
     const contextMaps = Object.keys(readJson('data/ballistics/terrain-context.json').terrainMaps).sort();
     assert.deepEqual(allowlist('js/map/heightfield.js', 'HEIGHTFIELD_MAP_IDS'), contextMaps);
 });

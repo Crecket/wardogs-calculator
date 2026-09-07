@@ -160,6 +160,15 @@ function drawNow() {
 
     /*
      * Layer 4:
+     * viable firing positions, above the tilt ramp whose flat ground it
+     * narrows down.
+     */
+    if (isMapLayerVisible('firingPositions')) {
+        drawFiringPositions(currentMap);
+    }
+
+    /*
+     * Layer 5:
      * terrain contours, above the tiles they describe and below
      * everything drawn on top of the ground.
      */
@@ -168,7 +177,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 5:
+     * Layer 6:
      * coordinate grid.
      */
     if (isMapLayerVisible('grid')) {
@@ -177,7 +186,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 6:
+     * Layer 7:
      * circular zones.
      */
     if (isMapLayerVisible('zones')) {
@@ -185,7 +194,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 7:
+     * Layer 8:
      * arbitrary polygons.
      */
     if (isMapLayerVisible('polygons')) {
@@ -243,7 +252,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 11:
+     * Layer 12:
      * preset icons are ALWAYS drawn last.
      *
      * This prevents tiles, grid, zones,

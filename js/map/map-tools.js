@@ -77,6 +77,12 @@ const MAP_TOOL_STATE = {
          * of a megabyte, fetched only when somebody asks for it.
          */
         flatness: false,
+        /*
+         * Off by default like the other baked layers, and the heaviest
+         * opinion in the popover: three filters have already been applied
+         * to what it shows.
+         */
+        firingPositions: false,
         grid: true,
         zones: true,
         polygons: true,
@@ -91,6 +97,16 @@ const MAP_TOOL_STATE = {
         crossSection: true,
         cursorCoords: true,
         milCursor: false
+    },
+
+    /*
+     * Which arc rule the firing-positions layer is showing. Low arc is the
+     * default because it matches the dead-ground layer, which is already
+     * labelled "Dead ground (low arc)", and because it is the flatter and
+     * more accurate shot.
+     */
+    arcs: {
+        firingPositions: 'low'
     }
 };
 
@@ -365,7 +381,8 @@ function saveMapToolState() {
             MAP_TOOLS_STORAGE_KEY,
             JSON.stringify({
                 ...stored,
-                layers: MAP_TOOL_STATE.layers
+                layers: MAP_TOOL_STATE.layers,
+                arcs: MAP_TOOL_STATE.arcs
             })
         );
     } catch (error) {
@@ -404,6 +421,13 @@ function loadMapToolState() {
             MAP_TOOL_STATE.layers = {
                 ...MAP_TOOL_STATE.layers,
                 ...parsed.layers
+            };
+        }
+
+        if (parsed?.arcs && typeof parsed.arcs === 'object') {
+            MAP_TOOL_STATE.arcs = {
+                ...MAP_TOOL_STATE.arcs,
+                ...parsed.arcs
             };
         }
 
@@ -1148,6 +1172,17 @@ function setMapLayerVisible(layer, visible) {
     }
 
     if (
+        layer === 'firingPositions' &&
+        visible &&
+        typeof ensureFiringPositionsLoaded === 'function'
+    ) {
+        ensureFiringPositionsLoaded(
+            currentMapToolMapId(),
+            firingPositionsArc()
+        );
+    }
+
+    if (
         layer === 'cursorCoords' &&
         !MAP_TOOL_STATE.layers.cursorCoords
     ) {
@@ -1164,6 +1199,30 @@ function setMapLayerVisible(layer, visible) {
         typeof hideMilCursor === 'function'
     ) {
         hideMilCursor();
+    }
+
+    draw();
+}
+
+function firingPositionsArc() {
+    return MAP_TOOL_STATE.arcs?.firingPositions === 'any' ? 'any' : 'low';
+}
+
+function setFiringPositionsArc(arc) {
+    const next = arc === 'any' ? 'any' : 'low';
+
+    if (firingPositionsArc() === next) {
+        return;
+    }
+
+    MAP_TOOL_STATE.arcs.firingPositions = next;
+    saveMapToolState();
+
+    if (
+        isMapLayerVisible('firingPositions') &&
+        typeof ensureFiringPositionsLoaded === 'function'
+    ) {
+        ensureFiringPositionsLoaded(currentMapToolMapId(), next);
     }
 
     draw();
@@ -1209,6 +1268,17 @@ function setMapLayerGroupVisible(layerIds, visible) {
     ) {
         ensureFlatnessLoaded(
             currentMapToolMapId()
+        );
+    }
+
+    if (
+        nextVisible &&
+        layerIds.includes('firingPositions') &&
+        typeof ensureFiringPositionsLoaded === 'function'
+    ) {
+        ensureFiringPositionsLoaded(
+            currentMapToolMapId(),
+            firingPositionsArc()
         );
     }
 
@@ -1268,6 +1338,15 @@ function buildMapLayers() {
         ? [['flatness', 'mapLayerFlatness']]
         : [];
 
+    const firingPositionsLayer = (
+        typeof mapHasFiringPositions === 'function' &&
+        mapHasFiringPositions(
+            currentMapToolMapId()
+        )
+    )
+        ? [['firingPositions', 'mapLayerFiringPositions']]
+        : [];
+
     const crossSectionLayer = $('crossSection')
         ? [['crossSection', 'mapLayerCrossSection']]
         : [];
@@ -1305,7 +1384,8 @@ function buildMapLayers() {
             titleKey: 'mapLayerGroupFiring',
             items: [
                 ['deadGround', 'mapLayerDeadGround'],
-                ...crossSectionLayer
+                ...crossSectionLayer,
+                ...firingPositionsLayer
             ]
         },
         {
@@ -1353,6 +1433,12 @@ function buildMapLayers() {
             <rect x="3" y="9" width="18" height="6" rx="1"/>
             <path d="M10.5 12a1.5 1.5 0 0 1 3 0 1.5 1.5 0 0 1-3 0"/>
             <path d="M9 9v6M15 9v6"/>
+        `,
+        firingPositions: `
+            <path d="M4 19h6"/>
+            <circle cx="7" cy="17" r="2"/>
+            <path d="m8 15 9-7"/>
+            <path d="M18 4v4h-4"/>
         `,
         grid: `
             <path d="M4 4h16v16H4z"/>
@@ -1586,6 +1672,58 @@ function buildMapLayers() {
                 );
 
                 items.appendChild(label);
+
+                if (id !== 'firingPositions') {
+                    return;
+                }
+
+                const arcs =
+                    document.createElement('div');
+
+                arcs.className =
+                    'map-layer-arc-toggle';
+
+                FIRING_POSITION_ARCS.forEach(
+                    arc => {
+                        const button =
+                            document.createElement('button');
+
+                        button.type =
+                            'button';
+
+                        button.textContent =
+                            tr(
+                                arc === 'any'
+                                    ? 'mapLayerArcAny'
+                                    : 'mapLayerArcLow'
+                            );
+
+                        button.disabled =
+                            !isMapLayerVisible(id);
+
+                        button.setAttribute(
+                            'aria-pressed',
+                            String(
+                                firingPositionsArc() === arc
+                            )
+                        );
+
+                        button.addEventListener(
+                            'click',
+                            event => {
+                                event.stopPropagation();
+
+                                setFiringPositionsArc(arc);
+
+                                buildMapLayers();
+                            }
+                        );
+
+                        arcs.appendChild(button);
+                    }
+                );
+
+                items.appendChild(arcs);
             }
         );
 
