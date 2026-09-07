@@ -51,14 +51,23 @@ const FIRING_POSITION_CACHE = new Map();
 
 /*
  * One entry per cell value: outside the set, inside it, on its edge. RGBA,
- * because the alpha does the work here rather than the colour — the
- * interior has to stay faint enough to read the flatness ramp through.
+ * because the alpha does the work here rather than the colour.
+ *
+ * The interior draws nothing. A wash was tried and read as glare: the set
+ * is lacy — Bakurani's any-mil regions enclose 491 holes — so a filled
+ * interior puts colour over most of the tower approaches at once and buries
+ * both the tiles and the flatness ramp underneath it. An outline states the
+ * same thing and leaves the ground legible.
+ *
+ * The edge is deliberately under full strength. At map-fit zoom the raster
+ * is downscaled and an 8 m edge falls below a pixel, so drawing it at 255
+ * buys nothing but aliasing.
  */
 function firingPositionsPalette() {
     return [
         [0, 0, 0, 0],
-        [56, 189, 220, 46],
-        [56, 189, 220, 255]
+        [0, 0, 0, 0],
+        [56, 189, 220, 205]
     ];
 }
 

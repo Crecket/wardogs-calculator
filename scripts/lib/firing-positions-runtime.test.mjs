@@ -94,14 +94,13 @@ test('a payload baked for the other arc is refused rather than drawn', () => {
     });
 });
 
-test('the palette hides the ground outside, washes the interior and draws the edge solid', () => {
+test('the palette draws the edge and nothing else', () => {
     const ctx = firingCtx();
     const palette = JSON.parse(callRuntime(ctx, 'JSON.stringify(firingPositionsPalette())'));
 
     assert.equal(palette.length, 3);
     assert.equal(palette[0][3], 0, 'ground outside the set is fully transparent');
-    assert.ok(palette[1][3] > 0 && palette[1][3] < 128, 'the interior is a faint wash');
-    assert.equal(palette[2][3], 255, 'the boundary is full strength');
-
-    assert.deepEqual(palette[1].slice(0, 3), palette[2].slice(0, 3));
+    assert.equal(palette[1][3], 0, 'the interior is transparent: the layer is an outline');
+    assert.ok(palette[2][3] > 128, 'the boundary is the only thing drawn, and is legible');
+    assert.ok(palette[2][3] < 255, 'but under full strength, because an 8 m edge downscales below a pixel');
 });
