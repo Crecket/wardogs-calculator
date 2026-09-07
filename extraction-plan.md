@@ -177,7 +177,6 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | # | Item(s) | What | Status | Branch |
 | --- | --- | --- | --- | --- |
 | 1 | 5.5 | Tower icon | [`pr` #9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | `upstream-pr/map-visuals`, carries v1.7.0 |
-| 2 | 5.3 | Main zone circle | [`pr` #9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | `upstream-pr/map-visuals`, carries v1.7.0 |
 | 3 | 7.1 | Positions survive a reload | [`pr` #8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | `upstream-pr/remember-positions`, carries v1.7.0 |
 | 4 | 3.1 | Contour layer | [`absorbed` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | branch deleted |
 | 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring + dead ground | [`pr` #11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | `upstream-pr/terrain-range-ring`, carries v1.7.0 |
@@ -208,6 +207,8 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 30 | — | Shape tools: line, arrow, rectangle and circle beside the pencil, sharing its colour, undo and collab ops | `branch` | `feat/collab-rooms` (fork only, ranked idea 13; adds a `type` field to `sync/src/ops.js`'s drawing validator) |
 | 31 | 1.x | Overwrite feedback: a remote `point.set` or `gun.move` flashes the affected point in the peer's colour with their name | `branch` | `feat/collab-rooms` (fork only, ranked idea 26, extends items 16 and 21) |
 | 32 | 3.x | Shaded relief raster built from the terrain chunks, drawn between the tiles and the contours | `branch` | `feat/collab-rooms` (fork only, ranked idea 18, extends item 4) |
+| 33 | 3.x | Flat-ground layer: hull tilt everywhere on a five-band ramp anchored on the 8° warning | `branch` | `feat/collab-rooms` (fork only, extends item 32) |
+| 34 | 3.7 | Firing-positions layer: the ground that is flat enough *and* can range every tower, with a low-arc / any-mil toggle | `branch` | `feat/collab-rooms` (fork only, extends items 5, 22 and 33) |
 
 The contour half of #10 was measured the same way, layer on, Bakurani, same zoom, 300 wheel events, `20808c8ac` against `b7296af39`:
 
@@ -254,8 +255,8 @@ All eleven open PRs were reviewed by the maintainer on 2026-08-30. Not one drew 
 | [#8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | Remember positions | `modified` | Keyed by map id in `463d30088`; awaiting re-review |
 | [#13](https://github.com/apollyon-sys/wardogs-calculator/pull/13) | Derived highlight | `modified` | Highlights every coordinate match in `380f8882f`; awaiting re-review |
 | [#14](https://github.com/apollyon-sys/wardogs-calculator/pull/14) | Tactical markers | `modified` | KO/ZH machine strings dropped in `0387012cd`; awaiting re-review |
-| [#9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | Main zone circle | `blocked` | Needs confirmed main-zone radii/positions from game data |
-| [#16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | FOB build areas | `blocked` | Needs confirmed FOB dimensions; also carries #9's commits |
+| [#9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | Tower icon | `modified` | The main-zone half is withdrawn: the zone is randomised per match, so the radii it was blocked on do not exist. Only the tower icon remains. |
+| [#16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | FOB build areas | `blocked` | Needs confirmed FOB dimensions; also carries #9's commits. `RING_SIZE_KEYS` now has `fob` as its only kind, the main zone having been the other. |
 | [#11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | Terrain range ring | `blocked` | Built on the superseded vacuum-fit projectile model |
 | [#15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | Flight time | `blocked` | Same projectile model as #11; stacks on it |
 | [#10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | Contour layer + render cost | `modified` | Rebuilt for cost in `db9a45377`–`4e4eac156`; awaiting re-review |
@@ -271,7 +272,7 @@ All eleven open PRs were reviewed by the maintainer on 2026-08-30. Not one drew 
 
 **Held on confirmed game data.** He will not merge eyeballed values as authoritative measurements.
 
-- **#9** main zone circle — radii and positions must come from game files or another reliable source. He also wants maps with no known data to draw nothing rather than fall back to a guessed centre circle; that half is a small code change, but pointless before the data question is settled. #9 is the base of #16.
+- **#9** main zone circle — **resolved by withdrawal.** He asked for radii and positions from game files or another reliable source, and for maps with no known data to draw nothing rather than fall back to a guessed centre. The data does not exist to supply: the zone is randomised per match, so there is no fixed radius or position to confirm, and "draw nothing" is the answer for every map. The feature is removed rather than rebuilt. #9 remains the base of #16 for the `getRingConfig` plumbing, which FOB areas still need.
 - **#16** FOB build areas — the 60 m half-side is eyeballed from footage. The interaction work (move, rotate, snap, undo) was praised specifically. Needs a rebase once #9 resolves.
 
 **Held on ballistics.** #11 and #15 both derive from the vacuum-fit projectile model, which he says his private research has superseded, and automatic terrain ballistics is deliberately disabled pending held-out validation. Nothing to fix in either; they wait on the new model. #15 stacks on #11 regardless.
@@ -403,10 +404,9 @@ The tiers are the reasoning; the status board at the top is the live state.
 
 ### Tier 2 — small and self-contained
 
-3. **5.3 Main zone circle.** *Best first real PR.* `getMainZone`, `drawMainZone`, `drawRadiusRing`, `hexToRgba` appended to `overlays.js`; one `renderer.js` hunk; `mainZone` blocks in `config/app.json` and both `maps/*.json`; the `mapLayerMainZone` key; two lines in the `map-tools.js` layer registry. ~250 lines, no collab contact anywhere.
-4. **7.1 Positions survive a reload.** `persistMapPoints` / `loadMapPoints` / `writeMapPoints` / `readStoredPoint` are contiguous at `js/features/saved-targets.js:334-519`, plus `MAP_POINTS_KEY` in `core.js`, one `main.js` call and one `inputs.js` hook. ~200 lines. Drop the `collabSyncShared` hook from the `inputs.js` hunk.
-4b. **7.2 Saved-target highlight derived from position.** `caabf2de1` computes which row is active from where the target actually sits instead of tracking `selectedSavedTargetId`. It **deletes** state: one line from `core.js`, three from `events.js`, one each from `coordinates.js` and `mobile.js`. Fixes the highlight going stale when the target moves by any path that forgot to clear the tracked id. Port the original commit, not the fork tip, which has grown the partial/sync states from 7.6–7.8.
-5. **6.3 + 6.4 `.env` config and analytics off by default.** *Parked: fork-only infrastructure, not going upstream.* New `scripts/lib/site-config.mjs`, the `build-pages.mjs` / `dev-server.mjs` wiring, `.env.example`, `docs/analytics.md`. Drop `collabUrl()` and leave `TILE_BASE_URL` for #9. Build-system only, no runtime risk, and it fixes a real problem: an unconfigured fork currently reports into upstream's analytics dashboard.
+3. **7.1 Positions survive a reload.** `persistMapPoints` / `loadMapPoints` / `writeMapPoints` / `readStoredPoint` are contiguous at `js/features/saved-targets.js:334-519`, plus `MAP_POINTS_KEY` in `core.js`, one `main.js` call and one `inputs.js` hook. ~200 lines. Drop the `collabSyncShared` hook from the `inputs.js` hunk.
+3b. **7.2 Saved-target highlight derived from position.** `caabf2de1` computes which row is active from where the target actually sits instead of tracking `selectedSavedTargetId`. It **deletes** state: one line from `core.js`, three from `events.js`, one each from `coordinates.js` and `mobile.js`. Fixes the highlight going stale when the target moves by any path that forgot to clear the tracked id. Port the original commit, not the fork tip, which has grown the partial/sync states from 7.6–7.8.
+4. **6.3 + 6.4 `.env` config and analytics off by default.** *Parked: fork-only infrastructure, not going upstream.* New `scripts/lib/site-config.mjs`, the `build-pages.mjs` / `dev-server.mjs` wiring, `.env.example`, `docs/analytics.md`. Drop `collabUrl()` and leave `TILE_BASE_URL` for #9. Build-system only, no runtime risk, and it fixes a real problem: an unconfigured fork currently reports into upstream's analytics dashboard.
 
 ### Tier 3 — medium, still reviewable
 
@@ -468,50 +468,18 @@ None of these have been verified at runtime. All are based on `29fd2bafd`.
 
 ---
 
-## §5.5 + §5.3 — `upstream-pr/map-visuals`
+## §5.5 — `upstream-pr/map-visuals`
 
 https://github.com/apollyon-sys/wardogs-calculator/pull/9
 
-Decide first: whether `drawRadiusRing`'s unused `fill`/`dash` options stay, and whether the map-centre fallback is worth carrying.
+The main zone circle that this branch also carried is withdrawn. The zone is randomised per match, so the confirmed radii and positions the PR was blocked on do not exist to supply — a circle drawn at a guessed centre tells a player nothing. Removed from the fork in `267567a0f`, which also drops `getMainZone`, `drawMainZone`, the `mainZone` blocks in `config/app.json` and both map files, the `mapLayerMainZone` key, and the `mainZone` kind from `RING_SIZE_KEYS`.
 
 ````markdown
-## Main zone circle and tower marker icon
-
-Two unrelated map visual changes. Both are additive.
-
-### Main zone circle
-
-Draws the scoring area: one circle per map.
-
-A map opts in with a `mainZone` block in `maps/<map>.json`, in stored metres like the other coordinates in those files:
-
-```json
-"mainZone": {
-  "x": 7991,
-  "y": 7183,
-  "radius": 500
-}
-```
-
-Bakurani gets 500 m, Ozeti 550 m. Both radii are eyeballed, not measured in-game. They live in the map data so correcting them is a data edit.
-
-Renders as a solid outlined circle, label on the top edge. No fill, because the zone covers a large part of the map. Not dashed, because there are already several dashed circles on screen.
-
-New layer-menu entry `mapLayerMainZone`, on by default, drawn between the preset polygons and the pencil drawings.
-
-`config/app.json` gains `map.rings.mainZone` for the fallback radius and the colour. `js/core/config.js` gains `getRingConfig(kind)`, which validates the radius is a positive finite number and the colour is `#rrggbb`, falling back to the built-in defaults.
-
-If a map has no `mainZone` block, the circle falls back to the centre of the map bounds at the default radius. That is a guess, not a measured position. Neither shipped map reaches it. Can be dropped in favour of drawing nothing.
-
-### Tower marker icon
+## Tower marker icon
 
 `assets/map-markers/tower.webp` now uses the game's drill glyph instead of the placeholder.
 
-### Review notes
-
-- `mapLayerMainZone` is added to `locales/en.json` only. Other locales fall back to English via `tr()`. Can add it everywhere if you prefer.
-- `drawRadiusRing` has `fill` and `dash` options that `drawMainZone` does not use. They are there for future ring overlays. Can be inlined out.
-- `js/map/renderer.js` gains four lines. Layer ordering and numbering are unchanged.
+A binary swap, additive, with no code change.
 ````
 
 ---
