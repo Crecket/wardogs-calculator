@@ -35,6 +35,7 @@
  *   --stencil <m>   spacing of the fitted samples   (default 2)
  *   --ring <m>      aim ring around each tower      (default 300)
  *   --workers <n>   parallel clearance workers      (default: every core)
+ *   --minregion <n> smallest region kept, in cells  (default 16)
  */
 
 import { readFile, writeFile } from 'node:fs/promises';
@@ -52,7 +53,9 @@ import {
 import {
     AIM_RING_METRES,
     CELL_BOUNDARY,
+    MIN_REGION_CELLS,
     aimPoints,
+    dropSmallRegions,
     outlineMask
 } from './lib/firing-positions.mjs';
 
@@ -92,6 +95,7 @@ function parseArgs(argv) {
         stencil: 2,
         ring: AIM_RING_METRES,
         workers: availableParallelism(),
+        minregion: MIN_REGION_CELLS,
         maps: []
     };
 
@@ -483,7 +487,27 @@ async function buildMap(mapId, options) {
     const results = [];
 
     for (const arc of ARCS) {
-        const mask = outlineMask(viable[arc], width, height);
+        /*
+         * Specks go before the outline is traced, not after: a region below
+         * the threshold should leave no edge behind, and tracing first would
+         * draw one for every one of them.
+         */
+        const kept = dropSmallRegions(
+            viable[arc],
+            width,
+            height,
+            options.minregion
+        );
+
+        let dropped = 0;
+
+        for (let i = 0; i < kept.length; i += 1) {
+            if (viable[arc][i] && !kept[i]) {
+                dropped += 1;
+            }
+        }
+
+        const mask = outlineMask(kept, width, height);
 
         let cells = 0;
         let boundary = 0;
@@ -512,9 +536,11 @@ async function buildMap(mapId, options) {
             stencilSpacingMeters: options.stencil,
             aimRingMeters: options.ring,
             aimPoints: aims.length,
+            minRegionCells: options.minregion,
             viableKm2: Number((cells * cellKm2).toFixed(3)),
+            droppedAsTooSmallKm2: Number((dropped * cellKm2).toFixed(3)),
             spawns: spawnShares(
-                viable[arc], width, height, bounds, step, spawns
+                kept, width, height, bounds, step, spawns
             ).map(entry => ({
                 ...entry,
                 share: Number(entry.share.toFixed(3))
@@ -537,7 +563,7 @@ async function buildMap(mapId, options) {
             JSON.stringify(payload, null, 4) + '\n'
         );
 
-        results.push({ arc, cells, boundary, payload, bytes: png.length });
+        results.push({ arc, cells, boundary, dropped, payload, bytes: png.length });
     }
 
     return {
@@ -590,6 +616,7 @@ for (const mapId of mapIds) {
 
         console.log(
             `  ${entry.arc.padEnd(3)} ${entry.payload.viableKm2.toFixed(2)} km2, ` +
+            `${entry.payload.droppedAsTooSmallKm2.toFixed(2)} km2 dropped as too small, ` +
             `${(entry.bytes / 1024).toFixed(0)} KB PNG` +
             (shares ? `, ${shares}` : '')
         );

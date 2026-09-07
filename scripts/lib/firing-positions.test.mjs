@@ -15,7 +15,9 @@ import {
     CELL_BOUNDARY,
     CELL_INTERIOR,
     CELL_OUTSIDE,
+    MIN_REGION_CELLS,
     aimPoints,
+    dropSmallRegions,
     outlineMask
 } from './firing-positions.mjs';
 
@@ -119,4 +121,103 @@ test('diagonal neighbours do not keep a cell off the boundary', () => {
     assert.equal(mask[3], CELL_BOUNDARY);
     assert.equal(mask[5], CELL_BOUNDARY);
     assert.equal(mask[7], CELL_BOUNDARY);
+});
+
+test('the smallest region kept is one heightfield cell, not a hull footprint', () => {
+    /*
+     * 16 cells of 8 m is 1024 m2, which is one 32 m heightfield cell — the
+     * grid the clearance verdict was decided on. Anything smaller claims a
+     * resolution the evidence behind it does not have.
+     */
+    assert.equal(MIN_REGION_CELLS, 16);
+});
+
+test('an isolated cell is dropped and a large region is kept', () => {
+    const viable = new Uint8Array(100);
+
+    viable[0] = 1;
+
+    for (let y = 2; y < 8; y += 1) {
+        for (let x = 2; x < 8; x += 1) {
+            viable[y * 10 + x] = 1;
+        }
+    }
+
+    const kept = dropSmallRegions(viable, 10, 10, 16);
+
+    assert.equal(kept[0], 0, 'the speck goes');
+    assert.equal(kept[5 * 10 + 5], 1, 'the 36-cell block stays');
+    assert.equal(kept.reduce((sum, v) => sum + v, 0), 36);
+});
+
+test('a region exactly at the threshold survives and one cell under it does not', () => {
+    const square = (side, extra) => {
+        const viable = new Uint8Array(64);
+
+        for (let i = 0; i < side * side; i += 1) {
+            viable[Math.floor(i / side) * 8 + (i % side)] = 1;
+        }
+
+        if (extra) {
+            viable[Math.floor((side * side) / side) * 8] = 1;
+        }
+
+        return viable;
+    };
+
+    /* 4x4 is exactly 16 cells. */
+    assert.equal(
+        dropSmallRegions(square(4), 8, 8, 16).reduce((s, v) => s + v, 0),
+        16
+    );
+
+    /* 15 cells: a 4x4 with one corner missing. */
+    const short = square(4);
+    short[3 * 8 + 3] = 0;
+
+    assert.equal(
+        dropSmallRegions(short, 8, 8, 16).reduce((s, v) => s + v, 0),
+        0
+    );
+});
+
+test('regions touch only through their sides, so a diagonal chain is not one region', () => {
+    const viable = new Uint8Array(64);
+
+    /* Eight cells on a diagonal: eight regions of one, not one of eight. */
+    for (let i = 0; i < 8; i += 1) {
+        viable[i * 8 + i] = 1;
+    }
+
+    assert.equal(dropSmallRegions(viable, 8, 8, 2).reduce((s, v) => s + v, 0), 0);
+});
+
+test('a region running off the raster edge is measured by what is on the raster', () => {
+    const viable = new Uint8Array(64);
+
+    /* A 2x8 strip along the top edge: 16 cells, so it survives at 16. */
+    for (let x = 0; x < 8; x += 1) {
+        viable[x] = 1;
+        viable[8 + x] = 1;
+    }
+
+    assert.equal(dropSmallRegions(viable, 8, 8, 16).reduce((s, v) => s + v, 0), 16);
+    assert.equal(dropSmallRegions(viable, 8, 8, 17).reduce((s, v) => s + v, 0), 0);
+});
+
+test('a threshold of one or less leaves the mask alone', () => {
+    const viable = Uint8Array.from([1, 0, 0, 1, 0, 0, 0, 0, 1]);
+
+    assert.deepEqual(
+        Array.from(dropSmallRegions(viable, 3, 3, 1)),
+        Array.from(viable)
+    );
+});
+
+test('dropping regions leaves the original mask untouched', () => {
+    const viable = Uint8Array.from([1, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const kept = dropSmallRegions(viable, 3, 3, 16);
+
+    assert.equal(viable[0], 1, 'the caller keeps its own array');
+    assert.equal(kept[0], 0);
 });

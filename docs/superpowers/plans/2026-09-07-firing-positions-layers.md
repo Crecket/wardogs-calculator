@@ -1271,6 +1271,8 @@ The pure half of the firing-positions layer: where the shots have to land, and h
   - `AIM_RING_METRES: number` — `300`.
   - `AIM_RING_POINTS: number` — `8`.
   - `CELL_OUTSIDE`, `CELL_INTERIOR`, `CELL_BOUNDARY` — `0`, `1`, `2`.
+  - `MIN_REGION_CELLS: number` — `16`, the smallest viable region worth drawing.
+  - `dropSmallRegions(viable, width, height, minCells?): Uint8Array` — clears every four-connected region smaller than `minCells`, returning a new mask.
   - `aimPoints(towers, options?): {x: number, y: number}[]` — `towers` is `[{x, y}]` in game units. Returns each tower's centre followed by `AIM_RING_POINTS` points evenly spaced on a ring of `AIM_RING_METRES`, also in game units. `options` accepts `ringMeters`, `ringPoints`, `metresPerGameUnit` (default `100`).
   - `outlineMask(viable, width, height): Uint8Array` — `viable` is any array-like that is truthy where a cell is viable. Returns one byte per cell.
 
@@ -2983,3 +2985,11 @@ The first build ran single-threaded at 551s for Bakurani and 436s for Ozeti. Thr
 Reordering the aim points cannot help, and the bake's own output says why: *flat enough* is 2.45 km² and *any mil* is 2.43 km², so 99% of the cells reaching the third filter pass it. There is almost no failure for an early exit to catch, and a cell that passes has to evaluate every aim point whatever order they come in. The memo is nearly free to remove but nearly worthless: 1.7M distinct keys means every lookup misses, but the lookup was never the cost.
 
 The cost is 1.7M terrain marches, each sampling the heightfield every 25 m — roughly 180 million bilinear samples. That work is irreducible without changing what the layer means. Rewriting the builder in a faster language was considered and rejected: it would buy perhaps 3–5x on one core, less than parallelism buys, in exchange for a second implementation of the projectile model and the terrain march that would drift from the app's the first time anyone touched the ballistics. Every worker instead builds its own vm over the same shipped `assessShot`, and both maps rebuild byte-identical.
+
+## Follow-up: specks removed after the first bake
+
+Reviewing the shipped layer against the map showed the outline reading as scattered dots rather than places. Counting them: Bakurani's any-mil set was 577 regions, of which 357 were one or two 8 m cells — 62% of the regions were 2.6% of the area, and each drew its own ring.
+
+`dropSmallRegions` now clears any four-connected region under `MIN_REGION_CELLS`, applied to the mask before `outlineMask` traces it, so a dropped region leaves no edge behind. The threshold is 16 cells because that is 1024 m², exactly one cell of the 32 m heightfield the clearance filter marched against: an island smaller than the grid square that judged it asserts a resolution the evidence does not have. Measured across both maps and both arcs, it removes about 87% of the regions for about 3% of the area — flat enough across four independent data sets to say the threshold sits at the noise floor rather than being tuned to one picture.
+
+The builder takes `--minregion <n>` and records `minRegionCells` and `droppedAsTooSmallKm2` in each sidecar, so the choice is visible in the data rather than only in the code.

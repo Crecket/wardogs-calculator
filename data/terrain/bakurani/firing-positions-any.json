@@ -7,25 +7,27 @@
     "stencilSpacingMeters": 2,
     "aimRingMeters": 300,
     "aimPoints": 45,
-    "viableKm2": 2.433,
+    "minRegionCells": 16,
+    "viableKm2": 2.354,
+    "droppedAsTooSmallKm2": 0.08,
     "spawns": [
         {
             "label": "Valkyra",
             "share": 0.359,
             "nearestMeters": 1844,
-            "medianMeters": 2460
+            "medianMeters": 2455
         },
         {
             "label": "Manticore",
-            "share": 0.253,
+            "share": 0.246,
             "nearestMeters": 2051,
-            "medianMeters": 2791
+            "medianMeters": 2792
         },
         {
             "label": "Lonestar",
-            "share": 0.388,
+            "share": 0.395,
             "nearestMeters": 1884,
-            "medianMeters": 2531
+            "medianMeters": 2529
         }
     ],
     "grid": {
@@ -37,6 +39,6 @@
         "stepY": 0.08
     },
     "file": "firing-positions-any.png",
-    "bytes": 18517,
-    "sha256": "90f9b46c4122d8803beafe7c500ae46129f515c305cc16a48f981e5a8e53040c"
+    "bytes": 16599,
+    "sha256": "90d24edd29f652ef079d7de3b16033166742064a80bdbcae14e67cca6d61aa57"
 }

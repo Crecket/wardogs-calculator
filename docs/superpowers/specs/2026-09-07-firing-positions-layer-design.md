@@ -48,6 +48,8 @@ Three filters, ordered cheapest first, because the expensive one is a terrain ma
 2. **Hull tilt at most 8 degrees.** Least-squares plane through a 5×5 stencil of 2 m samples spanning the 8 m hull footprint. Survivors 2.57 km².
 3. **Shell clears the terrain to every aim point.** Marched against the 32 m heightfield, the same source every other reachability verdict uses. Survivors 0.35 km².
 
+A fourth step runs after those three, on the mask rather than on cells: **any viable region smaller than 16 cells is cleared.** 16 cells of 8 m is 1024 m², exactly one cell of the 32 m heightfield the clearance filter marches against, so an island smaller than that is smaller than the grid square that decided it was viable — it claims a resolution the evidence does not have, and it is not somewhere a player could reliably park in any case. Across both maps and both arcs this removes about 87% of the regions for about 3% of the area, which is what a threshold set at the noise floor should look like. Regions are four-connected: a diagonal touch is not ground you can drive along.
+
 The artifact carried a fourth filter between 1 and 2, trimming ground more than 1 km north of the northernmost tower as too far to drive. It is cut. It removed 0.01 km² of 6.82 — 0.15% — and "north of the northernmost tower" is not a general rule: north is not special, and a third map would need a hand-tuned constant for the filter to mean anything. The playable bounds already do the real trimming.
 
 ### Two terrain sources, split by role
@@ -100,7 +102,7 @@ The group-level "select all" checkboxes change what they select, which is the po
 | File | Contents |
 | --- | --- |
 | `scripts/lib/flatness.mjs` | `planeTiltDegrees`, `tiltBand`. Pure, no terrain or ballistics dependency. |
-| `scripts/lib/firing-positions.mjs` | `aimPoints`, `outlineMask`. Pure geometry; no tilt. |
+| `scripts/lib/firing-positions.mjs` | `aimPoints`, `dropSmallRegions`, `outlineMask`. Pure geometry; no tilt. |
 | `scripts/build-flatness.mjs` | CLI wrapper, `npm run build-flatness`. |
 | `scripts/build-firing-positions.mjs` | CLI wrapper, `npm run build-firing-positions`. Bakes both arcs. Reports surviving area per map. |
 | `scripts/lib/firing-positions-worker.mjs` | One worker's share of the clearance filter, striding through the candidate cells. |
