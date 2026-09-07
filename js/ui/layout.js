@@ -186,6 +186,7 @@ const MOBILE_MENU_TEXT = {
         dark: 'Dark',
         language: 'Language',
         links: 'Links',
+        support: 'Support',
         credits: 'Credits',
         legal: 'Legal'
     },
@@ -196,6 +197,7 @@ const MOBILE_MENU_TEXT = {
         dark: 'Тёмная',
         language: 'Язык',
         links: 'Ссылки',
+        support: 'Поддержать',
         credits: 'Авторы',
         legal: 'Дисклеймер'
     },
@@ -206,6 +208,7 @@ const MOBILE_MENU_TEXT = {
         dark: 'Темна',
         language: 'Мова',
         links: 'Посилання',
+        support: 'Підтримати',
         credits: 'Автори',
         legal: 'Дисклеймер'
     },
@@ -216,6 +219,7 @@ const MOBILE_MENU_TEXT = {
         dark: 'Dunkel',
         language: 'Sprache',
         links: 'Links',
+        support: 'Unterstützen',
         credits: 'Credits',
         legal: 'Hinweis'
     },
@@ -226,6 +230,7 @@ const MOBILE_MENU_TEXT = {
         dark: 'Sombre',
         language: 'Langue',
         links: 'Liens',
+        support: 'Soutenir',
         credits: 'Crédits',
         legal: 'Mentions'
     },
@@ -236,6 +241,7 @@ const MOBILE_MENU_TEXT = {
         dark: 'Oscuro',
         language: 'Idioma',
         links: 'Enlaces',
+        support: 'Apoyar',
         credits: 'Créditos',
         legal: 'Aviso'
     },
@@ -246,6 +252,7 @@ const MOBILE_MENU_TEXT = {
         dark: 'Ciemny',
         language: 'Język',
         links: 'Linki',
+        support: 'Wesprzyj',
         credits: 'Autorzy',
         legal: 'Informacja'
     },
@@ -256,6 +263,7 @@ const MOBILE_MENU_TEXT = {
         dark: '다크',
         language: '언어',
         links: '링크',
+        support: '후원',
         credits: '제작진',
         legal: '법적 고지'
     },
@@ -266,6 +274,7 @@ const MOBILE_MENU_TEXT = {
         dark: 'Escuro',
         language: 'Idioma',
         links: 'Links',
+        support: 'Apoiar',
         credits: 'Créditos',
         legal: 'Aviso'
     },
@@ -276,6 +285,7 @@ const MOBILE_MENU_TEXT = {
         dark: 'NIGHT CAT',
         language: 'MEOWGUAGE',
         links: 'CAT LINKS',
+        support: 'SUPPORT CAT',
         credits: 'CAT CREDITS',
         legal: 'LEGAL MEOW'
     }
@@ -389,6 +399,12 @@ function syncMobileSideMenuLocalization() {
     setText(
         'mobileLinksLabel',
         text.links
+    );
+
+    setText(
+        'mobileSupportLabel',
+        text.support ||
+            MOBILE_MENU_TEXT.en.support
     );
 
     setText(
@@ -1125,6 +1141,21 @@ function initMobileSideMenu() {
         links
     );
 
+    const supportSection =
+        createMobileMenuSection(
+            'mobileSupportLabel',
+            'mobile-side-menu-support'
+        );
+
+    const donationLinks =
+        createDonationLinks(
+            'mobile-menu'
+        );
+
+    supportSection.appendChild(
+        donationLinks
+    );
+
     const footer =
         createMobileCreditsBlock();
 
@@ -1133,6 +1164,7 @@ function initMobileSideMenu() {
         appearanceSection,
         languageSection,
         linksSection,
+        supportSection,
         footer
     );
 
@@ -1196,6 +1228,23 @@ function initMobileSideMenu() {
 
                 setMobileSideMenuOpen(
                     false
+                );
+            }
+        );
+
+    donationLinks
+        .querySelectorAll(
+            '.donation-link'
+        )
+        .forEach(
+            link => {
+                link.addEventListener(
+                    'click',
+                    () => {
+                        setMobileSideMenuOpen(
+                            false
+                        );
+                    }
                 );
             }
         );

@@ -33,6 +33,7 @@
             dark: '深色',
             language: '语言',
             links: '链接',
+            support: '支持',
             credits: '致谢',
             legal: '法律信息'
         };

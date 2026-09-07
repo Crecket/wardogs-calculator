@@ -110,6 +110,111 @@ footer a:hover {
     margin-left: 2px;
 }
 
+.donation-links {
+    display: flex;
+    align-items: center;
+
+    gap: 6px;
+}
+
+.donation-link {
+    --donation-tone: var(--accent);
+
+    min-height: 26px;
+
+    padding: 4px 8px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 5px;
+
+    border: 1px solid
+        color-mix(
+            in srgb,
+            var(--donation-tone) 44%,
+            var(--border-light)
+        );
+
+    border-radius: 7px;
+
+    background:
+        color-mix(
+            in srgb,
+            var(--donation-tone) 12%,
+            var(--input-bg)
+        );
+
+    color: var(--text);
+
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+
+    white-space: nowrap;
+
+    box-shadow:
+        inset 0 0 0 1px
+        color-mix(
+            in srgb,
+            var(--donation-tone) 5%,
+            transparent
+        );
+
+    transition:
+        border-color .15s ease,
+        background .15s ease,
+        color .15s ease,
+        transform .15s ease;
+}
+
+.donation-link-buy-me-a-coffee {
+    --donation-tone: #d7a452;
+}
+
+.donation-link-ko-fi {
+    --donation-tone: #72a4f2;
+}
+
+.donation-link:hover,
+.donation-link:focus-visible {
+    border-color: var(--donation-tone);
+
+    background:
+        color-mix(
+            in srgb,
+            var(--donation-tone) 20%,
+            var(--input-hover-bg)
+        );
+
+    color: var(--text);
+
+    text-decoration: none;
+
+    transform: translateY(-1px);
+}
+
+.donation-link:active {
+    transform: translateY(0);
+}
+
+.donation-link-icon {
+    width: 15px;
+    height: 15px;
+
+    display: inline-flex;
+
+    flex: 0 0 15px;
+
+    color: var(--donation-tone);
+}
+
+.donation-link-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
 
 /* =========================
    LANGUAGE
@@ -483,5 +588,10 @@ footer a:hover {
     .footer-author {
         white-space: normal;
     }
-}
 
+    .donation-links-footer {
+        order: -1;
+
+        width: 100%;
+    }
+}
