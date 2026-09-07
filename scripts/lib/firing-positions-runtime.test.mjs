@@ -100,8 +100,21 @@ test('the palette draws the edge and nothing else', () => {
 
     assert.equal(palette.length, 3);
     assert.equal(palette[0][3], 0, 'ground outside the set is fully transparent');
-    assert.equal(palette[1][3], 0, 'the interior is transparent: the layer is an outline');
-    assert.equal(palette[2][3], 255, 'the boundary is the only thing drawn, at full strength');
+    assert.equal(palette[2][3], 255, 'the boundary is drawn at full strength');
+
+    /*
+     * The interior says which side of the outline is the good ground, but
+     * the flatness ramp has to stay readable through it: measured, an alpha
+     * past about 64 starts flattening neighbouring bands into each other.
+     */
+    assert.ok(palette[1][3] > 0, 'the interior is washed, not empty');
+    assert.ok(palette[1][3] <= 64, 'but slightly, so the ramp underneath survives');
+
+    assert.deepEqual(
+        palette[1].slice(0, 3),
+        palette[2].slice(0, 3),
+        'the wash and the edge are the same colour'
+    );
 
     /*
      * Not a terrain colour. The viable set always sits on the flatness

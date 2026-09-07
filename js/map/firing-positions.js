@@ -53,11 +53,17 @@ const FIRING_POSITION_CACHE = new Map();
  * One entry per cell value: outside the set, inside it, on its edge. RGBA,
  * because the alpha does the work here rather than the colour.
  *
- * The interior draws nothing. A wash was tried and read as glare: the set
- * is lacy — Bakurani's any-mil regions enclose 491 holes — so a filled
- * interior puts colour over most of the tower approaches at once and buries
- * both the tiles and the flatness ramp underneath it. An outline states the
- * same thing and leaves the ground legible.
+ * The interior carries a slight wash. An outline alone marks where the set
+ * ends without saying which side of the line is the good ground, and on a
+ * layer whose regions enclose hundreds of holes that is a real ambiguity.
+ *
+ * The alpha is 32 because it was measured rather than chosen. Against the
+ * flatness ramp underneath, that wash is a perceptual distance of 13 to 16
+ * from unfilled ground — comfortably visible — while leaving the closest
+ * pair of ramp bands 11.5 apart where they are 13.3 unfilled. The ramp
+ * loses about an eighth of its contrast and stays readable through the
+ * fill, which is the whole reason the two layers were split in the first
+ * place. Anything past about 64 starts flattening the bands together.
  *
  * Magenta, at full strength, and neither is arbitrary. The viable set lies
  * on the flatness ramp's green and amber bands by construction — it has
@@ -74,7 +80,7 @@ const FIRING_POSITION_CACHE = new Map();
 function firingPositionsPalette() {
     return [
         [0, 0, 0, 0],
-        [0, 0, 0, 0],
+        [230, 62, 192, 32],
         [230, 62, 192, 255]
     ];
 }
