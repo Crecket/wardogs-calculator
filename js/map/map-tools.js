@@ -89,7 +89,6 @@ const MAP_TOOL_STATE = {
         presetMarkers: true,
         drawings: true,
         userMarkers: true,
-        mainZone: true,
         fobAreas: true,
         artillery: true,
         savedTargets: true,
@@ -1395,7 +1394,6 @@ function buildMapLayers() {
                 ['zones', 'mapLayerZones'],
                 ['polygons', 'mapLayerPolygons'],
                 ['presetMarkers', 'mapLayerPresetMarkers'],
-                ['mainZone', 'mapLayerMainZone'],
                 ['fobAreas', 'mapLayerFobAreas'],
                 ['artillery', 'mapLayerArtillery'],
                 ['savedTargets', 'mapLayerSavedTargets']
@@ -1462,10 +1460,6 @@ function buildMapLayers() {
         userMarkers: `
             <path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z"/>
             <path d="m12 7 .9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3Z"/>
-        `,
-        mainZone: `
-            <circle cx="12" cy="12" r="8"/>
-            <path d="M10 8v8M10 8h5l-1.2 2L15 12h-5"/>
         `,
         fobAreas: `
             <path d="M5 19V9l7-4 7 4v10Z"/>

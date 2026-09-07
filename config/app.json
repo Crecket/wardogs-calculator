@@ -38,10 +38,6 @@
       "fob": {
         "halfSide": 60,
         "color": "#5fa8d3"
-      },
-      "mainZone": {
-        "radius": 500,
-        "color": "#82c596"
       }
     }
   }

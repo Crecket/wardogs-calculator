@@ -28,10 +28,6 @@ const DEFAULT_APP_CONFIG = {
             fob: {
                 halfSide: 60,
                 color: '#5fa8d3'
-            },
-            mainZone: {
-                radius: 500,
-                color: '#82c596'
             }
         }
     },
@@ -98,10 +94,6 @@ function mergeAppConfig(base, override) {
                 fob: {
                     ...base.map.rings.fob,
                     ...(override?.map?.rings?.fob || {})
-                },
-                mainZone: {
-                    ...base.map.rings.mainZone,
-                    ...(override?.map?.rings?.mainZone || {})
                 }
             }
         },
@@ -220,15 +212,13 @@ function isCollabConfigured() {
 }
 
 /*
- * The two ring kinds do not measure the same thing — a FOB build area has a
- * `halfSide`, the main zone has a `radius` — so each names its own key in
- * config/app.json rather than sharing one that is only honest about half of
- * them. The measurement comes back as `size`, so the drawing code does not
- * have to know which kind it was handed.
+ * A ring kind names its own measurement key in config/app.json rather than a
+ * shared one: a FOB build area has a `halfSide`, and a kind measured from its
+ * centre would have a `radius`. The measurement comes back as `size`, so the
+ * drawing code does not have to know which kind it was handed.
  */
 const RING_SIZE_KEYS = {
-    fob: 'halfSide',
-    mainZone: 'radius'
+    fob: 'halfSide'
 };
 
 function getRingConfig(kind) {

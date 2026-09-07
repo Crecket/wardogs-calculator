@@ -659,7 +659,6 @@ In `js/map/map-tools.js`, replace the whole `const groups = [ ... ];` literal (s
                 ['zones', 'mapLayerZones'],
                 ['polygons', 'mapLayerPolygons'],
                 ['presetMarkers', 'mapLayerPresetMarkers'],
-                ['mainZone', 'mapLayerMainZone'],
                 ['fobAreas', 'mapLayerFobAreas'],
                 ['artillery', 'mapLayerArtillery'],
                 ['savedTargets', 'mapLayerSavedTargets']
@@ -695,7 +694,7 @@ Run: `npm run dev`
 Open the map, open the Layers popover, and confirm:
 - Five headings in order: Map, Terrain, Firing, Markers, Map tools.
 - Terrain holds Contours and Shaded relief; Firing holds Dead ground (low arc) and Trajectory cross-section.
-- Markers no longer lists dead ground or the cross-section.
+- Markers no longer lists dead ground, the cross-section, or the main zone.
 - Ticking the Terrain group checkbox turns both terrain layers on and starts both downloads; unticking turns both off.
 - Switching to a map without terrain data does not render an empty Terrain heading.
 

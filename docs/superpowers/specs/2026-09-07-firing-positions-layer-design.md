@@ -88,7 +88,7 @@ The Layers popover currently has three groups, and `deadGround` and `crossSectio
 | Map | tiles, grid |
 | Terrain | contours, shaded relief, **flatness** |
 | Firing | dead ground, trajectory cross-section, **firing positions** |
-| Markers | zones, polygons, preset markers, main zone, FOB areas, artillery, saved targets |
+| Markers | zones, polygons, preset markers, FOB areas, artillery, saved targets |
 | Map tools | drawings, user markers, cursor coordinates, mil cursor |
 
 **Terrain** is exactly the set baked from the height data and downloaded on demand — the three layers that cost a fetch and describe the ground itself. **Firing** is exactly the set derived from the ballistics model, the ones that answer whether a shell can be put somewhere. **Markers** stops containing anything that is not a marker, so its existing `mapToolMarkers` title becomes literally true.

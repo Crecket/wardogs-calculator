@@ -71,7 +71,6 @@ const PAGE_HELPERS = String.raw`
             'drawCoordinateLabels',
             'drawPresetZones',
             'drawPresetPolygons',
-            'drawMainZone',
             'drawFobBuildAreas',
             'drawMapToolDrawings',
             'drawDeadGround',
