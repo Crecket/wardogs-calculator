@@ -96,7 +96,7 @@ async function initLobby() {
     let applying = false, needsRender = false, joining = false, readOnly = false;
     let code = '', ownerKey = '', you = '', roster = [], maximum = config.maxParticipants;
     let expiresAt = 0, remaining = 0, notice = '', recovery = null;
-    const delay = Math.max(1000, Math.min(5000, Number(config.batchDelayMs) || 1000));
+    const delay = Math.max(250, Math.min(5000, Number(config.batchDelayMs) || 300));
     const busy = () => Boolean(drag || MAP_TOOL_STATE.pencilDragging || MAP_TOOL_STATE.zoneDragging || MAP_TOOL_STATE.polygonDraft);
     const connected = () => socket?.readyState === WebSocket.OPEN && !joining;
     const rawDocument = (includeSaved = true) => ({
