@@ -67,6 +67,10 @@ test('idle enabled menu creates no connection and uses Russian labels', async t 
     const c = await client(t);
     assert.ok(c.window.document.querySelector('.map > #lobbyControls'));
     assert.equal(c.window.document.querySelector('#lobbyHeading').textContent, 'Лобби');
+    assert.equal(c.window.document.querySelector('.lobby-toggle').textContent.trim(), '');
+    assert.equal(c.window.document.querySelector('.lobby-toggle').getAttribute('aria-label'), 'Лобби');
+    assert.ok(c.window.document.querySelector('.lobby-toggle svg'));
+    assert.equal(c.window.document.querySelector('.lobby-check input').nextElementSibling?.tagName, 'SPAN');
     assert.equal(c.requests.length, 0); assert.equal(c.sockets.length, 0);
 });
 test('join, drag batching, acknowledged undo and leave preserve personal storage', async t => {

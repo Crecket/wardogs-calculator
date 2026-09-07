@@ -78,7 +78,16 @@ async function initLobby() {
             <p class="lobby-recovery" data-lobby-text="recovery" hidden></p>
             <button type="button" data-action="export" data-lobby-text="export" hidden></button>
         </section>
-        <button type="button" class="lobby-toggle" aria-controls="lobbyPanel" aria-expanded="false"><span class="lobby-dot" aria-hidden="true"></span><span data-lobby-text="title"></span><span class="lobby-badge"></span></button>`;
+        <button type="button" class="lobby-toggle" aria-controls="lobbyPanel" aria-expanded="false">
+            <span class="lobby-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="8" r="3"/><path d="M3.5 19v-1.5A4.5 4.5 0 0 1 8 13h2a4.5 4.5 0 0 1 4.5 4.5V19"/>
+                    <circle cx="17" cy="9" r="2.2"/><path d="M15.5 14h1.8a3.2 3.2 0 0 1 3.2 3.2V19"/>
+                </svg>
+                <span class="lobby-dot"></span>
+            </span>
+            <span class="lobby-badge"></span>
+        </button>`;
     document.querySelector('.map').append(root);
     const q = selector => root.querySelector(selector);
     const action = name => q(`[data-action="${name}"]`);
@@ -190,6 +199,8 @@ async function initLobby() {
     }
     function updateUI() {
         for (const node of root.querySelectorAll('[data-lobby-text]')) node.textContent = t(node.dataset.lobbyText);
+        q('.lobby-toggle').setAttribute('aria-label', t('title'));
+        q('.lobby-toggle').title = t('title');
         q('.lobby-setup').hidden = lobby.active;
         q('.lobby-session').hidden = !lobby.active;
         const status = joining ? 'connecting' : notice || (lobby.active ? (!connected() ? 'offline' : readOnly ? 'quota' : replica?.dirty ? 'pending' : 'ready') : 'idle');

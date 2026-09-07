@@ -4,8 +4,7 @@
 
 .mobile-app .sidebar-toggle,
 .mobile-app footer,
-.mobile-app .toolbar,
-.mobile-app .legend {
+.mobile-app .toolbar {
     display: none !important;
 }
 
@@ -852,4 +851,3 @@
 
     z-index: 200;
 }
-

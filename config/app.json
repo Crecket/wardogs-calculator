@@ -1,7 +1,7 @@
 {
   "collab": {
     "enabled": true,
-    "serverUrl": "https://wardogs-artillery.com",
+    "serverUrl": "https://wardogs-lobbies.wardogs-lobbies.workers.dev",
     "maxParticipants": 8,
     "roomLifetimeHours": 6,
     "maxRoomsPerDay": 250,
