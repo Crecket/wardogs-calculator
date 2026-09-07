@@ -47,7 +47,18 @@ The floating Map Tools toolbar provides:
 - **Import / Export** — back up or share drawings, zones, polygons, user markers, and layer visibility settings as JSON
 - **Undo / Redo** — drawings, zones, polygons, erased items, user markers, and Artillery/Target position changes
 
-Drawings, zones, polygons, and user markers are stored locally per map and are shared between desktop and mobile because both interfaces use the same site origin. The Import / Export Map Tool exports the complete persistent Map Tools state across maps, including layer visibility. Imports are merged with existing user content and imported item IDs are regenerated to avoid collisions.
+Outside a lobby, drawings, zones, polygons, and user markers are stored locally per map and are shared between desktop and mobile because both interfaces use the same site origin. Inside a lobby, those tactical objects synchronise with the room instead. The Import / Export Map Tool exports the complete persistent Map Tools state across maps, including layer visibility. Imports are merged with existing user content and imported item IDs are regenerated to avoid collisions.
+
+### Live Team Lobbies
+
+- Create a room and invite teammates with a link or code
+- Synchronise drawings, zones, polygons, and user-placed tactical markers
+- Optionally include the creator's saved targets when creating the room
+- Keep the selected weapon, artillery point, active target, and range circle separate for every player
+- Show teammates as labelled artillery-to-target overlays without their range circles
+- Keep camera position, zoom, active tool, layers, point locks, theme, and language local
+
+Lobby connections are optional and start only after a player creates or joins a room. See [Collaborative lobbies](lobbies.md) for configuration, server limits, privacy, recovery, and deployment.
 
 ### Mobile Interface
 
@@ -121,7 +132,7 @@ Current weapon support includes:
 
 | Weapon | Range |
 |---|---:|
-| Mortar | 132–684 m |
+| L81 Mortar | 132–684 m |
 | SPH-2 | 780–2629 m |
 
 ---
@@ -159,7 +170,7 @@ Azimuth follows standard compass bearings:
 
 ## MIL firing solutions
 
-The result panel calculates elevation in MIL from the configured ballistic tables. Mortar uses a single firing solution. SPH-2 exposes low-angle and high-angle solutions when both trajectories are available for the current distance. Weapon range limits remain separate from ballistic-table coverage, so samples outside the configured playable range are not treated as valid shots.
+The result panel calculates elevation in MIL from the configured ballistic tables. L81 Mortar uses a single firing solution. SPH-2 exposes low-angle and high-angle solutions when both trajectories are available for the current distance. Weapon range limits remain separate from ballistic-table coverage, so samples outside the configured playable range are not treated as valid shots.
 
 
 ## Terrain elevation and SPH-2 setup

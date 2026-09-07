@@ -234,8 +234,9 @@ function refreshWebApplicationJsonLd(html, definition) {
                 data.alternateName = [
                     'WARDOGS Artillery Calculator & Tactical Map',
                     'WARDOGS Arty Calc',
+                    'WARDOGS L81 Mortar Calculator',
                     'WARDOGS 炮兵计算器',
-                    'WARDOGS 迫击炮计算器'
+                    'WARDOGS L81 迫击炮计算器'
                 ];
                 replaced = true;
                 return `<script type="application/ld+json">${JSON.stringify(data, null, 2)}</script>`;

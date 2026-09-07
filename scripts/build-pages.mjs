@@ -162,7 +162,7 @@ function refreshSeoMetadata(html, appConfig) {
         /<head>[\s\S]*?<\/head>/i,
         head => head
             .replace(/\bSPG\b/g, 'SPH-2')
-            .replace(/mortar and SPH-2 solutions/gi, 'Mortar and SPH-2 firing solutions')
+            .replace(/mortar and SPH-2 solutions/gi, 'L81 Mortar and SPH-2 firing solutions')
     );
 
     output = output.replace(
@@ -180,7 +180,7 @@ function refreshSeoMetadata(html, appConfig) {
                 if (typeof data.description === 'string') {
                     data.description = data.description
                         .replace(/\bSPG\b/g, 'SPH-2')
-                        .replace(/mortar and SPH-2 solutions/gi, 'Mortar and SPH-2 firing solutions');
+                        .replace(/mortar and SPH-2 solutions/gi, 'L81 Mortar and SPH-2 firing solutions');
                 }
 
                 return `<script type="application/ld+json">${JSON.stringify(data, null, 2)}</script>`;
