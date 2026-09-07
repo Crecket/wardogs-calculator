@@ -44,6 +44,15 @@ function bindEvents() {
 
                 S.map =
                     'custom';
+
+                const customSize =
+                    getSavedCustomMapSize();
+
+                S.w =
+                    customSize.w;
+
+                S.h =
+                    customSize.h;
             }
 
             if (
@@ -136,8 +145,6 @@ function bindEvents() {
             S.map =
                 'custom';
 
-            persistAppSelections();
-
             S.w =
                 Math.max(
                     1,
@@ -161,6 +168,8 @@ function bindEvents() {
                         10
                     )
                 );
+
+            persistAppSelections();
 
             clamp(
                 S.origin
@@ -526,35 +535,18 @@ function bindEvents() {
              * locked gun/target must remain available for placing the active
              * unlocked point instead of being swallowed by the nearer lock.
              */
-            const nearestUnlockedPoint = [
-                {
-                    type: 'origin',
-                    distance: d1
-                },
-                {
-                    type: 'target',
-                    distance: d2
-                }
-            ]
-                .filter(
-                    point =>
-                        !isPointMapLocked(
-                            point.type
-                        )
-                )
-                .sort(
-                    (a, b) =>
-                        a.distance -
-                        b.distance
-                )[0];
+            const nearestUnlockedPoint =
+                getNearestUnlockedMapPoint(
+                    d1,
+                    d2,
+                    pointHitThreshold
+                );
 
             if (
-                nearestUnlockedPoint &&
-                nearestUnlockedPoint.distance <
-                    pointHitThreshold
+                nearestUnlockedPoint
             ) {
                 drag =
-                    nearestUnlockedPoint.type;
+                    nearestUnlockedPoint;
 
             } else {
                 if (

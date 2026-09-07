@@ -38,14 +38,16 @@ The floating Map Tools toolbar provides:
 
 - **Ruler** — measure distance and azimuth
 - **Pencil** — draw directly on the map
-- **Eraser** — remove pencil strokes and user-placed map markers
+- **Zone** — drag from the center to create a circular zone
+- **Polygon** — click vertices, then click the first vertex, double-click, or press `Enter` to finish
+- **Eraser** — remove pencil strokes, zones, polygons, and user-placed map markers
 - **Markers** — place tactical markers
 - **Coordinate Search** — jump to specific coordinates
 - **Layers** — toggle map tiles, overlays, drawings, markers, and cursor coordinates
-- **Import / Export** — back up or share drawings, user markers, and layer visibility settings as JSON
-- **Undo / Redo** — drawings, erased strokes, user markers, and Artillery/Target position changes
+- **Import / Export** — back up or share drawings, zones, polygons, user markers, and layer visibility settings as JSON
+- **Undo / Redo** — drawings, zones, polygons, erased items, user markers, and Artillery/Target position changes
 
-Drawings and user markers are stored locally per map and are shared between desktop and mobile because both interfaces use the same site origin. The Import / Export Map Tool exports the complete persistent Map Tools state across maps (drawings, user markers, and layer visibility settings). Imports are merged with existing user content and imported drawing/marker IDs are regenerated to avoid collisions.
+Drawings, zones, polygons, and user markers are stored locally per map and are shared between desktop and mobile because both interfaces use the same site origin. The Import / Export Map Tool exports the complete persistent Map Tools state across maps, including layer visibility. Imports are merged with existing user content and imported item IDs are regenerated to avoid collisions.
 
 ### Mobile Interface
 
@@ -55,7 +57,7 @@ The dedicated `/mobile/` UI is designed around touch input rather than being a s
 - Two-finger pinch zoom around the gesture midpoint
 - Tap-to-place Artillery/Target
 - Drag-to-move Artillery/Target
-- Touch Map Tools, including Pencil, Eraser, Markers, Layers, and Import / Export; the mobile toolbar is collapsed behind a single button by default
+- Touch Map Tools, including Pencil, Zone, Polygon, Eraser, Markers, Layers, and Import / Export; the mobile toolbar is collapsed behind a single button by default
 - Touch-accessible Undo / Redo buttons inside Layers
 - Tap preset marker to select it as Target
 - Swipeable bottom sheet for calculator, map settings, and saved targets
@@ -72,6 +74,8 @@ Desktop Map Tool shortcuts:
 |---|---|
 | `R` | Ruler |
 | `P` | Pencil |
+| `Z` | Zone |
+| `G` | Polygon |
 | `E` | Eraser |
 | `M` | Markers |
 | `F` | Coordinate Search |
@@ -80,6 +84,8 @@ Desktop Map Tool shortcuts:
 | `Ctrl + Z` | Undo |
 | `Ctrl + Y` | Redo |
 | `Ctrl + Shift + Z` | Redo |
+
+Letter shortcuts use physical keyboard positions, so they keep working when the active input language changes (for example, between English and Russian layouts).
 
 Desktop camera controls:
 

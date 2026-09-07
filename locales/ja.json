@@ -44,6 +44,8 @@
   "mapLocked": "プリセットマップ選択中 — グリッドサイズは固定されます",
   "mapToolRuler": "計測",
   "mapToolPencil": "ペン",
+  "mapToolZoneHint": "中心からドラッグして半径を設定します。",
+  "mapToolPolygonHint": "クリックして頂点を追加します。最初の点をクリックするか、ダブルクリックまたは Enter キーで完了します。",
   "mapToolMarkers": "マーカー",
   "mapToolNoMarkerAssets": "マーカー素材がありません",
   "markerLabelFob": "FOB",

@@ -15,6 +15,18 @@
     transition: opacity .18s ease, transform .18s ease;
 }
 
+.mobile-app .map-tool-interaction-hint {
+    position: absolute;
+    top: 0;
+    right: 52px;
+
+    width: min(300px, calc(100vw - 76px));
+    max-width: calc(100vw - 76px);
+
+    font-size: 11px;
+    text-align: left;
+}
+
 .mobile-app .map-tools-bar {
     display: none;
     flex-direction: column;

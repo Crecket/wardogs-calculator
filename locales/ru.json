@@ -44,6 +44,8 @@
   "mapLocked": "Выбрана готовая карта — размер сетки заблокирован",
   "mapToolRuler": "Линейка",
   "mapToolPencil": "Карандаш",
+  "mapToolZoneHint": "Потяните от центра, чтобы задать радиус.",
+  "mapToolPolygonHint": "Щёлкайте, чтобы добавлять вершины. Для завершения щёлкните первую точку, сделайте двойной щелчок или нажмите Enter.",
   "mapToolMarkers": "Метки",
   "mapToolNoMarkerAssets": "Нет доступных иконок",
   "markerLabelFob": "FOB",

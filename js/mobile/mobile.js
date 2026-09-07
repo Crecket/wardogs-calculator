@@ -60,35 +60,11 @@ function getMobileUserMarkerAt(x, y) {
         y - target.y
     );
 
-    const nearestUnlockedPoint = [
-        {
-            type: 'origin',
-            distance: originDistance
-        },
-        {
-            type: 'target',
-            distance: targetDistance
-        }
-    ]
-        .filter(
-            point =>
-                !isPointMapLocked(
-                    point.type
-                )
-        )
-        .sort(
-            (a, b) =>
-                a.distance -
-                b.distance
-        )[0];
-
-    return (
-        nearestUnlockedPoint &&
-        nearestUnlockedPoint.distance <=
-            MOBILE_POINT_HIT_RADIUS
-    )
-        ? nearestUnlockedPoint.type
-        : null;
+    return getNearestUnlockedMapPoint(
+        originDistance,
+        targetDistance,
+        MOBILE_POINT_HIT_RADIUS
+    );
 }
 
 function setMobileMode(type) {

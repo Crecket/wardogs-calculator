@@ -44,6 +44,8 @@
   "mapLocked": "Preset map selected — grid size is locked",
   "mapToolRuler": "Ruler",
   "mapToolPencil": "Pencil",
+  "mapToolZoneHint": "Drag from the center to set the radius.",
+  "mapToolPolygonHint": "Click to add vertices. Click the first point, double-click, or press Enter to finish.",
   "mapToolMarkers": "Markers",
   "mapToolNoMarkerAssets": "No marker assets",
   "markerLabelFob": "FOB",

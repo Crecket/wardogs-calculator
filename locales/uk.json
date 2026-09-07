@@ -48,6 +48,8 @@
   "mapLocked": "Обрано готову мапу — розмір сітки заблоковано",
   "mapToolRuler": "Лінійка",
   "mapToolPencil": "Олівець",
+  "mapToolZoneHint": "Потягніть від центру, щоб задати радіус.",
+  "mapToolPolygonHint": "Клацайте, щоб додавати вершини. Для завершення клацніть першу точку, двічі клацніть або натисніть Enter.",
   "mapToolMarkers": "Мітки",
   "mapToolNoMarkerAssets": "Немає доступних іконок",
   "markerLabelFob": "FOB",

@@ -48,6 +48,8 @@
   "mapLocked": "Wybrano gotową mapę — rozmiar siatki jest zablokowany",
   "mapToolRuler": "Linijka",
   "mapToolPencil": "Ołówek",
+  "mapToolZoneHint": "Przeciągnij od środka, aby ustawić promień.",
+  "mapToolPolygonHint": "Klikaj, aby dodawać wierzchołki. Aby zakończyć, kliknij pierwszy punkt, kliknij dwukrotnie lub naciśnij Enter.",
   "mapToolMarkers": "Znaczniki",
   "mapToolNoMarkerAssets": "Brak dostępnych ikon znaczników",
   "markerLabelFob": "FOB",

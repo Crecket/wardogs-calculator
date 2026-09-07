@@ -54,6 +54,8 @@
   "ready": "READY TO MEOW :P",
   "mapToolRuler": "Meowsure",
   "mapToolPencil": "Pawcil",
+  "mapToolZoneHint": "Drag from the center to set the purr-radius.",
+  "mapToolPolygonHint": "Click to add paw-lygon corners. Click the first point, double-click, or press Enter to finish.",
   "mapToolMarkers": "Pawkers",
   "mapToolNoMarkerAssets": "No pawker icons found",
   "markerLabelFob": "Furward Base",

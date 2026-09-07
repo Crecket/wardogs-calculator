@@ -52,6 +52,15 @@ const MAP_POINTS_KEY =
 const APP_SELECTIONS_KEY =
     'wardogs-app-selections';
 
+const DEFAULT_CUSTOM_MAP_SIZE = {
+    w: 10,
+    h: 10
+};
+
+let savedCustomMapSize = {
+    ...DEFAULT_CUSTOM_MAP_SIZE
+};
+
 
 /* =========================
    PERSISTED APP SELECTIONS
@@ -88,6 +97,31 @@ function loadAppSelections() {
             S.weapon =
                 parsed.weapon.trim();
         }
+
+        const customWidth =
+            Number(parsed?.customMap?.w);
+
+        const customHeight =
+            Number(parsed?.customMap?.h);
+
+        if (
+            Number.isFinite(customWidth) &&
+            Number.isFinite(customHeight) &&
+            customWidth >= 1 &&
+            customWidth <= 100 &&
+            customHeight >= 1 &&
+            customHeight <= 100
+        ) {
+            savedCustomMapSize = {
+                w: customWidth,
+                h: customHeight
+            };
+        }
+
+        if (S.map === 'custom') {
+            S.w = savedCustomMapSize.w;
+            S.h = savedCustomMapSize.h;
+        }
     } catch (error) {
         console.warn(
             'Failed to load app selections:',
@@ -98,11 +132,21 @@ function loadAppSelections() {
 
 function persistAppSelections() {
     try {
+        if (S.map === 'custom') {
+            savedCustomMapSize = {
+                w: S.w,
+                h: S.h
+            };
+        }
+
         localStorage.setItem(
             APP_SELECTIONS_KEY,
             JSON.stringify({
                 map: S.map,
-                weapon: S.weapon
+                weapon: S.weapon,
+                customMap: {
+                    ...savedCustomMapSize
+                }
             })
         );
     } catch (error) {
@@ -111,6 +155,12 @@ function persistAppSelections() {
             error
         );
     }
+}
+
+function getSavedCustomMapSize() {
+    return {
+        ...savedCustomMapSize
+    };
 }
 
 
@@ -158,6 +208,49 @@ function getKeyboardShortcutKey(event) {
         String(event?.key || '')
             .toLowerCase()
     );
+}
+
+
+/* =========================
+   MAP POINT HIT TESTING
+   ========================= */
+
+function getNearestUnlockedMapPoint(
+    originDistance,
+    targetDistance,
+    hitThreshold
+) {
+    const nearest = [
+        {
+            type: 'origin',
+            distance: originDistance
+        },
+        {
+            type: 'target',
+            distance: targetDistance
+        }
+    ]
+        .filter(
+            point =>
+                Number.isFinite(
+                    point.distance
+                ) &&
+                !isPointMapLocked(
+                    point.type
+                )
+        )
+        .sort(
+            (a, b) =>
+                a.distance -
+                b.distance
+        )[0];
+
+    return (
+        nearest &&
+        nearest.distance <= hitThreshold
+    )
+        ? nearest.type
+        : null;
 }
 
 

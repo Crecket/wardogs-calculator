@@ -44,6 +44,8 @@
   "mapLocked": "已选择预设地图 — 网格尺寸已锁定",
   "mapToolRuler": "测距尺",
   "mapToolPencil": "绘图",
+  "mapToolZoneHint": "从中心向外拖动以设置半径。",
+  "mapToolPolygonHint": "单击以添加顶点。单击第一个点、双击或按 Enter 键完成。",
   "mapToolMarkers": "标记",
   "mapToolNoMarkerAssets": "没有可用标记",
   "markerLabelFob": "FOB",

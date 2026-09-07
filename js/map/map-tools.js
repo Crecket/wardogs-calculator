@@ -8,7 +8,7 @@ const MAP_TOOLS_STORAGE_KEY =
 const MAP_TOOLS_EXPORT_TYPE =
     'wardogs-map-changes';
 
-const MAP_TOOLS_EXPORT_VERSION = 1;
+const MAP_TOOLS_EXPORT_VERSION = 2;
 
 const MAP_TOOLS_IMPORT_LIMITS = {
     drawings: 2000,
@@ -889,6 +889,26 @@ function updateMapToolsUI() {
                 MAP_TOOL_STATE.selectedMarkerIcon
             );
         });
+
+    const interactionHint =
+        $('mapToolInteractionHint');
+
+    const interactionHintKey =
+        MAP_TOOL_STATE.tool === 'zone'
+            ? 'mapToolZoneHint'
+            : MAP_TOOL_STATE.tool === 'polygon'
+                ? 'mapToolPolygonHint'
+                : null;
+
+    if (interactionHint) {
+        interactionHint.hidden =
+            !interactionHintKey;
+
+        interactionHint.textContent =
+            interactionHintKey
+                ? tr(interactionHintKey)
+                : '';
+    }
 
     if (c) {
         c.classList.toggle(
@@ -1829,6 +1849,27 @@ function ensureMapShapeTools() {
         return;
     }
 
+    if (!$('mapToolInteractionHint')) {
+        const hint =
+            document.createElement(
+                'div'
+            );
+
+        hint.id =
+            'mapToolInteractionHint';
+
+        hint.className =
+            'map-tool-interaction-hint';
+
+        hint.hidden = true;
+        hint.setAttribute(
+            'role',
+            'status'
+        );
+
+        bar.before(hint);
+    }
+
     const definitions = [
         {
             id: 'mapToolZone',
@@ -2748,7 +2789,11 @@ function findMapToolShapeAtCanvasPoint(
             .filter(
                 zone =>
                     zone.mapId ===
-                    currentMapToolMapId()
+                        currentMapToolMapId() &&
+                    Number.isFinite(zone.x) &&
+                    Number.isFinite(zone.y) &&
+                    Number.isFinite(zone.radius) &&
+                    zone.radius > 0
             )
             .forEach(zone => {
                 const center =
@@ -2798,7 +2843,10 @@ function findMapToolShapeAtCanvasPoint(
             .filter(
                 polygon =>
                     polygon.mapId ===
-                    currentMapToolMapId() &&
+                        currentMapToolMapId() &&
+                    Array.isArray(
+                        polygon.points
+                    ) &&
                     polygon.points.length >= 3
             )
             .forEach(polygon => {
@@ -3432,8 +3480,22 @@ function handleMapToolMouseMove(
 
         setPencilPathHover(pathHit);
 
+        const shapeHit =
+            markerHit || pathHit
+                ? null
+                : findMapToolShapeAtCanvasPoint(
+                    canvasX,
+                    canvasY
+                );
+
+        const shapeChanged =
+            setMapToolShapeHover(
+                shapeHit
+            );
+
         if (
             markerChanged ||
+            shapeChanged ||
             previousPathId !==
             MAP_TOOL_STATE.hoverPathId
         ) {
