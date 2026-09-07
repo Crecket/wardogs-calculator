@@ -270,6 +270,20 @@ async function init() {
 
         renderSavedTargets();
 
+        if (APP_CONFIG.collab?.enabled === true && APP_CONFIG.collab.serverUrl) {
+            try {
+                await loadRuntimeScript({
+                    selector: 'script[data-lobby-runtime]',
+                    dataAttribute: 'lobbyRuntime',
+                    url: new URL('js/collab/lobby.js', BASE_PATH).href,
+                    ready: () => typeof initLobby === 'function'
+                });
+                await initLobby();
+            } catch (error) {
+                console.warn('Optional lobby interface could not load:', error);
+            }
+        }
+
     } catch (error) {
 
         console.error(

@@ -713,6 +713,7 @@ function switchLanguage(languageId) {
 }
 
 function applyLanguage() {
+    lobby?.updateUI();
 
     document.documentElement.lang =
         LANG;

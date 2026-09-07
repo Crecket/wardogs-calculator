@@ -1,5 +1,7 @@
 let WEAPONS = {};
 let APP_CONFIG = {};
+// The optional lobby runtime is never loaded when collaboration is disabled.
+let lobby = null;
 
 const S = {
     w: 16,
@@ -131,6 +133,7 @@ function loadAppSelections() {
 }
 
 function persistAppSelections() {
+    if (lobby?.active) { lobby.capture(); return; }
     try {
         if (S.map === 'custom') {
             savedCustomMapSize = {

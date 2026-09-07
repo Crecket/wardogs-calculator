@@ -109,6 +109,7 @@ function snapshotMapToolContent() {
 }
 
 function updateMapToolHistoryUI() {
+    if (lobby?.active) { lobby.updateHistoryUI(); return; }
     const undoButton =
         $('mapToolUndoButton');
 
@@ -191,6 +192,7 @@ function restoreMapToolContent(snapshot) {
 }
 
 function pushMapToolHistory() {
+    if (lobby?.active) return;
     MAP_TOOL_STATE.undoStack.push(
         snapshotMapToolContent()
     );
@@ -212,6 +214,7 @@ function resetMapToolHistory() {
 }
 
 function undoMapToolAction() {
+    if (lobby?.active) return lobby.undo();
     if (!MAP_TOOL_STATE.undoStack.length) {
         return false;
     }
@@ -228,6 +231,7 @@ function undoMapToolAction() {
 }
 
 function redoMapToolAction() {
+    if (lobby?.active) return lobby.redo();
     if (!MAP_TOOL_STATE.redoStack.length) {
         return false;
     }
@@ -255,6 +259,7 @@ function matchesConfiguredCombo(event, combo) {
 }
 
 function saveMapToolState() {
+    if (lobby?.active) { lobby.capture(); return; }
     try {
         localStorage.setItem(
             MAP_TOOLS_STORAGE_KEY,

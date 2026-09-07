@@ -22,6 +22,7 @@ function bindEvents() {
     $('mapSelect').addEventListener(
         'change',
         () => {
+            if (lobby?.active) { $('mapSelect').value = S.map; return; }
 
             const key =
                 $('mapSelect').value;
@@ -141,6 +142,7 @@ function bindEvents() {
     $('apply').addEventListener(
         'click',
         () => {
+            if (lobby?.active) return;
 
             S.map =
                 'custom';

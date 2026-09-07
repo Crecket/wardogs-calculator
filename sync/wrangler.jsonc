@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "wardogs-lobbies",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-04-07",
+  "workers_dev": true,
+  "observability": { "enabled": false },
+  "durable_objects": {
+    "bindings": [
+      { "name": "ROOMS", "class_name": "LobbyRoom" },
+      { "name": "BUDGET", "class_name": "LobbyBudget" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["LobbyRoom", "LobbyBudget"] }
+  ],
+  "ratelimits": [
+    { "name": "ENTRY_RATE", "namespace_id": "73101", "simple": { "limit": 60, "period": 60 } },
+    { "name": "CREATE_RATE", "namespace_id": "73102", "simple": { "limit": 3, "period": 60 } }
+  ]
+}

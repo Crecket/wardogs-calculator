@@ -1,4 +1,19 @@
 {
+  "collab": {
+    "enabled": true,
+    "serverUrl": "https://wardogs-artillery.com",
+    "maxParticipants": 8,
+    "roomLifetimeHours": 6,
+    "maxRoomsPerDay": 250,
+    "maxChangeBatchesPerDay": 20000,
+    "maxChangeBatchesPerRoom": 1000,
+    "batchDelayMs": 1000,
+    "allowedOrigins": [
+      "https://wardogs-artillery.com",
+      "http://localhost:8000",
+      "http://127.0.0.1:8000"
+    ]
+  },
   "mapTools": {
     "shortcuts": {
       "ruler": "r",

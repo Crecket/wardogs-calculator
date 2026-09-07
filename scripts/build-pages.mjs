@@ -35,6 +35,7 @@ const desktopStyleFiles = [
     'styles/desktop/chrome.css',
     'styles/desktop/map-tools.css',
     'styles/desktop/motd.css',
+    'styles/desktop/lobby.css',
     'styles/desktop/seo.css'
 ];
 

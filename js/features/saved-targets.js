@@ -155,6 +155,7 @@ function loadSavedTargets() {
 }
 
 function persistSavedTargets() {
+    if (lobby?.active) { lobby.capture(); return; }
 
     localStorage.setItem(
         SAVED_TARGETS_KEY,
@@ -182,6 +183,7 @@ const MAP_POINTS_WRITE_DELAY_MS = 300;
 let mapPointsWriteTimer = null;
 
 function persistMapPoints() {
+    if (lobby?.active) { lobby.capture(); return; }
 
     /*
      * inputs() runs on every frame of a drag, so the write trails the
@@ -247,6 +249,7 @@ function readMapPointsStore() {
 }
 
 function writeMapPoints() {
+    if (lobby?.active) return;
 
     try {
         const store =

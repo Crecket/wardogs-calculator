@@ -1,5 +1,7 @@
 ## Project Structure
 
+For the optional Cloudflare collaborative-room service, see [Collaborative lobbies](lobbies.md) or the [Russian quick start](lobbies.ru.md).
+
 ```text
 wardogs-calculator/
 ├── .github/workflows/pages.yml

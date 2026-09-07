@@ -297,9 +297,7 @@ const assetFiles =
                     path.startsWith(
                         'js/'
                     ) &&
-                    path.endsWith(
-                        '.js'
-                    )
+                    /\.(?:js|mjs)$/.test(path)
                 )
             );
         }
