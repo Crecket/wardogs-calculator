@@ -59,15 +59,23 @@ const FIRING_POSITION_CACHE = new Map();
  * both the tiles and the flatness ramp underneath it. An outline states the
  * same thing and leaves the ground legible.
  *
- * The edge is deliberately under full strength. At map-fit zoom the raster
- * is downscaled and an 8 m edge falls below a pixel, so drawing it at 255
- * buys nothing but aliasing.
+ * Magenta, at full strength, and neither is arbitrary. The viable set lies
+ * on the flatness ramp's green and amber bands by construction — it has
+ * already passed the 8 degree filter, so it is never on the red — and cyan
+ * against green measures 37 dE where magenta measures 74. It is also the
+ * one hue nothing else on the map claims: the FOB rings are blue, the range
+ * ring orange, the polygons red, the markers white. Nothing here is
+ * terrain-coloured, which is the point.
+ *
+ * Full alpha because the raster downscales at map-fit zoom and an 8 m edge
+ * falls below a pixel; what survives is an average, so starting dimmer only
+ * makes it vanish sooner.
  */
 function firingPositionsPalette() {
     return [
         [0, 0, 0, 0],
         [0, 0, 0, 0],
-        [56, 189, 220, 205]
+        [230, 62, 192, 255]
     ];
 }
 

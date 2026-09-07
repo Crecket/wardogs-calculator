@@ -101,6 +101,14 @@ test('the palette draws the edge and nothing else', () => {
     assert.equal(palette.length, 3);
     assert.equal(palette[0][3], 0, 'ground outside the set is fully transparent');
     assert.equal(palette[1][3], 0, 'the interior is transparent: the layer is an outline');
-    assert.ok(palette[2][3] > 128, 'the boundary is the only thing drawn, and is legible');
-    assert.ok(palette[2][3] < 255, 'but under full strength, because an 8 m edge downscales below a pixel');
+    assert.equal(palette[2][3], 255, 'the boundary is the only thing drawn, at full strength');
+
+    /*
+     * Not a terrain colour. The viable set always sits on the flatness
+     * ramp's green and amber, so an outline sharing that hue is the one
+     * that cannot be seen where it matters.
+     */
+    const [red, green, blue] = palette[2];
+
+    assert.ok(red > green && blue > green, 'the edge is magenta, not a green or amber');
 });
