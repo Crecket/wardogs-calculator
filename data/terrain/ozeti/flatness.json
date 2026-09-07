@@ -1,0 +1,31 @@
+{
+    "format": "wardogs-flatness-v1",
+    "mapId": "ozeti",
+    "sampleSpacingMeters": 8,
+    "stencilSpacingMeters": 2,
+    "stencilSamples": 5,
+    "bandEdgeDegrees": [
+        2,
+        4,
+        6,
+        8
+    ],
+    "bandShares": [
+        0.1241,
+        0.1179,
+        0.1378,
+        0.1404,
+        0.4797
+    ],
+    "grid": {
+        "width": 1069,
+        "height": 972,
+        "originX": 57.58,
+        "originY": 99.56,
+        "stepX": 0.08,
+        "stepY": 0.08
+    },
+    "file": "flatness.png",
+    "bytes": 184812,
+    "sha256": "214fec9802891e707fd5d93e22688a5c8b201f346d8474852a1db627845b2e9a"
+}

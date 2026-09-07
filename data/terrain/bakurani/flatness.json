@@ -1,0 +1,31 @@
+{
+    "format": "wardogs-flatness-v1",
+    "mapId": "bakurani",
+    "sampleSpacingMeters": 8,
+    "stencilSpacingMeters": 2,
+    "stencilSamples": 5,
+    "bandEdgeDegrees": [
+        2,
+        4,
+        6,
+        8
+    ],
+    "bandShares": [
+        0.0365,
+        0.0539,
+        0.0665,
+        0.0696,
+        0.7736
+    ],
+    "grid": {
+        "width": 1379,
+        "height": 1379,
+        "originX": 23.35,
+        "originY": 129.65,
+        "stepX": 0.08,
+        "stepY": 0.08
+    },
+    "file": "flatness.png",
+    "bytes": 236725,
+    "sha256": "e12c6fd193cab5aecf0499dae26a6db2204ba8b6417e3246f06c7a7dd32dd72e"
+}

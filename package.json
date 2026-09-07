@@ -10,6 +10,7 @@
     "build-contours": "node scripts/build-contours.mjs",
     "build-heightfield": "node scripts/build-heightfield.mjs",
     "build-hillshade": "node scripts/build-hillshade.mjs",
+    "build-flatness": "node scripts/build-flatness.mjs",
     "fit-ballistics": "node scripts/fit-ballistics.mjs",
     "build-height-correction": "node scripts/build-height-correction.mjs",
     "bench:render": "node scripts/bench-render.mjs",
