@@ -24,11 +24,13 @@ The two layers must be legible together, so they carry different kinds of mark r
 
 | Band | Tilt | Bakurani | Ozeti |
 | --- | --- | --- | --- |
-| 0 | 0–2° | 3.7% | 12.4% |
-| 1 | 2–4° | 4.7% | 11.4% |
-| 2 | 4–6° | 5.2% | 12.0% |
-| 3 | 6–8° | 9.1% | 16.3% |
-| 4 | 8°+ | 77.3% | 47.9% |
+| 0 | 0–2° | 3.6% | 12.4% |
+| 1 | 2–4° | 5.4% | 11.8% |
+| 2 | 4–6° | 6.6% | 13.8% |
+| 3 | 6–8° | 7.0% | 14.0% |
+| 4 | 8°+ | 77.4% | 48.0% |
+
+These are measured from a 5×5 stencil of 2 m samples at 8 m spacing over the playable bounds, which is the method below. The design artifact's figures came from an earlier stencil and differ by up to two points in the middle bands; they agree to within 0.1% on the only band with a consequence, the 8°+ share, and on the total flat share — 22.6% of Bakurani and 52.0% of Ozeti.
 
 The ramp is anchored absolutely on the 8 degree threshold the app already warns at, so the same colour means the same tilt on every map. Percentages are share of total map area. Bakurani reading mostly red is the correct answer, not a calibration failure. A per-map relative ramp was rejected: it would make green mean 4 degrees on Bakurani and 1.6 degrees on Ozeti, and a legend that changes meaning between maps is worse than no legend.
 
