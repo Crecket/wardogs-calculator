@@ -72,6 +72,11 @@ const MAP_TOOL_STATE = {
          * a megabyte, fetched only when somebody asks for it.
          */
         hillshade: false,
+        /*
+         * Off by default for the same reason: the tilt raster is a quarter
+         * of a megabyte, fetched only when somebody asks for it.
+         */
+        flatness: false,
         grid: true,
         zones: true,
         polygons: true,
@@ -1135,6 +1140,14 @@ function setMapLayerVisible(layer, visible) {
     }
 
     if (
+        layer === 'flatness' &&
+        visible &&
+        typeof ensureFlatnessLoaded === 'function'
+    ) {
+        ensureFlatnessLoaded(currentMapToolMapId());
+    }
+
+    if (
         layer === 'cursorCoords' &&
         !MAP_TOOL_STATE.layers.cursorCoords
     ) {
@@ -1190,6 +1203,16 @@ function setMapLayerGroupVisible(layerIds, visible) {
     }
 
     if (
+        nextVisible &&
+        layerIds.includes('flatness') &&
+        typeof ensureFlatnessLoaded === 'function'
+    ) {
+        ensureFlatnessLoaded(
+            currentMapToolMapId()
+        );
+    }
+
+    if (
         !nextVisible &&
         layerIds.includes('cursorCoords')
     ) {
@@ -1236,6 +1259,15 @@ function buildMapLayers() {
         ? [['hillshade', 'mapLayerHillshade']]
         : [];
 
+    const flatnessLayer = (
+        typeof mapHasFlatness === 'function' &&
+        mapHasFlatness(
+            currentMapToolMapId()
+        )
+    )
+        ? [['flatness', 'mapLayerFlatness']]
+        : [];
+
     const crossSectionLayer = $('crossSection')
         ? [['crossSection', 'mapLayerCrossSection']]
         : [];
@@ -1259,7 +1291,8 @@ function buildMapLayers() {
             titleKey: 'mapLayerGroupTerrain',
             items: [
                 ...contourLayer,
-                ...hillshadeLayer
+                ...hillshadeLayer,
+                ...flatnessLayer
             ]
         },
         /*
@@ -1315,6 +1348,11 @@ function buildMapLayers() {
             <path d="M3 19 10 7l4.5 7"/>
             <path d="m11.5 19 4-6 5.5 6Z"/>
             <path d="M3 19h18"/>
+        `,
+        flatness: `
+            <rect x="3" y="9" width="18" height="6" rx="1"/>
+            <path d="M10.5 12a1.5 1.5 0 0 1 3 0 1.5 1.5 0 0 1-3 0"/>
+            <path d="M9 9v6M15 9v6"/>
         `,
         grid: `
             <path d="M4 4h16v16H4z"/>

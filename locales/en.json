@@ -93,6 +93,7 @@
   "mapLayerGroupFiring": "Firing",
   "mapLayerContours": "Contours",
   "mapLayerHillshade": "Shaded relief",
+  "mapLayerFlatness": "Flat ground",
   "mapLayerGrid": "Grid",
   "mapLayerZones": "Zones",
   "mapLayerPolygons": "Polygons",

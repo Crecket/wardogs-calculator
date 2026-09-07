@@ -151,6 +151,15 @@ function drawNow() {
 
     /*
      * Layer 3:
+     * hull tilt, above the relief that shades the same ground and below the
+     * contours that measure it.
+     */
+    if (isMapLayerVisible('flatness')) {
+        drawFlatness(currentMap);
+    }
+
+    /*
+     * Layer 4:
      * terrain contours, above the tiles they describe and below
      * everything drawn on top of the ground.
      */
@@ -159,7 +168,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 4:
+     * Layer 5:
      * coordinate grid.
      */
     if (isMapLayerVisible('grid')) {
@@ -168,7 +177,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 5:
+     * Layer 6:
      * circular zones.
      */
     if (isMapLayerVisible('zones')) {
@@ -176,7 +185,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 6:
+     * Layer 7:
      * arbitrary polygons.
      */
     if (isMapLayerVisible('polygons')) {
@@ -234,7 +243,7 @@ function drawNow() {
     }
 
     /*
-     * Layer 10:
+     * Layer 11:
      * preset icons are ALWAYS drawn last.
      *
      * This prevents tiles, grid, zones,
