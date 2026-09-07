@@ -1,0 +1,42 @@
+{
+    "format": "wardogs-firing-positions-v1",
+    "mapId": "bakurani",
+    "arc": "low",
+    "weaponId": "spg",
+    "sampleSpacingMeters": 8,
+    "stencilSpacingMeters": 2,
+    "aimRingMeters": 300,
+    "aimPoints": 45,
+    "viableKm2": 0.332,
+    "spawns": [
+        {
+            "label": "Valkyra",
+            "share": 0.512,
+            "nearestMeters": 1844,
+            "medianMeters": 2233
+        },
+        {
+            "label": "Manticore",
+            "share": 0.032,
+            "nearestMeters": 2887,
+            "medianMeters": 3240
+        },
+        {
+            "label": "Lonestar",
+            "share": 0.456,
+            "nearestMeters": 1899,
+            "medianMeters": 2474
+        }
+    ],
+    "grid": {
+        "width": 1379,
+        "height": 1379,
+        "originX": 23.35,
+        "originY": 129.65,
+        "stepX": 0.08,
+        "stepY": 0.08
+    },
+    "file": "firing-positions-low.png",
+    "bytes": 5094,
+    "sha256": "eaddcc5b42df6eb241a65e695a90e18d4bab0d676e48aa846a65afa88ddb5c02"
+}

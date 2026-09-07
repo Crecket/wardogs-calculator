@@ -1,0 +1,42 @@
+{
+    "format": "wardogs-firing-positions-v1",
+    "mapId": "ozeti",
+    "arc": "any",
+    "weaponId": "spg",
+    "sampleSpacingMeters": 8,
+    "stencilSpacingMeters": 2,
+    "aimRingMeters": 300,
+    "aimPoints": 36,
+    "viableKm2": 2.449,
+    "spawns": [
+        {
+            "label": "Valkyra",
+            "share": 0.5,
+            "nearestMeters": 102,
+            "medianMeters": 1209
+        },
+        {
+            "label": "Manticore",
+            "share": 0.168,
+            "nearestMeters": 2029,
+            "medianMeters": 2482
+        },
+        {
+            "label": "Lonestar",
+            "share": 0.332,
+            "nearestMeters": 1717,
+            "medianMeters": 2133
+        }
+    ],
+    "grid": {
+        "width": 1069,
+        "height": 972,
+        "originX": 57.58,
+        "originY": 99.56,
+        "stepX": 0.08,
+        "stepY": 0.08
+    },
+    "file": "firing-positions-any.png",
+    "bytes": 15993,
+    "sha256": "b97323ffabed3b2ecdf7dbb5c58dba5221f012bcee8e697c715db2b90d580f09"
+}
