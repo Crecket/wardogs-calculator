@@ -1246,9 +1246,33 @@ function buildMapLayers() {
             titleKey: 'map',
             items: [
                 ['tiles', 'mapLayerMap'],
-                ['grid', 'mapLayerGrid'],
+                ['grid', 'mapLayerGrid']
+            ]
+        },
+        /*
+         * Everything baked from the height data and fetched on demand. The
+         * three here are the only layers that cost a download, which is why
+         * turning the group on as a unit is a thing worth being able to do.
+         */
+        {
+            id: 'terrain',
+            titleKey: 'mapLayerGroupTerrain',
+            items: [
                 ...contourLayer,
                 ...hillshadeLayer
+            ]
+        },
+        /*
+         * Everything derived from the projectile model: the layers that
+         * answer whether a shell can be put somewhere, rather than what is
+         * there.
+         */
+        {
+            id: 'firing',
+            titleKey: 'mapLayerGroupFiring',
+            items: [
+                ['deadGround', 'mapLayerDeadGround'],
+                ...crossSectionLayer
             ]
         },
         {
@@ -1261,9 +1285,7 @@ function buildMapLayers() {
                 ['mainZone', 'mapLayerMainZone'],
                 ['fobAreas', 'mapLayerFobAreas'],
                 ['artillery', 'mapLayerArtillery'],
-                ['savedTargets', 'mapLayerSavedTargets'],
-                ['deadGround', 'mapLayerDeadGround'],
-                ...crossSectionLayer
+                ['savedTargets', 'mapLayerSavedTargets']
             ]
         },
         {
@@ -1277,6 +1299,8 @@ function buildMapLayers() {
             ]
         }
     ];
+
+    const visibleGroups = groups.filter(group => group.items.length);
 
     const icons = {
         tiles: `
@@ -1395,7 +1419,7 @@ function buildMapLayers() {
 
     container.appendChild(title);
 
-    groups.forEach(group => {
+    visibleGroups.forEach(group => {
         const section =
             document.createElement('section');
 

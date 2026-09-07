@@ -89,6 +89,8 @@
   "mapToolSearchInvalid": "Enter valid coordinates",
   "mapToolSearchOutOfBounds": "Coordinates are outside the map",
   "mapLayerMap": "Map tiles",
+  "mapLayerGroupTerrain": "Terrain",
+  "mapLayerGroupFiring": "Firing",
   "mapLayerContours": "Contours",
   "mapLayerHillshade": "Shaded relief",
   "mapLayerGrid": "Grid",
