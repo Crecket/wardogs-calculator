@@ -62,7 +62,8 @@ function addProductionSecurityMeta(html, appConfig) {
     const connectSources = new Set([
         "'self'",
         'https://assets.wardogs-artillery.com',
-        'https://cloud.umami.is'
+        'https://cloud.umami.is',
+        'https://gateway.umami.is'
     ]);
 
     if (collab.serverUrl) {
