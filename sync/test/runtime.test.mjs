@@ -6,8 +6,8 @@ import { build } from 'esbuild';
 import { Miniflare } from 'miniflare';
 const origin = 'http://localhost:8000';
 const document = () => ({ mapId: 'bakurani', w: 16, h: 16, drawings: [], markers: [], zones: [], polygons: [], savedTargets: [] });
-const marker = (id, x = 4, y = 3) => ({ id, mapId: 'bakurani', icon: 'assault', x, y });
-const addMarker = (id = 'shared', x = 4, y = 3) => ({ key: 'markers', id, before: null, value: marker(id, x, y) });
+const marker = (id, x = 40, y = 30) => ({ id, mapId: 'bakurani', icon: 'assault', x, y });
+const addMarker = (id = 'shared', x = 40, y = 30) => ({ key: 'markers', id, before: null, value: marker(id, x, y) });
 async function runtime(t, overrides = {}, env = {}) {
     const result = await build({
         entryPoints: [fileURLToPath(new URL('../src/index.mjs', import.meta.url))], bundle: true, write: false,
@@ -71,10 +71,10 @@ test('room admission, ephemeral player presence, shared annotations and late joi
     assert.equal((await join(mf, code)).status, 409);
     a.send('ping'); assert.equal(await a.next(m => m === 'pong'), 'pong');
 
-    a.send({ type: 'presence', name: 'Alpha', origin: { x: 5, y: 5 }, target: { x: 6, y: 6 } });
+    a.send({ type: 'presence', name: 'Alpha', origin: { x: 50, y: 50 }, target: { x: 60, y: 60 } });
     const alphaRoster = await b.next(m => m.type === 'peers' && m.roster.some(peer => peer.name === 'Alpha'));
-    assert.deepEqual(alphaRoster.roster.find(peer => peer.name === 'Alpha').target, { x: 6, y: 6 });
-    b.send({ type: 'presence', name: 'Bravo', origin: { x: 7, y: 7 }, target: { x: 8, y: 8 } });
+    assert.deepEqual(alphaRoster.roster.find(peer => peer.name === 'Alpha').target, { x: 60, y: 60 });
+    b.send({ type: 'presence', name: 'Bravo', origin: { x: 70, y: 70 }, target: { x: 80, y: 80 } });
     await a.next(m => m.type === 'peers' && m.roster.some(peer => peer.name === 'Bravo'));
 
     const ops = [addMarker()];
@@ -88,7 +88,7 @@ test('room admission, ephemeral player presence, shared annotations and late joi
     const c = await join(mf, code); assert.equal(c.status, 101);
     const snapshotC = await c.next(m => m.type === 'snapshot');
     assert.deepEqual(snapshotC.doc.markers, [marker('shared')]);
-    assert.deepEqual(snapshotC.roster.find(peer => peer.name === 'Alpha').origin, { x: 5, y: 5 });
+    assert.deepEqual(snapshotC.roster.find(peer => peer.name === 'Alpha').origin, { x: 50, y: 50 });
 });
 test('conflicts, write cap and host-only close are enforced', async t => {
     const mf = await runtime(t, { maxChangeBatchesPerRoom: 1 });
@@ -97,9 +97,9 @@ test('conflicts, write cap and host-only close are enforced', async t => {
     const first = addMarker();
     a.send({ type: 'changes', id: 'one', ops: [first] });
     assert.equal((await a.next(m => m.type === 'changes')).remainingUpdates, 0);
-    a.send({ type: 'changes', id: 'two', ops: [addMarker('shared', 9, 9)] });
+    a.send({ type: 'changes', id: 'two', ops: [addMarker('shared', 45, 35)] });
     assert.equal((await a.next(m => m.type === 'rejected')).code, 'conflict');
-    a.send({ type: 'changes', id: 'three', ops: [{ key: 'markers', id: 'shared', before: first.value, value: marker('shared', 9, 9) }] });
+    a.send({ type: 'changes', id: 'three', ops: [{ key: 'markers', id: 'shared', before: first.value, value: marker('shared', 45, 35) }] });
     assert.equal((await a.next(m => m.type === 'rejected')).code, 'room-budget');
     a.send({ type: 'close', ownerKey: 'wrong' });
     assert.equal((await a.next(m => m.type === 'error')).code, 'not-owner');
