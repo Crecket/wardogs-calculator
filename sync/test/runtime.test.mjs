@@ -6,7 +6,7 @@ import { build } from 'esbuild';
 import { Miniflare } from 'miniflare';
 const origin = 'http://localhost:8000';
 const document = () => ({ mapId: 'bakurani', w: 16, h: 16, drawings: [], markers: [], zones: [], polygons: [], savedTargets: [] });
-const marker = (id, x = 4, y = 3) => ({ id, mapId: 'bakurani', icon: 'infantry', x, y });
+const marker = (id, x = 4, y = 3) => ({ id, mapId: 'bakurani', icon: 'assault', x, y });
 const addMarker = (id = 'shared', x = 4, y = 3) => ({ key: 'markers', id, before: null, value: marker(id, x, y) });
 async function runtime(t, overrides = {}, env = {}) {
     const result = await build({
@@ -52,7 +52,7 @@ async function join(mf, code) {
 }
 test('Worker disabled switch and origin check are enforced server-side', async t => {
     const mf = await runtime(t, { enabled: false }, { LOBBIES_DEV: 'false' });
-    assert.equal((await create(mf)).status, 503);
+    assert.equal((await create(mf, document(), { Origin: 'https://wardogs-artillery.com' })).status, 503);
     assert.equal((await create(mf, document(), { Origin: 'https://evil.test' })).status, 403);
 });
 test('environment kill switch overrides enabled site config', async t => {
@@ -98,9 +98,9 @@ test('conflicts, write cap and host-only close are enforced', async t => {
     a.send({ type: 'changes', id: 'one', ops: [first] });
     assert.equal((await a.next(m => m.type === 'changes')).remainingUpdates, 0);
     a.send({ type: 'changes', id: 'two', ops: [addMarker('shared', 9, 9)] });
-    assert.equal((await a.next(m => m.type === 'snapshot')).error, 'conflict');
+    assert.equal((await a.next(m => m.type === 'rejected')).code, 'conflict');
     a.send({ type: 'changes', id: 'three', ops: [{ key: 'markers', id: 'shared', before: first.value, value: marker('shared', 9, 9) }] });
-    assert.equal((await a.next(m => m.type === 'snapshot')).error, 'room-budget');
+    assert.equal((await a.next(m => m.type === 'rejected')).code, 'room-budget');
     a.send({ type: 'close', ownerKey: 'wrong' });
     assert.equal((await a.next(m => m.type === 'error')).code, 'not-owner');
     a.send({ type: 'close', ownerKey }); await a.next(m => m.type === 'closed');
@@ -115,6 +115,35 @@ test('daily creation cap and malformed input; random invitations fail before adm
     const bad = await mf.dispatchFetch('https://lobby.test/rooms', { method: 'POST', headers: { Origin: origin }, body: '{' });
     assert.equal(bad.status, 400);
 });
+test('one admission has its own room cap and catalog validation happens before allocation', async t => {
+    const mf = await runtime(t, { maxRoomsPerAdmission: 1, maxRoomsPerDay: 20 });
+    const hiddenMarker = { ...marker('hidden'), icon: 'tower' };
+    const invalid = await create(mf, { ...document(), markers: [hiddenMarker] });
+    assert.equal(invalid.status, 400);
+    assert.equal((await invalid.json()).error, 'unsupported-marker');
+    const outside = await create(mf, { ...document(), markers: [marker('outside', 99, 1)] });
+    assert.equal(outside.status, 400);
+    assert.equal((await outside.json()).error, 'outside-map');
+    assert.equal((await create(mf)).status, 201);
+    const limited = await create(mf);
+    assert.equal(limited.status, 429);
+    assert.equal((await limited.json()).error, 'admission-room-limit');
+});
+test('duplicate acknowledgements and malformed sync requests are always small', async t => {
+    const mf = await runtime(t);
+    const { code } = await (await create(mf)).json();
+    const a = await join(mf, code);
+    await a.next(message => message.type === 'snapshot');
+    const change = { type: 'changes', id: 'one', ops: [addMarker()] };
+    a.send(change);
+    await a.next(message => message.type === 'changes');
+    a.send(change);
+    const ack = await a.next(message => message.type === 'ack');
+    assert.deepEqual(Object.keys(ack).sort(), ['id', 'remainingUpdates', 'revision', 'type']);
+    a.send({ type: 'sync' });
+    const error = await a.next(message => message.type === 'error');
+    assert.deepEqual(error, { type: 'error', code: 'bad-message' });
+});
 test('global write credits conservatively stop new rooms after daily allowance is reserved', async t => {
     const mf = await runtime(t, { maxChangeBatchesPerDay: 32 });
     const codeA = (await (await create(mf)).json()).code;
@@ -123,5 +152,5 @@ test('global write credits conservatively stop new rooms after daily allowance i
     await a.next(m => m.type === 'snapshot'); await b.next(m => m.type === 'snapshot');
     const msg = { type: 'changes', id: 'one', ops: [addMarker()] };
     a.send(msg); await a.next(m => m.type === 'changes');
-    b.send(msg); assert.equal((await b.next(m => m.type === 'snapshot')).error, 'daily-budget');
+    b.send(msg); assert.equal((await b.next(m => m.type === 'rejected')).code, 'daily-budget');
 });

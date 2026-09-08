@@ -1,6 +1,10 @@
 import { settings } from './config.mjs';
 import { normalizeDocument } from '../../js/collab/protocol.mjs';
-import { randomKey, hash, mintInvite, verifyInvite } from './tokens.mjs';
+import { validateCatalogDocument } from './catalog.mjs';
+import { validateTurnstile } from './admission.mjs';
+import {
+    randomKey, hash, mintInvite, verifyInvite, mintAdmission, verifyAdmission
+} from './tokens.mjs';
 export { LobbyRoom, LobbyBudget } from './rooms.mjs';
 function headers(origin) {
     return {
@@ -8,10 +12,24 @@ function headers(origin) {
         'Access-Control-Allow-Origin': origin, Vary: 'Origin',
         'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '86400',
-        'Referrer-Policy': 'no-referrer'
+        'Referrer-Policy': 'no-referrer',
+        'X-Content-Type-Options': 'nosniff',
+        'Cross-Origin-Resource-Policy': 'same-site',
+        'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
+        'Permissions-Policy': 'camera=(), geolocation=(), microphone=()'
     };
 }
 const json = (body, status, origin) => new Response(JSON.stringify(body), { status, headers: headers(origin) });
+
+function binding(env, name, config) {
+    const value = env[name];
+    if (!value && !config.development) throw new Error('missing-security-binding');
+    return value;
+}
+
+async function allowedBy(rateLimit, key) {
+    return !rateLimit || (await rateLimit.limit({ key })).success;
+}
 
 async function limitedBody(request, maximum) {
     const reader = request.body?.getReader();
@@ -41,15 +59,43 @@ export default {
         if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: headers(origin) });
         if (typeof env.ROOM_SECRET !== 'string' || env.ROOM_SECRET.length < 32) return json({ error: 'not-configured' }, 503, origin);
         const ip = request.headers.get('CF-Connecting-IP') || 'local';
-        if (env.ENTRY_RATE && !(await env.ENTRY_RATE.limit({ key: ip })).success) return json({ error: 'rate-limited' }, 429, origin);
         const url = new URL(request.url);
         try {
+            if (!await allowedBy(binding(env, 'ENTRY_RATE', config), ip)) {
+                return json({ error: 'rate-limited' }, 429, origin);
+            }
+            if (url.pathname === '/admission' && request.method === 'POST') {
+                if (!config.turnstileRequired) return json({ error: 'not-found' }, 404, origin);
+                if (!await allowedBy(binding(env, 'ADMISSION_RATE', config), ip)) {
+                    return json({ error: 'rate-limited' }, 429, origin);
+                }
+                const raw = await limitedBody(request, 4 * 1024);
+                const challenge = await validateTurnstile(env, config, raw.token, ip);
+                if (!challenge.ok) return json({ error: challenge.error }, challenge.status, origin);
+                const expiresAt = Date.now() + config.admissionLifetimeMinutes * 60000;
+                const admissionSubject = await hash(`admission:${ip}`);
+                return json({
+                    admission: await mintAdmission(env.ROOM_SECRET, expiresAt, admissionSubject),
+                    expiresAt
+                }, 201, origin);
+            }
             if (url.pathname === '/rooms' && request.method === 'POST') {
-                if (env.CREATE_RATE && !(await env.CREATE_RATE.limit({ key: ip })).success) return json({ error: 'rate-limited' }, 429, origin);
+                if (!await allowedBy(binding(env, 'CREATE_RATE', config), ip)) {
+                    return json({ error: 'rate-limited' }, 429, origin);
+                }
                 const raw = await limitedBody(request, 128 * 1024);
-                const doc = normalizeDocument(raw.doc);
-                const budget = await env.BUDGET.getByName('daily-budget').grant('create');
-                if (!budget.amount) return json({ error: 'daily-room-limit' }, 429, origin);
+                const doc = validateCatalogDocument(normalizeDocument(raw.doc));
+                const admissionSubject = await hash(`admission:${ip}`);
+                const admission = config.turnstileRequired
+                    ? await verifyAdmission(env.ROOM_SECRET, raw.admission, Date.now(), admissionSubject)
+                    : { id: admissionSubject.slice(0, 22) };
+                if (!admission) return json({ error: 'invalid-admission' }, 403, origin);
+                const budget = await env.BUDGET.getByName('daily-budget').grant('create', admission.id);
+                if (!budget.amount) return json({
+                    error: budget.reason === 'admission-limit'
+                        ? 'admission-room-limit'
+                        : 'daily-room-limit'
+                }, 429, origin);
                 const expiresAt = Date.now() + config.roomLifetimeHours * 3600000;
                 const code = await mintInvite(env.ROOM_SECRET, expiresAt);
                 const ownerKey = randomKey();
@@ -62,11 +108,15 @@ export default {
                 if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') return json({ error: 'websocket-required' }, 426, origin);
                 // Random scanners never instantiate DOs: invites are signed before lookup.
                 if (!await verifyInvite(env.ROOM_SECRET, match[1])) return json({ error: 'invalid-invite' }, 404, origin);
+                const joinKey = await hash(`${ip}:${match[1]}`);
+                if (!await allowedBy(binding(env, 'JOIN_RATE', config), joinKey)) {
+                    return json({ error: 'rate-limited' }, 429, origin);
+                }
                 return env.ROOMS.getByName(match[1]).fetch(request);
             }
             return json({ error: 'not-found' }, 404, origin);
         } catch (error) {
-            const clientErrors = /^(bad-|too-|wrong-|duplicate-|room-too-large)/;
+            const clientErrors = /^(bad-|too-|wrong-|duplicate-|outside-|room-too-large|unsupported-)/;
             return json({ error: clientErrors.test(error.message) ? error.message : 'unavailable' }, clientErrors.test(error.message) ? 400 : 503, origin);
         }
     }

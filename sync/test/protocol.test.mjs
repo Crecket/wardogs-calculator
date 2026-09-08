@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as P from '../../js/collab/protocol.mjs';
 import { createReplicaClass } from '../../js/collab/replica.mjs';
 const Replica = createReplicaClass(P);
-import { mintInvite, verifyInvite } from '../src/tokens.mjs';
+import { mintInvite, verifyInvite, mintAdmission, verifyAdmission } from '../src/tokens.mjs';
 
 const document = () => P.normalizeDocument({
     mapId: 'bakurani', w: 16, h: 16,
@@ -29,9 +29,11 @@ test('player presence and roster are bounded, sanitised and kept outside room st
         origin: { x: 5, y: 5 }, target: { x: 6, y: 6 }
     });
     assert.equal(P.normalizePlayerName('  Gunner\u0001 One  '), 'Gunner One');
+    assert.equal(P.normalizePlayerName('Ａl\u202Epha\u200b'), 'Alpha');
     const roster = P.normalizeRoster([{ id: 'peer-1', name: 'Gunner', origin: { x: 1, y: 2 }, target: { x: 3, y: 4 } }]);
     assert.equal(roster[0].name, 'Gunner');
     assert.throws(() => P.normalizePresence({ origin: { x: Infinity, y: 1 }, target: { x: 2, y: 2 } }), /bad-coordinate/);
+    assert.throws(() => P.normalizePresence({ origin: { x: 17, y: 1 }, target: { x: 2, y: 2 } }, { w: 16, h: 16 }), /bad-coordinate/);
     assert.throws(() => P.normalizeRoster([{ id: 'same' }, { id: 'same' }]), /duplicate-participant/);
     assert.throws(() => P.normalizeRoster(Array.from({ length: 33 }, (_, i) => ({ id: `p${i}` }))), /too-many-participants/);
 });
@@ -101,6 +103,24 @@ test('rejected operation keeps shared recovery data and cannot silently replay',
     assert.throws(() => r.receive({ revision: 7, ops: [] }), /revision-gap/);
 });
 
+test('small acknowledgements commit retries and small rejections preserve recovery', () => {
+    const r = new Replica(document());
+    const add = markerChange('a', marker('a'));
+    r.edit([add]);
+    r.take('created');
+    r.confirm('created', 1);
+    assert.deepEqual(r.doc.markers, [marker('a')]);
+    assert.equal(r.dirty, false);
+
+    const moved = markerChange('a', marker('a', 9, 9), marker('a'));
+    r.edit([moved]);
+    r.take('rejected');
+    const recovery = r.reject('rejected', 1);
+    assert.deepEqual(recovery.markers, [marker('a', 9, 9)]);
+    assert.deepEqual(r.doc.markers, [marker('a')]);
+    assert.equal(r.dirty, false);
+});
+
 test('signed invites reject mutation, random scans, expiry and wrong secret', async () => {
     const secret = 'a'.repeat(64);
     const until = Date.now() + 10000;
@@ -110,4 +130,20 @@ test('signed invites reject mutation, random scans, expiry and wrong secret', as
     assert.equal(await verifyInvite(secret, code, until), false);
     assert.equal(await verifyInvite(secret, 'random'), false);
     assert.equal(await verifyInvite(secret, code.replace(/^./, code[0] === 'a' ? 'b' : 'a')), false);
+});
+
+test('admission tokens are expiring, IP-bound and cannot be used as invitations', async () => {
+    const secret = 'c'.repeat(64);
+    const until = Date.now() + 10000;
+    const subject = 'hashed-client-address';
+    const admission = await mintAdmission(secret, until, subject);
+    const verified = await verifyAdmission(secret, admission, Date.now(), subject);
+    assert.equal(verified.expiresAt, until);
+    assert.equal(typeof verified.id, 'string');
+    assert.equal(await verifyAdmission(secret, admission, Date.now(), 'different-address'), null);
+    assert.equal(await verifyAdmission(secret, admission, until, subject), null);
+    assert.equal(await verifyInvite(secret, admission), false);
+
+    const invite = await mintInvite(secret, until);
+    assert.equal(await verifyAdmission(secret, invite, Date.now(), subject), null);
 });

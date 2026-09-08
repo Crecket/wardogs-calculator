@@ -7,7 +7,7 @@ import * as protocol from '../../js/collab/protocol.mjs';
 import * as replicaModule from '../../js/collab/replica.mjs';
 const roomDoc = () => ({ mapId: 'bakurani', w: 16, h: 16, drawings: [], markers: [], zones: [], polygons: [], savedTargets: [] });
 const code = `${'a'.repeat(22)}.${Date.now().toString(36)}.${'b'.repeat(43)}`;
-async function client(t, enabled = true) {
+async function client(t, enabled = true, challenge = false) {
     const window = new Window({ url: 'http://localhost:8000/' });
     t.after(() => window.happyDOM.close());
     window.document.body.innerHTML = `<div class="map"><canvas id="canvas"></canvas></div>
@@ -34,13 +34,26 @@ async function client(t, enabled = true) {
         message(data) { this.dispatchEvent(new window.MessageEvent('message', { data: JSON.stringify(data) })); }
         close() { this.readyState = 3; this.dispatchEvent(new window.CloseEvent('close')); }
     }
+    if (challenge) {
+        window.turnstile = {
+            options: null,
+            render(_holder, options) { this.options = options; return 'widget-id'; },
+            reset() {}
+        };
+    }
     const context = vm.createContext({
         window, document: window.document, location: window.location, navigator: window.navigator,
         localStorage: window.localStorage, URL, URLSearchParams, Blob, AbortSignal, TextEncoder, structuredClone, crypto, console,
         WebSocket: Socket, confirm: () => true, queueMicrotask,
         setTimeout: (fn, ms) => { timers.set(++timerId, { fn, ms }); return timerId; }, clearTimeout: id => timers.delete(id),
         setInterval: (fn, ms) => { timers.set(++timerId, { fn, ms, interval: true }); return timerId; }, clearInterval: id => timers.delete(id),
-        fetch: async (url, options) => { requests.push({ url, options }); return { ok: true, json: async () => ({ code, ownerKey: 'owner-test' }) }; },
+        fetch: async (url, options) => {
+            requests.push({ url, options });
+            const payload = url.endsWith('/admission')
+                ? { admission: code, expiresAt: Date.now() + 60000 }
+                : { code, ownerKey: 'owner-test' };
+            return { ok: true, json: async () => payload };
+        },
         __protocol: protocol, __replicaModule: replicaModule
     });
     const run = source => vm.runInContext(source, context);
@@ -48,7 +61,8 @@ async function client(t, enabled = true) {
         run(await readFile(new URL(`../../${path}`, import.meta.url), 'utf8'));
     }
     run(`
-        APP_CONFIG = {collab: {enabled: ${enabled}, serverUrl: 'https://lobby.test', maxParticipants: 8, batchDelayMs: 1000}};
+        APP_CONFIG = {collab: {enabled: ${enabled}, serverUrl: 'https://lobby.test', maxParticipants: 8, batchDelayMs: 1000,
+            turnstile: ${challenge ? "{enabled: true, siteKey: 'public-site-key', action: 'create-lobby'}" : '{enabled: false}'}}};
         MAPS = {bakurani: {w: 16, h: 16}}; WEAPONS = {mortar: {}, spg: {}}; LANG = 'ru';
         Object.assign(S, {map: 'custom', w: 10, h: 10, weapon: 'spg', target: {x: 2, y: 3}, panX: 33});
         savedTargets = [{id: 'personal', name: 'My own target', x: 1, y: 2, saveArtillery: false, origin: null}];
@@ -84,6 +98,23 @@ test('idle enabled menu creates no connection and uses Russian labels', async t 
     assert.ok(c.window.document.querySelector('.lobby-toggle svg'));
     assert.equal(c.window.document.querySelector('.lobby-check input').nextElementSibling?.tagName, 'SPAN');
     assert.equal(c.requests.length, 0); assert.equal(c.sockets.length, 0);
+});
+test('production creation exchanges a Turnstile result for a signed admission', async t => {
+    const c = await client(t, true, true);
+    c.click('create');
+    await new Promise(setImmediate);
+    assert.equal(c.requests.length, 0);
+    assert.equal(c.window.document.querySelector('.lobby-turnstile').hidden, false);
+    assert.match(c.window.document.querySelector('.lobby-status').textContent, /проверку безопасности/);
+
+    c.window.turnstile.options.callback('browser-challenge-token');
+    c.click('create');
+    await new Promise(setImmediate);
+    assert.equal(c.requests.length, 2);
+    assert.equal(c.requests[0].url, 'https://lobby.test/admission');
+    assert.equal(JSON.parse(c.requests[0].options.body).token, 'browser-challenge-token');
+    assert.equal(c.requests[1].url, 'https://lobby.test/rooms');
+    assert.equal(JSON.parse(c.requests[1].options.body).admission, code);
 });
 test('join keeps a personal firing solution while shared annotations retain undo', async t => {
     const c = await client(t);
@@ -166,7 +197,10 @@ test('disconnect does not auto-reconnect; rejected changes expose recovery witho
     c.run('S.target = {x: 9, y: 9}; inputs();'); c.tick();
     c.run("MAP_TOOL_STATE.markers = [{id: 'unconfirmed', mapId: 'bakurani', icon: 'infantry', x: 4, y: 4}]; saveMapToolState();"); c.tick();
     const change = c.sockets[0].sent.find(message => message.type === 'changes');
-    c.snapshot({ rejected: change.id, error: 'conflict' });
+    c.sockets[0].message({
+        type: 'rejected', id: change.id, revision: 0,
+        code: 'conflict', remainingUpdates: 99
+    });
     assert.equal(c.run('S.target.x'), 9);
     assert.equal(c.window.document.querySelector('.lobby-recovery').hidden, false);
     c.sockets[0].close(); c.tick();

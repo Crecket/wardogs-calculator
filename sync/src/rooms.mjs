@@ -1,32 +1,52 @@
 import { DurableObject } from 'cloudflare:workers';
 import { settings } from './config.mjs';
 import { hash } from './tokens.mjs';
+import { validateCatalogDocument } from './catalog.mjs';
 import {
     LIMITS, byteLength, normalizeDocument, normalizeOperations, applyOperations,
     normalizePlayerName, normalizePresence, same
 } from '../../js/collab/protocol.mjs';
 
 const today = () => new Date().toISOString().slice(0, 10);
+const publicChangeError = value => (
+    /^(bad-|too-|wrong-|duplicate-|unsupported-|outside-|room-too-large|conflict$|no-change$|expired$|room-budget$|daily-budget$)/.test(value)
+        ? value
+        : 'invalid-change'
+);
 
 /* A single small row for global admission and write-credit allocation. No polling. */
 export class LobbyBudget extends DurableObject {
-    async grant(kind) {
+    async grant(kind, actor = '') {
         return this.ctx.blockConcurrencyWhile(async () => {
             const config = settings(this.env);
             const day = today();
             if (!config.enabled) return { amount: 0, day };
             let row = await this.ctx.storage.get('budget');
-            if (!row || row.day !== day) row = { day, rooms: 0, batches: 0 };
+            if (!row || row.day !== day) {
+                const oldActorKeys = [...(await this.ctx.storage.list({ prefix: 'actor:' })).keys()];
+                if (oldActorKeys.length) await this.ctx.storage.delete(oldActorKeys);
+                row = { day, rooms: 0, batches: 0 };
+            }
             let amount = 0;
-            if (kind === 'create' && row.rooms < config.maxRoomsPerDay) {
-                amount = 1;
-                row.rooms++;
+            let reason = '';
+            if (kind === 'create') {
+                const actorKey = `actor:${day}:${actor}`;
+                const actorRooms = Number(await this.ctx.storage.get(actorKey)) || 0;
+                if (!actor || actorRooms >= config.maxRoomsPerAdmission) {
+                    reason = 'admission-limit';
+                } else if (row.rooms >= config.maxRoomsPerDay) {
+                    reason = 'daily-limit';
+                } else {
+                    amount = 1;
+                    row.rooms++;
+                    await this.ctx.storage.put(actorKey, actorRooms + 1);
+                }
             } else if (kind === 'changes') {
                 amount = Math.max(0, Math.min(32, config.maxChangeBatchesPerDay - row.batches));
                 row.batches += amount;
             }
             if (amount) await this.ctx.storage.put('budget', row);
-            return { amount, day };
+            return { amount, day, reason };
         });
     }
 }
@@ -63,13 +83,25 @@ export class LobbyRoom extends DurableObject {
     }
     send(ws, payload) { try { ws.send(JSON.stringify(payload)); } catch { /* disconnected */ } }
     broadcast(payload) { const text = JSON.stringify(payload); for (const ws of this.peers()) { try { ws.send(text); } catch {} } }
+    remainingUpdates() {
+        return Math.max(0, settings(this.env).maxChangeBatchesPerRoom - this.record.updates);
+    }
     snapshot(ws, extra = {}) {
         this.send(ws, {
             type: 'snapshot', revision: this.record.revision, doc: this.record.doc,
             you: ws.deserializeAttachment().id, roster: this.roster(),
             maxParticipants: settings(this.env).maxParticipants, expiresAt: this.record.expiresAt,
-            remainingUpdates: Math.max(0, settings(this.env).maxChangeBatchesPerRoom - this.record.updates), ...extra
+            remainingUpdates: this.remainingUpdates(), ...extra
         });
+    }
+    violation(ws, code) {
+        const attachment = ws.deserializeAttachment();
+        attachment.invalids = (attachment.invalids || 0) + 1;
+        ws.serializeAttachment(attachment);
+        this.send(ws, { type: 'error', code });
+        if (attachment.invalids >= settings(this.env).maxInvalidMessages) {
+            ws.close(1008, 'invalid-messages');
+        }
     }
     async fetch(request) {
         if (!settings(this.env).enabled) return new Response('Disabled', { status: 503 });
@@ -80,7 +112,8 @@ export class LobbyRoom extends DurableObject {
         this.ctx.acceptWebSocket(ws);
         ws.serializeAttachment({
             id: crypto.randomUUID(), name: '', origin: null, target: null,
-            tokens: 8, time: Date.now(), strikes: 0, lastId: null
+            tokens: 8, time: Date.now(), strikes: 0, invalids: 0,
+            lastId: null, lastRevision: null
         });
         this.snapshot(ws);
         this.broadcast({ type: 'peers', roster: this.roster() });
@@ -89,8 +122,10 @@ export class LobbyRoom extends DurableObject {
     allow(ws) {
         const a = ws.deserializeAttachment();
         const now = Date.now();
-        // Includes malformed messages and sync requests. Attachments survive hibernation.
-        a.tokens = Math.min(8, a.tokens + (now - a.time) / 1000);
+        // Every application message consumes a token. Attachments survive hibernation.
+        const elapsed = now - a.time;
+        if (elapsed >= 10000) a.strikes = 0;
+        a.tokens = Math.min(8, a.tokens + elapsed / 1000);
         a.time = now;
         const ok = a.tokens >= 1;
         if (ok) a.tokens--;
@@ -107,45 +142,45 @@ export class LobbyRoom extends DurableObject {
             ws.close(1009, 'message-too-large'); return;
         }
         let raw;
-        try { raw = JSON.parse(message); } catch { this.send(ws, { type: 'error', code: 'bad-json' }); return; }
+        try { raw = JSON.parse(message); } catch { this.violation(ws, 'bad-json'); return; }
         if (raw?.type === 'presence') {
             const a = ws.deserializeAttachment();
             let presence;
-            try { presence = normalizePresence(raw); }
-            catch { this.send(ws, { type: 'error', code: 'bad-presence' }); return; }
+            try { presence = normalizePresence(raw, this.record.doc); }
+            catch { this.violation(ws, 'bad-presence'); return; }
             const next = { name: normalizePlayerName(raw.name), ...presence };
             if (a.name === next.name && same(a.origin, next.origin) && same(a.target, next.target)) return;
             Object.assign(a, next);
+            a.invalids = 0;
             ws.serializeAttachment(a);
             this.broadcast({ type: 'peers', roster: this.roster() });
             return;
         }
-        // Kept for clients that loaded immediately before a rolling deployment.
-        if (raw?.type === 'name') {
-            const a = ws.deserializeAttachment();
-            a.name = normalizePlayerName(raw.name);
-            ws.serializeAttachment(a);
-            this.broadcast({ type: 'peers', roster: this.roster() });
-            return;
-        }
-        if (raw?.type === 'sync') { this.snapshot(ws); return; }
         if (raw?.type === 'close') {
             if (typeof raw.ownerKey === 'string' && raw.ownerKey.length <= 64 && await hash(raw.ownerKey) === this.record.ownerHash) await this.destroy('closed');
             else this.send(ws, { type: 'error', code: 'not-owner' });
             return;
         }
         if (raw?.type !== 'changes' || typeof raw.id !== 'string' || !/^[\w-]{1,64}$/.test(raw.id)) {
-            this.send(ws, { type: 'error', code: 'bad-message' }); return;
+            this.violation(ws, 'bad-message'); return;
         }
         // Serialize validation, quota allocation and commit. No await can interleave another edit.
         await this.ctx.blockConcurrencyWhile(async () => {
             const attachment = ws.deserializeAttachment();
-            if (attachment.lastId === raw.id) { this.snapshot(ws, { ack: raw.id }); return; }
+            if (attachment.lastId === raw.id) {
+                this.send(ws, {
+                    type: 'ack', id: raw.id, revision: attachment.lastRevision,
+                    remainingUpdates: this.remainingUpdates()
+                });
+                return;
+            }
             try {
                 if (!this.alive()) throw new Error('expired');
                 const ops = normalizeOperations(raw.ops, this.record.doc.mapId);
-                const next = applyOperations(this.record.doc, ops);
-                if (same(next, this.record.doc)) { this.snapshot(ws, { ack: raw.id }); return; }
+                const next = validateCatalogDocument(
+                    applyOperations(this.record.doc, ops)
+                );
+                if (same(next, this.record.doc)) throw new Error('no-change');
                 const config = settings(this.env);
                 if (this.record.updates >= config.maxChangeBatchesPerRoom) throw new Error('room-budget');
                 if (this.record.creditDay !== today() || !this.record.credits) {
@@ -159,10 +194,26 @@ export class LobbyRoom extends DurableObject {
                 await this.ctx.storage.put('room', updated);
                 this.record = updated;
                 attachment.lastId = raw.id;
+                attachment.lastRevision = updated.revision;
+                attachment.invalids = 0;
                 ws.serializeAttachment(attachment);
                 this.broadcast({ type: 'changes', id: raw.id, from: attachment.id, revision: updated.revision, ops, remainingUpdates: config.maxChangeBatchesPerRoom - updated.updates });
             } catch (error) {
-                this.snapshot(ws, { error: error.message, rejected: raw.id });
+                const code = publicChangeError(
+                    typeof error?.message === 'string' ? error.message : ''
+                );
+                this.send(ws, {
+                    type: 'rejected', id: raw.id, revision: this.record.revision,
+                    code, remainingUpdates: this.remainingUpdates()
+                });
+                if (/^(bad-|too-|wrong-|duplicate-|unsupported-|outside-|room-too-large)/.test(code)) {
+                    const latest = ws.deserializeAttachment();
+                    latest.invalids = (latest.invalids || 0) + 1;
+                    ws.serializeAttachment(latest);
+                    if (latest.invalids >= settings(this.env).maxInvalidMessages) {
+                        ws.close(1008, 'invalid-messages');
+                    }
+                }
             }
         });
     }
