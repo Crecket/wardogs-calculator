@@ -11,49 +11,18 @@ async function initLobby() {
     const P = await import(versionRuntimeAsset(new URL('js/collab/protocol.mjs', BASE_PATH).href));
     const { createReplicaClass } = await import(versionRuntimeAsset(new URL('js/collab/replica.mjs', BASE_PATH).href));
     const Replica = createReplicaClass(P);
-    const words = {
-        en: {
-            title: 'Lobby', name: 'Your name', invite: 'Invite link or code', create: 'Create lobby', join: 'Join',
-            include: 'Share my saved targets too', privacy: 'Drawings and map markers are shared. Gun, target and weapon stay personal. Teammates see labelled points without range circles.',
-            copy: 'Copy invite', leave: 'Leave', close: 'Close for everyone', reconnect: 'Reconnect', export: 'Export recovery copy',
-            idle: 'No connection until you create or join a lobby.', connecting: 'Connecting…', ready: 'Connected · synchronised',
-            pending: 'Sending changes…', offline: 'Disconnected. Editing paused; reconnect manually or leave.',
-            failed: 'Cannot connect: the lobby may be full, expired or disabled. Check the invite and server settings.',
-            conflict: 'Conflicting change was not applied. Latest room state restored; your version is available as a recovery copy.',
-            quota: 'Change limit reached. Editing paused. Export the room before leaving.', invalid: 'Room limits exceeded or unsupported data. Your version is available as a recovery copy.',
-            copied: 'Invite copied.', closeConfirm: 'Close this lobby for everyone and delete its shared state?',
-            leaveConfirm: 'Some changes are not confirmed by the server. Leave anyway? A recovery copy will remain available until reload.',
-            reconnectConfirm: 'Reconnect and load the server version? Unconfirmed changes will be kept as a recovery copy.',
-            closed: 'Lobby closed or expired. Your personal workspace has been restored.',
-            map: 'Room map is fixed. Leave to change it.', remaining: 'Batches left', expires: 'Expires',
-            budget: 'Daily room creation limit reached. Try after 00:00 UTC.', limited: 'Too many requests. Wait a minute and try again.',
-            challenge: 'Complete the security check, then press Create lobby again.',
-            security: 'Lobby creation security is unavailable or not configured.',
-            admissionLimit: 'This security session reached its room limit. Complete a new check.',
-            fallback: 'Participant', recovery: 'A recovery copy is available below. It is kept only in this tab until reload.'
-        },
-        ru: {
-            title: 'Лобби', name: 'Твоё имя', invite: 'Ссылка или код приглашения', create: 'Создать лобби', join: 'Войти',
-            include: 'Поделиться и моими сохранёнными целями', privacy: 'Рисунки и метки общие. Орудие, цель и оружие личные. Союзники видят подписанные точки без кругов дальности.',
-            copy: 'Скопировать приглашение', leave: 'Выйти', close: 'Закрыть для всех', reconnect: 'Переподключиться', export: 'Скачать резервную копию',
-            idle: 'Подключение начнётся только после создания лобби или входа.', connecting: 'Подключение…', ready: 'Подключено · синхронизировано',
-            pending: 'Отправка изменений…', offline: 'Связь потеряна. Правки приостановлены; переподключись вручную или выйди.',
-            failed: 'Не удалось войти: лобби может быть заполнено, закрыто или отключено. Проверь приглашение и настройки сервера.',
-            conflict: 'Конфликтующая правка не применена. Загружено состояние комнаты; твой вариант доступен в резервной копии.',
-            quota: 'Достигнут лимит изменений. Правки приостановлены. Скачай состояние комнаты перед выходом.', invalid: 'Превышены лимиты комнаты или есть неподдерживаемые данные. Твой вариант доступен в резервной копии.',
-            copied: 'Приглашение скопировано.', closeConfirm: 'Закрыть лобби для всех и удалить его совместное состояние?',
-            leaveConfirm: 'Сервер ещё не подтвердил часть изменений. Всё равно выйти? Резервная копия будет доступна до перезагрузки страницы.',
-            reconnectConfirm: 'Переподключиться и загрузить серверный вариант? Неподтверждённые правки останутся в резервной копии.',
-            closed: 'Лобби закрыто или истекло. Личное состояние карты восстановлено.',
-            map: 'Карта лобби фиксирована. Для смены выйди из него.', remaining: 'Пакетов правок осталось', expires: 'Истекает',
-            budget: 'Достигнут суточный лимит создания комнат. Попробуй после 00:00 UTC.', limited: 'Слишком много запросов. Подожди минуту.',
-            challenge: 'Пройди проверку безопасности и ещё раз нажми «Создать лобби».',
-            security: 'Защита создания лобби недоступна или не настроена.',
-            admissionLimit: 'Для этой проверки исчерпан лимит комнат. Пройди новую проверку.',
-            fallback: 'Участник', recovery: 'Ниже доступна резервная копия. Она хранится только в этой вкладке до перезагрузки.'
-        }
+    const textKeys = {
+        title: 'lobbyTitle', name: 'lobbyNameLabel', invite: 'lobbyInviteLabel', create: 'lobbyCreate', join: 'lobbyJoin',
+        include: 'lobbyIncludeSavedTargets', privacy: 'lobbyPrivacy', copy: 'lobbyCopyInvite', leave: 'lobbyLeave', close: 'lobbyCloseForEveryone',
+        reconnect: 'lobbyReconnect', export: 'lobbyExportRecovery', idle: 'lobbyStatusIdle', connecting: 'lobbyStatusConnecting', ready: 'lobbyStatusReady',
+        pending: 'lobbyStatusPending', offline: 'lobbyStatusOffline', failed: 'lobbyStatusFailed', conflict: 'lobbyStatusConflict', quota: 'lobbyStatusQuota',
+        invalid: 'lobbyStatusInvalid', copied: 'lobbyStatusCopied', closeConfirm: 'lobbyCloseConfirm', leaveConfirm: 'lobbyLeaveConfirm',
+        reconnectConfirm: 'lobbyReconnectConfirm', closed: 'lobbyStatusClosed', map: 'lobbyMapFixed', remaining: 'lobbyBatchesRemaining', expires: 'lobbyExpires',
+        budget: 'lobbyStatusBudget', limited: 'lobbyStatusLimited', challenge: 'lobbyStatusChallenge', security: 'lobbyStatusSecurity',
+        admissionLimit: 'lobbyStatusAdmissionLimit', fallback: 'lobbyParticipantFallback', recovery: 'lobbyRecoveryAvailable',
+        artilleryShort: 'lobbyArtilleryShort', targetShort: 'lobbyTargetShort'
     };
-    const t = key => (words[LANG] || words.en)[key] || key;
+    const t = key => tr(textKeys[key] || key);
     const root = document.createElement('div');
     root.id = 'lobbyControls';
     root.className = 'lobby-controls';
@@ -132,11 +101,18 @@ async function initLobby() {
         mapId: S.map, w: S.w, h: S.h,
         ...Object.fromEntries(P.COLLECTIONS.map(key => [key, key === 'savedTargets' ? (includeSaved ? savedTargets : []) : MAP_TOOL_STATE[key].filter(item => item.mapId === S.map)]))
     });
+    function documentBounds(doc) {
+        const map = doc.mapId !== 'custom' ? MAPS[doc.mapId] : null;
+        if (map && typeof isValidBounds === 'function' && isValidBounds(map.bounds)) {
+            return map.bounds;
+        }
+        return { minX: 0, maxX: doc.w, minY: 0, maxY: doc.h };
+    }
     const rawPresence = () => ({
         name: P.normalizePlayerName(q('.lobby-name').value),
         ...P.normalizePresence(
             { origin: S.origin, target: S.target },
-            { w: S.w, h: S.h }
+            documentBounds({ mapId: S.map, w: S.w, h: S.h })
         )
     });
     function validDocument(raw) {
@@ -160,10 +136,10 @@ async function initLobby() {
             Object.assign(S, { map: doc.mapId, w: doc.w, h: doc.h });
             if (different) {
                 if (typeof loadMapPoints === 'function') loadMapPoints();
-                clamp(S.origin);
-                clamp(S.target);
                 Object.assign(S, { zoom: 1, panX: 0, panY: 0 });
             }
+            clamp(S.origin);
+            clamp(S.target);
             for (const key of P.COLLECTIONS) {
                 if (key === 'savedTargets') savedTargets = structuredClone(doc[key]);
                 else MAP_TOOL_STATE[key] = structuredClone(doc[key]);
@@ -448,7 +424,7 @@ async function initLobby() {
                         }
                     }
                     if (!replica.flight) clearTimeout(ackTimer);
-                    you = P.slug(msg.you); roster = P.normalizeRoster(msg.roster, doc); maximum = msg.maxParticipants; expiresAt = msg.expiresAt; remaining = msg.remainingUpdates;
+                    you = P.slug(msg.you); roster = P.normalizeRoster(msg.roster, documentBounds(doc)); maximum = msg.maxParticipants; expiresAt = msg.expiresAt; remaining = msg.remainingUpdates;
                     q('.lobby-link').value = inviteLink();
                     render();
                     if (joinedNow) schedulePresence(true);
@@ -475,7 +451,11 @@ async function initLobby() {
                     readOnly = notice === 'quota';
                     clearTimeout(ackTimer);
                     render(); open(true);
-                } else if (msg.type === 'peers') { roster = P.normalizeRoster(msg.roster, replica?.doc); updateUI(); draw(); }
+                } else if (msg.type === 'peers') {
+                    const doc = replica?.doc;
+                    roster = P.normalizeRoster(msg.roster, doc ? documentBounds(doc) : null);
+                    updateUI(); draw();
+                }
                 else if (msg.type === 'closed') { notice = 'closed'; leave(true); open(true); }
                 else if (msg.type === 'error') { notice = msg.code === 'rate-limited' ? 'limited' : 'failed'; updateUI(); }
             } catch (error) {
@@ -484,12 +464,12 @@ async function initLobby() {
             }
         });
         current.addEventListener('close', event => {
+            if (socket !== current) return;
             console.error('[Lobby] socket closed:', {
                 code: event.code,
                 reason: event.reason,
                 clean: event.wasClean
             });
-            if (socket !== current) return;
             clearTimers(); joining = false;
             notice = lobby.active ? 'offline' : 'failed';
             preserve();
@@ -562,7 +542,7 @@ async function initLobby() {
             return [{ ...peer, displayName: peerDisplayName(peer, index) }];
         });
     }
-    function drawPeerMarker(point, kind, label, colour) {
+    function drawPeerMarker(point, kind, label, colour, above) {
         const pos = worldToLocalScreen(point.x, point.y);
         ctx.save();
         ctx.beginPath();
@@ -581,7 +561,7 @@ async function initLobby() {
         const text = `${label} · ${kind}`;
         ctx.font = '600 11px system-ui, sans-serif';
         const width = Math.min(156, Math.max(44, ctx.measureText(text).width + 10));
-        const labelY = pos.y + (kind === 'O' ? -21 : 21);
+        const labelY = pos.y + (above ? -21 : 21);
         ctx.fillStyle = 'rgba(13,16,18,.88)';
         ctx.fillRect(pos.x - width / 2, labelY - 8, width, 16);
         ctx.strokeStyle = colour;
@@ -606,8 +586,8 @@ async function initLobby() {
             ctx.lineTo(target.x, target.y);
             ctx.stroke();
             ctx.restore();
-            drawPeerMarker(peer.origin, 'O', peer.displayName, colour);
-            drawPeerMarker(peer.target, 'T', peer.displayName, colour);
+            drawPeerMarker(peer.origin, t('artilleryShort'), peer.displayName, colour, true);
+            drawPeerMarker(peer.target, t('targetShort'), peer.displayName, colour, false);
         }
     }
     lobby = {

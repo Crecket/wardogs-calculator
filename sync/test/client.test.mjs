@@ -5,8 +5,22 @@ import vm from 'node:vm';
 import { Window } from 'happy-dom';
 import * as protocol from '../../js/collab/protocol.mjs';
 import * as replicaModule from '../../js/collab/replica.mjs';
+const enLocale = JSON.parse(await readFile(new URL('../../locales/en.json', import.meta.url), 'utf8'));
+const ruLocale = JSON.parse(await readFile(new URL('../../locales/ru.json', import.meta.url), 'utf8'));
+const lobbyLocaleKeys = Object.keys(enLocale).filter(key => key.startsWith('lobby'));
 const roomDoc = () => ({ mapId: 'bakurani', w: 16, h: 16, drawings: [], markers: [], zones: [], polygons: [], savedTargets: [] });
 const code = `${'a'.repeat(22)}.${Date.now().toString(36)}.${'b'.repeat(43)}`;
+test('every registered language has the complete lobby interface', async () => {
+    const registry = JSON.parse(await readFile(new URL('../../locales/index.json', import.meta.url), 'utf8'));
+    assert.equal(lobbyLocaleKeys.length, 38);
+    for (const language of registry.languages) {
+        const locale = JSON.parse(await readFile(new URL(`../../locales/${language.file}`, import.meta.url), 'utf8'));
+        for (const key of lobbyLocaleKeys) {
+            assert.equal(typeof locale[key], 'string', `${language.id}: ${key}`);
+            assert.ok(locale[key].trim(), `${language.id}: ${key}`);
+        }
+    }
+});
 async function client(t, enabled = true, challenge = false) {
     const window = new Window({ url: 'http://localhost:8000/' });
     t.after(() => window.happyDOM.close());
@@ -63,7 +77,9 @@ async function client(t, enabled = true, challenge = false) {
     run(`
         APP_CONFIG = {collab: {enabled: ${enabled}, serverUrl: 'https://lobby.test', maxParticipants: 8, batchDelayMs: 1000,
             turnstile: ${challenge ? "{enabled: true, siteKey: 'public-site-key', action: 'create-lobby'}" : '{enabled: false}'}}};
-        MAPS = {bakurani: {w: 16, h: 16}}; WEAPONS = {mortar: {}, spg: {}}; LANG = 'ru';
+        MAPS = {bakurani: {w: 16, h: 16}}; WEAPONS = {mortar: {}, spg: {}}; LANG = 'ru'; DEFAULT_LANG = 'en';
+        I18N = {en: ${JSON.stringify(enLocale)}, ru: ${JSON.stringify(ruLocale)}};
+        function tr(key) {return I18N[LANG]?.[key] ?? I18N[DEFAULT_LANG]?.[key] ?? key;}
         Object.assign(S, {map: 'custom', w: 10, h: 10, weapon: 'spg', target: {x: 2, y: 3}, panX: 33});
         savedTargets = [{id: 'personal', name: 'My own target', x: 1, y: 2, saveArtillery: false, origin: null}];
         MAP_TOOL_STATE.markers = [{id: 'personal-marker', mapId: 'custom', icon: 'infantry', x: 2, y: 2}];
@@ -189,8 +205,8 @@ test('teammate markers are labelled and rendered without range circles', async t
     assert.equal(c.run('lobby.visiblePeers()[0].displayName'), 'Bravo');
     c.run('lobby.drawPeers()');
     assert.deepEqual(c.drawing.arcs.map(arc => arc.radius), [7, 7]);
-    assert.ok(c.drawing.labels.includes('Bravo · O'));
-    assert.ok(c.drawing.labels.includes('Bravo · T'));
+    assert.ok(c.drawing.labels.includes('Bravo · О'));
+    assert.ok(c.drawing.labels.includes('Bravo · Ц'));
 });
 test('disconnect does not auto-reconnect; rejected changes expose recovery without personal writes', async t => {
     const c = await client(t); c.click('create'); await new Promise(setImmediate); c.snapshot();

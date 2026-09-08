@@ -30,6 +30,17 @@ function point(value) {
     if (!object(value)) fail('bad-point');
     return { x: number(value.x), y: number(value.y) };
 }
+function coordinateBounds(value) {
+    if (!object(value)) fail('bad-bounds');
+    const minX = Number.isFinite(value.minX) ? value.minX : 0;
+    const minY = Number.isFinite(value.minY) ? value.minY : 0;
+    const maxX = Number.isFinite(value.maxX) ? value.maxX : value.w;
+    const maxY = Number.isFinite(value.maxY) ? value.maxY : value.h;
+    if (![minX, minY, maxX, maxY].every(Number.isFinite) || maxX < minX || maxY < minY) {
+        fail('bad-bounds');
+    }
+    return { minX, minY, maxX, maxY };
+}
 function plainText(value, maximum) {
     if (typeof value !== 'string') return '';
     return [...value.normalize('NFKC')
@@ -45,9 +56,10 @@ export function normalizePlayerName(value) {
 function presencePoint(value, bounds) {
     if (!bounds) return point(value);
     if (!object(value)) fail('bad-point');
+    const range = coordinateBounds(bounds);
     return {
-        x: number(value.x, 0, bounds.w),
-        y: number(value.y, 0, bounds.h)
+        x: number(value.x, range.minX, range.maxX),
+        y: number(value.y, range.minY, range.maxY)
     };
 }
 export function normalizePresence(raw, bounds = null) {
