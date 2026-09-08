@@ -1,7 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { settings } from './config.mjs';
 import { hash } from './tokens.mjs';
-import { validateCatalogDocument } from './catalog.mjs';
+import { documentBounds, validateCatalogDocument } from './catalog.mjs';
 import {
     LIMITS, byteLength, normalizeDocument, normalizeOperations, applyOperations,
     normalizePlayerName, normalizePresence, same
@@ -146,7 +146,7 @@ export class LobbyRoom extends DurableObject {
         if (raw?.type === 'presence') {
             const a = ws.deserializeAttachment();
             let presence;
-            try { presence = normalizePresence(raw, this.record.doc); }
+            try { presence = normalizePresence(raw, documentBounds(this.record.doc)); }
             catch { this.violation(ws, 'bad-presence'); return; }
             const next = { name: normalizePlayerName(raw.name), ...presence };
             if (a.name === next.name && same(a.origin, next.origin) && same(a.target, next.target)) return;
