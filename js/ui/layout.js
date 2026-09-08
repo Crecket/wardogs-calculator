@@ -278,6 +278,17 @@ const MOBILE_MENU_TEXT = {
         credits: 'Créditos',
         legal: 'Aviso'
     },
+    'zh-cn': {
+        menu: '菜单',
+        appearance: '外观',
+        light: '浅色',
+        dark: '深色',
+        language: '语言',
+        links: '链接',
+        support: '支持',
+        credits: '致谢',
+        legal: '法律信息'
+    },
     cat: {
         menu: 'MEOWNU',
         appearance: 'MEOWDE',
@@ -763,8 +774,9 @@ function createMobileCreditsBlock() {
 
     const authorLabel =
         String(
-            config.authorLabel ||
-            'by'
+            typeof tr === 'function'
+                ? tr('authorLabel')
+                : (config.authorLabel || 'by')
         );
 
     creditLine.append(
@@ -834,8 +846,9 @@ function createMobileCreditsBlock() {
         'mobile-side-menu-disclaimer';
 
     disclaimer.textContent =
-        config.disclaimer ||
-        '';
+        typeof tr === 'function'
+            ? tr('footerDisclaimer')
+            : (config.disclaimer || '');
 
     wrap.append(
         creditsHeading,
@@ -1862,6 +1875,25 @@ function updateLayoutLocalization() {
     ) {
         syncMobileThemeButtons();
         syncMobileSideMenuLocalization();
+
+        const setAriaLabel = (id, key) => {
+            const element = $(id);
+            if (element && typeof tr === 'function') {
+                element.setAttribute('aria-label', tr(key));
+            }
+        };
+
+        setAriaLabel('mobileSheetHandle', 'mobileOpenCalculator');
+        setAriaLabel('zoomOut', 'zoomOutLabel');
+        setAriaLabel('zoomIn', 'zoomInLabel');
+        setAriaLabel('mobileSideMenu', 'mobileMenu');
+        setAriaLabel('mobileSideMenuToggle', 'mobileMenu');
+        setAriaLabel('mobileSideMenuBackdrop', 'mobileCloseMenu');
+
+        const tabs = document.querySelector('.mobile-tabs');
+        if (tabs && typeof tr === 'function') {
+            tabs.setAttribute('aria-label', tr('mobileCalculatorSections'));
+        }
     }
 }
 

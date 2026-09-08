@@ -69,17 +69,26 @@ function updateThemeButton() {
             ? '☾'
             : '☼';
 
+    const label =
+        typeof tr === 'function'
+            ? tr(
+                isLight
+                    ? 'switchToDarkTheme'
+                    : 'switchToLightTheme'
+            )
+            : (
+                isLight
+                    ? 'Switch to dark theme'
+                    : 'Switch to light theme'
+            );
+
     $('themeToggle').setAttribute(
         'aria-label',
-        isLight
-            ? 'Switch to dark theme'
-            : 'Switch to light theme'
+        label
     );
 
     $('themeToggle').title =
-        isLight
-            ? 'Switch to dark theme'
-            : 'Switch to light theme';
+        label;
 }
 
 function toggleTheme() {

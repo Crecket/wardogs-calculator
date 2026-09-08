@@ -136,6 +136,12 @@
     line-height: 16px;
     overflow-wrap: anywhere;
 }
+.lobby-turnstile {
+    width: 100%;
+    min-height: 65px;
+    margin: 10px 0;
+    overflow: hidden;
+}
 .lobby-actions {
     display: flex;
     flex-wrap: wrap;

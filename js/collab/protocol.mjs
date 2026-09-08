@@ -30,24 +30,42 @@ function point(value) {
     if (!object(value)) fail('bad-point');
     return { x: number(value.x), y: number(value.y) };
 }
+function plainText(value, maximum) {
+    if (typeof value !== 'string') return '';
+    return [...value.normalize('NFKC')
+        .replace(/[\p{Cc}\p{Cf}\p{Cs}]/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim()]
+        .slice(0, maximum)
+        .join('');
+}
 export function normalizePlayerName(value) {
-    return typeof value === 'string'
-        ? value.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 24)
-        : '';
+    return plainText(value, 24);
 }
-export function normalizePresence(raw) {
+function presencePoint(value, bounds) {
+    if (!bounds) return point(value);
+    if (!object(value)) fail('bad-point');
+    return {
+        x: number(value.x, 0, bounds.w),
+        y: number(value.y, 0, bounds.h)
+    };
+}
+export function normalizePresence(raw, bounds = null) {
     if (!object(raw)) fail('bad-presence');
-    return { origin: point(raw.origin), target: point(raw.target) };
+    return {
+        origin: presencePoint(raw.origin, bounds),
+        target: presencePoint(raw.target, bounds)
+    };
 }
-export function normalizeRoster(raw) {
+export function normalizeRoster(raw, bounds = null) {
     if (!Array.isArray(raw) || raw.length > LIMITS.participants) fail('too-many-participants');
     const roster = raw.map(value => {
         if (!object(value)) fail('bad-participant');
         return {
             id: slug(value.id),
             name: normalizePlayerName(value.name),
-            origin: value.origin == null ? null : point(value.origin),
-            target: value.target == null ? null : point(value.target)
+            origin: value.origin == null ? null : presencePoint(value.origin, bounds),
+            target: value.target == null ? null : presencePoint(value.target, bounds)
         };
     });
     if (new Set(roster.map(peer => peer.id)).size !== roster.length) fail('duplicate-participant');
@@ -74,8 +92,8 @@ export function normalizeItem(collection, value, mapId) {
         case 'markers':
             return { id, mapId, icon: slug(value.icon), ...point(value) };
         case 'savedTargets': {
-            if (typeof value.name !== 'string' || value.name.length > 120) fail('bad-name');
-            const name = value.name.replace(/[\u0000-\u001f\u007f]/g, '').trim();
+            if (typeof value.name !== 'string' || [...value.name].length > 120) fail('bad-name');
+            const name = plainText(value.name, 120);
             if (!name) fail('bad-name');
             const origin = value.saveArtillery && value.origin ? point(value.origin) : null;
             return { id, name, ...point(value), saveArtillery: Boolean(origin), origin };

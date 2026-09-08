@@ -56,6 +56,60 @@ async function exists(path) {
     }
 }
 
+function addProductionSecurityMeta(html, appConfig) {
+    const collab = appConfig.collab || {};
+    const turnstileEnabled = collab.turnstile?.enabled === true;
+    const connectSources = new Set([
+        "'self'",
+        'https://assets.wardogs-artillery.com',
+        'https://cloud.umami.is'
+    ]);
+
+    if (collab.serverUrl) {
+        const server = new URL(collab.serverUrl);
+        connectSources.add(server.origin);
+        if (server.protocol === 'https:') connectSources.add(`wss://${server.host}`);
+    }
+    if (turnstileEnabled) connectSources.add('https://challenges.cloudflare.com');
+
+    const scriptSources = ["'self'", 'https://cloud.umami.is'];
+    if (turnstileEnabled) scriptSources.push('https://challenges.cloudflare.com');
+
+    const imageSources = [
+        "'self'",
+        'data:',
+        'blob:',
+        'https://assets.wardogs-artillery.com'
+    ];
+    if (turnstileEnabled) imageSources.push('https://challenges.cloudflare.com');
+
+    const policy = [
+        "default-src 'self'",
+        `script-src ${scriptSources.join(' ')}`,
+        "script-src-attr 'none'",
+        "style-src 'self' 'unsafe-inline'",
+        `img-src ${imageSources.join(' ')}`,
+        `connect-src ${[...connectSources].join(' ')}`,
+        `frame-src ${turnstileEnabled ? 'https://challenges.cloudflare.com' : "'none'"}`,
+        "font-src 'self' data:",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "worker-src 'self' blob:",
+        'upgrade-insecure-requests'
+    ].join('; ');
+
+    const metadata = [
+        `<meta content="${policy}" http-equiv="Content-Security-Policy"/>`,
+        '<meta content="no-referrer" name="referrer"/>'
+    ].join('\n');
+
+    return html.replace(
+        /(<meta\b[^>]*\bcharset\s*=\s*["'][^"']+["'][^>]*>)/i,
+        `$1\n${metadata}`
+    );
+}
+
 async function copyIfExists(source, target) {
     if (!(await exists(source))) return;
     await cp(source, target, {
@@ -256,7 +310,8 @@ function replaceSeoMetaContent(
 function refreshSeoV2StructuredData(
     html,
     appConfig,
-    copy
+    copy,
+    language
 ) {
     const version =
         appConfig?.site?.footer?.version;
@@ -273,8 +328,14 @@ function refreshSeoV2StructuredData(
                 data.description =
                     copy.description;
 
+                data.url =
+                    desktopUrlForLanguage(language);
+
+                data.inLanguage =
+                    language;
+
                 data.alternateName =
-                    [...SEO_ALTERNATE_NAMES];
+                    [...(copy.alternateNames || SEO_ALTERNATE_NAMES)];
 
                 data.featureList =
                     [...copy.features];
@@ -326,7 +387,7 @@ function injectFaqStructuredData(
     );
 }
 
-function renderSeoTopicLinks(cluster, faq) {
+function renderSeoTopicLinks(cluster, faq, faqLabel = 'FAQ') {
     const links = [
         {
             id: 'wardogs-artillery-calculator',
@@ -341,7 +402,7 @@ function renderSeoTopicLinks(cluster, faq) {
     if (Array.isArray(faq) && faq.length) {
         links.push({
             id: 'wardogs-calculator-faq',
-            label: 'FAQ'
+            label: faqLabel
         });
     }
 
@@ -352,7 +413,7 @@ function renderSeoTopicLinks(cluster, faq) {
         .join('');
 }
 
-function renderSeoFaq(faq) {
+function renderSeoFaq(faq, heading = 'WARDOGS Artillery Calculator FAQ') {
     if (!Array.isArray(faq) || !faq.length) {
         return '';
     }
@@ -368,7 +429,7 @@ function renderSeoFaq(faq) {
 
     return [
         '<section class="seo-faq" id="wardogs-calculator-faq">',
-        '<h3>WARDOGS Artillery Calculator FAQ</h3>',
+        `<h3>${escapeSeoHtml(heading)}</h3>`,
         items,
         '</section>'
     ].join('\n');
@@ -403,12 +464,19 @@ function injectSeoContentCluster(
         `<h2 id="wardogs-artillery-calculator">${escapeSeoHtml(cluster.heading)}</h2>`,
         `<p class="seo-content-lead">${escapeSeoHtml(cluster.intro)}</p>`,
         `<nav aria-label="${escapeSeoHtml(cluster.navLabel)}" class="seo-topic-nav">`,
-        renderSeoTopicLinks(cluster, copy.faq),
+        renderSeoTopicLinks(
+            cluster,
+            copy.faq,
+            copy.faqLabel || 'FAQ'
+        ),
         '</nav>',
         '<div class="seo-topic-list">',
         sections,
         '</div>',
-        renderSeoFaq(copy.faq),
+        renderSeoFaq(
+            copy.faq,
+            copy.faqHeading || 'WARDOGS Artillery Calculator FAQ'
+        ),
         '</div>'
     ].join('\n');
 
@@ -505,11 +573,22 @@ function applySeoV2(
             copy.description
         );
 
+    if (copy.imageAlt) {
+        output =
+            replaceSeoMetaContent(
+                output,
+                'property',
+                'og:image:alt',
+                copy.imageAlt
+            );
+    }
+
     output =
         refreshSeoV2StructuredData(
             output,
             appConfig,
-            copy
+            copy,
+            language
         );
 
     if (copy.cluster) {
@@ -557,16 +636,19 @@ function addMobileAlternate(html, language) {
 
 async function writeDesktopPage(source, target, appConfig, language) {
     const html = await readFile(source, 'utf8');
-    const prepared = addMobileAlternate(
-        applySeoV2(
-            refreshSeoMetadata(
-                normalizeDesktopRuntimePlaceholders(html),
-                appConfig
+    const prepared = addProductionSecurityMeta(
+        addMobileAlternate(
+            applySeoV2(
+                refreshSeoMetadata(
+                    normalizeDesktopRuntimePlaceholders(html),
+                    appConfig
+                ),
+                appConfig,
+                language
             ),
-            appConfig,
             language
         ),
-        language
+        appConfig
     );
 
     await writeFile(target, prepared, 'utf8');
@@ -784,13 +866,19 @@ async function buildMobilePages() {
         'utf8'
     );
 
+    const appConfig =
+        await readAppConfig();
+
     const languages =
         await getMobileLanguages();
 
     for (const language of languages) {
-        const html = renderMobileLocale(
-            template,
-            language
+        const html = addProductionSecurityMeta(
+            renderMobileLocale(
+                template,
+                language
+            ),
+            appConfig
         );
 
         if (language === 'en') {

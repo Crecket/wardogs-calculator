@@ -92,7 +92,7 @@ Normal localized desktop pages are search-indexable. The locale synchronization 
 - localized WebApplication structured data;
 - locale-specific landing content and FAQ structured data when configured.
 
-Generated locale routes reuse the canonical desktop shell, locale data and optional SEO content. This avoids maintaining separate copies of the full application HTML and prevents UI markup from drifting between languages.
+Desktop locale routes use the same build path and shared locale JSON. Every indexable desktop locale has a source shell under `src/pages/locales/` and receives the same SEO/metadata synchronization during production builds.
 
 Mobile locale routes share the matching desktop canonical URL. The Cat localization remains excluded from normal search indexing.
 
@@ -106,25 +106,25 @@ build-pages.mjs
   -> version-assets.mjs
 ```
 
-`sync-locales.mjs` creates or synchronizes generated locale routes, metadata, the sitemap and the shared locale-runtime override script before asset fingerprinting.
+`sync-locales.mjs` synchronizes locale metadata, language tags and the sitemap for all routes before asset fingerprinting. It does not create locale-specific runtime patches.
 
 ## Localized Page Sources
 
-Existing legacy desktop locale shells remain under:
+Desktop locale shells live under:
 
 ```text
 src/pages/locales/
 ```
 
-Other production locale routes may be generated from the canonical `dist/index.html` by `scripts/sync-locales.mjs`, using the locale registry, translation JSON and optional SEO content modules. The generated build output is authoritative; do not maintain a duplicate full shell for a generated locale.
+All desktop locales, including Simplified Chinese, are built by the same `build-pages.mjs` path and use the canonical translation registry:
 
 ```text
 locales/index.json
 locales/<locale>.json
-scripts/*-seo.mjs
+scripts/seo-content.mjs
 ```
 
-The mobile interface still uses one HTML template:
+The mobile interface uses one HTML template:
 
 ```text
 src/pages/mobile/index.html
@@ -136,4 +136,4 @@ Language-specific mobile routes are generated automatically from `locales/index.
 
 Map Tools use the shared locale JSON just like the rest of the application. Localized tool labels include **Ruler**, **Pencil**, **Eraser**, **Markers**, **Coordinate search**, **Layers**, import/export actions and the cursor-coordinate layer toggle.
 
-Any new user-visible UI string should be added to every supported locale or intentionally fall back to English. Runtime strings that live outside normal `data-i18n` nodes are centralized through `js/ui/locale-overrides.js` and the matching locale JSON.
+Any new user-visible UI string should be added to every supported locale or intentionally fall back to English. Runtime strings use the same shared localization APIs/tables as the rest of the application; there is no locale-specific monkey-patch layer.

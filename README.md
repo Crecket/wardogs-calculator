@@ -60,6 +60,7 @@ Detailed documentation is split into focused files to keep this README concise.
 - [Analytics](docs/analytics.md) — Umami custom events, event payloads, debouncing, and privacy considerations
 - [Message of the Day](docs/motd.md) — MOTD configuration, localization, and behavior
 - [Collaborative lobbies](docs/lobbies.md) — live team map behaviour, Cloudflare deployment, limits, privacy, and recovery
+- [Security hardening](docs/security.md) — public-source threat model, Cloudflare headers, secrets, CI, and residual risks
 - [Contributing](docs/contributing.md) — contribution guidelines
 - [License & Disclaimer](docs/legal.md) — MIT scope, third-party assets, and project disclaimer
 

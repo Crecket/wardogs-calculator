@@ -5,11 +5,15 @@ import {
 } from 'node:fs';
 import {
     readFile,
+    realpath,
     stat
 } from 'node:fs/promises';
 import {
     createServer
 } from 'node:http';
+import {
+    isIP
+} from 'node:net';
 import {
     dirname,
     extname,
@@ -36,6 +40,25 @@ const DEFAULT_HOST =
 
 const DEFAULT_PORT =
     8000;
+
+const PUBLIC_STATIC_ROOT_FILES =
+    new Set([
+        '/style.css',
+        '/mobile.css',
+        '/robots.txt',
+        '/sitemap.xml',
+        '/favicon.ico'
+    ]);
+
+const PUBLIC_STATIC_PREFIXES = [
+    '/assets/',
+    '/config/',
+    '/data/',
+    '/js/',
+    '/locales/',
+    '/maps/',
+    '/styles/'
+];
 
 function parseBooleanEnvironment(
     value,
@@ -311,7 +334,13 @@ function sendText(
                 contentType,
 
             'Cache-Control':
-                'no-store, max-age=0'
+                'no-store, max-age=0',
+
+            'X-Content-Type-Options':
+                'nosniff',
+
+            'Referrer-Policy':
+                'no-referrer'
         }
     );
 
@@ -342,7 +371,7 @@ async function sendHTML(
     );
 }
 
-function safeStaticPath(pathname) {
+function publicStaticPathname(pathname) {
     let decoded;
 
     try {
@@ -354,9 +383,62 @@ function safeStaticPath(pathname) {
         return null;
     }
 
+    if (
+        decoded.includes('\\') ||
+        decoded.includes('\0')
+    ) {
+        return null;
+    }
+
+    const segments =
+        decoded
+            .split('/')
+            .filter(Boolean);
+
+    if (
+        segments.some(
+            segment =>
+                segment === '.' ||
+                segment === '..' ||
+                segment.startsWith('.')
+        )
+    ) {
+        return null;
+    }
+
+    const normalizedPathname =
+        `/${segments.join('/')}`;
+
+    if (
+        !PUBLIC_STATIC_ROOT_FILES.has(
+            normalizedPathname
+        ) &&
+        !PUBLIC_STATIC_PREFIXES.some(
+            prefix =>
+                normalizedPathname.startsWith(
+                    prefix
+                )
+        )
+    ) {
+        return null;
+    }
+
+    return normalizedPathname;
+}
+
+function safeStaticPath(pathname) {
+    const publicPathname =
+        publicStaticPathname(
+            pathname
+        );
+
+    if (!publicPathname) {
+        return null;
+    }
+
     const relative =
         normalize(
-            decoded.replace(
+            publicPathname.replace(
                 /^\/+/, 
                 ''
             )
@@ -403,6 +485,21 @@ async function sendStatic(
         return false;
     }
 
+    const canonicalRoot =
+        await realpath(root);
+
+    const canonicalPath =
+        await realpath(path);
+
+    if (
+        canonicalPath !== canonicalRoot &&
+        !canonicalPath.startsWith(
+            `${canonicalRoot}${sep}`
+        )
+    ) {
+        return false;
+    }
+
     const contentType =
         MIME_TYPES[
             extname(path)
@@ -420,7 +517,13 @@ async function sendStatic(
                 info.size,
 
             'Cache-Control':
-                'no-store, max-age=0'
+                'no-store, max-age=0',
+
+            'X-Content-Type-Options':
+                'nosniff',
+
+            'Referrer-Policy':
+                'no-referrer'
         }
     );
 
@@ -428,6 +531,65 @@ async function sendStatic(
         .pipe(response);
 
     return true;
+}
+
+function requestHostAllowed(request) {
+    const value =
+        request.headers.host;
+
+    if (!value) {
+        return false;
+    }
+
+    try {
+        const parsed =
+            new URL(
+                `http://${value}`
+            );
+
+        const hostname =
+            parsed.hostname.replace(
+                /^\[|\]$/g,
+                ''
+            );
+
+        if (
+            parsed.username ||
+            parsed.password
+        ) {
+            return false;
+        }
+
+        if (
+            parsed.port &&
+            Number(parsed.port) !== port
+        ) {
+            return false;
+        }
+
+        const wildcard =
+            host === '0.0.0.0' ||
+            host === '::';
+
+        if (wildcard) {
+            return (
+                hostname === 'localhost' ||
+                Boolean(isIP(hostname))
+            );
+        }
+
+        if (hostname === host) {
+            return true;
+        }
+
+        return (
+            hostname === 'localhost' &&
+            ['127.0.0.1', '::1', 'localhost']
+                .includes(host)
+        );
+    } catch {
+        return false;
+    }
 }
 
 const reloadClients =
@@ -600,6 +762,26 @@ async function createRequestHandler() {
         response
     ) => {
         try {
+            if (!requestHostAllowed(request)) {
+                sendText(
+                    response,
+                    403,
+                    'Forbidden host.'
+                );
+
+                return;
+            }
+
+            if (request.method !== 'GET') {
+                sendText(
+                    response,
+                    405,
+                    'Method not allowed.'
+                );
+
+                return;
+            }
+
             const url =
                 new URL(
                     request.url,

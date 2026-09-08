@@ -43,6 +43,26 @@ return class Replica {
         if (this.undoStack.length > 100) this.undoStack.shift();
         this.flight = null;
     }
+    confirm(id, revision) {
+        if (this.flight?.id !== id) return;
+        if (revision === this.revision + 1) {
+            this.doc = applyOperations(this.doc, this.flight.ops);
+            this.revision = revision;
+        } else if (revision > this.revision) {
+            throw new Error('revision-gap');
+        }
+        this.acknowledge(id);
+    }
+    reject(id, revision) {
+        if (this.flight?.id !== id) return null;
+        if (revision !== this.revision) throw new Error('revision-gap');
+        const recovery = this.view();
+        this.queue = [];
+        this.flight = null;
+        this.undoStack = [];
+        this.redoStack = [];
+        return recovery;
+    }
     receive(message) {
         if (message.revision <= this.revision) return;
         if (message.revision !== this.revision + 1) throw new Error('revision-gap');

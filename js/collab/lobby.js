@@ -27,6 +27,9 @@ async function initLobby() {
             closed: 'Lobby closed or expired. Your personal workspace has been restored.',
             map: 'Room map is fixed. Leave to change it.', remaining: 'Batches left', expires: 'Expires',
             budget: 'Daily room creation limit reached. Try after 00:00 UTC.', limited: 'Too many requests. Wait a minute and try again.',
+            challenge: 'Complete the security check, then press Create lobby again.',
+            security: 'Lobby creation security is unavailable or not configured.',
+            admissionLimit: 'This security session reached its room limit. Complete a new check.',
             fallback: 'Participant', recovery: 'A recovery copy is available below. It is kept only in this tab until reload.'
         },
         ru: {
@@ -44,6 +47,9 @@ async function initLobby() {
             closed: 'Лобби закрыто или истекло. Личное состояние карты восстановлено.',
             map: 'Карта лобби фиксирована. Для смены выйди из него.', remaining: 'Пакетов правок осталось', expires: 'Истекает',
             budget: 'Достигнут суточный лимит создания комнат. Попробуй после 00:00 UTC.', limited: 'Слишком много запросов. Подожди минуту.',
+            challenge: 'Пройди проверку безопасности и ещё раз нажми «Создать лобби».',
+            security: 'Защита создания лобби недоступна или не настроена.',
+            admissionLimit: 'Для этой проверки исчерпан лимит комнат. Пройди новую проверку.',
             fallback: 'Участник', recovery: 'Ниже доступна резервная копия. Она хранится только в этой вкладке до перезагрузки.'
         }
     };
@@ -61,6 +67,7 @@ async function initLobby() {
                 <label><span data-lobby-text="invite"></span><input class="lobby-invite" maxlength="2000" autocomplete="off" spellcheck="false"></label>
                 <button type="button" data-action="join" data-lobby-text="join"></button>
                 <label class="lobby-check"><input type="checkbox" class="lobby-include"><span data-lobby-text="include"></span></label>
+                <div class="lobby-turnstile" hidden></div>
                 <button type="button" data-action="create" data-lobby-text="create"></button>
             </div>
             <div class="lobby-session" hidden>
@@ -97,6 +104,27 @@ async function initLobby() {
     let code = '', ownerKey = '', you = '', roster = [], maximum = config.maxParticipants;
     let expiresAt = 0, remaining = 0, notice = '', recovery = null;
     let sentPresence = null;
+    let admission = '', admissionExpiresAt = 0, challengeToken = '';
+    let turnstileWidget = null, turnstileLoader = null;
+    const turnstile = config.turnstile || {};
+    const LOBBY_NAME_KEY = 'wardogs-lobby-name';
+    try {
+        q('.lobby-name').value = P.normalizePlayerName(
+            window.sessionStorage.getItem(LOBBY_NAME_KEY) ||
+            window.localStorage.getItem(LOBBY_NAME_KEY) ||
+            ''
+        );
+    } catch {}
+    q('.lobby-name').addEventListener('input', () => {
+        const name = q('.lobby-name').value;
+        try {
+            window.sessionStorage.setItem(LOBBY_NAME_KEY, name);
+            window.localStorage.setItem(LOBBY_NAME_KEY, name);
+        } catch {}
+        schedulePresence();
+    });
+    const challengeRequired = turnstile.enabled === true &&
+        !['localhost', '127.0.0.1'].includes(server.hostname);
     const delay = Math.max(250, Math.min(5000, Number(config.batchDelayMs) || 300));
     const busy = () => Boolean(drag || MAP_TOOL_STATE.pencilDragging || MAP_TOOL_STATE.zoneDragging || MAP_TOOL_STATE.polygonDraft);
     const connected = () => socket?.readyState === WebSocket.OPEN && !joining;
@@ -104,7 +132,13 @@ async function initLobby() {
         mapId: S.map, w: S.w, h: S.h,
         ...Object.fromEntries(P.COLLECTIONS.map(key => [key, key === 'savedTargets' ? (includeSaved ? savedTargets : []) : MAP_TOOL_STATE[key].filter(item => item.mapId === S.map)]))
     });
-    const rawPresence = () => P.normalizePresence({ origin: S.origin, target: S.target });
+    const rawPresence = () => ({
+        name: P.normalizePlayerName(q('.lobby-name').value),
+        ...P.normalizePresence(
+            { origin: S.origin, target: S.target },
+            { w: S.w, h: S.h }
+        )
+    });
     function validDocument(raw) {
         const doc = P.normalizeDocument(raw);
         if (doc.mapId !== 'custom' && !Object.hasOwn(MAPS, doc.mapId)) throw new Error('unsupported-room');
@@ -168,11 +202,7 @@ async function initLobby() {
         if (!connected() || readOnly) return;
         const presence = rawPresence();
         if (!force && P.same(presence, sentPresence)) return;
-        const text = JSON.stringify({
-            type: 'presence',
-            name: q('.lobby-name').value,
-            ...presence
-        });
+        const text = JSON.stringify({ type: 'presence', ...presence });
         if (P.byteLength(text) > P.LIMITS.messageBytes) throw new Error('bad-presence');
         socket.send(text);
         sentPresence = structuredClone(presence);
@@ -254,7 +284,7 @@ async function initLobby() {
         q('.lobby-expires').textContent = `${t('expires')}: ${expiresAt ? new Date(expiresAt).toLocaleTimeString(LANG, { hour: '2-digit', minute: '2-digit' }) : '—'}`;
         q('.lobby-peers').replaceChildren(...roster.map((peer, index) => {
             const li = document.createElement('li');
-            li.textContent = `${peer.name || `${t('fallback')} ${index + 1}`}${peer.id === you ? ' •' : ''}`;
+            li.textContent = `${peerDisplayName(peer, index)}${peer.id === you ? ' •' : ''}`;
             return li;
         }));
         action('create').disabled = joining;
@@ -311,6 +341,82 @@ async function initLobby() {
         return candidate;
     }
     function inviteLink() { const url = new URL(location.href); url.hash = `room=${code}`; return url.href; }
+    function loadTurnstile() {
+        if (!challengeRequired || window.turnstile) return Promise.resolve();
+        if (turnstileLoader) return turnstileLoader;
+        if (typeof turnstile.siteKey !== 'string' || !turnstile.siteKey.trim()) {
+            return Promise.reject(new Error('turnstile-not-configured'));
+        }
+        turnstileLoader = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+            script.async = true;
+            script.defer = true;
+            script.dataset.wardogsTurnstile = '1';
+            script.addEventListener('load', resolve, { once: true });
+            script.addEventListener('error', () => reject(new Error('turnstile-unavailable')), { once: true });
+            document.head.appendChild(script);
+        });
+        return turnstileLoader;
+    }
+    async function prepareChallenge() {
+        if (!challengeRequired) return;
+        const holder = q('.lobby-turnstile');
+        holder.hidden = false;
+        await loadTurnstile();
+        if (!window.turnstile || typeof window.turnstile.render !== 'function') {
+            throw new Error('turnstile-unavailable');
+        }
+        if (turnstileWidget !== null) return;
+        turnstileWidget = window.turnstile.render(holder, {
+            sitekey: turnstile.siteKey,
+            action: turnstile.action || 'create-lobby',
+            size: 'flexible',
+            theme: document.documentElement.dataset.theme === 'light' ? 'light' : 'dark',
+            callback: token => {
+                challengeToken = token;
+                notice = '';
+                updateUI();
+            },
+            'expired-callback': () => {
+                challengeToken = '';
+                notice = 'challenge';
+                updateUI();
+            },
+            'error-callback': () => {
+                challengeToken = '';
+                notice = 'security';
+                updateUI();
+            }
+        });
+    }
+    function resetChallenge() {
+        challengeToken = '';
+        if (turnstileWidget !== null && window.turnstile?.reset) {
+            window.turnstile.reset(turnstileWidget);
+        }
+    }
+    async function getAdmission() {
+        if (!challengeRequired) return '';
+        if (admission && admissionExpiresAt > Date.now() + 5000) return admission;
+        await prepareChallenge();
+        if (!challengeToken) return null;
+        const response = await fetch(`${base}/admission`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: challengeToken }),
+            credentials: 'omit',
+            referrerPolicy: 'no-referrer',
+            signal: AbortSignal.timeout(10000)
+        });
+        const data = await response.json();
+        resetChallenge();
+        if (!response.ok) throw new Error(data.error);
+        admission = parseInvite(data.admission);
+        admissionExpiresAt = Number(data.expiresAt) || 0;
+        q('.lobby-turnstile').hidden = true;
+        return admission;
+    }
     function connect() {
         clearTimers();
         const old = socket; socket = null; old?.close(1000, 'reconnect');
@@ -342,7 +448,7 @@ async function initLobby() {
                         }
                     }
                     if (!replica.flight) clearTimeout(ackTimer);
-                    you = P.slug(msg.you); roster = P.normalizeRoster(msg.roster); maximum = msg.maxParticipants; expiresAt = msg.expiresAt; remaining = msg.remainingUpdates;
+                    you = P.slug(msg.you); roster = P.normalizeRoster(msg.roster, doc); maximum = msg.maxParticipants; expiresAt = msg.expiresAt; remaining = msg.remainingUpdates;
                     q('.lobby-link').value = inviteLink();
                     render();
                     if (joinedNow) schedulePresence(true);
@@ -353,14 +459,36 @@ async function initLobby() {
                     if (!remaining) readOnly = true;
                     if (!replica.flight) clearTimeout(ackTimer);
                     render(); schedule();
-                } else if (msg.type === 'peers') { roster = P.normalizeRoster(msg.roster); updateUI(); draw(); }
+                } else if (msg.type === 'ack') {
+                    replica.confirm(msg.id, msg.revision);
+                    remaining = msg.remainingUpdates;
+                    clearTimeout(ackTimer);
+                    render(); schedule();
+                } else if (msg.type === 'rejected') {
+                    recovery = replica.reject(msg.id, msg.revision) || recovery;
+                    remaining = msg.remainingUpdates;
+                    notice = ['room-budget', 'daily-budget'].includes(msg.code)
+                        ? 'quota'
+                        : msg.code === 'conflict'
+                            ? 'conflict'
+                            : 'invalid';
+                    readOnly = notice === 'quota';
+                    clearTimeout(ackTimer);
+                    render(); open(true);
+                } else if (msg.type === 'peers') { roster = P.normalizeRoster(msg.roster, replica?.doc); updateUI(); draw(); }
                 else if (msg.type === 'closed') { notice = 'closed'; leave(true); open(true); }
                 else if (msg.type === 'error') { notice = msg.code === 'rate-limited' ? 'limited' : 'failed'; updateUI(); }
-            } catch {
+            } catch (error) {
+                console.error('[Lobby] invalid state:', error, event.data);
                 preserve(); notice = 'failed'; current.close(4000, 'invalid-state');
             }
         });
-        current.addEventListener('close', () => {
+        current.addEventListener('close', event => {
+            console.error('[Lobby] socket closed:', {
+                code: event.code,
+                reason: event.reason,
+                clean: event.wasClean
+            });
             if (socket !== current) return;
             clearTimers(); joining = false;
             notice = lobby.active ? 'offline' : 'failed';
@@ -375,9 +503,16 @@ async function initLobby() {
         joining = true; notice = ''; updateUI();
         try {
             const doc = validDocument(rawDocument(q('.lobby-include').checked));
+            const admissionToken = await getAdmission();
+            if (admissionToken === null) {
+                joining = false;
+                notice = 'challenge';
+                updateUI();
+                return;
+            }
             const response = await fetch(`${base}/rooms`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ doc }), credentials: 'omit', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(15000)
+                body: JSON.stringify({ doc, admission: admissionToken }), credentials: 'omit', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(15000)
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error);
@@ -386,7 +521,15 @@ async function initLobby() {
             connect();
         } catch (error) {
             joining = false;
-            notice = error.message === 'daily-room-limit' ? 'budget' : error.message === 'rate-limited' ? 'limited' : 'failed';
+            if (error.message === 'admission-room-limit') {
+                admission = '';
+                admissionExpiresAt = 0;
+                notice = 'admissionLimit';
+                try { await prepareChallenge(); } catch { notice = 'security'; }
+            } else if (error.message === 'daily-room-limit') notice = 'budget';
+            else if (error.message === 'rate-limited') notice = 'limited';
+            else if (/^(challenge-|turnstile-)/.test(error.message)) notice = 'security';
+            else notice = 'failed';
             updateUI();
         }
     }
@@ -405,10 +548,18 @@ async function initLobby() {
         for (const char of id) hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
         return peerColours[Math.abs(hash) % peerColours.length];
     }
+    function peerDisplayName(peer, index) {
+        const fallback = `${t('fallback')} ${index + 1}`;
+        if (!peer.name) return fallback;
+        const duplicate = roster.filter(candidate =>
+            candidate.name && candidate.name.toLocaleLowerCase() === peer.name.toLocaleLowerCase()
+        ).length > 1;
+        return duplicate ? `${peer.name} · ${peer.id.slice(0, 4)}` : peer.name;
+    }
     function visiblePeers() {
         return roster.flatMap((peer, index) => {
             if (peer.id === you || !peer.origin || !peer.target) return [];
-            return [{ ...peer, displayName: peer.name || `${t('fallback')} ${index + 1}` }];
+            return [{ ...peer, displayName: peerDisplayName(peer, index) }];
         });
     }
     function drawPeerMarker(point, kind, label, colour) {

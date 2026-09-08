@@ -1,7 +1,7 @@
 {
   "collab": {
     "enabled": true,
-    "serverUrl": "https://lobby.wardogs-artillery.com",
+    "serverUrl": "http://127.0.0.1:8799",
     "maxParticipants": 8,
     "roomLifetimeHours": 6,
     "maxRoomsPerDay": 250,
@@ -9,10 +9,21 @@
     "maxChangeBatchesPerRoom": 1000,
     "batchDelayMs": 300,
     "allowedOrigins": [
-      "https://wardogs-artillery.com",
+      "https://wardogs-artillery.com"
+    ],
+    "developmentOrigins": [
       "http://localhost:8000",
       "http://127.0.0.1:8000"
-    ]
+    ],
+    "maxRoomsPerAdmission": 25,
+    "admissionLifetimeMinutes": 30,
+    "maxInvalidMessages": 5,
+    "turnstile": {
+      "enabled": true,
+      "siteKey": "0x4AAAAAAEsqj3RkFZ7z3IfY",
+      "hostname": "wardogs-artillery.com",
+      "action": "create-lobby"
+    }
   },
   "mapTools": {
     "shortcuts": {

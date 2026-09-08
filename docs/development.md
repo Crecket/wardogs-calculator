@@ -20,7 +20,6 @@ wardogs-calculator/
 │   ├── map/
 │   ├── mobile/
 │   └── ui/
-│       └── locale-overrides.js
 ├── locales/
 │   ├── index.json
 │   └── *.json

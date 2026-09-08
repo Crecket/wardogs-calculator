@@ -174,8 +174,14 @@ function createFooterPartner(partner) {
     label.className =
         'footer-partner-label';
 
+    const partnerLabel =
+        typeof tr === 'function' &&
+        partner.id === 'wardogs-hub'
+            ? tr('communityPartner')
+            : partner.label;
+
     label.textContent =
-        `${partner.label}:`;
+        `${partnerLabel}:`;
 
     const link =
         document.createElement(
@@ -251,7 +257,9 @@ function renderFooter() {
         'footer-disclaimer';
 
     disclaimer.textContent =
-        config.disclaimer || '';
+        typeof tr === 'function'
+            ? tr('footerDisclaimer')
+            : (config.disclaimer || '');
 
     const meta =
         document.createElement(
@@ -307,8 +315,9 @@ function renderFooter() {
 
     const authorLabel =
         String(
-            config.authorLabel ||
-            'by'
+            typeof tr === 'function'
+                ? tr('authorLabel')
+                : (config.authorLabel || 'by')
         );
 
     author.append(

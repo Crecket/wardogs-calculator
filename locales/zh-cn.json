@@ -47,7 +47,7 @@
   "mapToolZoneHint": "从中心向外拖动以设置半径。",
   "mapToolPolygonHint": "单击以添加顶点。单击第一个点、双击或按 Enter 键完成。",
   "mapToolMarkers": "标记",
-  "mapToolNoMarkerAssets": "没有可用标记",
+  "mapToolNoMarkerAssets": "没有可用标记",
   "markerLabelFob": "FOB",
   "markerLabelTank": "坦克",
   "markerLabelArtillery": "炮兵",
@@ -137,5 +137,10 @@
   "weaponNames": {
     "mortar": "L81 迫击炮",
     "spg": "SPH-2"
-  }
+  },
+  "mobileOpenCalculator": "打开计算器",
+  "mobileCalculatorSections": "计算器分区",
+  "zoomOutLabel": "缩小",
+  "zoomInLabel": "放大",
+  "mobileCloseMenu": "关闭菜单"
 }
