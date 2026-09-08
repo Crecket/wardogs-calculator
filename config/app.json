@@ -1,7 +1,7 @@
 {
   "collab": {
     "enabled": true,
-    "serverUrl": "http://127.0.0.1:8799",
+    "serverUrl": "https://lobby.wardogs-artillery.com",
     "maxParticipants": 8,
     "roomLifetimeHours": 6,
     "maxRoomsPerDay": 250,
