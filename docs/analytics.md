@@ -39,10 +39,13 @@ The current event set intentionally focuses on meaningful user actions rather th
 | `contours-toggle` | User enables or disables terrain contours directly or through the Base layer group | `enabled`, `map` |
 | `ruler-used` | A non-zero ruler measurement is completed | `map` |
 | `drawing-created` | A pencil path is completed | `map` |
+| `zone-created` | A non-zero circular zone is completed | `map` |
+| `polygon-created` | A polygon with at least three points is completed | `map` |
 | `user-marker-placed` | A user Map Tools marker is placed | `map` |
 | `map-changes-exported` | User exports persistent Map Tools data | `drawings`, `markers` |
 | `map-changes-imported` | A valid Map Tools JSON file is imported | `drawings`, `markers`, `layers` |
 | `partner-click` | User opens a community partner link | `partner`, `placement` |
+| `donation-click` | User opens a donation service | `service`, `placement` |
 | `desktop-version` | Mobile user chooses the desktop interface | none |
 | `lobby-opened` | Lobby panel is opened for the first time during the current page lifetime | `map` |
 | `lobby-connected` | A lobby connection succeeds after creating, joining or reconnecting | `method`, `map`, optional `withSavedTargets` for creation |
@@ -62,6 +65,8 @@ The analytics wrapper applies session-level deduplication to the highest-volume 
 - `preset-marker-selected` is emitted at most once per map in the current browser-tab session.
 
 The deduplication keys are stored in `sessionStorage`, so a page reload in the same tab does not immediately generate the same high-volume events again. A new tab starts a new analytics session budget. If `sessionStorage` is unavailable, the same policy still works in memory for the current page lifetime.
+
+`lobby-opened` has a separate page-lifetime guard in the lobby module. Repeatedly closing and reopening the panel does not emit additional events until the page is reloaded.
 
 This intentionally changes these events from action counters into **feature-usage signals**. They are suitable for measuring how many sessions use a feature and for preserving the Origin → Target → Calculation funnel without spending analytics quota on every repeated drag or recalculation.
 
@@ -95,6 +100,29 @@ Contour analytics records only whether the contour layer was enabled or disabled
 
 The Map Tools functions are wrapped after page initialization so contour telemetry stays centralized in `js/core/analytics.js` rather than adding direct Umami calls to the map implementation.
 
+## v1.8 lobby telemetry
+
+Lobby analytics measures feature adoption and connection outcomes, not room activity. It uses the shared `trackAnalytics()` wrapper and emits only completed lifecycle actions:
+
+- `lobby-opened` when the panel is opened for the first time during the current page lifetime;
+- `lobby-connected` after a valid room snapshot establishes a connection;
+- `lobby-failed` when creation, joining or reconnection fails;
+- `lobby-disconnected` when an established connection closes unexpectedly;
+- `lobby-left` after the user explicitly leaves;
+- `lobby-invite-copied` only after the clipboard operation succeeds;
+- `lobby-recovery-exported` after a recovery file is generated.
+
+The allowed lobby event values are deliberately bounded:
+
+| Property | Allowed values |
+|---|---|
+| `method` / `operation` | `create`, `join`, `reconnect` |
+| `reason` | `invalid-invite`, `admission-limit`, `daily-limit`, `rate-limited`, `security`, `connection` |
+| `map` | Current public map id or `custom` |
+| `withSavedTargets` | Boolean creation option; it does not report target count or contents |
+
+Presence updates, roster changes, WebSocket heartbeats, shared-state batches, acknowledgements, drawing changes and pointer movement do not generate lobby analytics events.
+
 ## Privacy and event volume
 
 Custom analytics data does **not** include:
@@ -116,7 +144,7 @@ Lobby events never include the invite or room code, owner key, player name, rost
 
 This keeps event payloads small and avoids generating excessive event-data usage. High-frequency actions such as map panning, cursor movement, mouse movement, and pinch/wheel zoom are deliberately not tracked.
 
-Repeated high-volume calculator interactions are also deduplicated before they are queued or sent to Umami. Rare actions such as saved-target transfer, drawings, ruler use, map changes, Terrain3D/contour toggles, and partner clicks continue to be recorded per completed action because their event volume is comparatively small and their action counts remain useful.
+Repeated high-volume calculator interactions are also deduplicated before they are queued or sent to Umami. Rare actions such as saved-target transfer, completed map drawings, zones and polygons, ruler use, map changes, Terrain3D/contour toggles, donation/partner clicks and lobby lifecycle actions continue to be recorded per completed action because their event volume is comparatively small and their action counts remain useful.
 
 ## Adding an event
 
