@@ -1,6 +1,6 @@
 ## Project Structure
 
-For the optional Cloudflare collaborative-room service, see [Collaborative lobbies](lobbies.md) or the [Russian quick start](lobbies.ru.md).
+For the optional Cloudflare collaborative-room service, see [Collaborative lobbies](lobbies.md).
 
 ```text
 wardogs-calculator/
@@ -64,7 +64,7 @@ If you use `http://127.0.0.1:8000` or a LAN address, allow that origin as well.
 See [Tile hosting](maps.md#tile-hosting) and
 [Terrain3D hosting](terrain.md#terrain3d-hosting) for asset paths and releases.
 
-Production analytics are disabled by default in the development server. Set `WARDOGS_DISABLE_ANALYTICS=false` only when explicitly testing the Umami integration.
+Production analytics are disabled by default in the development server. Set `WARDOGS_DISABLE_ANALYTICS=false` only when explicitly testing the Umami integration. See [Analytics](analytics.md#development-analytics-switch) for the full local-testing behavior.
 
 To test on another device:
 

@@ -49,7 +49,7 @@ The current event set intentionally focuses on meaningful user actions rather th
 | `desktop-version` | Mobile user chooses the desktop interface | none |
 | `lobby-opened` | Lobby panel is opened for the first time during the current page lifetime | `map` |
 | `lobby-connected` | A lobby connection succeeds after creating, joining or reconnecting | `method`, `map`, optional `withSavedTargets` for creation |
-| `lobby-failed` | Creating, joining or reconnecting cannot start | `operation`, coarse `reason` |
+| `lobby-failed` | Creating, joining or reconnecting does not complete | `operation`, coarse `reason` |
 | `lobby-disconnected` | An active lobby unexpectedly loses its connection | `map` |
 | `lobby-left` | User explicitly leaves a lobby | `map` |
 | `lobby-invite-copied` | An invite link is successfully copied | `map` |

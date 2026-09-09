@@ -133,6 +133,12 @@ Cloudflare's current Free-plan limits and billing model can change. Before launc
 - Rejected/unconfirmed local work can be downloaded from the menu as `wardogs-lobby-recovery.json`.
 - Entering a room takes an in-memory backup of the personal workspace. Leaving restores the original map, weapon, points, drawings, saved targets, camera and history. Room data is not written to personal `localStorage`.
 
+## Analytics and privacy
+
+The site records only low-volume lobby lifecycle events: first panel open, successful create/join/reconnect, coarse connection failures, unexpected disconnects, explicit leave, successful invite copy and recovery export. Event data is limited to the public map id, connection method, a bounded failure category and the boolean “include saved targets” option used during creation.
+
+Nicknames, invitation codes, owner keys, participant rosters, artillery or target coordinates, room documents, shared drawings, presence messages, recovery contents, WebSocket heartbeats and edit batches are never sent to Umami. See [Analytics](analytics.md#v18-lobby-telemetry) for the exact event and payload contract.
+
 ## Verification
 
 From `sync`:

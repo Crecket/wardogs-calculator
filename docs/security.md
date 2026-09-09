@@ -33,9 +33,10 @@ or R2 write credentials. The Turnstile site key is intentionally public.
   custom Worker domain. Worker observability remains off so invitation-bearing
   request paths are not intentionally copied into application logs.
 - Production HTML receives a restrictive CSP at build time. It allowlists only
-  the site, R2 asset host, lobby endpoint, Umami and Turnstile. Inline event
-  handlers, plugins, arbitrary frames and unexpected network destinations are
-  blocked.
+  the site, R2 asset host, lobby endpoint, the Umami tracker at
+  `https://cloud.umami.is`, its event endpoint at `https://gateway.umami.is`,
+  and Turnstile. Inline event handlers, plugins, arbitrary frames and
+  unexpected network destinations are blocked.
 - The local development server binds to loopback by default, validates `Host`,
   serves only public application paths and rejects symlink escapes.
 - JSON imports are rejected before reading files larger than 1 MiB.
@@ -124,8 +125,9 @@ actual protection.
   listing do not make public assets confidential. Preventing redistribution
   requires licensing/enforcement or an authenticated paid delivery design,
   which would add cost and still cannot stop an authorized client from copying.
-- Production analytics loads the allowlisted remote Umami script. It executes
-  with page privileges, and the analytics origin is also an allowed network
-  destination, so a compromise remains a supply-chain risk despite CSP.
-  Self-hosting a reviewed, pinned bundle or disabling analytics is the way to
-  remove that dependency.
+- Production analytics loads the remote script from `https://cloud.umami.is`
+  and allows event delivery to `https://gateway.umami.is`. The script executes
+  with page privileges, so a compromise remains a supply-chain risk despite
+  CSP. Self-hosting a reviewed, pinned bundle or disabling analytics is the way
+  to remove that dependency. See [Analytics](analytics.md) for the event payload
+  and privacy policy.
