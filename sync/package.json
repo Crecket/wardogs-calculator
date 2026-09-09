@@ -14,6 +14,10 @@
         "test:obs": "node test/obs.mjs"
     },
     "devDependencies": {
-        "wrangler": "^4.0.0"
+        "wrangler": "^4.129.0"
+    },
+    "overrides": {
+        "undici": "7.29.0",
+        "sharp": "0.35.4"
     }
 }

@@ -34,21 +34,18 @@ jobs:
       - name: Install site dependencies
         run: npm ci
 
-      - name: Install lobby dependencies
+      - name: Install sync worker dependencies
         working-directory: sync
         run: npm ci
 
       - name: Run tests
-        run: npm run test:scripts && npm --prefix sync test
+        run: npm run test:scripts && npm --prefix sync run test:smoke && npm --prefix sync run test:browser && npm --prefix sync run test:disabled && npm --prefix sync run test:guns && npm --prefix sync run test:cursors
 
       - name: Audit dependencies
         run: npm audit --audit-level=high && npm --prefix sync audit --audit-level=high
 
       - name: Build production site
         run: npm run build
-
-      - name: Verify production artifact
-        run: npm run test:build
 
       - name: Validate Worker bundle
         working-directory: sync

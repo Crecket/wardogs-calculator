@@ -4,42 +4,46 @@
 
 The repository is public. Treat every URL, protocol message, validation rule,
 limit and client-side check as known to an attacker. Security must come from
-server-side validation, unguessable or signed credentials, Cloudflare bindings
-and strict cost ceilings—not from hidden JavaScript or undocumented paths.
+server-side validation, unguessable identifiers, Cloudflare bindings and
+strict cost ceilings—not from hidden JavaScript or undocumented paths.
 
-The browser is untrusted. It never receives `ROOM_SECRET`, `TURNSTILE_SECRET`
-or R2 write credentials. The Turnstile site key is intentionally public.
+The browser is untrusted. The sync Worker holds no server-side secret today:
+a room's code is itself the bearer credential for joining it, not a signed
+token the browser could leak.
 
 ## Controls implemented in the repository
 
-- Production room creation requires a Turnstile token verified by the Worker.
-  The Worker checks success, hostname and action, then returns a short-lived,
-  IP-bound HMAC admission. One admission has its own configurable room cap.
-- Production and development origins are separate. Local origins are accepted
-  only with the explicit local `LOBBIES_DEV=true` flag.
-- Every production HTTP path requires configured rate-limit bindings. Creation,
-  challenge exchange and joins have separate keys and limits in addition to the
-  global application budgets.
-- Signed room invitations are verified before a Durable Object is opened.
-  Invalid paths therefore cannot create arbitrary room objects.
-- Documents and changes are normalized and checked against the server's map and
-  marker catalog. Coordinates, sizes, collection counts, operation counts,
-  messages and stored documents are bounded.
-- Full snapshots are sent only when a WebSocket joins. Duplicate or rejected
-  edits receive small messages, preventing error-driven snapshot amplification.
-- Player names use Unicode normalization and remove control/format characters.
-  Duplicate visible names receive a short participant-ID suffix.
-- `workers.dev` and preview endpoints are disabled; production uses only the
-  custom Worker domain. Worker observability remains off so invitation-bearing
-  request paths are not intentionally copied into application logs.
-- Production HTML receives a restrictive CSP at build time. It allowlists only
-  the site, R2 asset host, lobby endpoint, the Umami tracker at
-  `https://cloud.umami.is`, its event endpoint at `https://gateway.umami.is`,
-  and Turnstile. Inline event handlers, plugins, arbitrary frames and
-  unexpected network destinations are blocked.
+- Room *creation* is restricted to configured browser origins
+  (`ALLOWED_ORIGINS` in `sync/wrangler.jsonc`). Joining an existing room is
+  deliberately not gated by this list: the room code is the credential, and
+  invite links get opened from contexts an origin allowlist cannot enumerate.
+  Requests with no `Origin` header (curl, native clients, the test suite) are
+  allowed through—an origin allowlist is a browser-tab defence, not
+  authentication.
+- Every room enforces per-table caps (`LIMITS.drawings`, `.markers`,
+  `.targets`, `.guns`, `.peers`, `.viewers` in `sync/src/ops.js`) and
+  coordinate/zoom bounds, so a room cannot be grown or malformed past what the
+  Durable Object was sized for.
+- Each WebSocket connection is token-bucket rate-limited per op type
+  (`LIMITS.opsPerSecond`/`opsBurst`, `.cursorsPerSecond`/`cursorBurst`,
+  `.viewsPerSecond`/`viewBurst` in `sync/src/room.js`). Buckets live in memory
+  only and are dropped on hibernation.
+- Cursor/participant names strip control characters and are length-capped
+  before storage or broadcast.
+- Full snapshots are sent only when a WebSocket joins; all other traffic is
+  incremental, normalized ops.
+- Room state is SQLite-backed (`new_sqlite_classes` in `sync/wrangler.jsonc`),
+  which is required on the Workers Free plan and is the only backend where a
+  room's drawings can exceed the 128 KiB per-value cap key-value storage would
+  impose.
+- Production HTML receives a restrictive CSP at build time. It allowlists the
+  site, the R2 tile host, the sync Worker's origin for the collaboration
+  WebSocket, and the Umami tracker at `https://cloud.umami.is` /
+  `https://gateway.umami.is` only when analytics is enabled. Inline event
+  handlers, plugins, arbitrary frames and unexpected network destinations are
+  blocked.
 - The local development server binds to loopback by default, validates `Host`,
   serves only public application paths and rejects symlink escapes.
-- JSON imports are rejected before reading files larger than 1 MiB.
 - CI actions are pinned to full commits. Pull requests run tests, dependency
   audit, production build verification and a Worker dry run. Dependabot tracks
   both npm projects and GitHub Actions.
@@ -49,7 +53,7 @@ or R2 write credentials. The Turnstile site key is intentionally public.
 The generated CSP works as a `<meta http-equiv>` policy, but `frame-ancestors`
 is valid only in an HTTP response header. In the Cloudflare zone, create a
 **Transform Rule → Modify Response Header** restricted to the application host
-(`http.host eq "wardogs-artillery.com"`) and set:
+(`http.host eq "wardogs-map.olm.pet"`) and set:
 
 | Header | Value |
 | --- | --- |
@@ -68,7 +72,7 @@ API-specific headers and R2 needs its own CORS/cache policy.
 Verify after deployment:
 
 ```powershell
-curl.exe -I "https://wardogs-artillery.com/"
+curl.exe -I "https://wardogs-map.olm.pet/"
 ```
 
 ## Cloudflare and GitHub settings
@@ -82,52 +86,41 @@ curl.exe -I "https://wardogs-artillery.com/"
 4. In the GitHub repository, enable secret scanning and push protection where
    available. Protect `main`: require a pull request, require the Security
    checks workflow, block force pushes and block branch deletion.
-5. Do not enable Cloudflare Access on the public lobby endpoint; it would block
-   ordinary users. The application-level admission and room invitation are the
-   relevant controls.
 
 Test origin enforcement against the custom domain:
 
 ```powershell
-$workerUrl = "https://lobby.wardogs-artillery.com"
+$workerUrl = "https://wardogs-map-sync.olm.pet"
 curl.exe -i -H "Origin: https://some-fork.example" "$workerUrl/"
-curl.exe -i -H "Origin: https://wardogs-artillery.com" "$workerUrl/"
+curl.exe -i -H "Origin: https://wardogs-map.olm.pet" "$workerUrl/"
 ```
 
-The first request must be `403 forbidden-origin`; the second should reach the
-router and return `404 not-found`. A successful CORS response alone is not proof
-of authorization—the signed invitation and server admission checks provide the
-actual protection.
+The first request must be `403 forbidden-origin` for room-creation requests;
+a successful CORS response alone is not proof of authorization—joining still
+requires knowing the room code.
 
 ## Secrets and incident response
 
-- `ROOM_SECRET` signs invitations and creation admissions. Rotating it
-  invalidates all current invitation/admission tokens. Do this after suspected
-  disclosure, then ask participants to create new rooms.
-- `TURNSTILE_SECRET` can be rotated independently in the Turnstile dashboard
-  and with `npx wrangler secret put TURNSTILE_SECRET`.
-- `LOBBIES_DISABLED=true` is the emergency kill switch. It overrides repository
-  configuration and stops creation and connections while an incident is
-  investigated.
+- The sync Worker currently holds no server-side secret to rotate; a
+  compromised room is addressed by creating a new room and sharing its code
+  out of band, not by rotating a credential.
 - Revoke and replace compromised R2 tokens, review Cloudflare usage, and check
   Git history—not only the current tree—before considering a leaked credential
   removed.
 
 ## Remaining limitations
 
-- A room invitation is a bearer credential. Anyone who receives it can join and
-  edit until it expires; there are no user accounts or per-member permissions.
-- Turnstile and rate limits increase abuse cost but cannot prove a human is
-  benign. Global budgets intentionally prefer a temporary service stop over an
-  unbounded bill.
+- A room code is a bearer credential. Anyone who has it can join and edit
+  until the room expires from inactivity; there are no user accounts or
+  per-member permissions.
 - Files needed by a public browser—including R2 map tiles and terrain data—can
   be downloaded by users and forks. CORS, obscure paths and disabled bucket
   listing do not make public assets confidential. Preventing redistribution
   requires licensing/enforcement or an authenticated paid delivery design,
   which would add cost and still cannot stop an authorized client from copying.
-- Production analytics loads the remote script from `https://cloud.umami.is`
-  and allows event delivery to `https://gateway.umami.is`. The script executes
-  with page privileges, so a compromise remains a supply-chain risk despite
-  CSP. Self-hosting a reviewed, pinned bundle or disabling analytics is the way
-  to remove that dependency. See [Analytics](analytics.md) for the event payload
-  and privacy policy.
+- Production analytics, when enabled, loads the remote script from
+  `https://cloud.umami.is` and allows event delivery to
+  `https://gateway.umami.is`. The script executes with page privileges, so a
+  compromise remains a supply-chain risk despite CSP. Self-hosting a reviewed,
+  pinned bundle or disabling analytics is the way to remove that dependency.
+  See [Analytics](analytics.md) for the event payload and privacy policy.
