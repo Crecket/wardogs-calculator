@@ -63,7 +63,17 @@ for (const path of securityMetaPages) {
     assert.doesNotMatch(html, /Content-Security-Policy[^>]+localhost/i, `${page}: development origin leaked into CSP`);
 }
 
-assert.equal(artifactFiles.some(path => path.endsWith('.bin')), false, 'terrain binaries entered the Pages artifact');
+const terrainContext = JSON.parse(await readFile(join(root, 'data', 'ballistics', 'terrain-context.json'), 'utf8'));
+const terrainMapIds = Object.keys(terrainContext.terrainMaps ?? {});
+assert.ok(terrainMapIds.length > 0, 'terrain-context.json has no terrainMaps');
+
+for (const mapId of terrainMapIds) {
+    const manifest = join(dist, 'data', 'terrain', mapId, 'manifest.json');
+    const heightfield = join(dist, 'data', 'terrain', mapId, 'heightfield.bin');
+    assert.ok(artifactFiles.includes(manifest), `${mapId}: terrain manifest is missing from the Pages artifact`);
+    assert.ok(artifactFiles.includes(heightfield), `${mapId}: terrain heightfield is missing from the Pages artifact`);
+}
+
 assert.equal(artifactFiles.some(path => path.includes(`${join('maps', 'tiles')}`)), false, 'map tiles entered the Pages artifact');
 
 const sitemap = await readFile(join(dist, 'sitemap.xml'), 'utf8');
