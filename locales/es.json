@@ -55,6 +55,8 @@
   "mapLocked": "Mapa predeterminado seleccionado — el tamaño de la cuadrícula está bloqueado",
   "mapToolRuler": "Regla",
   "mapToolPencil": "Lápiz",
+  "mapToolZoneHint": "Arrastra desde el centro para definir el radio.",
+  "mapToolPolygonHint": "Haz clic para añadir vértices. Para terminar, haz clic en el primer punto, haz doble clic o pulsa Enter.",
   "mapToolMarkers": "Marcadores",
   "mapToolNoMarkerAssets": "No hay iconos de marcador disponibles",
   "markerLabelFob": "FOB",

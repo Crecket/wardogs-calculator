@@ -95,8 +95,8 @@ function drawGrid() {
 
         ctx.lineWidth =
             isMajor
-                ? 1.3
-                : 1;
+                ? 1
+                : 0.65;
 
         ctx.beginPath();
 
@@ -154,8 +154,8 @@ function drawGrid() {
 
         ctx.lineWidth =
             isMajor
-                ? 1.3
-                : 1;
+                ? 1
+                : 0.65;
 
         ctx.beginPath();
 

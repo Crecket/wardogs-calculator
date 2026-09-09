@@ -5,7 +5,7 @@
 [![Vanilla JS](https://img.shields.io/badge/JavaScript-Vanilla-F7DF1E?style=flat-square&logo=javascript&logoColor=000)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![GitHub Pages](https://img.shields.io/badge/Hosted_on-GitHub_Pages-222?style=flat-square&logo=github)](https://pages.github.com/)
 
-A lightweight, open-source artillery calculator and tactical map tool for **WARDOGS**.
+A lightweight, open-source **L81 Mortar** and **SPH-2** artillery calculator, live team map, and tactical planning tool for **WARDOGS**.
 
 **Live app:** https://wardogs-artillery.com/  
 **Mobile UI:** https://wardogs-artillery.com/mobile/  
@@ -36,11 +36,11 @@ The project ships two interfaces from the same repository and GitHub Pages deplo
 
 Phones are automatically routed from the desktop entry pages to the matching mobile route. The mobile UI is a separate map-first interface with touch panning, pinch zoom, touch-friendly point placement, Map Tools, and a bottom-sheet calculator.
 
-Both interfaces reuse the same calculator logic, maps, tile pyramid, configuration, translations, saved targets, drawings, and browser storage.
+Both interfaces reuse the same calculator logic, maps, tile pyramid, configuration, translations, saved targets, drawings, browser storage, and optional live team lobbies.
 
 ## Localization
 
-The shared locale system supports English, Russian, Ukrainian, German, French, Spanish, Polish, Portuguese, Simplified Chinese, Korean, and the non-indexed Cat locale.
+The shared locale system supports English, Russian, Ukrainian, German, French, Spanish, Polish, Portuguese, Simplified Chinese, Korean, Japanese, and the non-indexed Cat locale.
 
 ## Documentation
 
@@ -55,6 +55,7 @@ Detailed documentation is split into focused files to keep this README concise.
 - [Development](docs/development.md) — project structure, local development, unified build process, and GitHub Pages deployment
 - [Analytics](docs/analytics.md) — Umami custom events, event payloads, debouncing, and privacy considerations
 - [Message of the Day](docs/motd.md) — MOTD configuration, localization, and behavior
+- [Security hardening](docs/security.md) — public-source threat model, Cloudflare headers, secrets, CI, and residual risks
 - [Contributing](docs/contributing.md) — contribution guidelines
 - [License & Disclaimer](docs/legal.md) — MIT scope, third-party assets, and project disclaimer
 

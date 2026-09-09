@@ -49,6 +49,210 @@ const SAVE_ARTILLERY_KEY =
 const MAP_POINTS_KEY =
     'wardogs-map-points';
 
+const APP_SELECTIONS_KEY =
+    'wardogs-app-selections';
+
+const DEFAULT_CUSTOM_MAP_SIZE = {
+    w: 10,
+    h: 10
+};
+
+let savedCustomMapSize = {
+    ...DEFAULT_CUSTOM_MAP_SIZE
+};
+
+
+/* =========================
+   PERSISTED APP SELECTIONS
+   ========================= */
+
+function loadAppSelections() {
+    try {
+        const raw =
+            localStorage.getItem(
+                APP_SELECTIONS_KEY
+            );
+
+        if (!raw) {
+            return;
+        }
+
+        const parsed =
+            JSON.parse(raw);
+
+        if (
+            typeof parsed?.map ===
+                'string' &&
+            parsed.map.trim()
+        ) {
+            S.map =
+                parsed.map.trim();
+        }
+
+        if (
+            typeof parsed?.weapon ===
+                'string' &&
+            parsed.weapon.trim()
+        ) {
+            S.weapon =
+                parsed.weapon.trim();
+        }
+
+        const customWidth =
+            Number(parsed?.customMap?.w);
+
+        const customHeight =
+            Number(parsed?.customMap?.h);
+
+        if (
+            Number.isFinite(customWidth) &&
+            Number.isFinite(customHeight) &&
+            customWidth >= 1 &&
+            customWidth <= 100 &&
+            customHeight >= 1 &&
+            customHeight <= 100
+        ) {
+            savedCustomMapSize = {
+                w: customWidth,
+                h: customHeight
+            };
+        }
+
+        if (S.map === 'custom') {
+            S.w = savedCustomMapSize.w;
+            S.h = savedCustomMapSize.h;
+        }
+    } catch (error) {
+        console.warn(
+            'Failed to load app selections:',
+            error
+        );
+    }
+}
+
+function persistAppSelections() {
+    try {
+        if (S.map === 'custom') {
+            savedCustomMapSize = {
+                w: S.w,
+                h: S.h
+            };
+        }
+
+        localStorage.setItem(
+            APP_SELECTIONS_KEY,
+            JSON.stringify({
+                map: S.map,
+                weapon: S.weapon,
+                customMap: {
+                    ...savedCustomMapSize
+                }
+            })
+        );
+    } catch (error) {
+        console.warn(
+            'Failed to save app selections:',
+            error
+        );
+    }
+}
+
+function getSavedCustomMapSize() {
+    return {
+        ...savedCustomMapSize
+    };
+}
+
+
+/* =========================
+   KEYBOARD SHORTCUTS
+   ========================= */
+
+/*
+ * event.key follows the active keyboard layout (KeyR becomes "к" on a
+ * Russian layout). Shortcut bindings describe physical keys, so prefer
+ * event.code for letters/digits and fall back to event.key for everything
+ * else. This keeps shortcuts layout-independent without changing displayed
+ * shortcut labels.
+ */
+function getKeyboardShortcutKey(event) {
+    const code =
+        String(event?.code || '');
+
+    if (/^Key[A-Z]$/.test(code)) {
+        return code.slice(3).toLowerCase();
+    }
+
+    if (/^Digit[0-9]$/.test(code)) {
+        return code.slice(5);
+    }
+
+    const codeKeys = {
+        Escape: 'escape',
+        ArrowUp: 'arrowup',
+        ArrowRight: 'arrowright',
+        ArrowDown: 'arrowdown',
+        ArrowLeft: 'arrowleft',
+        Equal: event?.shiftKey ? '+' : '=',
+        NumpadAdd: '+',
+        Minus: event?.shiftKey ? '_' : '-',
+        NumpadSubtract: '-',
+        Enter: 'enter',
+        NumpadEnter: 'enter',
+        Backspace: 'backspace',
+        Delete: 'delete'
+    };
+
+    return (
+        codeKeys[code] ||
+        String(event?.key || '')
+            .toLowerCase()
+    );
+}
+
+
+/* =========================
+   MAP POINT HIT TESTING
+   ========================= */
+
+function getNearestUnlockedMapPoint(
+    originDistance,
+    targetDistance,
+    hitThreshold
+) {
+    const nearest = [
+        {
+            type: 'origin',
+            distance: originDistance
+        },
+        {
+            type: 'target',
+            distance: targetDistance
+        }
+    ]
+        .filter(
+            point =>
+                Number.isFinite(
+                    point.distance
+                ) &&
+                !isPointMapLocked(
+                    point.type
+                )
+        )
+        .sort(
+            (a, b) =>
+                a.distance -
+                b.distance
+        )[0];
+
+    return (
+        nearest &&
+        nearest.distance <= hitThreshold
+    )
+        ? nearest.type
+        : null;
+}
+
 
 /* =========================
    ZOOM

@@ -55,6 +55,8 @@
   "mapLocked": "Carte prédéfinie sélectionnée — la taille de la grille est verrouillée",
   "mapToolRuler": "Règle",
   "mapToolPencil": "Crayon",
+  "mapToolZoneHint": "Faites glisser depuis le centre pour définir le rayon.",
+  "mapToolPolygonHint": "Cliquez pour ajouter des sommets. Pour terminer, cliquez sur le premier point, double-cliquez ou appuyez sur Entrée.",
   "mapToolMarkers": "Marqueurs",
   "mapToolNoMarkerAssets": "Aucune icône de marqueur disponible",
   "markerLabelFob": "FOB",

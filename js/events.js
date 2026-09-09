@@ -22,7 +22,6 @@ function bindEvents() {
     $('mapSelect').addEventListener(
         'change',
         () => {
-
             const key =
                 $('mapSelect').value;
 
@@ -44,7 +43,25 @@ function bindEvents() {
 
                 S.map =
                     'custom';
+
+                const customSize =
+                    getSavedCustomMapSize();
+
+                S.w =
+                    customSize.w;
+
+                S.h =
+                    customSize.h;
             }
+
+            if (
+                typeof loadMapPoints ===
+                'function'
+            ) {
+                loadMapPoints();
+            }
+
+            persistAppSelections();
 
             clamp(
                 S.origin
@@ -120,6 +137,8 @@ function bindEvents() {
                 collabSyncShared();
             }
 
+            persistAppSelections();
+
             if (
                 typeof trackAnalytics ===
                 'function'
@@ -139,7 +158,6 @@ function bindEvents() {
     $('apply').addEventListener(
         'click',
         () => {
-
             /*
              * A room's map is fixed at creation: saved targets carry no
              * map id, so resizing under them would silently misplace
@@ -178,6 +196,8 @@ function bindEvents() {
                         10
                     )
                 );
+
+            persistAppSelections();
 
             clamp(
                 S.origin
@@ -553,40 +573,36 @@ function bindEvents() {
                     S.target.y
                 );
 
+            /*
+             * Locked points are not hit-test targets. A click beside a
+             * locked gun/target must remain available for placing the active
+             * unlocked point instead of being swallowed by the nearer lock.
+             */
+            const nearestUnlockedPoint =
+                getNearestUnlockedMapPoint(
+                    d1,
+                    d2,
+                    pointHitThreshold
+                );
+
             if (
-                !isForcePlacementEnabled() &&
-                Math.min(d1, d2) <
-                pointHitThreshold
+                nearestUnlockedPoint
             ) {
-                const nearestPoint =
-                    d1 < d2
-                        ? 'origin'
-                        : 'target';
-
-                if (
-                    isPointMapLocked(
-                        nearestPoint
-                    )
-                ) {
-                    drag = null;
-                    updateCursor(e);
-                    return;
-                }
-
                 /*
                  * Select before the write below: S.origin resolves through
                  * the active gun, so the selection has to move first or
                  * the drag would edit the gun you just clicked away from.
                  */
                 if (
-                    nearestPoint === 'origin' &&
+                    nearestUnlockedPoint === 'origin' &&
                     hitGun &&
                     hitGun.id !== S.activeGunId
                 ) {
                     selectGun(hitGun.id);
                 }
 
-                drag = nearestPoint;
+                drag =
+                    nearestUnlockedPoint;
 
             } else {
 

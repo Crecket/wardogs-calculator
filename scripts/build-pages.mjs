@@ -1,6 +1,11 @@
 import { cp, mkdir, readFile, rm, writeFile, readdir, stat } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+    MAP_LANDING_PAGES,
+    mapLandingUrl,
+    renderMapLandingPage
+} from './map-landing-pages.mjs';
 import { SEO_ALTERNATE_NAMES, SEO_PAGE_CONTENT } from './seo-content.mjs';
 import { buildObsPage } from './lib/obs-page.mjs';
 import {
@@ -66,6 +71,91 @@ async function exists(path) {
     }
 }
 
+function tileOrigin() {
+    const base = tileBaseUrl();
+
+    if (!base) return null;
+
+    try {
+        return new URL(base).origin;
+    } catch {
+        return null;
+    }
+}
+
+function collabOrigins() {
+    const configured = collabUrl();
+
+    if (!configured) return [];
+
+    try {
+        const server = new URL(configured);
+        const origins = [server.origin];
+
+        if (server.protocol === 'wss:') origins.push(`https://${server.host}`);
+        if (server.protocol === 'ws:') origins.push(`http://${server.host}`);
+
+        return origins;
+    } catch {
+        return [];
+    }
+}
+
+function addProductionSecurityMeta(html, appConfig) {
+    const collab = appConfig.collab || {};
+    const turnstileEnabled = collab.turnstile?.enabled === true;
+    const analyticsEnabled = Boolean(analyticsWebsiteId());
+    const origin = tileOrigin();
+
+    const connectSources = new Set(["'self'"]);
+    if (origin) connectSources.add(origin);
+    if (analyticsEnabled) {
+        connectSources.add('https://cloud.umami.is');
+        connectSources.add('https://gateway.umami.is');
+    }
+
+    for (const collabOrigin of collabOrigins()) connectSources.add(collabOrigin);
+    if (turnstileEnabled) connectSources.add('https://challenges.cloudflare.com');
+
+    const scriptSources = ["'self'"];
+    if (analyticsEnabled) scriptSources.push('https://cloud.umami.is');
+    if (turnstileEnabled) scriptSources.push('https://challenges.cloudflare.com');
+
+    const imageSources = [
+        "'self'",
+        'data:',
+        'blob:'
+    ];
+    if (origin) imageSources.push(origin);
+    if (turnstileEnabled) imageSources.push('https://challenges.cloudflare.com');
+
+    const policy = [
+        "default-src 'self'",
+        `script-src ${scriptSources.join(' ')}`,
+        "script-src-attr 'none'",
+        "style-src 'self' 'unsafe-inline'",
+        `img-src ${imageSources.join(' ')}`,
+        `connect-src ${[...connectSources].join(' ')}`,
+        `frame-src ${turnstileEnabled ? 'https://challenges.cloudflare.com' : "'none'"}`,
+        "font-src 'self' data:",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "worker-src 'self' blob:",
+        'upgrade-insecure-requests'
+    ].join('; ');
+
+    const metadata = [
+        `<meta content="${policy}" http-equiv="Content-Security-Policy"/>`,
+        '<meta content="no-referrer" name="referrer"/>'
+    ].join('\n');
+
+    return html.replace(
+        /(<meta\b[^>]*\bcharset\s*=\s*["'][^"']+["'][^>]*>)/i,
+        `$1\n${metadata}`
+    );
+}
+
 async function copyIfExists(source, target, filter) {
     if (!(await exists(source))) return;
     await cp(source, target, { recursive: true, filter });
@@ -114,6 +204,16 @@ async function bundleStyles() {
     await bundleStyleFiles(
         obsStyleFiles,
         'obs.css'
+    );
+
+    await mkdir(
+        join(dist, 'styles'),
+        { recursive: true }
+    );
+
+    await copyIfExists(
+        join(root, 'styles', 'map-landing.css'),
+        join(dist, 'styles', 'map-landing.css')
     );
 }
 
@@ -195,7 +295,7 @@ function refreshSeoMetadata(html, appConfig) {
         /<head>[\s\S]*?<\/head>/i,
         head => head
             .replace(/\bSPG\b/g, 'SPH-2')
-            .replace(/mortar and SPH-2 solutions/gi, 'Mortar and SPH-2 firing solutions')
+            .replace(/mortar and SPH-2 solutions/gi, 'L81 Mortar and SPH-2 firing solutions')
     );
 
     output = output.replace(
@@ -213,7 +313,7 @@ function refreshSeoMetadata(html, appConfig) {
                 if (typeof data.description === 'string') {
                     data.description = data.description
                         .replace(/\bSPG\b/g, 'SPH-2')
-                        .replace(/mortar and SPH-2 solutions/gi, 'Mortar and SPH-2 firing solutions');
+                        .replace(/mortar and SPH-2 solutions/gi, 'L81 Mortar and SPH-2 firing solutions');
                 }
 
                 return `<script type="application/ld+json">${JSON.stringify(data, null, 2)}</script>`;
@@ -289,7 +389,8 @@ function replaceSeoMetaContent(
 function refreshSeoV2StructuredData(
     html,
     appConfig,
-    copy
+    copy,
+    language
 ) {
     const version =
         appConfig?.site?.footer?.version;
@@ -306,8 +407,14 @@ function refreshSeoV2StructuredData(
                 data.description =
                     copy.description;
 
+                data.url =
+                    desktopUrlForLanguage(language);
+
+                data.inLanguage =
+                    language;
+
                 data.alternateName =
-                    [...SEO_ALTERNATE_NAMES];
+                    [...(copy.alternateNames || SEO_ALTERNATE_NAMES)];
 
                 data.featureList =
                     [...copy.features];
@@ -359,7 +466,7 @@ function injectFaqStructuredData(
     );
 }
 
-function renderSeoTopicLinks(cluster, faq) {
+function renderSeoTopicLinks(cluster, faq, faqLabel = 'FAQ') {
     const links = [
         {
             id: 'wardogs-artillery-calculator',
@@ -367,25 +474,26 @@ function renderSeoTopicLinks(cluster, faq) {
         },
         ...cluster.sections.map(section => ({
             id: section.id,
-            label: section.heading
+            label: section.heading,
+            href: section.href
         }))
     ];
 
     if (Array.isArray(faq) && faq.length) {
         links.push({
             id: 'wardogs-calculator-faq',
-            label: 'FAQ'
+            label: faqLabel
         });
     }
 
     return links
         .map(link => (
-            `<a href="#${escapeSeoHtml(link.id)}">${escapeSeoHtml(link.label)}</a>`
+            `<a href="${link.href ? escapeSeoHtml(link.href) : `#${escapeSeoHtml(link.id)}`}">${escapeSeoHtml(link.label)}</a>`
         ))
         .join('');
 }
 
-function renderSeoFaq(faq) {
+function renderSeoFaq(faq, heading = 'WARDOGS Artillery Calculator FAQ') {
     if (!Array.isArray(faq) || !faq.length) {
         return '';
     }
@@ -401,7 +509,7 @@ function renderSeoFaq(faq) {
 
     return [
         '<section class="seo-faq" id="wardogs-calculator-faq">',
-        '<h3>WARDOGS Artillery Calculator FAQ</h3>',
+        `<h3>${escapeSeoHtml(heading)}</h3>`,
         items,
         '</section>'
     ].join('\n');
@@ -423,12 +531,18 @@ function injectSeoContentCluster(
     }
 
     const sections = cluster.sections
-        .map(section => [
-            `<section class="seo-topic" id="${escapeSeoHtml(section.id)}">`,
-            `<h3>${escapeSeoHtml(section.heading)}</h3>`,
-            `<p>${escapeSeoHtml(section.body)}</p>`,
-            '</section>'
-        ].join('\n'))
+        .map(section => {
+            const heading = section.href
+                ? `<a href="${escapeSeoHtml(section.href)}">${escapeSeoHtml(section.heading)}</a>`
+                : escapeSeoHtml(section.heading);
+
+            return [
+                `<section class="seo-topic" id="${escapeSeoHtml(section.id)}">`,
+                `<h3>${heading}</h3>`,
+                `<p>${escapeSeoHtml(section.body)}</p>`,
+                '</section>'
+            ].join('\n');
+        })
         .join('\n');
 
     const block = [
@@ -436,12 +550,19 @@ function injectSeoContentCluster(
         `<h2 id="wardogs-artillery-calculator">${escapeSeoHtml(cluster.heading)}</h2>`,
         `<p class="seo-content-lead">${escapeSeoHtml(cluster.intro)}</p>`,
         `<nav aria-label="${escapeSeoHtml(cluster.navLabel)}" class="seo-topic-nav">`,
-        renderSeoTopicLinks(cluster, copy.faq),
+        renderSeoTopicLinks(
+            cluster,
+            copy.faq,
+            copy.faqLabel || 'FAQ'
+        ),
         '</nav>',
         '<div class="seo-topic-list">',
         sections,
         '</div>',
-        renderSeoFaq(copy.faq),
+        renderSeoFaq(
+            copy.faq,
+            copy.faqHeading || 'WARDOGS Artillery Calculator FAQ'
+        ),
         '</div>'
     ].join('\n');
 
@@ -538,11 +659,22 @@ function applySeoV2(
             copy.description
         );
 
+    if (copy.imageAlt) {
+        output =
+            replaceSeoMetaContent(
+                output,
+                'property',
+                'og:image:alt',
+                copy.imageAlt
+            );
+    }
+
     output =
         refreshSeoV2StructuredData(
             output,
             appConfig,
-            copy
+            copy,
+            language
         );
 
     if (copy.cluster) {
@@ -629,16 +761,19 @@ function prepareAnalytics(html) {
 
 async function writeDesktopPage(source, target, appConfig, language) {
     const html = prepareAnalytics(await readFile(source, 'utf8'));
-    const prepared = addMobileAlternate(
-        applySeoV2(
-            refreshSeoMetadata(
-                normalizeDesktopRuntimePlaceholders(html),
-                appConfig
+    const prepared = addProductionSecurityMeta(
+        addMobileAlternate(
+            applySeoV2(
+                refreshSeoMetadata(
+                    normalizeDesktopRuntimePlaceholders(html),
+                    appConfig
+                ),
+                appConfig,
+                language
             ),
-            appConfig,
             language
         ),
-        language
+        appConfig
     );
 
     await writeFile(target, prepared, 'utf8');
@@ -728,6 +863,25 @@ async function applyTileBaseUrl() {
     console.log(
         `Tiles served from ${base} (${repointed} map${repointed === 1 ? '' : 's'} repointed)`
     );
+}
+
+async function buildMapLandingPages() {
+    const template = await readFile(
+        join(root, 'src', 'pages', 'maps', 'template.html'),
+        'utf8'
+    );
+    const appConfig = await readAppConfig();
+
+    for (const page of MAP_LANDING_PAGES) {
+        const targetDir = join(dist, 'maps', page.id);
+        const html = addProductionSecurityMeta(
+            renderMapLandingPage(template, page),
+            appConfig
+        );
+
+        await mkdir(targetDir, { recursive: true });
+        await writeFile(join(targetDir, 'index.html'), html, 'utf8');
+    }
 }
 
 async function readAppConfig() {
@@ -826,7 +980,7 @@ async function buildSitemap() {
         )
         .join('\n');
 
-    const urls = languages
+    const localeUrls = languages
         .map(language => [
             '  <url>',
             `    <loc>${escapeXml(desktopUrlForLanguage(language))}</loc>`,
@@ -835,6 +989,20 @@ async function buildSitemap() {
             `    <lastmod>${escapeXml(lastModified)}</lastmod>`,
             '  </url>'
         ].join('\n'))
+        .join('\n');
+
+    const mapUrls = MAP_LANDING_PAGES
+        .map(page => [
+            '  <url>',
+            `    <loc>${escapeXml(mapLandingUrl(page.id))}</loc>`,
+            '    <changefreq>weekly</changefreq>',
+            `    <lastmod>${escapeXml(lastModified)}</lastmod>`,
+            '  </url>'
+        ].join('\n'))
+        .join('\n');
+
+    const urls = [localeUrls, mapUrls]
+        .filter(Boolean)
         .join('\n');
 
     const sitemap = [
@@ -936,15 +1104,21 @@ async function buildMobilePages() {
         'utf8'
     );
 
+    const appConfig =
+        await readAppConfig();
+
     const languages =
         await getMobileLanguages();
 
     for (const language of languages) {
-        const html = prepareAnalytics(
-            renderMobileLocale(
-                template,
-                language
-            )
+        const html = addProductionSecurityMeta(
+            prepareAnalytics(
+                renderMobileLocale(
+                    template,
+                    language
+                )
+            ),
+            appConfig
         );
 
         if (language === 'en') {
@@ -1022,6 +1196,7 @@ await applyCollabUrl();
 await applyTileBaseUrl();
 await bundleStyles();
 await buildDesktopPages();
+await buildMapLandingPages();
 await buildSitemap();
 await buildMobilePages();
 await buildObsRoute();

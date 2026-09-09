@@ -201,7 +201,7 @@ check('solution is rendered from stored state', /^\d+$/.test(localState.mil),
 check('azimuth is rendered', localState.azimuth === '36.9°', localState.azimuth);
 check('range is rendered', localState.range === '500 m', localState.range);
 check('gun line names the gun and its weapon',
-    /Gun 1 · Mortar · 1\/2/.test(localState.gun), localState.gun);
+    /Gun 1 · L81 Mortar · 1\/2/.test(localState.gun), localState.gun);
 check('time of flight is rendered', localState.flight.length > 0, localState.flight);
 check('camera framed the pair', localState.zoom > 1, String(localState.zoom));
 check('map fills the browser source', localState.mapWidth === VIEWPORT.width &&

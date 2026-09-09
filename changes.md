@@ -113,7 +113,7 @@ and weapon selection in real time. Zoom, pan and layer toggles stay local.
 - **3.6 Height correction, gated** — applies to every arc where the inputs are
   trusted, captions corrected vs uncorrected arcs, and warns only when the MIL
   genuinely cannot be trusted.
-  *Files:* `js/features/terrain-ballistics.js`, `js/ui/locale-overrides.js`,
+  *Files:* `js/features/terrain-ballistics.js`,
   `data/ballistics/terrain-context.json` · *Needs:* 3.3, 3.5
 - **3.7 Max range ring against the terrain** — the ring is solved against the
   heightfield instead of assuming flat ground, with the extra reach from

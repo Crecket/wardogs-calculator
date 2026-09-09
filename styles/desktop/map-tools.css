@@ -54,6 +54,35 @@
     display: none;
 }
 
+.map-tool-interaction-hint {
+    max-width: min(420px, calc(100vw - 40px));
+    padding: 7px 10px;
+
+    border: 1px solid var(--border-light);
+    border-radius: 7px;
+
+    background:
+        color-mix(
+            in srgb,
+            var(--header-bg) 94%,
+            transparent
+        );
+
+    color: var(--muted);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .2);
+    backdrop-filter: blur(8px);
+
+    font-size: 12px;
+    line-height: 1.35;
+    text-align: right;
+
+    pointer-events: none;
+}
+
+.map-tool-interaction-hint[hidden] {
+    display: none;
+}
+
 .map-tool-button {
     width: 36px;
     height: 34px;

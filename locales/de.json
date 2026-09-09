@@ -55,6 +55,8 @@
   "mapLocked": "Vorgefertigte Karte ausgewählt — Rastergröße ist gesperrt",
   "mapToolRuler": "Lineal",
   "mapToolPencil": "Stift",
+  "mapToolZoneHint": "Vom Mittelpunkt ziehen, um den Radius festzulegen.",
+  "mapToolPolygonHint": "Klicken, um Eckpunkte hinzuzufügen. Zum Abschließen den ersten Punkt anklicken, doppelklicken oder Enter drücken.",
   "mapToolMarkers": "Marker",
   "mapToolNoMarkerAssets": "Keine Marker-Symbole verfügbar",
   "markerLabelFob": "FOB",

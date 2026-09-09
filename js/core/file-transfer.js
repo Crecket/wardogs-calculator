@@ -2,6 +2,8 @@
    JSON FILE TRANSFER
    ========================= */
 
+const WARDOGS_JSON_MAX_BYTES = 1024 * 1024;
+
 function wardogsExportTimestamp() {
     return new Date()
         .toISOString()
@@ -131,6 +133,10 @@ function selectWardogsJsonFile() {
 async function readWardogsJsonFile(file) {
     if (!file) {
         return null;
+    }
+
+    if (!Number.isFinite(file.size) || file.size > WARDOGS_JSON_MAX_BYTES) {
+        throw new Error('wardogs-json-file-too-large');
     }
 
     const text = await file.text();

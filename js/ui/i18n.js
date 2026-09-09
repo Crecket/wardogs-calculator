@@ -713,7 +713,6 @@ function switchLanguage(languageId) {
 }
 
 function applyLanguage() {
-
     document.documentElement.lang =
         LANG;
 

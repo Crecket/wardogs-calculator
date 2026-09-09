@@ -55,6 +55,8 @@
   "mapLocked": "Mapa predefinido selecionado — tamanho da grelha bloqueado",
   "mapToolRuler": "Régua",
   "mapToolPencil": "Lápis",
+  "mapToolZoneHint": "Arraste a partir do centro para definir o raio.",
+  "mapToolPolygonHint": "Clique para adicionar vértices. Para terminar, clique no primeiro ponto, faça duplo clique ou pressione Enter.",
   "mapToolMarkers": "Marcadores",
   "mapToolNoMarkerAssets": "Não há ícones de marcador disponíveis",
   "markerLabelFob": "FOB",

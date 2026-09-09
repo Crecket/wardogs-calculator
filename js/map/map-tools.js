@@ -8,10 +8,12 @@ const MAP_TOOLS_STORAGE_KEY =
 const MAP_TOOLS_EXPORT_TYPE =
     'wardogs-map-changes';
 
-const MAP_TOOLS_EXPORT_VERSION = 1;
+const MAP_TOOLS_EXPORT_VERSION = 2;
 
 const MAP_TOOLS_IMPORT_LIMITS = {
     drawings: 2000,
+    zones: 1000,
+    polygons: 1000,
     markers: 5000,
     pointsPerDrawing: 10000
 };
@@ -44,11 +46,22 @@ const MAP_TOOL_STATE = {
     shapeType: 'line',
     activePath: null,
 
+    zoneStart: null,
+    zoneEnd: null,
+    zoneDragging: false,
+
+    polygonDraft: null,
+    polygonHover: null,
+
     drawings: [],
+    zones: [],
+    polygons: [],
     markers: [],
 
     hoverPathId: null,
     hoverDeletePoint: null,
+    hoverShapeType: null,
+    hoverShapeId: null,
     hoverMarkerId: null,
 
     rotationDrag: null,
@@ -142,6 +155,8 @@ function snapshotMapToolContent() {
     return {
         mapId: currentMapToolMapId(),
         drawings: structuredClone(MAP_TOOL_STATE.drawings),
+        zones: structuredClone(MAP_TOOL_STATE.zones),
+        polygons: structuredClone(MAP_TOOL_STATE.polygons),
         markers: structuredClone(MAP_TOOL_STATE.markers),
         origin: structuredClone(S.origin),
         target: structuredClone(S.target),
@@ -183,6 +198,12 @@ function restoreMapToolContent(snapshot) {
     MAP_TOOL_STATE.drawings =
         structuredClone(snapshot.drawings || []);
 
+    MAP_TOOL_STATE.zones =
+        structuredClone(snapshot.zones || []);
+
+    MAP_TOOL_STATE.polygons =
+        structuredClone(snapshot.polygons || []);
+
     MAP_TOOL_STATE.markers =
         structuredClone(snapshot.markers || []);
 
@@ -223,6 +244,8 @@ function restoreMapToolContent(snapshot) {
 
     MAP_TOOL_STATE.hoverPathId = null;
     MAP_TOOL_STATE.hoverDeletePoint = null;
+    MAP_TOOL_STATE.hoverShapeType = null;
+    MAP_TOOL_STATE.hoverShapeId = null;
     MAP_TOOL_STATE.hoverMarkerId = null;
     MAP_TOOL_STATE.rotationDrag = null;
     MAP_TOOL_STATE.moveDrag = null;
@@ -325,7 +348,7 @@ function matchesConfiguredCombo(event, combo) {
     if (!combo) return false;
     const parts = String(combo).toLowerCase().split('+').map(part => part.trim());
     const key = parts.pop();
-    return String(event.key || '').toLowerCase() === key &&
+    return getKeyboardShortcutKey(event) === key &&
         event.ctrlKey === parts.includes('ctrl') &&
         event.metaKey === parts.includes('meta') &&
         event.altKey === parts.includes('alt') &&
@@ -352,6 +375,8 @@ function saveMapToolState() {
     try {
         let stored = {
             drawings: MAP_TOOL_STATE.drawings,
+            zones: MAP_TOOL_STATE.zones,
+            polygons: MAP_TOOL_STATE.polygons,
             markers: MAP_TOOL_STATE.markers
         };
 
@@ -368,6 +393,14 @@ function saveMapToolState() {
             stored = {
                 drawings: Array.isArray(parsed?.drawings)
                     ? parsed.drawings
+                    : [],
+
+                zones: Array.isArray(parsed?.zones)
+                    ? parsed.zones
+                    : [],
+
+                polygons: Array.isArray(parsed?.polygons)
+                    ? parsed.polygons
                     : [],
 
                 markers: Array.isArray(parsed?.markers)
@@ -411,6 +444,16 @@ function loadMapToolState() {
                 ? parsed.drawings
                 : [];
 
+        MAP_TOOL_STATE.zones =
+            Array.isArray(parsed?.zones)
+                ? parsed.zones
+                : [];
+
+        MAP_TOOL_STATE.polygons =
+            Array.isArray(parsed?.polygons)
+                ? parsed.polygons
+                : [];
+
         MAP_TOOL_STATE.markers =
             Array.isArray(parsed?.markers)
                 ? parsed.markers
@@ -437,6 +480,8 @@ function loadMapToolState() {
         );
 
         MAP_TOOL_STATE.drawings = [];
+        MAP_TOOL_STATE.zones = [];
+        MAP_TOOL_STATE.polygons = [];
         MAP_TOOL_STATE.markers = [];
     }
 }
@@ -462,6 +507,8 @@ function createMapToolExportPayload() {
         exportedAt: new Date().toISOString(),
         data: {
             drawings: structuredClone(MAP_TOOL_STATE.drawings),
+            zones: structuredClone(MAP_TOOL_STATE.zones),
+            polygons: structuredClone(MAP_TOOL_STATE.polygons),
             markers: structuredClone(MAP_TOOL_STATE.markers),
             layers: structuredClone(MAP_TOOL_STATE.layers)
         }
@@ -479,6 +526,8 @@ function exportMapToolChanges() {
     if (typeof trackAnalytics === 'function') {
         trackAnalytics('map-changes-exported', {
             drawings: MAP_TOOL_STATE.drawings.length,
+            zones: MAP_TOOL_STATE.zones.length,
+            polygons: MAP_TOOL_STATE.polygons.length,
             markers: MAP_TOOL_STATE.markers.length
         });
     }
@@ -536,6 +585,73 @@ function normalizeImportedMapToolDrawing(drawing) {
     }
 
     return normalized;
+}
+
+function normalizeImportedMapToolZone(zone) {
+    if (
+        !zone ||
+        typeof zone !== 'object' ||
+        !Number.isFinite(Number(zone.x)) ||
+        !Number.isFinite(Number(zone.y)) ||
+        !Number.isFinite(Number(zone.radius)) ||
+        Number(zone.radius) <= 0
+    ) {
+        return null;
+    }
+
+    const color =
+        typeof zone.color === 'string' &&
+        /^#[0-9a-f]{6}$/i.test(zone.color)
+            ? zone.color
+            : '#d7a452';
+
+    return {
+        id: mapToolId(),
+        mapId: importedMapId(zone.mapId),
+        color,
+        x: Number(zone.x),
+        y: Number(zone.y),
+        radius: Number(zone.radius)
+    };
+}
+
+function normalizeImportedMapToolPolygon(polygon) {
+    if (
+        !polygon ||
+        typeof polygon !== 'object' ||
+        !Array.isArray(polygon.points)
+    ) {
+        return null;
+    }
+
+    const points = polygon.points
+        .slice(0, MAP_TOOLS_IMPORT_LIMITS.pointsPerDrawing)
+        .filter(point =>
+            point &&
+            Number.isFinite(Number(point.x)) &&
+            Number.isFinite(Number(point.y))
+        )
+        .map(point => ({
+            x: Number(point.x),
+            y: Number(point.y)
+        }));
+
+    if (points.length < 3) {
+        return null;
+    }
+
+    const color =
+        typeof polygon.color === 'string' &&
+        /^#[0-9a-f]{6}$/i.test(polygon.color)
+            ? polygon.color
+            : '#d7a452';
+
+    return {
+        id: mapToolId(),
+        mapId: importedMapId(polygon.mapId),
+        color,
+        points
+    };
 }
 
 function normalizeImportedMapToolMarker(marker) {
@@ -604,6 +720,20 @@ function normalizeImportedMapToolPayload(payload) {
             .filter(Boolean)
         : [];
 
+    const zones = Array.isArray(source.zones)
+        ? source.zones
+            .slice(0, MAP_TOOLS_IMPORT_LIMITS.zones)
+            .map(normalizeImportedMapToolZone)
+            .filter(Boolean)
+        : [];
+
+    const polygons = Array.isArray(source.polygons)
+        ? source.polygons
+            .slice(0, MAP_TOOLS_IMPORT_LIMITS.polygons)
+            .map(normalizeImportedMapToolPolygon)
+            .filter(Boolean)
+        : [];
+
     const markers = Array.isArray(source.markers)
         ? source.markers
             .slice(0, MAP_TOOLS_IMPORT_LIMITS.markers)
@@ -613,19 +743,38 @@ function normalizeImportedMapToolPayload(payload) {
 
     const layers = normalizeImportedMapLayers(source.layers);
 
-    if (!drawings.length && !markers.length && !layers) {
+    if (
+        !drawings.length &&
+        !zones.length &&
+        !polygons.length &&
+        !markers.length &&
+        !layers
+    ) {
         throw new Error('No supported map changes found');
     }
 
-    return { drawings, markers, layers };
+    return {
+        drawings,
+        zones,
+        polygons,
+        markers,
+        layers
+    };
 }
 
 function applyImportedMapToolChanges(imported) {
-    if (imported.drawings.length || imported.markers.length) {
+    if (
+        imported.drawings.length ||
+        imported.zones.length ||
+        imported.polygons.length ||
+        imported.markers.length
+    ) {
         pushMapToolHistory();
     }
 
     MAP_TOOL_STATE.drawings.push(...imported.drawings);
+    MAP_TOOL_STATE.zones.push(...imported.zones);
+    MAP_TOOL_STATE.polygons.push(...imported.polygons);
     MAP_TOOL_STATE.markers.push(...imported.markers);
 
     if (imported.layers) {
@@ -637,6 +786,8 @@ function applyImportedMapToolChanges(imported) {
 
     MAP_TOOL_STATE.hoverPathId = null;
     MAP_TOOL_STATE.hoverDeletePoint = null;
+    MAP_TOOL_STATE.hoverShapeType = null;
+    MAP_TOOL_STATE.hoverShapeId = null;
     MAP_TOOL_STATE.hoverMarkerId = null;
 
     saveMapToolState();
@@ -688,6 +839,8 @@ async function importMapToolChanges() {
         if (typeof trackAnalytics === 'function') {
             trackAnalytics('map-changes-imported', {
                 drawings: imported.drawings.length,
+                zones: imported.zones.length,
+                polygons: imported.polygons.length,
                 markers: imported.markers.length,
                 layers: Boolean(imported.layers)
             });
@@ -715,12 +868,56 @@ function setMapTool(tool) {
     MAP_TOOL_STATE.pencilDragging = false;
     MAP_TOOL_STATE.shapeDragging = false;
     MAP_TOOL_STATE.activePath = null;
+    MAP_TOOL_STATE.zoneStart = null;
+    MAP_TOOL_STATE.zoneEnd = null;
+    MAP_TOOL_STATE.zoneDragging = false;
+    MAP_TOOL_STATE.polygonDraft = null;
+    MAP_TOOL_STATE.polygonHover = null;
     MAP_TOOL_STATE.hoverPathId = null;
     MAP_TOOL_STATE.hoverDeletePoint = null;
+    MAP_TOOL_STATE.hoverShapeType = null;
+    MAP_TOOL_STATE.hoverShapeId = null;
     MAP_TOOL_STATE.hoverMarkerId = null;
+
+    if (MAP_TOOL_STATE.tool === 'zone') {
+        MAP_TOOL_STATE.layers.zones = true;
+        saveMapToolState();
+    }
+
+    if (MAP_TOOL_STATE.tool === 'polygon') {
+        MAP_TOOL_STATE.layers.polygons = true;
+        saveMapToolState();
+    }
 
     updateMapToolsUI();
     draw();
+}
+
+function activateColorMapTool(tool) {
+    const changed =
+        MAP_TOOL_STATE.tool !== tool;
+
+    if (changed) {
+        setMapTool(tool);
+        closeMapToolMenus(
+            'pencilPalette'
+        );
+        $('pencilPalette')
+            ?.classList.add('open');
+        updateMapToolsUI();
+        return;
+    }
+
+    if (isMapToolMenuOpen('pencilPalette')) {
+        closeMapToolMenus();
+        setMapTool(tool);
+        updateMapToolsUI();
+        return;
+    }
+
+    toggleMapToolMenu(
+        'pencilPalette'
+    );
 }
 
 function closeMapToolMenus(except = null) {
@@ -925,10 +1122,39 @@ function updateMapToolsUI() {
             );
         });
 
+    const interactionHint =
+        $('mapToolInteractionHint');
+
+    const interactionHintKey =
+        MAP_TOOL_STATE.tool === 'zone'
+            ? 'mapToolZoneHint'
+            : MAP_TOOL_STATE.tool === 'polygon'
+                ? 'mapToolPolygonHint'
+                : null;
+
+    if (interactionHint) {
+        interactionHint.hidden =
+            !interactionHintKey;
+
+        interactionHint.textContent =
+            interactionHintKey
+                ? tr(interactionHintKey)
+                : '';
+    }
+
     if (c) {
         c.classList.toggle(
             'map-tool-active',
-            ['ruler', 'pencil', 'shapes', 'eraser', 'marker', 'targeting'].includes(MAP_TOOL_STATE.tool)
+            [
+                'ruler',
+                'pencil',
+                'shapes',
+                'eraser',
+                'marker',
+                'targeting',
+                'zone',
+                'polygon'
+            ].includes(MAP_TOOL_STATE.tool)
         );
 
         c.classList.toggle(
@@ -991,8 +1217,18 @@ function buildPencilPalette() {
                 MAP_TOOL_STATE.pencilColor =
                     item.color;
 
-                MAP_TOOL_STATE.tool =
-                    'pencil';
+                if (
+                    ![
+                        'pencil',
+                        'zone',
+                        'polygon'
+                    ].includes(
+                        MAP_TOOL_STATE.tool
+                    )
+                ) {
+                    MAP_TOOL_STATE.tool =
+                        'pencil';
+                }
 
                 updateMapToolsUI();
             }
@@ -1867,6 +2103,34 @@ function handleMapToolShortcut(event) {
         return false;
     }
 
+    const key =
+        getKeyboardShortcutKey(
+            event
+        );
+
+    if (
+        MAP_TOOL_STATE.tool === 'polygon' &&
+        key === 'enter'
+    ) {
+        return finishPolygonDraft();
+    }
+
+    if (
+        MAP_TOOL_STATE.tool === 'polygon' &&
+        ['backspace', 'delete'].includes(key) &&
+        MAP_TOOL_STATE.polygonDraft?.points?.length
+    ) {
+        MAP_TOOL_STATE.polygonDraft.points.pop();
+
+        if (!MAP_TOOL_STATE.polygonDraft.points.length) {
+            MAP_TOOL_STATE.polygonDraft = null;
+            MAP_TOOL_STATE.polygonHover = null;
+        }
+
+        draw();
+        return true;
+    }
+
     const undoShortcut = getMapToolShortcut('undo') || 'ctrl+z';
     const redoShortcut = getMapToolShortcut('redo') || 'ctrl+y';
     const redoAltShortcut = getMapToolShortcut('redoAlt') || 'ctrl+shift+z';
@@ -1880,11 +2144,12 @@ function handleMapToolShortcut(event) {
         return false;
     }
 
-    const key = String(event.key || '').toLowerCase();
     const shortcuts = {
         ruler: getMapToolShortcut('ruler'),
         pencil: getMapToolShortcut('pencil'),
         shapes: getMapToolShortcut('shapes'),
+        zone: getMapToolShortcut('zone'),
+        polygon: getMapToolShortcut('polygon'),
         eraser: getMapToolShortcut('eraser'),
         marker: getMapToolShortcut('marker'),
         targeting: getMapToolShortcut('targeting'),
@@ -1894,11 +2159,9 @@ function handleMapToolShortcut(event) {
     };
 
     if (key === shortcuts.clearTool) {
-        MAP_TOOL_STATE.tool = null;
         MAP_TOOL_STATE.searchPoint = null;
         closeMapToolMenus();
-        updateMapToolsUI();
-        draw();
+        setMapTool(null);
         return true;
     }
 
@@ -1921,6 +2184,16 @@ function handleMapToolShortcut(event) {
         MAP_TOOL_STATE.tool = 'pencil';
         updateMapToolsUI();
         toggleMapToolMenu('pencilPalette');
+        return true;
+    }
+
+    if (key === shortcuts.zone) {
+        activateColorMapTool('zone');
+        return true;
+    }
+
+    if (key === shortcuts.polygon) {
+        activateColorMapTool('polygon');
         return true;
     }
 
@@ -2121,6 +2394,103 @@ async function toggleMapFullscreen() {
     }
 }
 
+function ensureMapShapeTools() {
+    const bar =
+        document.querySelector(
+            '.map-tools-bar'
+        );
+
+    if (!bar) {
+        return;
+    }
+
+    if (!$('mapToolInteractionHint')) {
+        const hint =
+            document.createElement(
+                'div'
+            );
+
+        hint.id =
+            'mapToolInteractionHint';
+
+        hint.className =
+            'map-tool-interaction-hint';
+
+        hint.hidden = true;
+        hint.setAttribute(
+            'role',
+            'status'
+        );
+
+        bar.before(hint);
+    }
+
+    const definitions = [
+        {
+            id: 'mapToolZone',
+            tool: 'zone',
+            icon: `
+                <circle cx="12" cy="12" r="7"/>
+                <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+                <path d="M12 5v3M12 16v3M5 12h3M16 12h3"/>
+            `
+        },
+        {
+            id: 'mapToolPolygon',
+            tool: 'polygon',
+            icon: `
+                <path d="m5 17 2-10 9-3 4 8-5 8Z"/>
+                <circle cx="7" cy="7" r="1.2" fill="currentColor" stroke="none"/>
+                <circle cx="16" cy="4" r="1.2" fill="currentColor" stroke="none"/>
+                <circle cx="20" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+                <circle cx="15" cy="20" r="1.2" fill="currentColor" stroke="none"/>
+                <circle cx="5" cy="17" r="1.2" fill="currentColor" stroke="none"/>
+            `
+        }
+    ];
+
+    const insertBefore =
+        $('mapToolEraser') ||
+        $('mapToolMarker') ||
+        null;
+
+    definitions.forEach(definition => {
+        if ($(definition.id)) {
+            return;
+        }
+
+        const button =
+            document.createElement(
+                'button'
+            );
+
+        button.type = 'button';
+        button.id = definition.id;
+        button.className = 'map-tool-button';
+        button.dataset.tool = definition.tool;
+        button.innerHTML = `
+            <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                ${definition.icon}
+            </svg>
+        `;
+
+        bar.insertBefore(
+            button,
+            insertBefore
+        );
+    });
+}
+
 function ensureMapHistoryTools() {
     const bar =
         document.querySelector(
@@ -2254,6 +2624,7 @@ function ensureMapHistoryTools() {
 }
 
 function updateMapToolsLocalization() {
+    ensureMapShapeTools();
     ensureMapHistoryTools();
 
     const undoButton =
@@ -2265,6 +2636,8 @@ function updateMapToolsLocalization() {
     const rulerButton = $('mapToolRuler');
     const pencilButton = $('mapToolPencil');
     const shapesButton = $('mapToolShapes');
+    const zoneButton = $('mapToolZone');
+    const polygonButton = $('mapToolPolygon');
     const eraserButton = $('mapToolEraser');
     const markerButton = $('mapToolMarker');
     const targetingButton = $('mapToolTargeting');
@@ -2290,6 +2663,8 @@ function updateMapToolsLocalization() {
     setToolButtonLabel(rulerButton, 'mapToolRuler', 'ruler');
     setToolButtonLabel(pencilButton, 'mapToolPencil', 'pencil');
     setToolButtonLabel(shapesButton, 'mapToolShapes', 'shapes');
+    setToolButtonLabel(zoneButton, 'mapLayerZones', 'zone');
+    setToolButtonLabel(polygonButton, 'mapLayerPolygons', 'polygon');
     setToolButtonLabel(eraserButton, 'mapToolEraser', 'eraser');
     setToolButtonLabel(markerButton, 'mapToolMarkers', 'marker');
     setToolButtonLabel(targetingButton, 'mapToolTargeting', 'targeting');
@@ -2337,6 +2712,10 @@ function initMapTools() {
         $('mapToolPencil');
     const shapesButton =
         $('mapToolShapes');
+    const zoneButton =
+        $('mapToolZone');
+    const polygonButton =
+        $('mapToolPolygon');
     const eraserButton =
         $('mapToolEraser');
     const markerButton =
@@ -2401,6 +2780,28 @@ function initMapTools() {
 
             toggleMapToolMenu(
                 'pencilPalette'
+            );
+        }
+    );
+
+    zoneButton?.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+
+            activateColorMapTool(
+                'zone'
+            );
+        }
+    );
+
+    polygonButton?.addEventListener(
+        'click',
+        event => {
+            event.stopPropagation();
+
+            activateColorMapTool(
+                'polygon'
             );
         }
     );
@@ -2629,6 +3030,21 @@ function initMapTools() {
         });
     });
 
+    c?.addEventListener(
+        'dblclick',
+        event => {
+            if (
+                MAP_TOOL_STATE.tool !==
+                'polygon'
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+            finishPolygonDraft();
+        }
+    );
+
     document.addEventListener(
         'click',
         event => {
@@ -2696,6 +3112,204 @@ function addPencilPoint(point) {
         x: point.x,
         y: point.y
     });
+}
+
+function finishZoneDraft() {
+    if (
+        !MAP_TOOL_STATE.zoneDragging ||
+        !MAP_TOOL_STATE.zoneStart ||
+        !MAP_TOOL_STATE.zoneEnd
+    ) {
+        return false;
+    }
+
+    const start =
+        MAP_TOOL_STATE.zoneStart;
+
+    const end =
+        MAP_TOOL_STATE.zoneEnd;
+
+    const radius =
+        Math.hypot(
+            end.x - start.x,
+            end.y - start.y
+        );
+
+    MAP_TOOL_STATE.zoneDragging = false;
+    MAP_TOOL_STATE.zoneStart = null;
+    MAP_TOOL_STATE.zoneEnd = null;
+
+    if (
+        radius * view().scale < 4
+    ) {
+        draw();
+        return true;
+    }
+
+    pushMapToolHistory();
+
+    MAP_TOOL_STATE.zones.push({
+        id: mapToolId(),
+        mapId: currentMapToolMapId(),
+        color: MAP_TOOL_STATE.pencilColor,
+        x: start.x,
+        y: start.y,
+        radius
+    });
+
+    saveMapToolState();
+
+    if (
+        typeof trackAnalytics ===
+            'function'
+    ) {
+        trackAnalytics(
+            'zone-created',
+            {
+                map: S.map
+            }
+        );
+    }
+
+    draw();
+    return true;
+}
+
+function addPolygonPoint(point) {
+    if (!MAP_TOOL_STATE.polygonDraft) {
+        MAP_TOOL_STATE.polygonDraft = {
+            id: mapToolId(),
+            mapId: currentMapToolMapId(),
+            color: MAP_TOOL_STATE.pencilColor,
+            points: [
+                {
+                    x: point.x,
+                    y: point.y
+                }
+            ]
+        };
+
+        MAP_TOOL_STATE.polygonHover = {
+            x: point.x,
+            y: point.y
+        };
+
+        draw();
+        return true;
+    }
+
+    const draft =
+        MAP_TOOL_STATE.polygonDraft;
+
+    const first =
+        draft.points[0];
+
+    if (
+        draft.points.length >= 3 &&
+        first
+    ) {
+        const firstScreen =
+            toScreen(
+                first.x,
+                first.y
+            );
+
+        const pointScreen =
+            toScreen(
+                point.x,
+                point.y
+            );
+
+        if (
+            Math.hypot(
+                pointScreen.x - firstScreen.x,
+                pointScreen.y - firstScreen.y
+            ) <= 14
+        ) {
+            return finishPolygonDraft();
+        }
+    }
+
+    const last =
+        draft.points[
+            draft.points.length - 1
+        ];
+
+    const lastScreen =
+        toScreen(
+            last.x,
+            last.y
+        );
+
+    const pointScreen =
+        toScreen(
+            point.x,
+            point.y
+        );
+
+    if (
+        Math.hypot(
+            pointScreen.x - lastScreen.x,
+            pointScreen.y - lastScreen.y
+        ) < 3
+    ) {
+        return true;
+    }
+
+    draft.points.push({
+        x: point.x,
+        y: point.y
+    });
+
+    MAP_TOOL_STATE.polygonHover = {
+        x: point.x,
+        y: point.y
+    };
+
+    draw();
+    return true;
+}
+
+function finishPolygonDraft() {
+    const draft =
+        MAP_TOOL_STATE.polygonDraft;
+
+    if (
+        !draft ||
+        !Array.isArray(draft.points) ||
+        draft.points.length < 3
+    ) {
+        return false;
+    }
+
+    pushMapToolHistory();
+
+    MAP_TOOL_STATE.polygons.push({
+        ...draft,
+        points: structuredClone(
+            draft.points
+        )
+    });
+
+    MAP_TOOL_STATE.polygonDraft = null;
+    MAP_TOOL_STATE.polygonHover = null;
+
+    saveMapToolState();
+
+    if (
+        typeof trackAnalytics ===
+            'function'
+    ) {
+        trackAnalytics(
+            'polygon-created',
+            {
+                map: S.map
+            }
+        );
+    }
+
+    draw();
+    return true;
 }
 
 function placeMapToolMarker(point) {
@@ -2901,6 +3515,203 @@ function findPencilPathAtCanvasPoint(
     return best;
 }
 
+function isCanvasPointInsidePolygon(
+    canvasX,
+    canvasY,
+    points
+) {
+    let inside = false;
+
+    for (
+        let current = 0,
+            previous = points.length - 1;
+        current < points.length;
+        previous = current++
+    ) {
+        const a = points[current];
+        const b = points[previous];
+
+        const crosses =
+            (a.y > canvasY) !==
+                (b.y > canvasY) &&
+            canvasX <
+                (
+                    (b.x - a.x) *
+                    (canvasY - a.y)
+                ) /
+                (
+                    b.y - a.y ||
+                    Number.EPSILON
+                ) +
+                a.x;
+
+        if (crosses) {
+            inside = !inside;
+        }
+    }
+
+    return inside;
+}
+
+function findMapToolShapeAtCanvasPoint(
+    canvasX,
+    canvasY
+) {
+    let best = null;
+
+    if (isMapLayerVisible('zones')) {
+        MAP_TOOL_STATE.zones
+            .filter(
+                zone =>
+                    zone.mapId ===
+                        currentMapToolMapId() &&
+                    Number.isFinite(zone.x) &&
+                    Number.isFinite(zone.y) &&
+                    Number.isFinite(zone.radius) &&
+                    zone.radius > 0
+            )
+            .forEach(zone => {
+                const center =
+                    toScreen(
+                        zone.x,
+                        zone.y
+                    );
+
+                const radius =
+                    zone.radius *
+                    view().scale;
+
+                const centerDistance =
+                    Math.hypot(
+                        canvasX - center.x,
+                        canvasY - center.y
+                    );
+
+                if (
+                    centerDistance >
+                    radius + 10
+                ) {
+                    return;
+                }
+
+                const distance =
+                    Math.abs(
+                        centerDistance -
+                        radius
+                    );
+
+                if (
+                    !best ||
+                    distance < best.distance
+                ) {
+                    best = {
+                        type: 'zone',
+                        id: zone.id,
+                        distance
+                    };
+                }
+            });
+    }
+
+    if (isMapLayerVisible('polygons')) {
+        MAP_TOOL_STATE.polygons
+            .filter(
+                polygon =>
+                    polygon.mapId ===
+                        currentMapToolMapId() &&
+                    Array.isArray(
+                        polygon.points
+                    ) &&
+                    polygon.points.length >= 3
+            )
+            .forEach(polygon => {
+                const points =
+                    polygon.points.map(
+                        point =>
+                            toScreen(
+                                point.x,
+                                point.y
+                            )
+                    );
+
+                let edgeDistance =
+                    Infinity;
+
+                for (
+                    let index = 0;
+                    index < points.length;
+                    index++
+                ) {
+                    const a = points[index];
+                    const b =
+                        points[
+                            (index + 1) %
+                            points.length
+                        ];
+
+                    edgeDistance =
+                        Math.min(
+                            edgeDistance,
+                            pointToSegmentDistance(
+                                canvasX,
+                                canvasY,
+                                a.x,
+                                a.y,
+                                b.x,
+                                b.y
+                            ).distance
+                        );
+                }
+
+                if (
+                    edgeDistance > 10 &&
+                    !isCanvasPointInsidePolygon(
+                        canvasX,
+                        canvasY,
+                        points
+                    )
+                ) {
+                    return;
+                }
+
+                if (
+                    !best ||
+                    edgeDistance < best.distance
+                ) {
+                    best = {
+                        type: 'polygon',
+                        id: polygon.id,
+                        distance: edgeDistance
+                    };
+                }
+            });
+    }
+
+    return best;
+}
+
+function setMapToolShapeHover(hit) {
+    const nextType =
+        hit?.type || null;
+
+    const nextId =
+        hit?.id || null;
+
+    const changed =
+        nextType !==
+            MAP_TOOL_STATE.hoverShapeType ||
+        nextId !==
+            MAP_TOOL_STATE.hoverShapeId;
+
+    MAP_TOOL_STATE.hoverShapeType =
+        nextType;
+
+    MAP_TOOL_STATE.hoverShapeId =
+        nextId;
+
+    return changed;
+}
+
 function setPencilPathHover(hit) {
     MAP_TOOL_STATE.hoverPathId =
         hit?.id || null;
@@ -2928,6 +3739,7 @@ function eraseMapToolItemAtCanvasPoint(
 
     if (markerHit) {
         setPencilPathHover(null);
+        setMapToolShapeHover(null);
         return deleteHoveredMapToolMarker();
     }
 
@@ -2939,12 +3751,25 @@ function eraseMapToolItemAtCanvasPoint(
 
     setPencilPathHover(pathHit);
 
-    if (!pathHit) {
-        draw();
-        return false;
+    if (pathHit) {
+        setMapToolShapeHover(null);
+        return deleteHoveredPencilPath();
     }
 
-    return deleteHoveredPencilPath();
+    const shapeHit =
+        findMapToolShapeAtCanvasPoint(
+            canvasX,
+            canvasY
+        );
+
+    setMapToolShapeHover(shapeHit);
+
+    if (shapeHit) {
+        return deleteHoveredMapToolShape();
+    }
+
+    draw();
+    return false;
 }
 
 function deleteHoveredPencilPath() {
@@ -2997,6 +3822,50 @@ function deleteHoveredPencilPath() {
     }
 
     return false;
+}
+
+function deleteHoveredMapToolShape() {
+    const type =
+        MAP_TOOL_STATE.hoverShapeType;
+
+    const id =
+        MAP_TOOL_STATE.hoverShapeId;
+
+    const collectionName =
+        type === 'zone'
+            ? 'zones'
+            : type === 'polygon'
+                ? 'polygons'
+                : null;
+
+    if (!collectionName || !id) {
+        return false;
+    }
+
+    const collection =
+        MAP_TOOL_STATE[collectionName];
+
+    if (
+        !collection.some(
+            item =>
+                item.id === id
+        )
+    ) {
+        return false;
+    }
+
+    pushMapToolHistory();
+
+    MAP_TOOL_STATE[collectionName] =
+        collection.filter(
+            item =>
+                item.id !== id
+        );
+
+    setMapToolShapeHover(null);
+    saveMapToolState();
+    draw();
+    return true;
 }
 
 function getHoveredMapToolMarker() {
@@ -3813,6 +4682,32 @@ function handleMapToolMouseDown(
     }
 
     if (
+        MAP_TOOL_STATE.tool === 'zone'
+    ) {
+        MAP_TOOL_STATE.zoneStart = {
+            x: world.x,
+            y: world.y
+        };
+
+        MAP_TOOL_STATE.zoneEnd = {
+            x: world.x,
+            y: world.y
+        };
+
+        MAP_TOOL_STATE.zoneDragging = true;
+        draw();
+        return true;
+    }
+
+    if (
+        MAP_TOOL_STATE.tool === 'polygon'
+    ) {
+        return addPolygonPoint(
+            world
+        );
+    }
+
+    if (
         MAP_TOOL_STATE.tool === 'marker'
     ) {
         placeMapToolMarker(world);
@@ -3898,6 +4793,39 @@ function handleMapToolMouseMove(
     }
 
     if (
+        MAP_TOOL_STATE.tool === 'zone' &&
+        MAP_TOOL_STATE.zoneDragging
+    ) {
+        if (
+            isWorldPointInsideMap(world)
+        ) {
+            MAP_TOOL_STATE.zoneEnd = {
+                x: world.x,
+                y: world.y
+            };
+        }
+
+        draw();
+        return true;
+    }
+
+    if (
+        MAP_TOOL_STATE.tool === 'polygon' &&
+        MAP_TOOL_STATE.polygonDraft
+    ) {
+        MAP_TOOL_STATE.polygonHover =
+            isWorldPointInsideMap(world)
+                ? {
+                    x: world.x,
+                    y: world.y
+                }
+                : null;
+
+        draw();
+        return true;
+    }
+
+    if (
         MAP_TOOL_STATE.tool === 'eraser'
     ) {
         const rect =
@@ -3933,8 +4861,22 @@ function handleMapToolMouseMove(
 
         setPencilPathHover(pathHit);
 
+        const shapeHit =
+            markerHit || pathHit
+                ? null
+                : findMapToolShapeAtCanvasPoint(
+                    canvasX,
+                    canvasY
+                );
+
+        const shapeChanged =
+            setMapToolShapeHover(
+                shapeHit
+            );
+
         if (
             markerChanged ||
+            shapeChanged ||
             previousPathId !==
             MAP_TOOL_STATE.hoverPathId
         ) {
@@ -4060,6 +5002,12 @@ function handleMapToolMouseUp() {
         return true;
     }
 
+    if (
+        MAP_TOOL_STATE.zoneDragging
+    ) {
+        return finishZoneDraft();
+    }
+
     return false;
 }
 
@@ -4129,6 +5077,274 @@ function updatePencilHover(event) {
 
     setPencilPathHover(hit);
     draw();
+}
+
+function drawMapToolZone(zone, preview = false) {
+    if (
+        !zone ||
+        !Number.isFinite(zone.x) ||
+        !Number.isFinite(zone.y) ||
+        !Number.isFinite(zone.radius) ||
+        zone.radius <= 0
+    ) {
+        return;
+    }
+
+    const center =
+        worldToLocalScreen(
+            zone.x,
+            zone.y
+        );
+
+    const radius =
+        zone.radius *
+        view().scale;
+
+    const hovered =
+        MAP_TOOL_STATE.tool === 'eraser' &&
+        MAP_TOOL_STATE.hoverShapeType === 'zone' &&
+        MAP_TOOL_STATE.hoverShapeId === zone.id;
+
+    const color =
+        hovered
+            ? '#d86666'
+            : zone.color || '#d7a452';
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(
+        center.x,
+        center.y,
+        radius,
+        0,
+        Math.PI * 2
+    );
+    ctx.fillStyle =
+        hexToRgba(
+            color,
+            preview ? 0.08 : 0.14
+        );
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = hovered ? 3 : 2;
+    ctx.setLineDash(
+        preview
+            ? [5, 4]
+            : [7, 5]
+    );
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (preview) {
+        ctx.beginPath();
+        ctx.arc(
+            center.x,
+            center.y,
+            3,
+            0,
+            Math.PI * 2
+        );
+        ctx.fillStyle = color;
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
+function drawMapToolZones() {
+    MAP_TOOL_STATE.zones
+        .filter(
+            zone =>
+                zone.mapId ===
+                currentMapToolMapId()
+        )
+        .forEach(
+            zone =>
+                drawMapToolZone(zone)
+        );
+
+    if (
+        MAP_TOOL_STATE.zoneDragging &&
+        MAP_TOOL_STATE.zoneStart &&
+        MAP_TOOL_STATE.zoneEnd
+    ) {
+        drawMapToolZone(
+            {
+                id: 'active-zone',
+                mapId: currentMapToolMapId(),
+                color: MAP_TOOL_STATE.pencilColor,
+                x: MAP_TOOL_STATE.zoneStart.x,
+                y: MAP_TOOL_STATE.zoneStart.y,
+                radius: Math.hypot(
+                    MAP_TOOL_STATE.zoneEnd.x -
+                        MAP_TOOL_STATE.zoneStart.x,
+                    MAP_TOOL_STATE.zoneEnd.y -
+                        MAP_TOOL_STATE.zoneStart.y
+                )
+            },
+            true
+        );
+    }
+}
+
+function drawMapToolPolygon(
+    polygon,
+    {
+        draft = false,
+        hoverPoint = null
+    } = {}
+) {
+    if (
+        !polygon ||
+        !Array.isArray(polygon.points) ||
+        !polygon.points.length
+    ) {
+        return;
+    }
+
+    const points = [
+        ...polygon.points
+    ];
+
+    if (draft && hoverPoint) {
+        points.push(
+            hoverPoint
+        );
+    }
+
+    const screenPoints =
+        points.map(
+            point =>
+                worldToLocalScreen(
+                    point.x,
+                    point.y
+                )
+        );
+
+    const hovered =
+        MAP_TOOL_STATE.tool === 'eraser' &&
+        MAP_TOOL_STATE.hoverShapeType === 'polygon' &&
+        MAP_TOOL_STATE.hoverShapeId === polygon.id;
+
+    const color =
+        hovered
+            ? '#d86666'
+            : polygon.color || '#d7a452';
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(
+        screenPoints[0].x,
+        screenPoints[0].y
+    );
+
+    for (
+        let index = 1;
+        index < screenPoints.length;
+        index++
+    ) {
+        ctx.lineTo(
+            screenPoints[index].x,
+            screenPoints[index].y
+        );
+    }
+
+    if (!draft && polygon.points.length >= 3) {
+        ctx.closePath();
+        ctx.fillStyle =
+            hexToRgba(
+                color,
+                0.15
+            );
+        ctx.fill();
+    } else if (
+        draft &&
+        polygon.points.length >= 3
+    ) {
+        ctx.lineTo(
+            screenPoints[0].x,
+            screenPoints[0].y
+        );
+        ctx.fillStyle =
+            hexToRgba(
+                color,
+                0.08
+            );
+        ctx.fill();
+    }
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = hovered ? 3 : 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.setLineDash(
+        draft
+            ? [5, 4]
+            : []
+    );
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (draft) {
+        polygon.points.forEach(
+            (point, index) => {
+                const screen =
+                    worldToLocalScreen(
+                        point.x,
+                        point.y
+                    );
+
+                ctx.beginPath();
+                ctx.arc(
+                    screen.x,
+                    screen.y,
+                    index === 0 ? 5 : 3.5,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fillStyle =
+                    index === 0
+                        ? '#ffffff'
+                        : color;
+                ctx.fill();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        );
+    }
+
+    ctx.restore();
+}
+
+function drawMapToolPolygons() {
+    MAP_TOOL_STATE.polygons
+        .filter(
+            polygon =>
+                polygon.mapId ===
+                currentMapToolMapId()
+        )
+        .forEach(
+            polygon =>
+                drawMapToolPolygon(
+                    polygon
+                )
+        );
+
+    if (
+        MAP_TOOL_STATE.polygonDraft &&
+        MAP_TOOL_STATE.polygonDraft.mapId ===
+            currentMapToolMapId()
+    ) {
+        drawMapToolPolygon(
+            MAP_TOOL_STATE.polygonDraft,
+            {
+                draft: true,
+                hoverPoint:
+                    MAP_TOOL_STATE.polygonHover
+            }
+        );
+    }
 }
 
 function drawMapToolPath(path) {

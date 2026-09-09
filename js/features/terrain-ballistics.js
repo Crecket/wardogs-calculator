@@ -79,8 +79,10 @@
             warningBody: 'A inclinação do veículo altera o alcance real. Coloca o SPH-2 no terreno mais plano possível. No HUD do artilheiro, procura a silhueta do veículo por baixo de STABILIZED / ASL: as duas pequenas marcas laterais mostram a inclinação lateral. Reposiciona o veículo até as marcas ficarem o mais centradas e alinhadas possível. A inclinação para a frente/trás também afeta o alcance — evita estacionar numa subida ou descida.'
         },
         'zh-cn': {
-            warningTitle: '射击前请将 SPH-2 停放水平',
-            warningBody: '车体倾斜会改变实际射程。请将 SPH-2 停在尽可能平坦的地面上。在炮手 HUD 中，找到 STABILIZED / ASL 下方的车辆轮廓图：两侧的小标记显示横向倾斜。调整车辆位置，直到两个标记尽可能居中且对齐。前后坡度同样影响射程，请避免停在上坡或下坡上。'
+            terrainLoading: '正在加载地形高程',
+            terrainStatus: 'ΔZ {dz} m · MIL 未自动修正',
+            warningTitle: '射击前请将 SPH-2 调平',
+            warningBody: '车体倾斜会改变实际射程。请尽量将 SPH-2 停在平坦地面上。在炮手 HUD 中找到 STABILIZED / ASL 下方的车辆轮廓；两侧的小标记显示横向倾斜。重新调整车辆位置，直到标记尽可能居中并处于同一水平。前后坡度同样会影响射程，因此避免在上坡或下坡位置停车。'
         },
         cat: {
             warningTitle: 'LEVEL THE MEOWTILLERY BEFORE FIRING',

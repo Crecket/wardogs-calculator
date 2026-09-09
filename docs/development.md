@@ -1,5 +1,7 @@
 ## Project Structure
 
+For the optional Cloudflare collaborative-room service, see [Shared Sessions](collaboration.md).
+
 ```text
 wardogs-calculator/
 ├── .github/workflows/pages.yml
@@ -18,16 +20,16 @@ wardogs-calculator/
 │   ├── map/
 │   ├── mobile/
 │   └── ui/
-│       └── locale-overrides.js
 ├── locales/
 │   ├── index.json
-│   └── zh-cn.json
+│   └── *.json
 ├── maps/
 ├── scripts/
 │   ├── build-pages.mjs
 │   ├── build-contours.mjs
 │   ├── sync-locales.mjs
-│   ├── zh-cn-seo.mjs
+│   ├── seo-content.mjs
+│   ├── map-landing-pages.mjs
 │   ├── version-assets.mjs
 │   ├── dev-server.mjs
 │   ├── install-terrain-release.ps1
@@ -37,12 +39,14 @@ wardogs-calculator/
 │   └── pages/
 │       ├── index.html
 │       ├── locales/
+│       ├── maps/template.html
 │       ├── mobile/
 │       │   └── index.html
 │       └── obs/
 │           └── overlay.html   # Readout markup for the OBS route
 │
 ├── styles/
+│   └── map-landing.css
 │
 ├── sync/                     # Shared-session server (deployed separately)
 │   ├── src/
@@ -85,7 +89,15 @@ The project must be served over HTTP because maps, configuration, locales, Terra
 npm run dev
 ```
 
-Production analytics are disabled by default in the development server. Set `WARDOGS_DISABLE_ANALYTICS=false` only when explicitly testing the Umami integration.
+Open `http://localhost:8000/`. Map imagery and Terrain3D elevation load from the R2 custom domain, so an
+Internet connection and an R2 CORS rule allowing this exact origin are required.
+If you use `http://127.0.0.1:8000` or a LAN address, allow that origin as well.
+See [Tile hosting](maps.md#tile-hosting) and
+[Terrain3D hosting](terrain.md#terrain3d-hosting) for asset paths and releases.
+
+Production analytics are disabled by default in the development server. Set `WARDOGS_DISABLE_ANALYTICS=false` only when explicitly testing the Umami integration. See [Analytics](analytics.md#development-analytics-switch) for the full local-testing behavior.
+
+The lightweight English map guides are available from the source server at `/maps/bakurani/`, `/maps/ozeti/` and `/maps/zestafona/`. Restart the server after editing `scripts/map-landing-pages.mjs`; template and CSS edits continue to use live reload.
 
 To test on another device:
 
@@ -93,7 +105,7 @@ To test on another device:
 npm run dev -- --host 0.0.0.0
 ```
 
-The source dev server continues to serve the legacy static desktop locale shells. **Generated production locales such as Simplified Chinese should be validated from a production build**, because their desktop route and SEO metadata are intentionally created by the locale synchronization step.
+The source dev server continues to serve legacy static desktop locale shells. **Generated production locale routes should be validated from a production build**, because their route files and SEO metadata are intentionally created by the locale synchronization step.
 
 ### Production build
 
@@ -117,21 +129,25 @@ Responsibilities:
 
 1. `build-pages.mjs`
    - clears `dist/`;
-   - copies shared assets, JS, locales, maps, config and data;
+   - copies shared assets, JS, locales, map JSON, config and data;
+   - excludes `maps/tiles/` because map imagery is served from R2;
+   - excludes `data/terrain/**/*.bin` because terrain binaries are served from R2;
+   - keeps local terrain manifests and generated contours;
    - bundles desktop/mobile CSS;
    - creates the normal desktop routes;
+   - creates lightweight English map landing routes from the shared template and content registry;
    - creates mobile locale routes from `locales/index.json`;
    - creates the `/obs/` overlay route from the desktop shell plus
      `src/pages/obs/overlay.html`, see `scripts/lib/obs-page.mjs` and
      [OBS overlay](features.md#obs-overlay).
 2. `sync-locales.mjs`
-   - generates the official `/zh-cn/` desktop route from the canonical desktop shell;
+   - creates or synchronizes generated locale routes from the canonical page shells and locale registry;
    - synchronizes canonical, `hreflang`, Open Graph locale metadata and sitemap data from the locale registry;
-   - applies Chinese product-intent SEO content and FAQ structured data;
-   - localizes `/mobile/zh-cn/` metadata;
+   - applies locale-specific SEO content and structured data when configured;
+   - localizes generated mobile-route metadata;
    - injects the shared locale runtime override before the app initializes.
 3. `version-assets.mjs`
-   - fingerprints the final JS/CSS assets and updates every generated HTML route.
+   - fingerprints the final JS/CSS assets, including the map landing stylesheet, and updates every generated HTML route.
 
 The final artifact includes:
 
@@ -144,9 +160,13 @@ dist/
 ├── de/
 ├── zh-cn/
 │   └── index.html
+├── maps/
+│   ├── bakurani/index.html
+│   ├── ozeti/index.html
+│   └── zestafona/index.html
 ├── mobile/
 │   ├── index.html
-│   └── zh-cn/
+│   └── <locale>/
 │       └── index.html
 ├── assets/
 ├── js/
@@ -157,28 +177,37 @@ dist/
 └── sitemap.xml
 ```
 
-Large resources such as map tiles and Terrain3D chunks exist only once and are shared by desktop/mobile locale routes.
+Map tiles and Terrain3D chunks are loaded from `assets.wardogs-artillery.com`
+and are absent from `dist/`. The shared terrain registry points at versioned
+R2 manifests; chunk URLs resolve relative to each remote manifest. Local
+manifest copies and `contours.json` remain in `dist/data/terrain/`.
 
-### Simplified Chinese validation
+Before deploying, finish and verify both the tile and terrain uploads. Every
+registered terrain map, including locally added maps such as Zestafona, needs a
+remote `terrainManifest` URL once its binaries are excluded from the build.
+
+### Localized route validation
 
 After `npm run build`, serve `dist/` and verify:
 
 ```text
-http://localhost:8000/zh-cn/
-http://localhost:8000/mobile/zh-cn/
+http://localhost:8000/<locale>/
+http://localhost:8000/mobile/<locale>/
 ```
 
-Check the UI, language selector, China flag, Mortar/SPH-2 naming, mobile menu, footer/legal copy, Terrain3D status and SPH-2 warning. Inspect generated HTML to confirm:
+Repeat the check for every supported locale. Check the UI, language selector, flag, weapon naming, mobile menu, footer/legal copy, Terrain3D status and SPH-2 warning. Inspect generated HTML to confirm:
 
 ```text
-lang="zh-CN"
-canonical -> https://wardogs-artillery.com/zh-cn/
-hreflang="zh-CN"
-og:locale = zh_CN
-FAQPage JSON-LD
+lang matches the locale registry
+canonical points to the matching desktop route
+hreflang matches the locale registry
+og:locale matches the locale registry
+locale-specific JSON-LD is present when configured
 ```
 
-Also confirm `dist/sitemap.xml` contains `/zh-cn/` and that every indexable desktop locale advertises the Chinese alternate.
+Also confirm `dist/sitemap.xml` contains every indexable desktop locale and that each indexable route advertises all registered alternates.
+
+For map landing pages, `npm run test:build` checks unique metadata, canonical URLs, crawlable copy, internal links, sitemap entries, indexability, structured data, lightweight resource loading and the validated `?map=` calculator handoff.
 
 ## Terrain3D verification
 
@@ -190,7 +219,7 @@ Terrain3D unavailable -> keep normal firing solution
 MIL                   -> existing firing tables remain authoritative
 ```
 
-Simplified Chinese localization must not change the terrain calibration, firing tables, release safety flags, or automatic-correction behavior.
+Localization changes must not change the terrain calibration, firing tables, release safety flags, or automatic-correction behavior.
 
 ## Development Workflow
 
@@ -217,10 +246,14 @@ Production:
 ```text
 https://wardogs-artillery.com/
 https://wardogs-artillery.com/mobile/
-https://wardogs-artillery.com/zh-cn/
-https://wardogs-artillery.com/mobile/zh-cn/
+https://wardogs-artillery.com/<locale>/
+https://wardogs-artillery.com/mobile/<locale>/
 ```
 
-GitHub Actions runs `npm run build`, uploads the single `dist/` artifact and deploys it to GitHub Pages. The only custom domain remains `wardogs-artillery.com`.
+GitHub Actions runs `npm run build`, uploads the single `dist/` artifact and
+deploys it to GitHub Pages at `wardogs-artillery.com`. Map imagery and Terrain3D
+manifests/binaries are published separately to R2 and served through
+`assets.wardogs-artillery.com`; deploying the site does not upload them. Verify
+the complete asset release before deploying registry URLs that reference it.
 
 Do not manually edit files inside `dist/`; they are regenerated on every build.

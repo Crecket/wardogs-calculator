@@ -9,6 +9,11 @@ const MAP_SHAPE_TYPES = [
     'circle'
 ];
 
+const MAP_SHAPE_CREATABLE_TYPES = [
+    'line',
+    'arrow'
+];
+
 const MAP_SHAPE_LABEL_KEYS = {
     line: 'mapToolShapeLine',
     arrow: 'mapToolShapeArrow',
@@ -75,7 +80,7 @@ function buildMapShapePalette() {
     shapeRow.className =
         'map-tool-shape-row';
 
-    MAP_SHAPE_TYPES.forEach(type => {
+    MAP_SHAPE_CREATABLE_TYPES.forEach(type => {
         const button =
             document.createElement('button');
 

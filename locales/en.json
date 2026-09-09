@@ -66,6 +66,8 @@
   "mapToolShapeArrow": "Arrow",
   "mapToolShapeRect": "Rectangle",
   "mapToolShapeCircle": "Circle",
+  "mapToolZoneHint": "Drag from the center to set the radius.",
+  "mapToolPolygonHint": "Click to add vertices. Click the first point, double-click, or press Enter to finish.",
   "mapToolMarkers": "Markers",
   "mapToolTargeting": "Targeting mode",
   "targetingModeHint": "Map clicks save a new target. The active target stays where it is.",
@@ -231,5 +233,15 @@
   "noteOffMap": "no terrain data here",
   "crossSectionBelowMin": "needs elevation below the gun's minimum — passes over",
   "crossSectionAboveMax": "needs elevation above the gun's maximum — falls short",
-  "reachUnknown": "No terrain data"
+  "reachUnknown": "No terrain data",
+  "authorLabel": "by",
+  "communityPartner": "Community partner",
+  "footerDisclaimer": "Unofficial community project. Not affiliated with or endorsed by BULKHEAD or the WARDOGS development team.",
+  "switchToDarkTheme": "Switch to dark theme",
+  "switchToLightTheme": "Switch to light theme",
+  "mobileOpenCalculator": "Open calculator",
+  "mobileCalculatorSections": "Calculator sections",
+  "zoomOutLabel": "Zoom out",
+  "zoomInLabel": "Zoom in",
+  "mobileCloseMenu": "Close menu"
 }

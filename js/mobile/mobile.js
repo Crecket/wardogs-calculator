@@ -90,32 +90,27 @@ function getMobileUserMarkerAt(x, y) {
         y - target.y
     );
 
-    const nearest = Math.min(
-        originDistance,
-        targetDistance
-    );
+    const nearestUnlockedPoint =
+        getNearestUnlockedMapPoint(
+            originDistance,
+            targetDistance,
+            MOBILE_POINT_HIT_RADIUS
+        );
 
-    if (nearest > MOBILE_POINT_HIT_RADIUS) {
-        return null;
+    /*
+     * Select before returning: S.origin resolves through the active
+     * gun, so the drag that follows has to be pointed at the gun that
+     * was actually tapped.
+     */
+    if (
+        nearestUnlockedPoint === 'origin' &&
+        hitGun &&
+        hitGun.id !== S.activeGunId
+    ) {
+        selectGun(hitGun.id);
     }
 
-    if (originDistance <= targetDistance) {
-        /*
-         * Select before returning: S.origin resolves through the active
-         * gun, so the drag that follows has to be pointed at the gun that
-         * was actually tapped.
-         */
-        if (
-            hitGun &&
-            hitGun.id !== S.activeGunId
-        ) {
-            selectGun(hitGun.id);
-        }
-
-        return 'origin';
-    }
-
-    return 'target';
+    return nearestUnlockedPoint;
 }
 
 function setMobileMode(type) {
@@ -146,7 +141,8 @@ function startMobilePinch() {
         (
             MAP_TOOL_STATE.rulerDragging ||
             MAP_TOOL_STATE.pencilDragging ||
-            MAP_TOOL_STATE.shapeDragging
+            MAP_TOOL_STATE.shapeDragging ||
+            MAP_TOOL_STATE.zoneDragging
         )
     ) {
         handleMapToolMouseUp();
@@ -270,7 +266,7 @@ function handleMobilePointerDown(event) {
 
     if (
         typeof MAP_TOOL_STATE !== 'undefined' &&
-        ['ruler', 'pencil', 'shapes', 'eraser', 'marker'].includes(
+        ['ruler', 'pencil', 'shapes', 'zone', 'polygon', 'eraser', 'marker'].includes(
             MAP_TOOL_STATE.tool
         )
     ) {
@@ -475,7 +471,7 @@ function finishMobileTap(event, gesture) {
 
     if (
         typeof MAP_TOOL_STATE === 'undefined' ||
-        !['ruler', 'pencil', 'shapes', 'eraser', 'marker'].includes(
+        !['ruler', 'pencil', 'shapes', 'zone', 'polygon', 'eraser', 'marker'].includes(
             MAP_TOOL_STATE.tool
         )
     ) {
