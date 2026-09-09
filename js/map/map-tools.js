@@ -89,8 +89,6 @@ const MAP_TOOL_STATE = {
         artillery: true,
         savedTargets: true,
         deadGround: false,
-        crossSection: true,
-        targetMinimap: true,
         cursorCoords: true,
         milCursor: false
     },
@@ -1183,14 +1181,6 @@ function buildMapLayers() {
         ? [['firingPositions', 'mapLayerFiringPositions']]
         : [];
 
-    const crossSectionLayer = $('crossSection')
-        ? [['crossSection', 'mapLayerCrossSection']]
-        : [];
-
-    const targetMinimapLayer = $('targetMinimap')
-        ? [['targetMinimap', 'mapLayerTargetMinimap']]
-        : [];
-
     const groups = [
         {
             id: 'base',
@@ -1224,8 +1214,6 @@ function buildMapLayers() {
             titleKey: 'mapLayerGroupFiring',
             items: [
                 ['deadGround', 'mapLayerDeadGround'],
-                ...crossSectionLayer,
-                ...targetMinimapLayer,
                 ...firingPositionsLayer
             ]
         },
@@ -1316,16 +1304,6 @@ function buildMapLayers() {
             <path d="M3 17c3 0 4.5-6 7.5-6s4.5 6 7.5 6"/>
             <path d="M3 20h18"/>
             <path d="M14 8h5v4"/>
-        `,
-        crossSection: `
-            <path d="M3 19h18"/>
-            <path d="M3 16c3.5 0 4-4 7.5-4S15 16 21 16"/>
-            <path d="M4 14c2.5-8 12.5-8 15.5-1"/>
-        `,
-        targetMinimap: `
-            <rect x="3" y="4" width="18" height="16" rx="2"/>
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 6v2M12 16v2M6 12h2M16 12h2"/>
         `,
         artillery: `
             <circle cx="12" cy="12" r="6"/>

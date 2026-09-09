@@ -96,8 +96,6 @@
   "mapLayerFobAreas": "FOB build areas",
   "mapLayerArtillery": "Artillery overlay",
   "mapLayerDeadGround": "Dead ground (low arc)",
-  "mapLayerCrossSection": "Trajectory cross-section",
-  "mapLayerTargetMinimap": "Target area",
   "mapToolUndo": "Undo",
   "mapToolRedo": "Redo",
   "mapToolUndoRedoHint": "Undo: {undo} · Redo: {redo}",

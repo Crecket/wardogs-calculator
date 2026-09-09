@@ -1,0 +1,21 @@
+{
+    "format": "wardogs-canopy-v1",
+    "mapId": "zestafona",
+    "sampleSpacingMeters": 8,
+    "tileZoom": 7,
+    "luminanceMeanMax": 45,
+    "luminanceStdMin": 3,
+    "coverage": 1,
+    "canopyShare": 0.2024,
+    "grid": {
+        "width": 1313,
+        "height": 1141,
+        "originX": 19.9,
+        "originY": 141.9,
+        "stepX": 0.08,
+        "stepY": 0.08
+    },
+    "file": "canopy.png",
+    "bytes": 164084,
+    "sha256": "d7b676d7e7b09e83540bd9a835f281dfc52ed4781c6e803d42f5fc6532671cee"
+}

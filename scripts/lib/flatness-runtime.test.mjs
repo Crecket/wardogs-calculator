@@ -33,7 +33,7 @@ test('only the maps with a baked raster are offered the layer', () => {
      */
     assert.deepEqual(
         JSON.parse(callRuntime(ctx, 'JSON.stringify(FLATNESS_MAP_IDS)')),
-        ['bakurani', 'ozeti']
+        ['bakurani', 'ozeti', 'zestafona']
     );
 
     assert.equal(callRuntime(ctx, 'mapHasFlatness("bakurani")'), true);

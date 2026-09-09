@@ -7,12 +7,13 @@ const TARGET_MINIMAP_STATE = {
     pending: false
 };
 
+/*
+ * The panel is part of the desktop page and not a layer: it is there
+ * whenever its markup is, and the mobile shell simply does not carry it.
+ * Collapsing is the header's own affair.
+ */
 function targetMinimapVisible() {
-    return (
-        Boolean($('targetMinimap')) &&
-        typeof isMapLayerVisible === 'function' &&
-        isMapLayerVisible('targetMinimap')
-    );
+    return Boolean($('targetMinimap'));
 }
 
 function targetMinimapSurface(canvas) {

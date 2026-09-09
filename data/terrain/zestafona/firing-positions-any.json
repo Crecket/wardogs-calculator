@@ -1,0 +1,70 @@
+{
+    "format": "wardogs-firing-positions-v1",
+    "mapId": "zestafona",
+    "arc": "any",
+    "weaponId": "spg",
+    "sampleSpacingMeters": 8,
+    "stencilSpacingMeters": 2,
+    "aimRingMeters": 300,
+    "aimPoints": 27,
+    "tiltLimitDegrees": 4,
+    "lowArcMissableTowers": 1,
+    "canopyMeters": 30,
+    "fallbackTiltLimitDegrees": 8,
+    "minRegionCells": 16,
+    "viableKm2": 1.354,
+    "fallbackKm2": 2.403,
+    "droppedAsUnparkableKm2": 0.639,
+    "droppedAsTooSmallKm2": 0.046,
+    "spawns": [
+        {
+            "label": "VALKYRA Spawn",
+            "share": 0.116,
+            "nearestMeters": 1773,
+            "medianMeters": 2680
+        },
+        {
+            "label": "MANTICORE Spawn",
+            "share": 0.254,
+            "nearestMeters": 1463,
+            "medianMeters": 2674
+        },
+        {
+            "label": "LONESTAR",
+            "share": 0.629,
+            "nearestMeters": 1656,
+            "medianMeters": 2515
+        }
+    ],
+    "fallbackSpawns": [
+        {
+            "label": "VALKYRA Spawn",
+            "share": 0.27,
+            "nearestMeters": 1643,
+            "medianMeters": 2578
+        },
+        {
+            "label": "MANTICORE Spawn",
+            "share": 0.313,
+            "nearestMeters": 1433,
+            "medianMeters": 2182
+        },
+        {
+            "label": "LONESTAR",
+            "share": 0.418,
+            "nearestMeters": 1570,
+            "medianMeters": 2377
+        }
+    ],
+    "grid": {
+        "width": 1313,
+        "height": 1141,
+        "originX": 19.9,
+        "originY": 141.9,
+        "stepX": 0.08,
+        "stepY": 0.08
+    },
+    "file": "firing-positions-any.png",
+    "bytes": 21880,
+    "sha256": "00f6dd1c4ae187737461df62c7b60ea36d30a0543373aa2c9295e83e095145c0"
+}

@@ -18,12 +18,13 @@ const CROSS_SECTION_STATE = {
     key: ''
 };
 
+/*
+ * The panel is part of the desktop page and not a layer: it is there
+ * whenever its markup is, and the mobile shell simply does not carry it.
+ * Collapsing is the header's own affair.
+ */
 function crossSectionPanelVisible() {
-    return (
-        Boolean($('crossSection')) &&
-        typeof isMapLayerVisible === 'function' &&
-        isMapLayerVisible('crossSection')
-    );
+    return Boolean($('crossSection'));
 }
 
 function crossSectionProfile(field, origin, target, distanceMeters) {

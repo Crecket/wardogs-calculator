@@ -47,7 +47,8 @@ const FIRING_POSITION_FORMAT = 'wardogs-firing-positions-v1';
  */
 const FIRING_POSITION_MAP_IDS = [
     'bakurani',
-    'ozeti'
+    'ozeti',
+    'zestafona'
 ];
 
 const FIRING_POSITION_ARCS = ['low', 'any'];

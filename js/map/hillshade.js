@@ -25,7 +25,8 @@ const HILLSHADE_FORMAT = 'wardogs-hillshade-v1';
  */
 const HILLSHADE_MAP_IDS = [
     'bakurani',
-    'ozeti'
+    'ozeti',
+    'zestafona'
 ];
 
 const HILLSHADE_OPACITY = 0.5;

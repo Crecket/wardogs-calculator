@@ -1,0 +1,19 @@
+{
+    "format": "wardogs-heightfield-u16-v1",
+    "mapId": "zestafona",
+    "generatedFrom": "data/terrain/zestafona/manifest.json",
+    "generatedAt": "2026-09-09",
+    "spacingMeters": 32,
+    "grid": {
+        "width": 330,
+        "height": 286,
+        "originX": 19.9,
+        "originY": 50.7,
+        "stepGameUnits": 0.32
+    },
+    "minZMeters": 35.34584095688365,
+    "maxZMeters": 670.2527336060883,
+    "file": "heightfield.bin",
+    "bytes": 188760,
+    "sha256": "8dc9276619f6a82e3395406dc37519c2fe25be4bdc4dc938b8fd4be81a7bb2ff"
+}

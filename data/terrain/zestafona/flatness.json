@@ -1,0 +1,31 @@
+{
+    "format": "wardogs-flatness-v1",
+    "mapId": "zestafona",
+    "sampleSpacingMeters": 8,
+    "stencilSpacingMeters": 2,
+    "stencilSamples": 5,
+    "bandEdgeDegrees": [
+        2,
+        4,
+        6,
+        8
+    ],
+    "bandShares": [
+        0.1166,
+        0.0951,
+        0.0943,
+        0.0915,
+        0.6026
+    ],
+    "grid": {
+        "width": 1313,
+        "height": 1141,
+        "originX": 19.9,
+        "originY": 141.9,
+        "stepX": 0.08,
+        "stepY": 0.08
+    },
+    "file": "flatness.png",
+    "bytes": 292218,
+    "sha256": "969644efdd2a23ca13a46a71b54c1db509b9511783418d811537080ffe983950"
+}

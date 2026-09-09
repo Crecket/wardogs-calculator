@@ -5,8 +5,8 @@
     "tileZoom": 7,
     "luminanceMeanMax": 45,
     "luminanceStdMin": 3,
-    "coverage": 0.8736,
-    "canopyShare": 0.1882,
+    "coverage": 0.999,
+    "canopyShare": 0.1814,
     "grid": {
         "width": 1379,
         "height": 1379,
@@ -16,6 +16,6 @@
         "stepY": 0.08
     },
     "file": "canopy.png",
-    "bytes": 174564,
-    "sha256": "256375772b5fde7c667c8efa8174b3004145a004a589855245d0e37dc86d4077"
+    "bytes": 193616,
+    "sha256": "08346ada6ed482f9dab5032f85ceab9a09020ab10d40c1bdcd72371ad23a750e"
 }

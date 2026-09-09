@@ -40,6 +40,8 @@ Running list of everything asked for in this session.
 - [x] Make every tool button turn its tool off on a second click — the menu-backed ones (pencil, shapes, markers, coordinate search, layers, shared session, zones) only did that while their popover happened to be open
 - [x] Redo the zone tool as a drag across the area — press and release both sit on the circle, the centre is the midpoint, so nothing has to be guessed before there is a circle on screen to judge
 - [x] Give tiles a second host — `TILE_FALLBACK_BASE_URL` writes `tiles.fallbackPath` into the built maps and `loadTile()` retries there, so a map our bucket is missing comes from upstream's public asset origin instead of failing
+- [x] Give Zestafona the full terrain set — its 256 chunks came back from the parent of upstream's "move terrain data to r2" commit, every one matching its manifest hash, and now heightfield, hillshade, flatness, canopy and firing positions are baked and the map is in every raster list and the terrain context; its tiles live only on upstream's asset origin, not our bucket
+- [x] Drop the Target area and Trajectory cross-section entries from the Layers popover — both panels are always on the desktop page and collapse from their own header; the mobile shell never carried them
 - [x] Turn the firing positions layer into the go-to spots — a canopy raster baked from the map tiles (`npm run build-canopy`, dark and rough pixels are trees) refuses cells inside woodland and stands thick woods 30 m tall in the clearance march; the tilt cap drops from 8 to 4 degrees; the low arc asks for a flat lane to all but one tower centre instead of every ring point, which had left Bakurani with nothing; survivors are trimmed to 24 m blocks; the outline is neon green
 
 ## Next
@@ -53,7 +55,7 @@ Running list of everything asked for in this session.
 
 ## Blocked
 
-- [ ] Regenerate the Terrain 3D data for Zestafona. The 256 source chunks were recovered on 2026-09-09 from the parent of upstream's "move terrain data to r2" commit, which had deleted them from git, and every one matches its manifest hash. They sit untracked under `data/terrain/zestafona/chunks/`, 134 MB. Still to do: decide whether to commit them the way Bakurani's are, then run heightfield, hillshade, flatness, contours, canopy (after fetching its tiles) and firing positions, and add the map to the raster map lists.
+_Nothing blocked._
 
 ## Bigger direction, not started
 

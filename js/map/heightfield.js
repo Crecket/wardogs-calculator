@@ -24,7 +24,8 @@ const HEIGHTFIELD_FORMAT = 'wardogs-heightfield-u16-v1';
 
 const HEIGHTFIELD_MAP_IDS = [
     'bakurani',
-    'ozeti'
+    'ozeti',
+    'zestafona'
 ];
 
 const HEIGHTFIELD_CACHE = new Map();

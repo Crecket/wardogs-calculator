@@ -1,0 +1,22 @@
+{
+    "format": "wardogs-hillshade-v1",
+    "mapId": "zestafona",
+    "sampleSpacingMeters": 8,
+    "sunAzimuthDegrees": 315,
+    "sunAltitudeDegrees": 45,
+    "zFactor": 1.575,
+    "gain": 1,
+    "reliefMeters": 635,
+    "boundsReliefMeters": 637,
+    "grid": {
+        "width": 1313,
+        "height": 1141,
+        "originX": 19.9,
+        "originY": 141.9,
+        "stepX": 0.08,
+        "stepY": 0.08
+    },
+    "file": "hillshade.png",
+    "bytes": 1500104,
+    "sha256": "25f63a3a7df9e0d84ae4b769b66da8e5f196621f05211fa7280d18ee71fc7df9"
+}

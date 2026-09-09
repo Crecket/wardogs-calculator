@@ -38,8 +38,7 @@ function sectionCtx() {
             tr: key => key,
             $: () => null,
             RANGE_RING_MARCH_METRES: 25,
-            rangeRingSample: () => 0,
-            isMapLayerVisible: () => false
+            rangeRingSample: () => 0
         }
     );
     setRuntimeGlobal(ctx, 'PROJECTILE_MODEL', model);

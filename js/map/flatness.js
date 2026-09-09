@@ -36,7 +36,8 @@ const FLATNESS_FORMAT = 'wardogs-flatness-v1';
  */
 const FLATNESS_MAP_IDS = [
     'bakurani',
-    'ozeti'
+    'ozeti',
+    'zestafona'
 ];
 
 const FLATNESS_OPACITY = 0.45;
