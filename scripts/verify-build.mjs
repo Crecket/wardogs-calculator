@@ -7,9 +7,22 @@ import {
     MAP_LANDING_PAGES,
     mapLandingUrl
 } from './map-landing-pages.mjs';
+import { analyticsWebsiteId, collabUrl } from './lib/site-config.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
+
+function collabOrigin() {
+    const configured = collabUrl();
+
+    if (!configured) return null;
+
+    try {
+        return new URL(configured).origin;
+    } catch {
+        return null;
+    }
+}
 
 async function files(directory) {
     const output = [];
@@ -25,14 +38,28 @@ const artifactFiles = await files(dist);
 const htmlFiles = artifactFiles.filter(path => path.endsWith('.html'));
 assert.ok(htmlFiles.length > 1, 'expected desktop and mobile HTML routes');
 
-for (const path of htmlFiles) {
+const appConfig = JSON.parse(await readFile(join(root, 'config', 'app.json'), 'utf8'));
+const turnstileEnabled = appConfig.collab?.turnstile?.enabled === true;
+const analyticsEnabled = Boolean(analyticsWebsiteId());
+const origin = collabOrigin();
+
+const obsRoute = join(dist, 'obs', 'index.html');
+const securityMetaPages = htmlFiles.filter(path => path !== obsRoute);
+
+for (const path of securityMetaPages) {
     const page = relative(dist, path);
     const html = await readFile(path, 'utf8');
     assert.match(html, /http-equiv="Content-Security-Policy"/i, `${page}: missing CSP`);
     assert.match(html, /script-src-attr 'none'/, `${page}: inline handlers are not blocked`);
-    assert.match(html, /https:\/\/lobby\.wardogs-artillery\.com/, `${page}: lobby is not allowed by CSP`);
-    assert.match(html, /https:\/\/challenges\.cloudflare\.com/, `${page}: Turnstile is not allowed by CSP`);
-    assert.match(html, /https:\/\/gateway\.umami\.is/, `${page}: Umami gateway is not allowed by CSP`);
+    if (origin) {
+        assert.ok(html.includes(origin), `${page}: collab origin is not allowed by CSP`);
+    }
+    if (turnstileEnabled) {
+        assert.match(html, /https:\/\/challenges\.cloudflare\.com/, `${page}: Turnstile is not allowed by CSP`);
+    }
+    if (analyticsEnabled) {
+        assert.match(html, /https:\/\/gateway\.umami\.is/, `${page}: Umami gateway is not allowed by CSP`);
+    }
     assert.doesNotMatch(html, /Content-Security-Policy[^>]+localhost/i, `${page}: development origin leaked into CSP`);
 }
 

@@ -49,9 +49,9 @@ jobs:
       - name: Test site scripts
         run: npm run test:scripts
 
-      - name: Test lobby
+      - name: Test sync worker
         working-directory: sync
-        run: npm test
+        run: npm run test:smoke && npm run test:browser && npm run test:disabled && npm run test:guns && npm run test:cursors
 
       - name: Audit dependencies
         run: npm audit --audit-level=high && npm --prefix sync audit --audit-level=high
