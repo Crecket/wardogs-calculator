@@ -29,10 +29,13 @@ wardogs-calculator/
 │   ├── build-contours.mjs
 │   ├── sync-locales.mjs
 │   ├── seo-content.mjs
+│   ├── map-landing-pages.mjs
 │   ├── version-assets.mjs
 │   └── dev-server.mjs
 ├── src/pages/
+│   └── maps/template.html
 ├── styles/
+│   └── map-landing.css
 ├── package.json
 ├── style.css
 ├── mobile.css
@@ -65,6 +68,8 @@ See [Tile hosting](maps.md#tile-hosting) and
 [Terrain3D hosting](terrain.md#terrain3d-hosting) for asset paths and releases.
 
 Production analytics are disabled by default in the development server. Set `WARDOGS_DISABLE_ANALYTICS=false` only when explicitly testing the Umami integration. See [Analytics](analytics.md#development-analytics-switch) for the full local-testing behavior.
+
+The lightweight English map guides are available from the source server at `/maps/bakurani/`, `/maps/ozeti/` and `/maps/zestafona/`. Restart the server after editing `scripts/map-landing-pages.mjs`; template and CSS edits continue to use live reload.
 
 To test on another device:
 
@@ -102,6 +107,7 @@ Responsibilities:
    - keeps local terrain manifests and generated contours;
    - bundles desktop/mobile CSS;
    - creates the normal desktop routes;
+   - creates lightweight English map landing routes from the shared template and content registry;
    - creates mobile locale routes from `locales/index.json`.
 2. `sync-locales.mjs`
    - creates or synchronizes generated locale routes from the canonical page shells and locale registry;
@@ -110,7 +116,7 @@ Responsibilities:
    - localizes generated mobile-route metadata;
    - injects the shared locale runtime override before the app initializes.
 3. `version-assets.mjs`
-   - fingerprints the final JS/CSS assets and updates every generated HTML route.
+   - fingerprints the final JS/CSS assets, including the map landing stylesheet, and updates every generated HTML route.
 
 The final artifact includes:
 
@@ -119,6 +125,10 @@ dist/
 ├── index.html
 ├── <locale>/
 │   └── index.html
+├── maps/
+│   ├── bakurani/index.html
+│   ├── ozeti/index.html
+│   └── zestafona/index.html
 ├── mobile/
 │   ├── index.html
 │   └── <locale>/
@@ -161,6 +171,8 @@ locale-specific JSON-LD is present when configured
 ```
 
 Also confirm `dist/sitemap.xml` contains every indexable desktop locale and that each indexable route advertises all registered alternates.
+
+For map landing pages, `npm run test:build` checks unique metadata, canonical URLs, crawlable copy, internal links, sitemap entries, indexability, structured data, lightweight resource loading and the validated `?map=` calculator handoff.
 
 ## Terrain3D verification
 

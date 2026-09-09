@@ -25,6 +25,10 @@ import {
 import {
     fileURLToPath
 } from 'node:url';
+import {
+    MAP_LANDING_PAGES_BY_ID,
+    renderMapLandingPage
+} from './map-landing-pages.mjs';
 
 const __dirname = dirname(
     fileURLToPath(import.meta.url)
@@ -757,6 +761,15 @@ async function createRequestHandler() {
             'index.html'
         );
 
+    const mapTemplatePath =
+        join(
+            root,
+            'src',
+            'pages',
+            'maps',
+            'template.html'
+        );
+
     return async (
         request,
         response
@@ -818,6 +831,33 @@ async function createRequestHandler() {
                 );
 
                 return;
+            }
+
+            const mapLandingMatch =
+                pathname.match(
+                    /^\/maps\/([a-z0-9-]+)(?:\/index\.html)?\/?$/i
+                );
+
+            if (mapLandingMatch) {
+                const mapId =
+                    mapLandingMatch[1]
+                        .toLowerCase();
+                const page =
+                    MAP_LANDING_PAGES_BY_ID[mapId];
+
+                if (page) {
+                    await sendHTML(
+                        response,
+                        mapTemplatePath,
+                        template =>
+                            renderMapLandingPage(
+                                template,
+                                page
+                            )
+                    );
+
+                    return;
+                }
             }
 
             const mobileMatch =

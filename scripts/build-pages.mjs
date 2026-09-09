@@ -1,6 +1,11 @@
 import { cp, mkdir, readFile, rm, writeFile, readdir, stat } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+    MAP_LANDING_PAGES,
+    mapLandingUrl,
+    renderMapLandingPage
+} from './map-landing-pages.mjs';
 import { SEO_ALTERNATE_NAMES, SEO_PAGE_CONTENT } from './seo-content.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -150,6 +155,16 @@ async function bundleStyles() {
     await bundleStyleFiles(
         mobileStyleFiles,
         'mobile.css'
+    );
+
+    await mkdir(
+        join(dist, 'styles'),
+        { recursive: true }
+    );
+
+    await copyIfExists(
+        join(root, 'styles', 'map-landing.css'),
+        join(dist, 'styles', 'map-landing.css')
     );
 }
 
@@ -396,7 +411,8 @@ function renderSeoTopicLinks(cluster, faq, faqLabel = 'FAQ') {
         },
         ...cluster.sections.map(section => ({
             id: section.id,
-            label: section.heading
+            label: section.heading,
+            href: section.href
         }))
     ];
 
@@ -409,7 +425,7 @@ function renderSeoTopicLinks(cluster, faq, faqLabel = 'FAQ') {
 
     return links
         .map(link => (
-            `<a href="#${escapeSeoHtml(link.id)}">${escapeSeoHtml(link.label)}</a>`
+            `<a href="${link.href ? escapeSeoHtml(link.href) : `#${escapeSeoHtml(link.id)}`}">${escapeSeoHtml(link.label)}</a>`
         ))
         .join('');
 }
@@ -452,12 +468,18 @@ function injectSeoContentCluster(
     }
 
     const sections = cluster.sections
-        .map(section => [
-            `<section class="seo-topic" id="${escapeSeoHtml(section.id)}">`,
-            `<h3>${escapeSeoHtml(section.heading)}</h3>`,
-            `<p>${escapeSeoHtml(section.body)}</p>`,
-            '</section>'
-        ].join('\n'))
+        .map(section => {
+            const heading = section.href
+                ? `<a href="${escapeSeoHtml(section.href)}">${escapeSeoHtml(section.heading)}</a>`
+                : escapeSeoHtml(section.heading);
+
+            return [
+                `<section class="seo-topic" id="${escapeSeoHtml(section.id)}">`,
+                `<h3>${heading}</h3>`,
+                `<p>${escapeSeoHtml(section.body)}</p>`,
+                '</section>'
+            ].join('\n');
+        })
         .join('\n');
 
     const block = [
@@ -694,6 +716,25 @@ async function buildDesktopPages() {
     }
 }
 
+async function buildMapLandingPages() {
+    const template = await readFile(
+        join(root, 'src', 'pages', 'maps', 'template.html'),
+        'utf8'
+    );
+    const appConfig = await readAppConfig();
+
+    for (const page of MAP_LANDING_PAGES) {
+        const targetDir = join(dist, 'maps', page.id);
+        const html = addProductionSecurityMeta(
+            renderMapLandingPage(template, page),
+            appConfig
+        );
+
+        await mkdir(targetDir, { recursive: true });
+        await writeFile(join(targetDir, 'index.html'), html, 'utf8');
+    }
+}
+
 async function readAppConfig() {
     const path = join(root, 'config', 'app.json');
     return JSON.parse(await readFile(path, 'utf8'));
@@ -757,7 +798,7 @@ async function buildSitemap() {
         )
         .join('\n');
 
-    const urls = languages
+    const localeUrls = languages
         .map(language => [
             '  <url>',
             `    <loc>${escapeXml(desktopUrlForLanguage(language))}</loc>`,
@@ -766,6 +807,20 @@ async function buildSitemap() {
             `    <lastmod>${escapeXml(lastModified)}</lastmod>`,
             '  </url>'
         ].join('\n'))
+        .join('\n');
+
+    const mapUrls = MAP_LANDING_PAGES
+        .map(page => [
+            '  <url>',
+            `    <loc>${escapeXml(mapLandingUrl(page.id))}</loc>`,
+            '    <changefreq>weekly</changefreq>',
+            `    <lastmod>${escapeXml(lastModified)}</lastmod>`,
+            '  </url>'
+        ].join('\n'))
+        .join('\n');
+
+    const urls = [localeUrls, mapUrls]
+        .filter(Boolean)
         .join('\n');
 
     const sitemap = [
@@ -939,6 +994,7 @@ await mkdir(
 await copySharedStatic();
 await bundleStyles();
 await buildDesktopPages();
+await buildMapLandingPages();
 await buildSitemap();
 await buildMobilePages();
 

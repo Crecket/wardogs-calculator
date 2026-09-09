@@ -88,6 +88,7 @@ function isVersionedAsset(url) {
     return (
         path === 'style.css' ||
         path === 'mobile.css' ||
+        path === 'styles/map-landing.css' ||
         path.startsWith('js/')
     );
 }
@@ -293,6 +294,7 @@ const assetFiles =
             return (
                 path === 'style.css' ||
                 path === 'mobile.css' ||
+                path === 'styles/map-landing.css' ||
                 (
                     path.startsWith(
                         'js/'

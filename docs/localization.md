@@ -96,6 +96,10 @@ Desktop locale routes use the same build path and shared locale JSON. Every inde
 
 Mobile locale routes share the matching desktop canonical URL. The Cat localization remains excluded from normal search indexing.
 
+The standalone guides under `/maps/<map-id>/` are currently English-only canonical documents. They deliberately do not advertise `hreflang` alternates until every map has a reviewed, map-specific translation; automatically generating repeated thin copy would weaken the landing-page set. Runtime language selection in the calculator is unchanged when a guide opens the app through `?map=<map-id>`.
+
+When translated map guides are added, give each translation a stable route, self-referencing canonical, complete visible copy and reciprocal `hreflang` set. Extend both sitemap generators and the map SEO smoke test in the same change.
+
 ## Build pipeline
 
 The production build is:

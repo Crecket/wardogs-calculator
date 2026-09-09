@@ -127,16 +127,19 @@ export const SEO_PAGE_CONTENT = {
                 },
                 {
                     id: 'bakurani-interactive-map',
+                    href: 'maps/bakurani/',
                     heading: 'Bakurani Interactive Map',
                     body: 'The Bakurani interactive map is calibrated to WARDOGS coordinates so artillery positions, targets, saved targets, the ruler, drawings and tactical markers share the same map space. Terrain contour layers and Terrain3D elevation data are available for tactical planning and supported SPH-2 terrain-correction previews.'
                 },
                 {
                     id: 'ozeti-interactive-map',
+                    href: 'maps/ozeti/',
                     heading: 'Ozeti Interactive Map',
                     body: 'The Ozeti interactive map uses calibrated WARDOGS coordinates and corrected playable-area alignment for artillery and tactical planning. Artillery positions, targets, saved targets, drawings, markers and terrain contours share the same coordinate space, with Terrain3D elevation data available where supported.'
                 },
                 {
                     id: 'zestafona-interactive-map',
+                    href: 'maps/zestafona/',
                     heading: 'Zestafona Interactive Map',
                     body: 'The Zestafona interactive map uses calibrated WARDOGS coordinates for artillery placement, targets and tactical planning. Multi-resolution map tiles, saved targets, the ruler, drawings, markers, terrain contours and Terrain3D elevation context are available in the same workspace.'
                 },

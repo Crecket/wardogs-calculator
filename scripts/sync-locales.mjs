@@ -1,6 +1,10 @@
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+    MAP_LANDING_PAGES,
+    mapLandingUrl
+} from './map-landing-pages.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
@@ -178,7 +182,7 @@ async function buildSitemap(indexableLanguages, lastModified) {
         )
         .join('\n');
 
-    const urls = indexableLanguages
+    const localeUrls = indexableLanguages
         .map(definition => [
             '  <url>',
             `    <loc>${escapeXml(desktopUrl(definition))}</loc>`,
@@ -187,6 +191,20 @@ async function buildSitemap(indexableLanguages, lastModified) {
             `    <lastmod>${escapeXml(lastModified)}</lastmod>`,
             '  </url>'
         ].join('\n'))
+        .join('\n');
+
+    const mapUrls = MAP_LANDING_PAGES
+        .map(page => [
+            '  <url>',
+            `    <loc>${escapeXml(mapLandingUrl(page.id))}</loc>`,
+            '    <changefreq>weekly</changefreq>',
+            `    <lastmod>${escapeXml(lastModified)}</lastmod>`,
+            '  </url>'
+        ].join('\n'))
+        .join('\n');
+
+    const urls = [localeUrls, mapUrls]
+        .filter(Boolean)
         .join('\n');
 
     const sitemap = [

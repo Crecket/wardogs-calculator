@@ -208,6 +208,8 @@ async function init() {
 
         await loadMaps();
 
+        applyMapQuerySelection();
+
         await loadTerrainBallisticsRuntime();
 
         initMapTools();

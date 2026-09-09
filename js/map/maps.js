@@ -268,6 +268,62 @@ async function loadMaps() {
 
 
 /* =========================
+   DIRECT MAP ENTRY
+   ========================= */
+
+function applyMapQuerySelection() {
+    const url =
+        new URL(
+            window.location.href
+        );
+
+    const requested =
+        url.searchParams
+            .get('map')
+            ?.trim()
+            .toLowerCase();
+
+    if (
+        !requested ||
+        !Object.hasOwn(
+            MAPS,
+            requested
+        )
+    ) {
+        return false;
+    }
+
+    const map =
+        MAPS[requested];
+
+    S.map = map.id;
+    S.w = map.w;
+    S.h = map.h;
+
+    const select =
+        $('mapSelect');
+
+    if (select) {
+        select.value = map.id;
+    }
+
+    /* Consume the validated deep link once; normal startup persists it. */
+    url.searchParams.delete('map');
+
+    const cleanUrl =
+        `${url.pathname}${url.search}${url.hash}`;
+
+    window.history.replaceState(
+        window.history.state,
+        '',
+        cleanUrl
+    );
+
+    return true;
+}
+
+
+/* =========================
    MAP SELECT
    ========================= */
 

@@ -15,6 +15,22 @@ Each map has its own JSON configuration and may define:
 - Polygons
 - Map-specific metadata
 
+### Indexable map landing pages
+
+Bakurani, Ozeti and Zestafona each have a lightweight English search document:
+
+```text
+/maps/bakurani/
+/maps/ozeti/
+/maps/zestafona/
+```
+
+These routes are generated as real `dist/maps/<map-id>/index.html` files. They are guides and entry points, not duplicate calculators: they load only the shared landing stylesheet and deferred analytics, then link to the main application with a validated `?map=<map-id>` parameter. The application consumes that parameter once, selects the registered map and stores it through normal selection persistence.
+
+Shared markup lives in `src/pages/maps/template.html`. Unique metadata, body copy and FAQ content live in `scripts/map-landing-pages.mjs`. `scripts/build-pages.mjs` creates the routes, both sitemap stages include them, and `scripts/verify-build.mjs` enforces their SEO and lightweight-loading contract.
+
+The template uses `<base href="../../">` so relative links work on the custom domain and below a GitHub project path. Production canonical and sitemap URLs always use `https://wardogs-artillery.com/maps/<map-id>/` with a trailing slash.
+
 ### Bakurani
 
 Bakurani uses a multi-resolution WebP tile pyramid published to Cloudflare R2.
@@ -217,6 +233,8 @@ maps/tiles/my-map/
 4. Upload the tile pyramid to R2 under a versioned release prefix and set
    `tiles.path` to its full public HTTPS URL. Local tiles are excluded from the
    production build.
+
+5. If the map needs an indexable guide, add a unique, fact-checked definition to `scripts/map-landing-pages.mjs`, link it from the relevant English homepage SEO section, then run the build and SEO smoke test. Do not publish mechanical translations or copy another map's text with only the name changed.
 
 5. Configure the coordinate bounds.
 
