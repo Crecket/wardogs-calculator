@@ -391,6 +391,10 @@ function collabApplyMapId(mapId) {
         select.value = mapId;
     }
 
+    if (typeof populateZoneSelect === 'function') {
+        populateZoneSelect();
+    }
+
     clamp(S.origin);
     clamp(S.target);
 

@@ -156,8 +156,7 @@ Two things this branch shipped without being able to fully check.
 
 Not unverified — measured and understood, but the app does not represent it.
 
-**The main zone moves between matches.** Each map ships several named control
-zones and the match picks one; we draw the Default variant and nothing else.
+**The main zone moves between matches.** Each map ships several named control zones and the match picks one. The sidebar now carries a variant picker under the map select, drawing whichever zone the player picks, from the centres below. Zestafona's variants are unknown and its picker stays hidden until the pak read supplies them. Two values on that same read: the radii (500 m Bakurani, 550 m Ozeti, from the game's `controlZoneRadius`) against the community sites' "2 km circle", and the dev vlog's three variants per map against Ozeti's four.
 
 | Map | Variant | Centre | Offset from Default |
 |---|---|---|---|
@@ -168,10 +167,6 @@ zones and the match picks one; we draw the Default variant and nothing else.
 | Ozeti | Farmland | `9471, 6359` | 531 m |
 | Ozeti | Church | `10163, 6326` | 164 m |
 | Ozeti | River | `9774, 6244` | 254 m |
-
-On Ozeti the Farmland zone sits 531 m from Default — about one full radius — so
-on that rotation the circle we draw barely overlaps the real one. Supporting
-all variants means a per-map list plus a picker: a feature, not a data fix.
 
 **Real map art is available for two markers we draw by hand.** The game's own
 marker textures are mirrored at

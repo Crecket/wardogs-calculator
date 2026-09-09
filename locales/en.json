@@ -2,6 +2,7 @@
   "title": "WARDOGS // ARTILLERY CALCULATOR",
   "gridInfo": "1 km → 10×10 cells of 100 m",
   "map": "Map",
+  "zoneHidden": "Zone hidden",
   "weapon": "Weapon",
   "maxRange": "Max range",
   "targetStatus": "Target status",

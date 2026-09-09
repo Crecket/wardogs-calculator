@@ -155,6 +155,29 @@
     }
   ],
   "zones": [],
+  "mainZones": [
+    {
+      "id": "default",
+      "name": "Default",
+      "x": 7991,
+      "y": 7183,
+      "radius": 500
+    },
+    {
+      "id": "farmland",
+      "name": "Farmland",
+      "x": 8137,
+      "y": 6938,
+      "radius": 500
+    },
+    {
+      "id": "lumberyard",
+      "name": "Lumberyard",
+      "x": 8249,
+      "y": 7182,
+      "radius": 500
+    }
+  ],
   "polygons": [
     {
       "color": "#d86666",

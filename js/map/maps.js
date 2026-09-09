@@ -193,7 +193,103 @@ function normalizeMap(map) {
             ? map.polygons
             : [];
 
+    normalized.mainZones =
+        Array.isArray(map.mainZones)
+            ? map.mainZones.filter(
+                zone =>
+                    zone &&
+                    typeof zone.id === 'string' &&
+                    zone.id.trim() &&
+                    Number.isFinite(Number(zone.x)) &&
+                    Number.isFinite(Number(zone.y)) &&
+                    Number(zone.radius) > 0
+            )
+            : [];
+
     return normalized;
+}
+
+
+/* =========================
+   MAIN ZONE VARIANTS
+   ========================= */
+
+const MAIN_ZONE_HIDDEN = 'none';
+
+function resolveMainZone(map, selection) {
+    const variants =
+        Array.isArray(map?.mainZones)
+            ? map.mainZones
+            : [];
+
+    if (!variants.length) {
+        return null;
+    }
+
+    const chosen =
+        selection?.[map.id];
+
+    if (chosen === MAIN_ZONE_HIDDEN) {
+        return null;
+    }
+
+    return (
+        variants.find(zone => zone.id === chosen) ||
+        variants[0]
+    );
+}
+
+function populateZoneSelect() {
+    const select =
+        $('zoneSelect');
+
+    if (!select) {
+        return;
+    }
+
+    const map =
+        MAPS[S.map];
+
+    const variants =
+        Array.isArray(map?.mainZones)
+            ? map.mainZones
+            : [];
+
+    select.hidden =
+        !variants.length;
+
+    select.innerHTML = '';
+
+    if (!variants.length) {
+        return;
+    }
+
+    variants.forEach(
+        zone => {
+            const option =
+                document.createElement('option');
+
+            option.value = zone.id;
+            option.textContent = zone.name;
+            select.appendChild(option);
+        }
+    );
+
+    const hidden =
+        document.createElement('option');
+
+    hidden.value = MAIN_ZONE_HIDDEN;
+    hidden.textContent = tr('zoneHidden');
+    select.appendChild(hidden);
+
+    const chosen =
+        S.mainZone?.[S.map];
+
+    select.value =
+        chosen === MAIN_ZONE_HIDDEN ||
+        variants.some(zone => zone.id === chosen)
+            ? chosen
+            : variants[0].id;
 }
 
 
@@ -388,4 +484,6 @@ function populateMapSelect() {
 
     select.value =
         S.map;
+
+    populateZoneSelect();
 }

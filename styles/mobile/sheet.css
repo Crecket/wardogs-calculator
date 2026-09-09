@@ -324,3 +324,7 @@
     color: var(--muted);
     font-size: 11px;
 }
+
+.mobile-app #zoneSelect {
+    margin-top: 8px;
+}

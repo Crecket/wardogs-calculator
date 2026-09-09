@@ -147,6 +147,36 @@
     }
   ],
   "zones": [],
+  "mainZones": [
+    {
+      "id": "default",
+      "name": "Default",
+      "x": 10002,
+      "y": 6357,
+      "radius": 550
+    },
+    {
+      "id": "farmland",
+      "name": "Farmland",
+      "x": 9471,
+      "y": 6359,
+      "radius": 550
+    },
+    {
+      "id": "church",
+      "name": "Church",
+      "x": 10163,
+      "y": 6326,
+      "radius": 550
+    },
+    {
+      "id": "river",
+      "name": "River",
+      "x": 9774,
+      "y": 6244,
+      "radius": 550
+    }
+  ],
   "polygons": [
     {
       "color": "#d86666",

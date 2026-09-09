@@ -11,6 +11,8 @@ const S = {
 
     map: 'bakurani',
 
+    mainZone: {},
+
     weapon: null,
 
     origin: {
@@ -87,6 +89,20 @@ function loadAppSelections() {
                 parsed.weapon.trim();
         }
 
+        if (
+            parsed?.mainZone &&
+            typeof parsed.mainZone === 'object'
+        ) {
+            S.mainZone =
+                Object.fromEntries(
+                    Object.entries(parsed.mainZone)
+                        .filter(
+                            ([, zone]) =>
+                                typeof zone === 'string'
+                        )
+                );
+        }
+
     } catch (error) {
         console.warn(
             'Failed to load app selections:',
@@ -101,7 +117,8 @@ function persistAppSelections() {
             APP_SELECTIONS_KEY,
             JSON.stringify({
                 map: S.map,
-                weapon: S.weapon
+                weapon: S.weapon,
+                mainZone: S.mainZone
             })
         );
     } catch (error) {

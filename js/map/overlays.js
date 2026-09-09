@@ -478,6 +478,141 @@ function drawPresetZones(map) {
 }
 
 /* =========================
+   MAIN ZONE
+   ========================= */
+
+const MAIN_ZONE_COLOR = '#82c596';
+
+function drawMainZone(map) {
+
+    const zone =
+        resolveMainZone(
+            map,
+            S.mainZone
+        );
+
+    if (!zone) {
+        return;
+    }
+
+    const v =
+        view();
+
+    const pos =
+        worldToLocalScreen(
+            storedMetersToWorldCoordinate(zone.x),
+            storedMetersToWorldCoordinate(zone.y)
+        );
+
+    const radius =
+        metersToWorldDistance(
+            zone.radius
+        ) *
+        v.scale;
+
+    if (
+        !Number.isFinite(radius) ||
+        radius <= 0
+    ) {
+        return;
+    }
+
+    const glowWidth =
+        Math.min(
+            radius * 0.5,
+            Math.max(
+                18,
+                radius * 0.12
+            )
+        );
+
+    const glow =
+        ctx.createRadialGradient(
+            pos.x,
+            pos.y,
+            Math.max(0, radius - glowWidth),
+            pos.x,
+            pos.y,
+            radius
+        );
+
+    glow.addColorStop(
+        0,
+        hexToRgba(MAIN_ZONE_COLOR, 0)
+    );
+
+    glow.addColorStop(
+        1,
+        hexToRgba(MAIN_ZONE_COLOR, 0.22)
+    );
+
+    ctx.save();
+
+    ctx.beginPath();
+
+    ctx.arc(
+        pos.x,
+        pos.y,
+        radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle =
+        glow;
+
+    ctx.fill();
+
+    ctx.lineWidth =
+        6;
+
+    ctx.strokeStyle =
+        hexToRgba(MAIN_ZONE_COLOR, 0.18);
+
+    ctx.stroke();
+
+    ctx.lineWidth =
+        2;
+
+    ctx.strokeStyle =
+        MAIN_ZONE_COLOR;
+
+    ctx.stroke();
+
+    ctx.font =
+        '600 12px system-ui, sans-serif';
+
+    ctx.textAlign =
+        'center';
+
+    ctx.textBaseline =
+        'bottom';
+
+    ctx.lineWidth =
+        3;
+
+    ctx.strokeStyle =
+        'rgba(0, 0, 0, 0.75)';
+
+    ctx.strokeText(
+        zone.name,
+        pos.x,
+        pos.y - radius - 6
+    );
+
+    ctx.fillStyle =
+        MAIN_ZONE_COLOR;
+
+    ctx.fillText(
+        zone.name,
+        pos.x,
+        pos.y - radius - 6
+    );
+
+    ctx.restore();
+}
+
+/* =========================
    PRESET POLYGONS
    ========================= */
 

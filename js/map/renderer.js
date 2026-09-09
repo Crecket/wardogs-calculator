@@ -194,6 +194,8 @@ function drawNow() {
         drawMapToolZones();
     }
 
+    drawMainZone(currentMap);
+
     /*
      * Layer 8:
      * arbitrary polygons.

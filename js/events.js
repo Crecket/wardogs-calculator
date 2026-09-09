@@ -42,6 +42,8 @@ function bindEvents() {
 
             resetMapToolHistory();
 
+            populateZoneSelect();
+
             if (
                 typeof trackAnalytics ===
                 'function'
@@ -55,6 +57,18 @@ function bindEvents() {
             }
 
             inputs();
+        }
+    );
+
+    $('zoneSelect')?.addEventListener(
+        'change',
+        () => {
+            S.mainZone[S.map] =
+                $('zoneSelect').value;
+
+            persistAppSelections();
+
+            draw();
         }
     );
 

@@ -611,3 +611,8 @@ button:disabled {
 .mode-option > button {
     width: 100%;
 }
+
+
+#zoneSelect {
+    margin-top: 8px;
+}
