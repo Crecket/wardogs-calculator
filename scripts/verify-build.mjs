@@ -59,6 +59,18 @@ for (const path of securityMetaPages) {
     assert.doesNotMatch(html, /Content-Security-Policy[^>]+localhost/i, `${page}: development origin leaked into CSP`);
 }
 
+for (const path of htmlFiles) {
+    const page = relative(dist, path);
+    const html = await readFile(path, 'utf8');
+    const localScripts = html.match(/<script[^>]*\ssrc="js\/[^"]+"[^>]*><\/script>/g) ?? [];
+    assert.ok(localScripts.length <= 2, `${page}: ${localScripts.length} separate script tags, the build did not bundle them`);
+    for (const tag of localScripts.filter(tag => tag.includes('js/bundles/'))) {
+        const bundle = tag.match(/src="([^"?]+)/)[1];
+        assert.ok(artifactFiles.includes(join(dist, bundle)), `${page}: ${bundle} is missing from the Pages artifact`);
+        assert.match(tag, /\sdefer\s/, `${page}: ${bundle} is not deferred`);
+    }
+}
+
 const terrainContext = JSON.parse(await readFile(join(root, 'data', 'ballistics', 'terrain-context.json'), 'utf8'));
 const terrainMapIds = Object.keys(terrainContext.terrainMaps ?? {});
 assert.ok(terrainMapIds.length > 0, 'terrain-context.json has no terrainMaps');
