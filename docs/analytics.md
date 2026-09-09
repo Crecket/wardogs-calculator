@@ -44,6 +44,13 @@ The current event set intentionally focuses on meaningful user actions rather th
 | `map-changes-imported` | A valid Map Tools JSON file is imported | `drawings`, `markers`, `layers` |
 | `partner-click` | User opens a community partner link | `partner`, `placement` |
 | `desktop-version` | Mobile user chooses the desktop interface | none |
+| `lobby-opened` | Lobby panel is opened for the first time during the current page lifetime | `map` |
+| `lobby-connected` | A lobby connection succeeds after creating, joining or reconnecting | `method`, `map`, optional `withSavedTargets` for creation |
+| `lobby-failed` | Creating, joining or reconnecting cannot start | `operation`, coarse `reason` |
+| `lobby-disconnected` | An active lobby unexpectedly loses its connection | `map` |
+| `lobby-left` | User explicitly leaves a lobby | `map` |
+| `lobby-invite-copied` | An invite link is successfully copied | `map` |
+| `lobby-recovery-exported` | A lobby recovery file is exported | `map` |
 
 ## High-volume event budget
 
@@ -104,6 +111,8 @@ Custom analytics data does **not** include:
 Saved-target transfer events report only counts, import format (`single` or `list`), and whether a single exported target includes an artillery position. Names and coordinates are never sent.
 
 Map data transfer events contain only aggregate item counts and whether layer settings were included. Coordinates, drawing geometry, marker positions, and imported file contents are not sent to Umami.
+
+Lobby events never include the invite or room code, owner key, player name, roster, coordinates, room contents, or recovery data. Failures are reduced to a small allowlist of categories instead of reporting raw server errors.
 
 This keeps event payloads small and avoids generating excessive event-data usage. High-frequency actions such as map panning, cursor movement, mouse movement, and pinch/wheel zoom are deliberately not tracked.
 

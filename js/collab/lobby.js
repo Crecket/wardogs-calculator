@@ -75,6 +75,7 @@ async function initLobby() {
     let sentPresence = null;
     let admission = '', admissionExpiresAt = 0, challengeToken = '';
     let turnstileWidget = null, turnstileLoader = null;
+    let connectionMethod = 'join', lobbyOpenedTracked = false;
     const turnstile = config.turnstile || {};
     const LOBBY_NAME_KEY = 'wardogs-lobby-name';
     try {
@@ -97,6 +98,19 @@ async function initLobby() {
     const delay = Math.max(250, Math.min(5000, Number(config.batchDelayMs) || 300));
     const busy = () => Boolean(drag || MAP_TOOL_STATE.pencilDragging || MAP_TOOL_STATE.zoneDragging || MAP_TOOL_STATE.polygonDraft);
     const connected = () => socket?.readyState === WebSocket.OPEN && !joining;
+    const lobbyMap = () => replica?.doc?.mapId || S.map;
+    const trackLobby = (name, data) => {
+        if (typeof trackAnalytics === 'function') trackAnalytics(name, data);
+    };
+    function failureReason(error) {
+        const message = typeof error?.message === 'string' ? error.message : '';
+        if (message === 'invalid-invite') return 'invalid-invite';
+        if (message === 'admission-room-limit') return 'admission-limit';
+        if (message === 'daily-room-limit') return 'daily-limit';
+        if (message === 'rate-limited') return 'rate-limited';
+        if (/^(challenge-|turnstile-)/.test(message)) return 'security';
+        return 'connection';
+    }
     const rawDocument = (includeSaved = true) => ({
         mapId: S.map, w: S.w, h: S.h,
         ...Object.fromEntries(P.COLLECTIONS.map(key => [key, key === 'savedTargets' ? (includeSaved ? savedTargets : []) : MAP_TOOL_STATE[key].filter(item => item.mapId === S.map)]))
@@ -393,9 +407,10 @@ async function initLobby() {
         q('.lobby-turnstile').hidden = true;
         return admission;
     }
-    function connect() {
+    function connect(method = 'join') {
         clearTimers();
         const old = socket; socket = null; old?.close(1000, 'reconnect');
+        connectionMethod = method;
         joining = true; notice = ''; sentPresence = null;
         const url = new URL(`${base}/rooms/${code}`); url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
         const current = new WebSocket(url);
@@ -427,7 +442,12 @@ async function initLobby() {
                     you = P.slug(msg.you); roster = P.normalizeRoster(msg.roster, documentBounds(doc)); maximum = msg.maxParticipants; expiresAt = msg.expiresAt; remaining = msg.remainingUpdates;
                     q('.lobby-link').value = inviteLink();
                     render();
-                    if (joinedNow) schedulePresence(true);
+                    if (joinedNow) {
+                        const data = { method: connectionMethod, map: doc.mapId };
+                        if (connectionMethod === 'create') data.withSavedTargets = q('.lobby-include').checked;
+                        trackLobby('lobby-connected', data);
+                        schedulePresence(true);
+                    }
                     schedule();
                 } else if (msg.type === 'changes') {
                     replica.receive(msg);
@@ -465,6 +485,8 @@ async function initLobby() {
         });
         current.addEventListener('close', event => {
             if (socket !== current) return;
+            const failedWhileJoining = joining;
+            const activeMap = lobbyMap();
             console.error('[Lobby] socket closed:', {
                 code: event.code,
                 reason: event.reason,
@@ -475,6 +497,11 @@ async function initLobby() {
             preserve();
             if (lobby.active) { resetGesture(); render(); }
             updateUI(); open(true);
+            if (failedWhileJoining) {
+                trackLobby('lobby-failed', { operation: connectionMethod, reason: 'connection' });
+            } else {
+                trackLobby('lobby-disconnected', { map: activeMap });
+            }
         });
         current.addEventListener('error', () => { notice = 'failed'; updateUI(); });
         updateUI();
@@ -498,7 +525,7 @@ async function initLobby() {
             if (!response.ok) throw new Error(data.error);
             code = parseInvite(data.code); ownerKey = data.ownerKey;
             q('.lobby-invite').value = inviteLink();
-            connect();
+            connect('create');
         } catch (error) {
             joining = false;
             if (error.message === 'admission-room-limit') {
@@ -510,6 +537,7 @@ async function initLobby() {
             else if (error.message === 'rate-limited') notice = 'limited';
             else if (/^(challenge-|turnstile-)/.test(error.message)) notice = 'security';
             else notice = 'failed';
+            trackLobby('lobby-failed', { operation: 'create', reason: failureReason(error) });
             updateUI();
         }
     }
@@ -521,6 +549,7 @@ async function initLobby() {
         const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
         const link = document.createElement('a'); link.href = url; link.download = 'wardogs-lobby-recovery.json'; link.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
+        trackLobby('lobby-recovery-exported', { map: doc.mapId });
     }
     const peerColours = ['#64b5f6', '#81c784', '#ba68c8', '#ffb74d', '#4dd0e1', '#f06292', '#aed581', '#90a4ae'];
     function peerColour(id) {
@@ -600,17 +629,39 @@ async function initLobby() {
         undo: () => history('undo'),
         redo: () => history('redo')
     };
-    q('.lobby-toggle').addEventListener('click', () => open(q('#lobbyPanel').hidden));
+    q('.lobby-toggle').addEventListener('click', () => {
+        const opening = q('#lobbyPanel').hidden;
+        open(opening);
+        if (opening && !lobbyOpenedTracked) {
+            lobbyOpenedTracked = true;
+            trackLobby('lobby-opened', { map: lobbyMap() });
+        }
+    });
     action('create').addEventListener('click', create);
     action('join').addEventListener('click', () => {
-        try { const next = parseInvite(q('.lobby-invite').value); if (next !== code) ownerKey = ''; code = next; connect(); }
-        catch { notice = 'failed'; updateUI(); }
+        try { const next = parseInvite(q('.lobby-invite').value); if (next !== code) ownerKey = ''; code = next; connect('join'); }
+        catch (error) {
+            notice = 'failed';
+            trackLobby('lobby-failed', { operation: 'join', reason: failureReason(error) });
+            updateUI();
+        }
     });
-    action('leave').addEventListener('click', () => { notice = ''; leave(); });
-    action('reconnect').addEventListener('click', () => { if (!replica?.dirty || confirm(t('reconnectConfirm'))) connect(); });
+    action('leave').addEventListener('click', () => {
+        const wasActive = lobby.active;
+        const activeMap = lobbyMap();
+        notice = '';
+        leave();
+        if (wasActive && !lobby.active) trackLobby('lobby-left', { map: activeMap });
+    });
+    action('reconnect').addEventListener('click', () => { if (!replica?.dirty || confirm(t('reconnectConfirm'))) connect('reconnect'); });
     action('close').addEventListener('click', () => { if (connected() && confirm(t('closeConfirm'))) socket.send(JSON.stringify({ type: 'close', ownerKey })); });
     action('copy').addEventListener('click', async () => {
-        try { await navigator.clipboard.writeText(inviteLink()); notice = 'copied'; updateUI(); }
+        try {
+            await navigator.clipboard.writeText(inviteLink());
+            notice = 'copied';
+            trackLobby('lobby-invite-copied', { map: lobbyMap() });
+            updateUI();
+        }
         catch { q('.lobby-link').focus(); q('.lobby-link').select(); }
     });
     action('export').addEventListener('click', exportCopy);

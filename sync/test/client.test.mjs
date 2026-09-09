@@ -40,7 +40,7 @@ async function client(t, enabled = true, challenge = false) {
         measureText(text) { return { width: String(text).length * 6 }; }
     };
     window.document.querySelector('canvas').getContext = () => canvasContext;
-    const sockets = [], requests = [], timers = new Map(); let timerId = 0;
+    const sockets = [], requests = [], analytics = [], timers = new Map(); let timerId = 0;
     class Socket extends window.EventTarget {
         static OPEN = 1;
         constructor(url) { super(); this.url = url; this.readyState = 1; this.sent = []; sockets.push(this); }
@@ -59,6 +59,7 @@ async function client(t, enabled = true, challenge = false) {
         window, document: window.document, location: window.location, navigator: window.navigator,
         localStorage: window.localStorage, URL, URLSearchParams, Blob, AbortSignal, TextEncoder, structuredClone, crypto, console,
         WebSocket: Socket, confirm: () => true, queueMicrotask,
+        trackAnalytics: (name, data) => analytics.push(structuredClone({ name, data })),
         setTimeout: (fn, ms) => { timers.set(++timerId, { fn, ms }); return timerId; }, clearTimeout: id => timers.delete(id),
         setInterval: (fn, ms) => { timers.set(++timerId, { fn, ms, interval: true }); return timerId; }, clearInterval: id => timers.delete(id),
         fetch: async (url, options) => {
@@ -97,7 +98,7 @@ async function client(t, enabled = true, challenge = false) {
     const click = action => window.document.querySelector(`[data-action="${action}"]`).click();
     const snapshot = (extra = {}) => sockets.at(-1).message({ type: 'snapshot', revision: 0, doc: roomDoc(), you: 'peer-1', roster: [{ id: 'peer-1', name: '', origin: null, target: null }], maxParticipants: 8, remainingUpdates: 100, expiresAt: Date.now() + 60000, ...extra });
     const tick = () => { for (const [id, timer] of [...timers]) if (!timer.interval && timer.ms <= 1000) { timers.delete(id); timer.fn(); } };
-    return { run, window, sockets, requests, click, snapshot, tick, drawing };
+    return { run, window, sockets, requests, click, snapshot, tick, drawing, analytics };
 }
 test('disabled feature has no menu, requests or sockets; personal persistence still works', async t => {
     const c = await client(t, false);
@@ -114,6 +115,18 @@ test('idle enabled menu creates no connection and uses Russian labels', async t 
     assert.ok(c.window.document.querySelector('.lobby-toggle svg'));
     assert.equal(c.window.document.querySelector('.lobby-check input').nextElementSibling?.tagName, 'SPAN');
     assert.equal(c.requests.length, 0); assert.equal(c.sockets.length, 0);
+    const toggle = c.window.document.querySelector('.lobby-toggle');
+    toggle.click(); toggle.click(); toggle.click();
+    assert.deepEqual(c.analytics, [{ name: 'lobby-opened', data: { map: 'custom' } }]);
+});
+test('invalid invites report only a coarse analytics failure', async t => {
+    const c = await client(t);
+    c.window.document.querySelector('.lobby-invite').value = 'not-a-room-code';
+    c.click('join');
+    assert.deepEqual(c.analytics, [{
+        name: 'lobby-failed',
+        data: { operation: 'join', reason: 'invalid-invite' }
+    }]);
 });
 test('production creation exchanges a Turnstile result for a signed admission', async t => {
     const c = await client(t, true, true);
@@ -144,6 +157,12 @@ test('join keeps a personal firing solution while shared annotations retain undo
     assert.equal('target' in createdDoc, false);
     assert.equal('weapon' in createdDoc, false);
     c.snapshot();
+    assert.deepEqual(c.analytics, [{
+        name: 'lobby-connected',
+        data: { method: 'create', map: 'bakurani', withSavedTargets: false }
+    }]);
+    assert.equal(JSON.stringify(c.analytics).includes('Alpha'), false);
+    assert.equal(JSON.stringify(c.analytics).includes(code), false);
     assert.equal(c.run('lobby.active'), true);
     assert.equal(c.run('S.map'), 'bakurani');
     assert.equal(c.run('S.target.x'), 2);
@@ -173,6 +192,7 @@ test('join keeps a personal firing solution while shared annotations retain undo
     assert.equal(c.run('MAP_TOOL_STATE.markers.length'), 0);
     assert.equal(c.run('S.target.x'), 8);
     c.click('leave');
+    assert.deepEqual(c.analytics.at(-1), { name: 'lobby-left', data: { map: 'bakurani' } });
     assert.equal(c.run('lobby.active'), false);
     assert.equal(c.run('S.map'), 'custom'); assert.equal(c.run('S.weapon'), 'spg'); assert.equal(c.run('S.panX'), 33);
     assert.equal(c.run('savedTargets[0].id'), 'personal'); assert.equal(c.run('MAP_TOOL_STATE.markers[0].id'), 'personal-marker');
@@ -222,5 +242,6 @@ test('disconnect does not auto-reconnect; rejected changes expose recovery witho
     c.sockets[0].close(); c.tick();
     assert.equal(c.sockets.length, 1);
     assert.match(c.window.document.querySelector('.lobby-status').textContent, /Связь потеряна/);
+    assert.deepEqual(c.analytics.at(-1), { name: 'lobby-disconnected', data: { map: 'bakurani' } });
     c.click('leave'); assert.equal(c.run('S.target.x'), 2);
 });
