@@ -3,15 +3,16 @@
    ========================= */
 
 /*
- * The ground an SPG can be parked on that can also put a shell into every
- * tower, baked by scripts/build-firing-positions.mjs into one raster per
- * map per arc rule and drawn above the flatness ramp.
+ * The go-to spots: ground an SPG would drive to on purpose, baked by
+ * scripts/build-firing-positions.mjs into one raster per map per arc rule
+ * and drawn above the flatness ramp.
  *
  * This is the opinionated layer. Flatness is terrain truth with no view
- * about what the gun is for; this one has been through three filters — in
- * range of every aim point, hull tilt under 8 degrees, and the shell
- * actually clearing the ground on the way — and what survives is a few
- * percent of the map.
+ * about what the gun is for; this one has been through four filters — in
+ * range of every aim point, hull tilt under 4 degrees, not inside woodland,
+ * and the shell clearing the ground with thick woods standing 30 m tall —
+ * then trimmed to blocks at least 24 m square. What survives is well under
+ * one percent of the map.
  *
  * It is drawn as an outline with a faint wash rather than a second ramp.
  * Every cell here has already passed the tilt filter, so colouring it by
@@ -20,17 +21,21 @@
  * the bands underneath into illegibility. The boundary is marked at bake
  * time, so this still costs one drawImage.
  *
- * The arc rule is the player's choice and it is not cosmetic. Forcing the
- * low arc matches the dead-ground layer and is the flatter, more accurate
- * shot; allowing any mil is more truthful about the gun and far more
- * permissive, because the high arc reaches 1390 mil and clears almost
- * anything. On Bakurani the choice moves MANTICORE from 2% of the viable
- * set to 21%, and on Ozeti it moves the ranking the other way, so neither
- * rule can be shipped as the only one.
+ * The arc rule is the player's choice and it is not cosmetic. The low arc
+ * is the flatter, more accurate shot and it is the one trees defeat: a
+ * shallow shell meets the first thick wood within 70 m, so the low set
+ * asks for a clean flat lane to the centre of all but one tower rather
+ * than to every ring point, which no wooded valley floor can give. The any
+ * arc keeps the full rule, every tower and every ring point with whichever
+ * arc works, because the high arc reaches 1390 mil and clears almost
+ * anything.
  *
- * The same blind spots as the flatness layer apply, and one more: the towers
- * move between matches, which is what the 300 m ring around each of them is
- * absorbing.
+ * The canopy comes from the map tiles, not the terrain, so it is a reading
+ * of the picture rather than of the game. The shot assessment the app runs
+ * when the player clicks a spot does not see it: this layer refuses ground
+ * the click verdict would pass, by design, and never the other way round.
+ * The towers move between matches, which is what the 300 m ring around each
+ * of them is absorbing in the any-arc set.
  */
 
 const FIRING_POSITION_FORMAT = 'wardogs-firing-positions-v1';
@@ -50,8 +55,9 @@ const FIRING_POSITION_ARCS = ['low', 'any'];
 const FIRING_POSITION_CACHE = new Map();
 
 /*
- * One entry per cell value: outside the set, inside it, on its edge. RGBA,
- * because the alpha does the work here rather than the colour.
+ * One entry per cell value: outside both sets, inside the go-to set, on
+ * its edge, inside the fallback set, on its edge. RGBA, because the alpha
+ * does the work here rather than the colour.
  *
  * The interior carries a slight wash. An outline alone marks where the set
  * ends without saying which side of the line is the good ground, and on a
@@ -65,13 +71,17 @@ const FIRING_POSITION_CACHE = new Map();
  * fill, which is the whole reason the two layers were split in the first
  * place. Anything past about 64 starts flattening the bands together.
  *
- * Magenta, at full strength, and neither is arbitrary. The viable set lies
- * on the flatness ramp's green and amber bands by construction — it has
- * already passed the 8 degree filter, so it is never on the red — and cyan
- * against green measures 37 dE where magenta measures 74. It is also the
- * one hue nothing else on the map claims: the FOB rings are blue, the range
- * ring orange, the polygons red, the markers white. Nothing here is
- * terrain-coloured, which is the point.
+ * Two tiers. Neon green is the go-to set, at full strength: green is what
+ * "go here" reads as, and the set is small enough now that it has to be
+ * found rather than avoided. The viable ground sits on the flatness ramp's
+ * greenest band by construction, but the ramp's green is a dim wash and
+ * this is a saturated edge at full alpha, several times brighter than
+ * anything under it, so the two do not merge. Orange is the fallback set,
+ * the layer's original rule with the hull's own tilt limit and trees
+ * ignored, drawn only where green is not; it is there for the spawn that
+ * the strict rule leaves with almost nothing. The two hues sit far apart
+ * and neither is claimed by anything else on the map except the range
+ * ring, which is a thin circle and never a filled region.
  *
  * Full alpha because the raster downscales at map-fit zoom and an 8 m edge
  * falls below a pixel; what survives is an average, so starting dimmer only
@@ -80,8 +90,10 @@ const FIRING_POSITION_CACHE = new Map();
 function firingPositionsPalette() {
     return [
         [0, 0, 0, 0],
-        [230, 62, 192, 32],
-        [230, 62, 192, 255]
+        [57, 255, 20, 32],
+        [57, 255, 20, 255],
+        [255, 150, 0, 32],
+        [255, 150, 0, 255]
     ];
 }
 

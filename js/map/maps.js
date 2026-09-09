@@ -131,6 +131,17 @@ function normalizeMap(map) {
                         ''
                     ),
 
+            fallbackPath:
+                typeof normalized.tiles.fallbackPath ===
+                'string' &&
+                normalized.tiles.fallbackPath.trim()
+                    ? normalized.tiles.fallbackPath
+                        .replace(
+                            /\/+$/,
+                            ''
+                        )
+                    : null,
+
             tileSize:
                 typeof normalized.tiles.tileSize ===
                 'number'
@@ -359,42 +370,20 @@ function populateMapSelect() {
         );
 
     /*
-     * Custom map always last.
-     */
-    const custom =
-        document.createElement(
-            'option'
-        );
-
-    custom.value =
-        'custom';
-
-    custom.textContent =
-        tr('customMap');
-
-    select.appendChild(
-        custom
-    );
-
-    /*
      * If configured default map doesn't
      * exist for some reason, fall back
      * to the first available map.
      */
-    if (
-        S.map !== 'custom' &&
-        !MAPS[S.map]
-    ) {
+    if (!MAPS[S.map]) {
 
         const firstMap =
             Object.values(
                 MAPS
             )[0];
 
-        S.map =
-            firstMap
-                ? firstMap.id
-                : 'custom';
+        if (firstMap) {
+            S.map = firstMap.id;
+        }
     }
 
     select.value =

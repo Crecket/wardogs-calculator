@@ -3,10 +3,6 @@ import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
-import {
-    MAP_LANDING_PAGES,
-    mapLandingUrl
-} from './map-landing-pages.mjs';
 import { analyticsWebsiteId, collabUrl } from './lib/site-config.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -78,70 +74,9 @@ assert.equal(artifactFiles.some(path => path.includes(`${join('maps', 'tiles')}`
 
 const sitemap = await readFile(join(dist, 'sitemap.xml'), 'utf8');
 const robots = await readFile(join(dist, 'robots.txt'), 'utf8');
-const homepage = await readFile(join(dist, 'index.html'), 'utf8');
-const landingStyle = join(dist, 'styles', 'map-landing.css');
-const titles = new Set();
-const descriptions = new Set();
-const headings = new Set();
 
-assert.ok(artifactFiles.includes(landingStyle), 'map landing stylesheet is missing');
 assert.match(robots, /^Allow:\s*\/$/mi, 'robots.txt does not allow crawling');
-assert.doesNotMatch(robots, /Disallow:\s*\/maps/i, 'robots.txt blocks map pages');
 assert.match(robots, /Sitemap:\s*https:\/\/wardogs-artillery\.com\/sitemap\.xml/i, 'production sitemap is not advertised');
-
-function occurrences(text, value) {
-    return text.split(value).length - 1;
-}
-
-for (const page of MAP_LANDING_PAGES) {
-    const path = join(dist, 'maps', page.id, 'index.html');
-    const route = `maps/${page.id}/`;
-    const url = mapLandingUrl(page.id);
-    const html = await readFile(path, 'utf8');
-
-    assert.match(html, /<html\b[^>]*\blang="en"/i, `${route}: incorrect language`);
-    assert.match(html, /<base href="\.\.\/\.\.\/"\/>/i, `${route}: missing project-safe base URL`);
-    assert.match(html, /content="index, follow, max-image-preview:large"[^>]*name="robots"/i, `${route}: page is not indexable`);
-    assert.doesNotMatch(html, /\bnoindex\b/i, `${route}: accidental noindex`);
-    assert.equal(occurrences(html, '<title>'), 1, `${route}: expected one title`);
-    assert.ok(html.includes(`<title>${page.title}</title>`), `${route}: incorrect title`);
-    assert.ok(html.includes(`<meta content="${page.description}" name="description"/>`), `${route}: incorrect description`);
-    assert.equal(occurrences(html, 'rel="canonical"'), 1, `${route}: expected one canonical`);
-    assert.ok(html.includes(`<link href="${url}" rel="canonical"/>`), `${route}: incorrect canonical`);
-    assert.ok(html.includes(`<meta content="${url}" property="og:url"/>`), `${route}: incorrect Open Graph URL`);
-    assert.ok(html.includes(`<meta content="${page.title}" property="og:title"/>`), `${route}: incorrect Open Graph title`);
-    assert.ok(html.includes(`<meta content="${page.title}" name="twitter:title"/>`), `${route}: incorrect Twitter title`);
-    assert.ok(html.includes(`<h1>${page.heading}</h1>`), `${route}: incorrect H1`);
-    assert.ok(html.includes(`href="?map=${page.id}"`), `${route}: CTA does not select its map`);
-    assert.ok(html.includes(`Open ${page.name} Interactive Map`), `${route}: primary CTA is missing`);
-    assert.ok(html.includes('href="./"'), `${route}: calculator backlink is missing`);
-
-    for (const related of MAP_LANDING_PAGES.filter(item => item.id !== page.id)) {
-        assert.ok(html.includes(`href="maps/${related.id}/"`), `${route}: missing ${related.id} link`);
-    }
-
-    const structured = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/i);
-    assert.ok(structured, `${route}: structured data is missing`);
-    const schema = JSON.parse(structured[1]);
-    assert.equal(schema['@context'], 'https://schema.org', `${route}: incorrect schema context`);
-    assert.ok(schema['@graph'].some(item => item['@type'] === 'WebPage' && item.url === url), `${route}: WebPage schema is missing`);
-    assert.ok(schema['@graph'].some(item => item['@type'] === 'BreadcrumbList'), `${route}: BreadcrumbList schema is missing`);
-
-    assert.doesNotMatch(html, /\bsrc="(?:\.\.\/)*js\//i, `${route}: application JS loaded eagerly`);
-    assert.doesNotMatch(html, /(?:\.bin|maps\/tiles|lobby\.js|<canvas\b)/i, `${route}: heavy resource leaked into landing HTML`);
-    assert.match(html, /href="styles\/map-landing\.css\?v=[a-f0-9]{12}"/i, `${route}: CSS is not fingerprinted`);
-    assert.ok(html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').length > 2500, `${route}: body copy is too thin`);
-    assert.equal(occurrences(sitemap, `<loc>${url}</loc>`), 1, `${route}: sitemap entry missing or duplicated`);
-    assert.ok(homepage.includes(`href="maps/${page.id}/"`), `${route}: homepage link is missing`);
-
-    titles.add(page.title);
-    descriptions.add(page.description);
-    headings.add(page.heading);
-}
-
-assert.equal(titles.size, MAP_LANDING_PAGES.length, 'map titles are not unique');
-assert.equal(descriptions.size, MAP_LANDING_PAGES.length, 'map descriptions are not unique');
-assert.equal(headings.size, MAP_LANDING_PAGES.length, 'map H1 values are not unique');
 
 const mapRuntime = await readFile(join(root, 'js', 'map', 'maps.js'), 'utf8');
 const selected = { value: '' };

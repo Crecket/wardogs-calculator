@@ -140,6 +140,28 @@ function getTileURL(
     );
 }
 
+function getTileFallbackURL(
+    map,
+    zoom,
+    x,
+    y
+) {
+
+    const tiles =
+        getTileConfig(map);
+
+    if (
+        !tiles ||
+        !tiles.fallbackPath
+    ) {
+        return null;
+    }
+
+    return resourceURL(
+        `${tiles.fallbackPath}/zoom_${zoom}/${x}_${y}.${tiles.extension}`
+    );
+}
+
 function loadTile(
     map,
     zoom,
@@ -181,7 +203,30 @@ function loadTile(
         tile
     );
 
+    const fallbackURL =
+        getTileFallbackURL(
+            map,
+            zoom,
+            x,
+            y
+        );
+
     decodeMapImage(url)
+        .catch(
+            error => {
+
+                if (
+                    !fallbackURL ||
+                    fallbackURL === url
+                ) {
+                    throw error;
+                }
+
+                return decodeMapImage(
+                    fallbackURL
+                );
+            }
+        )
         .then(
             image => {
 
@@ -208,7 +253,13 @@ function loadTile(
                     true;
 
                 console.warn(
-                    `Failed to load tile: ${url}`
+                    `Failed to load tile: ${url}` +
+                    (
+                        fallbackURL &&
+                        fallbackURL !== url
+                            ? ` (and ${fallbackURL})`
+                            : ''
+                    )
                 );
 
                 draw();

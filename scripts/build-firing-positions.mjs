@@ -10,25 +10,44 @@
  * which is the whole reason it is a build step: js/map/firing-positions.js
  * does nothing at runtime but blit the result.
  *
- * Three filters, cheapest first, because the last one is a terrain march
- * per aim point and only a few percent of the map ever reaches it:
+ * This is the go-to layer: not everywhere a gun could sit, but the spots
+ * worth driving to. Four filters, cheapest first, because the last one is a
+ * terrain march per aim point and only a few percent of the map ever
+ * reaches it:
  *
  *   1. every aim point inside the arc's declared range envelope
- *   2. hull tilt at most 8 degrees
- *   3. the shell clearing the ground on the way to every aim point
+ *   2. hull tilt under 4 degrees
+ *   3. not inside woodland, read from the canopy raster
+ *   4. the shell clearing the ground, with thick woods standing 30 m tall
  *
  * Tilt reads the 2 m chunks, because a hull footprint is 8 m and the 32 m
  * heightfield cannot answer a question at that scale. Clearance reads the
- * 32 m heightfield through the shipped assessShot, because a verdict here
- * that disagreed with the one the app gives when the player clicks that
- * spot would be worse than no layer at all.
+ * 32 m heightfield through the shipped assessShot, with the canopy lifted
+ * onto it first. That makes the layer stricter than the verdict the app
+ * gives when the player clicks the spot, which does not see trees; the
+ * layer errs toward refusing ground, never toward offering it.
  *
- * The first two filters run here; the third is handed to a pool of workers,
- * because it is 1.7 million terrain marches and everything else is noise
- * beside it. Ordering the aim points to fail faster was measured and buys
- * nothing — 99% of the cells that reach the third filter pass it — and
+ * The low arc keeps a cell when it has a clean flat lane to the centre of
+ * all but one tower. The any arc keeps the original rule, every tower and
+ * every ring point with whichever arc works. What survives is opened with
+ * a three by three block so nothing narrower than 24 m is offered as a
+ * place to park, then specks go.
+ *
+ * A second tier rides in the same raster: the original rule, tilt under 8
+ * degrees and trees ignored, drawn in a second colour where the go-to set
+ * is not. It costs a second clearance pass over the plain heightfield, and
+ * it is there because the strict set leaves one Bakurani spawn with almost
+ * nothing to drive to.
+ *
+ * The first three filters run here; the fourth is handed to a pool of
+ * workers, because it is 1.7 million terrain marches and everything else is
+ * noise beside it. Ordering the aim points to fail faster was measured and
+ * buys nothing — 99% of the cells that reach the march pass it — and
  * bypassing assessShot's memo buys 5%. The work itself is irreducible, so
  * the only lever left is not doing it on one core.
+ *
+ * A map without a canopy raster is skipped: run scripts/build-canopy.mjs
+ * first. Baking without it would offer every flat forest floor.
  *
  * Options:
  *   --spacing <m>   cell spacing, metres            (default 8)
@@ -44,22 +63,27 @@ import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-    TILT_LIMIT_BAND,
-    planeTiltDegrees,
-    tiltBand
-} from './lib/flatness.mjs';
+import { planeTiltDegrees } from './lib/flatness.mjs';
 
 import {
     AIM_RING_METRES,
+    AIM_RING_POINTS,
     CELL_BOUNDARY,
+    CELL_FALLBACK_BOUNDARY,
+    CELL_INTERIOR,
+    FALLBACK_TILT_LIMIT_DEGREES,
+    LOW_ARC_MISSABLE_TOWERS,
     MIN_REGION_CELLS,
+    TILT_LIMIT_DEGREES,
     aimPoints,
     dropSmallRegions,
-    outlineMask
+    parkingMask,
+    tierMask
 } from './lib/firing-positions.mjs';
 
-import { encodePng } from './lib/png.mjs';
+import { CANOPY_METRES, raiseCanopy } from './lib/canopy.mjs';
+
+import { decodePng, encodePng } from './lib/png.mjs';
 
 import {
     createTerrainSampler,
@@ -170,6 +194,51 @@ async function loadHeightfield(terrainDir) {
 }
 
 /*
+ * The canopy raster scripts/build-canopy.mjs wrote, or null when the map has
+ * none. It has to share the firing grid exactly, since it is indexed by the
+ * same cell.
+ */
+async function loadCanopy(terrainDir, grid) {
+    const headerPath = join(terrainDir, 'canopy.json');
+
+    if (!existsSync(headerPath)) {
+        return null;
+    }
+
+    const header = await readJson(headerPath);
+    const decoded = decodePng(await readFile(join(terrainDir, header.file)));
+
+    if (decoded.channels !== 1) {
+        throw new Error(`${header.mapId}: canopy raster is not one byte per cell`);
+    }
+
+    const cells = decoded.pixels;
+
+    const same =
+        header.grid.width === grid.width &&
+        header.grid.height === grid.height &&
+        Math.abs(header.grid.originX - grid.originX) < 1e-9 &&
+        Math.abs(header.grid.originY - grid.originY) < 1e-9 &&
+        Math.abs(header.grid.stepX - grid.stepX) < 1e-9;
+
+    if (!same) {
+        throw new Error(
+            `${header.mapId}: canopy grid does not match the firing grid; ` +
+            'rebuild it with the same spacing'
+        );
+    }
+
+    if (cells.length !== grid.width * grid.height) {
+        throw new Error(
+            `${header.mapId}: canopy raster has ${cells.length} cells, ` +
+            `header says ${grid.width * grid.height}`
+        );
+    }
+
+    return { cells, grid: header.grid };
+}
+
+/*
  * The declared range envelopes, read from the shipped code rather than from
  * data/weapons.json directly. Raw entries carry minRangeKm / maxRangeKm and
  * arcDeclaredRange reads minRange / maxRange, so skipping normalizeWeapon
@@ -224,8 +293,11 @@ async function declaredRanges() {
  * no shared memory is needed. The 2 m chunks stay here: they are 58 MB and
  * only the tilt filter, which already ran, ever reads them.
  */
-function runClearance(field, aims, xs, ys, workerCount) {
+function runClearance(field, aims, towers, xs, ys, workerCount, lowRule) {
     const count = Math.max(1, Math.min(workerCount, xs.length || 1));
+
+    const aimsPerTower = 1 + AIM_RING_POINTS;
+    const lowTowersRequired = Math.max(1, towers - LOW_ARC_MISSABLE_TOWERS);
 
     const heightfield = {
         heights: field.heights.buffer,
@@ -246,6 +318,9 @@ function runClearance(field, aims, xs, ys, workerCount) {
                         root,
                         heightfield,
                         aims,
+                        aimsPerTower,
+                        lowTowersRequired,
+                        lowRule,
                         weaponId: WEAPON_ID,
                         xs: xs.buffer,
                         ys: ys.buffer,
@@ -373,8 +448,30 @@ async function buildMap(mapId, options) {
     }
 
     const sample = createTerrainSampler(manifest, chunks);
+    const plainField = await loadHeightfield(terrainDir);
     const field = await loadHeightfield(terrainDir);
     const declared = await declaredRanges();
+
+    const step = options.spacing / METRES_PER_GAME_UNIT;
+    const width = Math.floor((bounds.maxX - bounds.minX) / step) + 1;
+    const height = Math.floor((bounds.maxY - bounds.minY) / step) + 1;
+
+    const grid = {
+        width,
+        height,
+        originX: bounds.minX,
+        originY: bounds.maxY,
+        stepX: step,
+        stepY: step
+    };
+
+    const canopy = await loadCanopy(terrainDir, grid);
+
+    if (!canopy) {
+        return { mapId, skipped: 'no canopy raster, run build-canopy first' };
+    }
+
+    const raised = raiseCanopy(field, canopy);
 
     /*
      * The cheap gate is the union of the two arcs' envelopes. A cell outside
@@ -384,13 +481,14 @@ async function buildMap(mapId, options) {
     const envelopeMin = Math.min(declared.low.minMeters, declared.high.minMeters);
     const envelopeMax = Math.max(declared.low.maxMeters, declared.high.maxMeters);
 
-    const step = options.spacing / METRES_PER_GAME_UNIT;
-    const width = Math.floor((bounds.maxX - bounds.minX) / step) + 1;
-    const height = Math.floor((bounds.maxY - bounds.minY) / step) + 1;
-
-    const viable = {
+    const emptyMasks = () => ({
         low: new Uint8Array(width * height),
         any: new Uint8Array(width * height)
+    });
+
+    const viable = {
+        goto: emptyMasks(),
+        fallback: emptyMasks()
     };
 
     const offset = options.stencil / METRES_PER_GAME_UNIT;
@@ -398,15 +496,18 @@ async function buildMap(mapId, options) {
     const stencil = new Float64Array(STENCIL_SAMPLES * STENCIL_SAMPLES);
 
     let inEnvelope = 0;
+    let underTrees = 0;
 
     /*
-     * The first two filters run here, in one pass, and what survives is the
-     * candidate list the workers are given. Both are cheap next to the
-     * third: a hypot per aim point, then twenty-five terrain samples.
+     * The first three filters run here, in one pass, and what survives is
+     * the candidate list the workers are given, one list per tier. All are
+     * cheap next to the march: a hypot per aim point, twenty-five terrain
+     * samples, one byte.
      */
-    const candidateX = [];
-    const candidateY = [];
-    const candidateIndex = [];
+    const candidates = {
+        goto: { x: [], y: [], index: [] },
+        fallback: { x: [], y: [], index: [] }
+    };
 
     for (let y = 0; y < height; y += 1) {
         const gameY = bounds.maxY - y * step;
@@ -443,81 +544,114 @@ async function buildMap(mapId, options) {
                 }
             }
 
-            if (
-                tiltBand(planeTiltDegrees(stencil, options.stencil)) >=
-                TILT_LIMIT_BAND
-            ) {
+            const tilt = planeTiltDegrees(stencil, options.stencil);
+
+            if (!(tilt < FALLBACK_TILT_LIMIT_DEGREES)) {
                 continue;
             }
 
-            candidateX.push(gameX);
-            candidateY.push(gameY);
-            candidateIndex.push(y * width + x);
+            const index = y * width + x;
+
+            candidates.fallback.x.push(gameX);
+            candidates.fallback.y.push(gameY);
+            candidates.fallback.index.push(index);
+
+            if (!(tilt < TILT_LIMIT_DEGREES)) {
+                continue;
+            }
+
+            if (canopy.cells[index]) {
+                underTrees += 1;
+                continue;
+            }
+
+            candidates.goto.x.push(gameX);
+            candidates.goto.y.push(gameY);
+            candidates.goto.index.push(index);
         }
     }
 
-    const flatEnough = candidateIndex.length;
-
-    const clearance = await runClearance(
-        field,
-        aims,
-        Float64Array.from(candidateX),
-        Float64Array.from(candidateY),
-        options.workers
-    );
+    const flatEnough = candidates.goto.index.length;
 
     /*
      * Every worker returns a full-length mask with only its own stride
      * filled in, so the merge is a union and the order they finish in
      * cannot change the answer.
      */
-    for (const slice of clearance) {
-        for (let i = 0; i < candidateIndex.length; i += 1) {
-            if (slice.any[i]) {
-                viable.any[candidateIndex[i]] = 1;
-            }
+    const march = async (tier, tierField, lowRule) => {
+        const list = candidates[tier];
 
-            if (slice.low[i]) {
-                viable.low[candidateIndex[i]] = 1;
+        const clearance = await runClearance(
+            tierField,
+            aims,
+            towers.length,
+            Float64Array.from(list.x),
+            Float64Array.from(list.y),
+            options.workers,
+            lowRule
+        );
+
+        for (const slice of clearance) {
+            for (let i = 0; i < list.index.length; i += 1) {
+                if (slice.any[i]) {
+                    viable[tier].any[list.index[i]] = 1;
+                }
+
+                if (slice.low[i]) {
+                    viable[tier].low[list.index[i]] = 1;
+                }
             }
         }
-    }
+    };
+
+    await march('goto', field, 'tower-centres');
+    await march('fallback', plainField, 'every-point');
 
     const cellKm2 = (options.spacing * options.spacing) / 1e6;
     const results = [];
 
     for (const arc of ARCS) {
         /*
-         * Specks go before the outline is traced, not after: a region below
-         * the threshold should leave no edge behind, and tracing first would
-         * draw one for every one of them.
+         * The parking test and the specks go before the outline is traced,
+         * not after: ground that is refused should leave no edge behind,
+         * and tracing first would draw one for every sliver.
          */
-        const kept = dropSmallRegions(
-            viable[arc],
-            width,
-            height,
-            options.minregion
-        );
+        const settle = raw => {
+            const parkable = parkingMask(raw, width, height);
+            const kept = dropSmallRegions(parkable, width, height, options.minregion);
 
-        let dropped = 0;
+            let unparkable = 0;
+            let dropped = 0;
 
-        for (let i = 0; i < kept.length; i += 1) {
-            if (viable[arc][i] && !kept[i]) {
-                dropped += 1;
+            for (let i = 0; i < kept.length; i += 1) {
+                if (raw[i] && !parkable[i]) {
+                    unparkable += 1;
+                } else if (parkable[i] && !kept[i]) {
+                    dropped += 1;
+                }
             }
-        }
 
-        const mask = outlineMask(kept, width, height);
+            return { kept, unparkable, dropped };
+        };
+
+        const goto = settle(viable.goto[arc]);
+        const fallback = settle(viable.fallback[arc]);
+        const { kept, unparkable, dropped } = goto;
+
+        const mask = tierMask(goto.kept, fallback.kept, width, height);
 
         let cells = 0;
         let boundary = 0;
+        let fallbackCells = 0;
 
         for (let i = 0; i < mask.length; i += 1) {
-            if (mask[i]) {
+            if (mask[i] === CELL_INTERIOR || mask[i] === CELL_BOUNDARY) {
                 cells += 1;
+            } else if (mask[i]) {
+                fallbackCells += 1;
             }
 
-            if (mask[i] === CELL_BOUNDARY) {
+            if (mask[i] === CELL_BOUNDARY || mask[i] === CELL_FALLBACK_BOUNDARY) {
                 boundary += 1;
             }
         }
@@ -536,8 +670,14 @@ async function buildMap(mapId, options) {
             stencilSpacingMeters: options.stencil,
             aimRingMeters: options.ring,
             aimPoints: aims.length,
+            tiltLimitDegrees: TILT_LIMIT_DEGREES,
+            lowArcMissableTowers: LOW_ARC_MISSABLE_TOWERS,
+            canopyMeters: CANOPY_METRES,
+            fallbackTiltLimitDegrees: FALLBACK_TILT_LIMIT_DEGREES,
             minRegionCells: options.minregion,
             viableKm2: Number((cells * cellKm2).toFixed(3)),
+            fallbackKm2: Number((fallbackCells * cellKm2).toFixed(3)),
+            droppedAsUnparkableKm2: Number((unparkable * cellKm2).toFixed(3)),
             droppedAsTooSmallKm2: Number((dropped * cellKm2).toFixed(3)),
             spawns: spawnShares(
                 kept, width, height, bounds, step, spawns
@@ -545,14 +685,13 @@ async function buildMap(mapId, options) {
                 ...entry,
                 share: Number(entry.share.toFixed(3))
             })),
-            grid: {
-                width,
-                height,
-                originX: bounds.minX,
-                originY: bounds.maxY,
-                stepX: step,
-                stepY: step
-            },
+            fallbackSpawns: spawnShares(
+                fallback.kept, width, height, bounds, step, spawns
+            ).map(entry => ({
+                ...entry,
+                share: Number(entry.share.toFixed(3))
+            })),
+            grid,
             file,
             bytes: png.length,
             sha256: createHash('sha256').update(png).digest('hex')
@@ -563,7 +702,7 @@ async function buildMap(mapId, options) {
             JSON.stringify(payload, null, 4) + '\n'
         );
 
-        results.push({ arc, cells, boundary, dropped, payload, bytes: png.length });
+        results.push({ arc, cells, fallbackCells, boundary, dropped, payload, bytes: png.length });
     }
 
     return {
@@ -572,6 +711,8 @@ async function buildMap(mapId, options) {
         height,
         aims: aims.length,
         inEnvelope: inEnvelope * cellKm2,
+        underTrees: underTrees * cellKm2,
+        raised,
         flatEnough: flatEnough * cellKm2,
         workers: Math.max(1, Math.min(options.workers, flatEnough || 1)),
         results
@@ -598,27 +739,43 @@ for (const mapId of mapIds) {
         continue;
     }
 
+    if (result.skipped) {
+        console.log(`${mapId}: ${result.skipped}, skipped`);
+        continue;
+    }
+
     built += 1;
 
     console.log(
         `${result.mapId}: ${result.width}x${result.height} cells, ` +
         `${result.aims} aim points, ` +
         `in envelope ${result.inEnvelope.toFixed(2)} km2, ` +
-        `flat enough ${result.flatEnough.toFixed(2)} km2, ` +
+        `${result.raised} heightfield cells under wood, ` +
+        `flat enough ${result.flatEnough.toFixed(2)} km2 ` +
+        `of which ${result.underTrees.toFixed(2)} km2 in trees, ` +
         `${result.workers} workers, ` +
         `${((Date.now() - started) / 1000).toFixed(0)}s`
     );
 
     for (const entry of result.results) {
-        const shares = entry.payload.spawns
+        const describe = list => list
             .map(spawn => `${spawn.label} ${(100 * spawn.share).toFixed(0)}%`)
             .join(' ');
 
+        const shares = describe(entry.payload.spawns);
+        const fallbackShares = describe(entry.payload.fallbackSpawns);
+
         console.log(
-            `  ${entry.arc.padEnd(3)} ${entry.payload.viableKm2.toFixed(2)} km2, ` +
+            `  ${entry.arc.padEnd(3)} go-to ${entry.payload.viableKm2.toFixed(2)} km2, ` +
+            `${entry.payload.droppedAsUnparkableKm2.toFixed(2)} km2 dropped as unparkable, ` +
             `${entry.payload.droppedAsTooSmallKm2.toFixed(2)} km2 dropped as too small, ` +
             `${(entry.bytes / 1024).toFixed(0)} KB PNG` +
             (shares ? `, ${shares}` : '')
+        );
+
+        console.log(
+            `      fallback ${entry.payload.fallbackKm2.toFixed(2)} km2` +
+            (fallbackShares ? `, ${fallbackShares}` : '')
         );
     }
 }

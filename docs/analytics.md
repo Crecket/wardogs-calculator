@@ -52,7 +52,6 @@ The current event set intentionally focuses on meaningful user actions rather th
 | `target-exported` | User exports one saved target | `withArtillery` |
 | `targets-exported` | User exports the complete saved-target list | `count` |
 | `targets-imported` | A valid single-target or target-list JSON file is imported | `count`, `format` |
-| `preset-marker-selected` | First preset-marker target selection for each map in the current browser-tab session | `map` |
 | `coordinate-search` | A valid coordinate search is completed | `map` |
 | `terrain3d-toggle` | User manually enables or disables experimental Terrain3D correction | `enabled`, `map` |
 | `contours-toggle` | User enables or disables terrain contours directly or through the Base layer group | `enabled`, `map` |
@@ -80,8 +79,7 @@ The analytics wrapper applies session-level deduplication to the highest-volume 
 
 - `calculation` is emitted at most once for each map + weapon combination in the current browser-tab session;
 - `origin-placed` is emitted at most once per map in the current browser-tab session;
-- `target-placed` is emitted at most once per map in the current browser-tab session;
-- `preset-marker-selected` is emitted at most once per map in the current browser-tab session.
+- `target-placed` is emitted at most once per map in the current browser-tab session.
 
 The deduplication keys are stored in `sessionStorage`, so a page reload in the same tab does not immediately generate the same high-volume events again. A new tab starts a new analytics session budget. If `sessionStorage` is unavailable, the same policy still works in memory for the current page lifetime.
 

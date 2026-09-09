@@ -181,19 +181,12 @@ async function init() {
 
     try {
 
-        applyTheme(
-            getTheme()
-        );
-
-        bindThemeToggle();
-
         loadSavedTargets();
 
         await loadLanguages();
 
         await loadAppConfig();
 
-        renderFooter();
 
         /*
          * Load the last selected ids before their registries are populated.
@@ -237,10 +230,7 @@ async function init() {
          * selected preset map after the
          * map JSON files are available.
          */
-        if (
-            S.map !== 'custom' &&
-            MAPS[S.map]
-        ) {
+        if (MAPS[S.map]) {
 
             S.w =
                 MAPS[S.map].w;
@@ -265,10 +255,6 @@ async function init() {
         }
 
         loadSaveArtilleryPreference();
-
-        updatePresetLock();
-        updatePointLocksUI();
-        updateForcePlacementUI();
 
         applyLanguage();
 

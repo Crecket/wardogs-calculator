@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-page-language="en" lang="en">
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
@@ -24,10 +24,6 @@
     </div>
 
     <div class="header-controls mobile-header-controls">
-        <button aria-label="Toggle theme" class="theme-toggle" id="themeToggle" title="Toggle theme" type="button">
-            <span id="themeIcon">☼</span>
-        </button>
-        <select class="language-select" id="language"></select>
     </div>
 </header>
 
@@ -35,8 +31,6 @@
     <section class="workspace mobile-workspace">
         <div class="map mobile-map">
             <canvas id="canvas"></canvas>
-
-            <div class="mobile-status" id="status"></div>
 
             <div class="mobile-solution-hud">
                 <div class="mobile-solution-grid">
@@ -93,7 +87,6 @@
                     <div class="map-tool-search-error" id="coordinateSearchError"></div>
                 </div>
                 <div class="map-tool-popover map-tool-layers" id="mapLayersPopover"></div>
-<div class="map-tool-popover map-tool-data-transfer" id="mapDataTransferPopover"></div>
 <div class="map-tool-popover map-tool-collab" id="collabPopover"></div>
                 <button aria-controls="mapToolsBar" aria-expanded="false" aria-label="Map tools" class="mobile-map-tools-toggle" id="mobileMapToolsToggle" title="Map tools" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 12h2"/><path d="M10 12h10"/><circle cx="8" cy="12" r="2"/><path d="M4 17h8"/><path d="M16 17h4"/><circle cx="14" cy="17" r="2"/></svg>
@@ -124,9 +117,6 @@
                     <button aria-label="Layers" class="map-tool-button" data-tool="layers" id="mapToolLayers" title="Layers" type="button">
                         <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h2M10 7h9M5 12h2M10 12h9M5 17h2M10 17h9"/></svg>
                     </button>
-<button aria-label="Import / Export" class="map-tool-button" data-tool="dataTransfer" id="mapToolDataTransfer" title="Import / Export" type="button">
-<svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v10"/><path d="m4 11 3 3 3-3"/><path d="M17 20V10"/><path d="m14 13 3-3 3 3"/></svg>
-</button>
 <button aria-label="Shared session" class="map-tool-button" data-tool="collab" hidden id="mapToolCollab" title="Shared session" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4"/><path d="m8.2 13.2 7.6 4.4"/></svg>
 </button>
@@ -162,7 +152,6 @@
 
                 <div class="mobile-card">
                     <h2 data-i18n="weapon">Weapon</h2>
-                    <label data-i18n="weaponType" for="weapon">Weapon type</label>
                     <select id="weapon"></select>
                     <div class="mobile-inline-row">
                         <span data-i18n="weaponRange">Max range</span>
@@ -173,24 +162,24 @@
                 <div class="mobile-card">
                     <h2 data-i18n="pointSelection">Point selection</h2>
                     <label data-i18n="artilleryXY">Artillery X / Y</label>
-                    <div class="grid2">
+                    <div class="coordinate-row">
+<div class="grid2">
                         <input id="ox" inputmode="decimal" step="0.01" type="number"/>
                         <input id="oy" inputmode="decimal" step="0.01" type="number"/>
-                    </div>
 <div class="point-coordinate-actions">
-<button data-i18n="copyCoordinates" id="coordinateOriginCopy" type="button">Copy</button>
-<button data-i18n="pasteCoordinates" id="coordinateOriginPaste" type="button">Paste</button>
-<button aria-pressed="false" class="point-lock-button" id="coordinateOriginLock" type="button">Lock</button>
+<button aria-label="Copy coordinates" class="coordinate-action" id="coordinateOriginCopy" title="Copy coordinates" type="button"><svg aria-hidden="true" class="coordinate-action-icon" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="14"><rect height="13" rx="2" width="13" x="9" y="9"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg aria-hidden="true" class="coordinate-action-done" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24" width="14"><path d="m5 13 4 4 10-10"/></svg></button>
+<button aria-label="Paste coordinates" class="coordinate-action" id="coordinateOriginPaste" title="Paste coordinates" type="button"><svg aria-hidden="true" class="coordinate-action-icon" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="14"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect height="4" rx="1" width="8" x="8" y="2"/></svg><svg aria-hidden="true" class="coordinate-action-done" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24" width="14"><path d="m5 13 4 4 10-10"/></svg></button>
+</div>
 </div>
                     <label data-i18n="targetXY">Target X / Y</label>
-                    <div class="grid2">
+                    <div class="coordinate-row">
+<div class="grid2">
                         <input id="tx" inputmode="decimal" step="0.01" type="number"/>
                         <input id="ty" inputmode="decimal" step="0.01" type="number"/>
-                    </div>
 <div class="point-coordinate-actions">
-<button data-i18n="copyCoordinates" id="coordinateTargetCopy" type="button">Copy</button>
-<button data-i18n="pasteCoordinates" id="coordinateTargetPaste" type="button">Paste</button>
-<button aria-pressed="false" class="point-lock-button" id="coordinateTargetLock" type="button">Lock</button>
+<button aria-label="Copy coordinates" class="coordinate-action" id="coordinateTargetCopy" title="Copy coordinates" type="button"><svg aria-hidden="true" class="coordinate-action-icon" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="14"><rect height="13" rx="2" width="13" x="9" y="9"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg aria-hidden="true" class="coordinate-action-done" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24" width="14"><path d="m5 13 4 4 10-10"/></svg></button>
+<button aria-label="Paste coordinates" class="coordinate-action" id="coordinateTargetPaste" title="Paste coordinates" type="button"><svg aria-hidden="true" class="coordinate-action-icon" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="14"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect height="4" rx="1" width="8" x="8" y="2"/></svg><svg aria-hidden="true" class="coordinate-action-done" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24" width="14"><path d="m5 13 4 4 10-10"/></svg></button>
+</div>
 </div>
                 </div>
 
@@ -198,11 +187,9 @@
                     <h2 data-i18n="result">Result</h2>
                     <div class="mobile-inline-row"><span>ΔX</span><b id="dx">0 m</b></div>
                     <div class="mobile-inline-row"><span>ΔY</span><b id="dy">0 m</b></div>
-                    <p class="hint" data-i18n="azimuthHint">Azimuth: 0° north, 90° east, 180° south, 270° west.</p>
                 </div>
 
                 <div class="mobile-action-grid">
-                    <button data-i18n="swap" id="swap" type="button">Swap points</button>
                     <button data-i18n="clear" id="clear" type="button">Reset</button>
                 </div>
             </section>
@@ -210,21 +197,7 @@
             <section class="mobile-panel" data-mobile-panel="map">
                 <div class="mobile-card">
                     <h2 data-i18n="map">Map</h2>
-                    <label data-i18n="presetMap" for="mapSelect">Preset map</label>
                     <select id="mapSelect"></select>
-                    <div id="customMapSizing">
-                        <div class="grid2">
-                            <div>
-                                <label data-i18n="width" for="w">Width, km</label>
-                                <input id="w" max="100" min="1" type="number" value="10"/>
-                            </div>
-                            <div>
-                                <label data-i18n="height" for="h">Height, km</label>
-                                <input id="h" max="100" min="1" type="number" value="10"/>
-                            </div>
-                        </div>
-                        <button class="primary" data-i18n="apply" id="apply" type="button">Apply</button>
-                    </div>
                 </div>
 
                 <div class="mobile-card">
@@ -265,10 +238,6 @@
                     </div>
                     <div class="saved-target-actions">
                         <button class="save-target-button primary" data-i18n="save" id="saveTarget" type="button">Save</button>
-<div class="saved-target-transfer-actions">
-<button data-i18n="exportAllTargets" id="exportSavedTargets" type="button">Export all</button>
-<button data-i18n="importTargets" id="importSavedTargets" type="button">Import</button>
-</div>
 <div aria-live="polite" class="saved-target-transfer-status" id="savedTargetsTransferStatus"></div>
                     </div>
                 </div>
@@ -277,16 +246,13 @@
     </aside>
 </main>
 
-<footer id="siteFooter"></footer>
-
 <script src="js/core/core.js"></script>
 <script src="js/features/guns.js"></script>
 <script src="js/core/resources.js"></script>
 <script src="js/core/config.js"></script>
 <script src="js/core/analytics.js"></script>
-<script src="js/core/file-transfer.js"></script>
 <script src="js/ui/i18n.js"></script>
-<script src="js/ui/theme.js"></script>
+
 <script src="js/ui/footer.js"></script>
 <script src="js/ui/layout.js"></script>
 <script src="js/features/saved-targets.js"></script>
@@ -316,7 +282,6 @@
 <script src="js/map/collab-flash.js"></script>
 <script src="js/map/renderer.js"></script>
 <script src="js/features/coordinates.js"></script>
-<script src="js/features/point-locks.js"></script>
 <script src="js/features/flight-time.js"></script>
 <script src="js/features/fps-meter.js"></script>
 <script src="js/features/results.js"></script>

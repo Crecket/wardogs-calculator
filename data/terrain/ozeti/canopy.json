@@ -1,0 +1,21 @@
+{
+    "format": "wardogs-canopy-v1",
+    "mapId": "ozeti",
+    "sampleSpacingMeters": 8,
+    "tileZoom": 7,
+    "luminanceMeanMax": 45,
+    "luminanceStdMin": 3,
+    "coverage": 1,
+    "canopyShare": 0.0954,
+    "grid": {
+        "width": 1069,
+        "height": 972,
+        "originX": 57.58,
+        "originY": 99.56,
+        "stepX": 0.08,
+        "stepY": 0.08
+    },
+    "file": "canopy.png",
+    "bytes": 73569,
+    "sha256": "edd2b9a55bbbbf58a4728ae8e2936c8aaea5b90560b69ab7c36284e21d0af2c4"
+}

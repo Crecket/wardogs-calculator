@@ -190,44 +190,16 @@ function reachSignatureNow() {
     ].join('|');
 }
 
-function reachBadgeHead(item) {
-    const info =
-        item.querySelector('.saved-target-info');
-
-    if (!info) {
-        return null;
-    }
-
-    const name =
-        info.querySelector('.saved-target-name');
-
-    if (!name) {
-        return null;
-    }
-
-    let head = name.parentElement;
-
-    if (!head.classList.contains('saved-target-head')) {
-        head = document.createElement('div');
-
-        head.className = 'saved-target-head';
-
-        info.insertBefore(head, name);
-        head.appendChild(name);
-    }
-
-    return head;
-}
-
 function reachBadgeHost(item) {
-    const head = reachBadgeHead(item);
+    const marker =
+        item.querySelector('.saved-target-marker');
 
-    if (!head) {
+    if (!marker) {
         return null;
     }
 
     let host =
-        head.parentElement.querySelector('.saved-target-reach');
+        marker.querySelector('.saved-target-reach');
 
     if (!host) {
         host = document.createElement('div');
@@ -238,8 +210,8 @@ function reachBadgeHost(item) {
         host.setAttribute('aria-label', tr('reachBadges'));
     }
 
-    if (head.lastElementChild !== host) {
-        head.appendChild(host);
+    if (marker.lastElementChild !== host) {
+        marker.appendChild(host);
     }
 
     return host;

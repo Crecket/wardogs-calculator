@@ -25,6 +25,8 @@ export const AIM_RING_POINTS = 8;
 export const CELL_OUTSIDE = 0;
 export const CELL_INTERIOR = 1;
 export const CELL_BOUNDARY = 2;
+export const CELL_FALLBACK_INTERIOR = 3;
+export const CELL_FALLBACK_BOUNDARY = 4;
 
 /*
  * The smallest patch of viable ground worth drawing, in 8 m cells.
@@ -41,6 +43,35 @@ export const CELL_BOUNDARY = 2;
  * should look like.
  */
 export const MIN_REGION_CELLS = 16;
+
+/*
+ * The tilt a go-to spot may have. The flatness ramp warns at 8 degrees,
+ * which is the hull's limit; this layer is not asking whether the gun can
+ * sit there but whether it is somewhere you would drive to on purpose, and
+ * on Bakurani halving the limit cuts the candidate ground by four fifths
+ * before trees are even considered.
+ */
+export const TILT_LIMIT_DEGREES = 4;
+
+/*
+ * The second tier: ground that is not a go-to spot but is not awful either.
+ * It is the layer's original rule — the hull's own 8 degree limit, trees
+ * ignored, every tower and every ring point — and it exists because on
+ * Bakurani the strict set leaves one spawn with almost nothing, and a gun
+ * that has to set up anyway is better served by a worse spot than by none.
+ */
+export const FALLBACK_TILT_LIMIT_DEGREES = 8;
+
+/*
+ * How many towers the low arc may fail to reach flat. The bake originally
+ * demanded a clean low lane to every tower and every ring point around it,
+ * and once trees count that set is empty on Bakurani: the flat ground is the
+ * valley floor and the valley floor has hedgerows, so a 600 m corridor in
+ * four directions at once never exists. Requiring the tower centres and
+ * forgiving one of them is the reading of "I can hit the towers flat from
+ * here" that still has spots in it. The any-arc set keeps the full rule.
+ */
+export const LOW_ARC_MISSABLE_TOWERS = 1;
 
 const METRES_PER_GAME_UNIT = 100;
 
@@ -99,6 +130,90 @@ export function outlineMask(viable, width, height) {
     }
 
     return mask;
+}
+
+/*
+ * Lays the two tiers into one raster. The go-to set is outlined as itself;
+ * the fallback set is outlined only where the go-to set is not, so a green
+ * region sitting inside orange ground keeps its own edge and the orange
+ * edge runs around the outside. Both inputs are already parked and
+ * de-specked; this only decides which byte a cell gets.
+ */
+export function tierMask(primary, fallback, width, height) {
+    const mask = outlineMask(primary, width, height);
+
+    const rest = new Uint8Array(width * height);
+
+    for (let i = 0; i < rest.length; i += 1) {
+        rest[i] = fallback[i] && !primary[i] ? 1 : 0;
+    }
+
+    const outer = outlineMask(rest, width, height);
+
+    for (let i = 0; i < mask.length; i += 1) {
+        if (mask[i]) {
+            continue;
+        }
+
+        if (outer[i] === CELL_INTERIOR) {
+            mask[i] = CELL_FALLBACK_INTERIOR;
+        } else if (outer[i] === CELL_BOUNDARY) {
+            mask[i] = CELL_FALLBACK_BOUNDARY;
+        }
+    }
+
+    return mask;
+}
+
+/*
+ * Keeps only the cells that belong to some fully viable three by three
+ * block, returning a new mask and leaving the caller's alone.
+ *
+ * An 8 m cell is one hull, and a string of them one cell wide is a line
+ * you could stand a gun on but never park a gun in. Three cells is 24 m,
+ * room to pull in, turn, and pull out, and it is the smallest square that
+ * still reads as a spot rather than a mark at map-fit zoom. Erode then
+ * dilate, so a block keeps its edges and a spur loses them.
+ */
+export function parkingMask(viable, width, height) {
+    const core = new Uint8Array(width * height);
+
+    for (let y = 1; y < height - 1; y += 1) {
+        for (let x = 1; x < width - 1; x += 1) {
+            let solid = true;
+
+            for (let dy = -1; dy <= 1 && solid; dy += 1) {
+                for (let dx = -1; dx <= 1; dx += 1) {
+                    if (!viable[(y + dy) * width + (x + dx)]) {
+                        solid = false;
+                        break;
+                    }
+                }
+            }
+
+            if (solid) {
+                core[y * width + x] = 1;
+            }
+        }
+    }
+
+    const kept = new Uint8Array(width * height);
+
+    for (let y = 1; y < height - 1; y += 1) {
+        for (let x = 1; x < width - 1; x += 1) {
+            if (!core[y * width + x]) {
+                continue;
+            }
+
+            for (let dy = -1; dy <= 1; dy += 1) {
+                for (let dx = -1; dx <= 1; dx += 1) {
+                    kept[(y + dy) * width + (x + dx)] = 1;
+                }
+            }
+        }
+    }
+
+    return kept;
 }
 
 /*

@@ -107,7 +107,14 @@ function flashCoordinateAction(
         return;
     }
 
-    button.textContent = tr(key);
+    const label = tr(
+        action === 'copy'
+            ? 'copyCoordinates'
+            : 'pasteCoordinates'
+    );
+
+    button.classList.add('is-done');
+    button.title = tr(key);
 
     window.setTimeout(
         () => {
@@ -115,11 +122,8 @@ function flashCoordinateAction(
                 return;
             }
 
-            button.textContent = tr(
-                action === 'copy'
-                    ? 'copyCoordinates'
-                    : 'pasteCoordinates'
-            );
+            button.classList.remove('is-done');
+            button.title = label;
         },
         COORDINATE_FEEDBACK_DELAY
     );

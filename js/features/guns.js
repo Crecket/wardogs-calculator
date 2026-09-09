@@ -6,7 +6,7 @@
  * Artillery is a list. S.origin and S.weapon stay as the names the rest of
  * the code already uses, but become accessors onto whichever gun is
  * selected — which is what keeps events.js, results.js, inputs.js,
- * point-locks.js, terrain-ballistics.js and mobile.js out of this feature
+ * terrain-ballistics.js and mobile.js out of this feature
  * entirely, and keeps js/core/core.js untouched so it never conflicts on an
  * upstream merge.
  */

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-page-language="en" lang="en">
+<html lang="en">
 <head>
 <meta content="202028ddb3b841b2" name="yandex-verification"/>
 <meta content="LtfWehCgGAvT8AdpuHGFaCUKBNsmPOEk4J3YkqZEJvM" name="google-site-verification"/>
@@ -15,15 +15,6 @@
 <meta content="index, follow, max-image-preview:large" name="robots"/>
 <meta content="#101316" name="theme-color"/>
 <link href="https://wardogs-artillery.com/" rel="canonical"/>
-<link href="https://wardogs-artillery.com/" hreflang="en" rel="alternate"/>
-<link href="https://wardogs-artillery.com/ru/" hreflang="ru" rel="alternate"/>
-<link href="https://wardogs-artillery.com/uk/" hreflang="uk" rel="alternate"/>
-<link href="https://wardogs-artillery.com/de/" hreflang="de" rel="alternate"/>
-<link href="https://wardogs-artillery.com/fr/" hreflang="fr" rel="alternate"/>
-<link href="https://wardogs-artillery.com/es/" hreflang="es" rel="alternate"/>
-<link href="https://wardogs-artillery.com/pl/" hreflang="pl" rel="alternate"/>
-<link href="https://wardogs-artillery.com/pt/" hreflang="pt" rel="alternate"/>
-<link href="https://wardogs-artillery.com/" hreflang="x-default" rel="alternate"/>
 <meta content="website" property="og:type"/>
 <meta content="WARDOGS Artillery Calculator" property="og:site_name"/>
 <meta content="WARDOGS Artillery Calculator &amp; Interactive Map" property="og:title"/>
@@ -64,44 +55,16 @@
 </script>
 </head>
 <body>
-<header>
-<div class="header-title">
-<img alt="" aria-hidden="true" class="header-brand-icon" src="assets/favicon.png"/>
-<h1 data-i18n="title">WARDOGS // ARTILLERY CALCULATOR</h1>
-<span data-i18n="gridInfo">1 km → 10×10 cells of 100 m</span>
-</div>
-<div class="header-controls">
-<button aria-label="Toggle theme" class="theme-toggle" id="themeToggle" title="Toggle theme" type="button">
-<span id="themeIcon">☼</span>
-</button>
-<select class="language-select" id="language"></select>
-</div>
-</header>
 <main>
 <aside>
 <!-- MAP -->
 <div class="section">
 <h2 data-i18n="map">Map</h2>
-<label data-i18n="presetMap">Preset map</label>
 <select id="mapSelect"></select>
-<div id="customMapSizing">
-<div class="grid2" style="margin-top:7px">
-<div>
-<label data-i18n="width">Width, km</label>
-<input id="w" max="100" min="1" type="number" value="10"/>
-</div>
-<div>
-<label data-i18n="height">Height, km</label>
-<input id="h" max="100" min="1" type="number" value="10"/>
-</div>
-</div>
-<button class="primary" data-i18n="apply" id="apply" style="margin-top:8px">Apply</button>
-</div>
 </div>
 <!-- WEAPON -->
 <div class="section">
 <h2 data-i18n="weapon">Weapon</h2>
-<label data-i18n="weaponType">Weapon type</label>
 <select id="weapon"></select>
 <div class="result" style="margin-top:8px">
 <div class="row">
@@ -117,7 +80,6 @@
                     </b>
 </div>
 </div>
-<p class="hint" data-i18n="rangeHint">The circle shows the maximum range of the selected weapon from the artillery position.</p>
 </div>
 <!-- POINT SELECTION -->
 <div class="section">
@@ -125,32 +87,32 @@
 <div class="mode">
 <div class="mode-option">
 <button class="active" data-i18n="artillery" id="originMode">Artillery</button>
-<button aria-pressed="false" class="mode-force-pin" id="originForcePin" type="button"><svg aria-hidden="true" height="15" viewBox="0 0 24 24" width="15"><path d="M17 9V7a5 5 0 0 0-10 0v2H6a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10a1 1 0 0 0-1-1h-1ZM9 7a3 3 0 0 1 6 0v2H9V7Zm4 9.7V18a1 1 0 0 1-2 0v-1.3a2 2 0 1 1 2 0Z" fill="currentColor"/></svg></button>
 </div>
 <div class="mode-option">
 <button data-i18n="target" id="targetMode">Target</button>
-<button aria-pressed="false" class="mode-force-pin" id="targetForcePin" type="button"><svg aria-hidden="true" height="15" viewBox="0 0 24 24" width="15"><path d="M17 9V7a5 5 0 0 0-10 0v2H6a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10a1 1 0 0 0-1-1h-1ZM9 7a3 3 0 0 1 6 0v2H9V7Zm4 9.7V18a1 1 0 0 1-2 0v-1.3a2 2 0 1 1 2 0Z" fill="currentColor"/></svg></button>
 </div>
 </div>
 <label data-i18n="artilleryXY">Artillery X / Y</label>
+<div class="coordinate-row">
 <div class="grid2">
 <input id="ox" step="0.01" type="number" value="2000"/>
 <input id="oy" step="0.01" type="number" value="2000"/>
 </div>
 <div class="point-coordinate-actions">
-<button data-i18n="copyCoordinates" id="coordinateOriginCopy" type="button">Copy</button>
-<button data-i18n="pasteCoordinates" id="coordinateOriginPaste" type="button">Paste</button>
-<button aria-pressed="false" class="point-lock-button" id="coordinateOriginLock" type="button">Lock</button>
+<button aria-label="Copy coordinates" class="coordinate-action" id="coordinateOriginCopy" title="Copy coordinates" type="button"><svg aria-hidden="true" class="coordinate-action-icon" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="14"><rect height="13" rx="2" width="13" x="9" y="9"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg aria-hidden="true" class="coordinate-action-done" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24" width="14"><path d="m5 13 4 4 10-10"/></svg></button>
+<button aria-label="Paste coordinates" class="coordinate-action" id="coordinateOriginPaste" title="Paste coordinates" type="button"><svg aria-hidden="true" class="coordinate-action-icon" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="14"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect height="4" rx="1" width="8" x="8" y="2"/></svg><svg aria-hidden="true" class="coordinate-action-done" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24" width="14"><path d="m5 13 4 4 10-10"/></svg></button>
+</div>
 </div>
 <label data-i18n="targetXY">Target X / Y</label>
+<div class="coordinate-row">
 <div class="grid2">
 <input id="tx" step="0.01" type="number" value="2500"/>
 <input id="ty" step="0.01" type="number" value="2500"/>
 </div>
 <div class="point-coordinate-actions">
-<button data-i18n="copyCoordinates" id="coordinateTargetCopy" type="button">Copy</button>
-<button data-i18n="pasteCoordinates" id="coordinateTargetPaste" type="button">Paste</button>
-<button aria-pressed="false" class="point-lock-button" id="coordinateTargetLock" type="button">Lock</button>
+<button aria-label="Copy coordinates" class="coordinate-action" id="coordinateTargetCopy" title="Copy coordinates" type="button"><svg aria-hidden="true" class="coordinate-action-icon" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="14"><rect height="13" rx="2" width="13" x="9" y="9"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg aria-hidden="true" class="coordinate-action-done" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24" width="14"><path d="m5 13 4 4 10-10"/></svg></button>
+<button aria-label="Paste coordinates" class="coordinate-action" id="coordinateTargetPaste" title="Paste coordinates" type="button"><svg aria-hidden="true" class="coordinate-action-icon" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="14"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect height="4" rx="1" width="8" x="8" y="2"/></svg><svg aria-hidden="true" class="coordinate-action-done" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24" width="14"><path d="m5 13 4 4 10-10"/></svg></button>
+</div>
 </div>
 </div>
 <!-- RESULT -->
@@ -161,19 +123,23 @@
 <div class="solution-metric">
 <span class="solution-metric-label" data-i18n="distance">Distance</span>
 <strong class="solution-metric-value" id="distm">707 m</strong>
-<span class="solution-metric-sub" id="dist">0.71 km</span>
-</div>
-<div class="solution-metric solution-metric-highlight">
-<span class="solution-metric-label" data-i18n="mil">MIL</span>
-<strong class="solution-metric-value" id="mil">—</strong>
-<span class="solution-metric-sub" id="milAlt" hidden></span>
 </div>
 <div class="solution-metric">
 <span class="solution-metric-label" data-i18n="azimuth">AZIMUTH</span>
 <strong class="solution-metric-value" id="angle">45.0°</strong>
-<span class="solution-metric-sub solution-metric-spacer" aria-hidden="true">&nbsp;</span>
 </div>
 </div>
+<div class="solution-mil-grid" data-arcs="2" id="milGrid">
+<div class="solution-metric solution-metric-highlight" id="milLowCard">
+<span class="solution-metric-label" data-i18n="lowArc" id="milLowLabel">Low arc</span>
+<strong class="solution-metric-value" id="milLow">—</strong>
+</div>
+<div class="solution-metric solution-metric-highlight" id="milHighCard">
+<span class="solution-metric-label" data-i18n="highArc" id="milHighLabel">High arc</span>
+<strong class="solution-metric-value" id="milHigh">—</strong>
+</div>
+</div>
+<div class="solution-metric-sub solution-mil-note" id="milAlt" hidden></div>
 <div class="solution-flight" id="flightTimes" hidden>
 <span class="solution-flight-label" data-i18n="flightTime">Time of flight</span>
 <div class="solution-flight-badges" id="flightTimeBadges"></div>
@@ -184,7 +150,6 @@
 <div class="solution-secondary-item"><span>ΔY</span><b id="dy">+500 m</b></div>
 </div>
 </div>
-<p class="hint" data-i18n="azimuthHint">Azimuth: 0° north, 90° east, 180° south, 270° west.</p>
 </div>
 <!-- CONTROLS -->
 <div class="section">
@@ -198,8 +163,8 @@
                 </button>
 </div>
 <button data-i18n="fit" id="fit" style="margin-top:7px">Fit map</button>
-<button data-i18n="swap" id="swap" style="margin-top:7px">Swap points</button>
 <button data-i18n="clear" id="clear" style="margin-top:7px">Reset</button>
+<div class="sidebar-controls" id="sidebarControls"></div>
 </div>
 </aside>
 <button aria-label="Hide sidebar" aria-expanded="true" class="sidebar-toggle" id="sidebarToggle" title="Hide sidebar" type="button">
@@ -207,9 +172,6 @@
 </button>
 <!-- WORKSPACE -->
 <section class="workspace">
-<div class="toolbar">
-<span class="status" id="status"></span>
-</div>
 <div class="map">
 <canvas id="canvas"></canvas>
 <!-- CURSOR -->
@@ -254,10 +216,6 @@
 </div>
 <div class="saved-target-actions">
 <button class="save-target-button" data-i18n="save" id="saveTarget" type="button">Save</button>
-<div class="saved-target-transfer-actions">
-<button data-i18n="exportAllTargets" id="exportSavedTargets" type="button">Export all</button>
-<button data-i18n="importTargets" id="importSavedTargets" type="button">Import</button>
-</div>
 <div aria-live="polite" class="saved-target-transfer-status" id="savedTargetsTransferStatus"></div>
 </div>
 </div>
@@ -276,7 +234,6 @@
 <div class="map-tool-search-error" id="coordinateSearchError"></div>
 </div>
 <div class="map-tool-popover map-tool-layers" id="mapLayersPopover"></div>
-<div class="map-tool-popover map-tool-data-transfer" id="mapDataTransferPopover"></div>
 <div class="map-tool-popover map-tool-collab" id="collabPopover"></div>
 <div class="map-tools-bar">
 <button aria-label="Targeting mode" class="map-tool-button map-tool-primary" data-tool="targeting" id="mapToolTargeting" title="Targeting mode" type="button">
@@ -324,9 +281,6 @@
 <path d="M5 7h2M10 7h9M5 12h2M10 12h9M5 17h2M10 17h9"/>
 </svg>
 </button>
-<button aria-label="Import / Export" class="map-tool-button" data-tool="dataTransfer" id="mapToolDataTransfer" title="Import / Export" type="button">
-<svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v10"/><path d="m4 11 3 3 3-3"/><path d="M17 20V10"/><path d="m14 13 3-3 3 3"/></svg>
-</button>
 <button aria-label="Shared session" class="map-tool-button" data-tool="collab" hidden id="mapToolCollab" title="Shared session" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4"/><path d="m8.2 13.2 7.6 4.4"/></svg>
 </button>
@@ -337,6 +291,16 @@
 </button>
 </div>
 </div>
+<!-- MAP PANELS -->
+<div class="map-panels">
+<div class="target-minimap" data-collapsed="false" hidden id="targetMinimap">
+<div class="target-minimap-header">
+<span class="target-minimap-title" data-i18n="targetMinimap">Target area</span>
+<button aria-expanded="true" class="target-minimap-toggle" id="targetMinimapToggle" type="button">▴</button>
+</div>
+<canvas class="target-minimap-canvas" id="targetMinimapCanvas"></canvas>
+<div class="target-minimap-caption" id="targetMinimapCaption"></div>
+</div>
 <!-- CROSS SECTION -->
 <div class="cross-section" data-collapsed="false" hidden id="crossSection">
 <div class="cross-section-header">
@@ -345,6 +309,7 @@
 </div>
 <canvas class="cross-section-canvas" id="crossSectionCanvas"></canvas>
 <div class="cross-section-caption" id="crossSectionCaption"></div>
+</div>
 </div>
 <!-- LEGEND -->
 <div class="legend">
@@ -359,15 +324,13 @@
 </div>
 </section>
 </main>
-<footer id="siteFooter"></footer>
 <script src="js/core/core.js"></script>
 <script src="js/features/guns.js"></script>
 <script src="js/core/resources.js"></script>
 <script src="js/core/config.js"></script>
 <script src="js/core/analytics.js"></script>
-<script src="js/core/file-transfer.js"></script>
 <script src="js/ui/i18n.js"></script>
-<script src="js/ui/theme.js"></script><script src="js/ui/footer.js"></script>
+<script src="js/ui/footer.js"></script>
 <script src="js/ui/layout.js"></script>
 <script src="js/features/saved-targets.js"></script>
 <script src="js/features/collab.js"></script>
@@ -391,6 +354,7 @@
 <script src="js/map/range-ring.js"></script>
 <script src="js/map/dead-ground.js"></script>
 <script src="js/map/cross-section.js"></script>
+<script src="js/map/target-minimap.js"></script>
 <script src="js/map/map-tools.js"></script>
 <script src="js/map/map-shapes.js"></script>
 <script src="js/map/grid.js"></script>
@@ -398,10 +362,8 @@
 <script src="js/map/collab-flash.js"></script>
 <script src="js/map/renderer.js"></script>
 <script src="js/features/coordinates.js"></script>
-<script src="js/features/point-locks.js"></script>
 <script src="js/features/flight-time.js"></script>
 <script src="js/features/fps-meter.js"></script>
-<script src="js/features/force-placement.js"></script>
 <script src="js/features/results.js"></script>
 <script src="js/features/mil-cursor.js"></script>
 <script src="js/features/panel-popout.js"></script>

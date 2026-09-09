@@ -9,7 +9,7 @@
  * grey+alpha, RGB or RGBA image all encode through the same call.
  */
 
-import { deflateSync } from 'node:zlib';
+import { deflateSync, inflateSync } from 'node:zlib';
 
 const SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
@@ -146,6 +146,107 @@ function filterScanlines(pixels, width, height, channels) {
     }
 
     return out;
+}
+
+/*
+ * The inverse, for the bakes that read each other's rasters. 8-bit only,
+ * no interlace, every CRC checked, so a truncated or hand-edited file
+ * fails here rather than becoming a silently wrong layer.
+ */
+export function decodePng(buffer) {
+    const bytes = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+
+    if (!bytes.subarray(0, 8).equals(SIGNATURE)) {
+        throw new Error('Not a PNG');
+    }
+
+    const chunks = new Map();
+    const idat = [];
+
+    let offset = 8;
+
+    while (offset < bytes.length) {
+        const length = bytes.readUInt32BE(offset);
+        const type = bytes.toString('ascii', offset + 4, offset + 8);
+        const data = bytes.subarray(offset + 8, offset + 8 + length);
+        const crc = bytes.readUInt32BE(offset + 8 + length);
+
+        if (crc32(bytes.subarray(offset + 4, offset + 8 + length)) !== crc) {
+            throw new Error(`PNG ${type} chunk fails its CRC`);
+        }
+
+        if (type === 'IDAT') {
+            idat.push(data);
+        } else {
+            chunks.set(type, data);
+        }
+
+        offset += 12 + length;
+    }
+
+    const header = chunks.get('IHDR');
+
+    if (!header || !chunks.has('IEND')) {
+        throw new Error('PNG is missing IHDR or IEND');
+    }
+
+    const width = header.readUInt32BE(0);
+    const height = header.readUInt32BE(4);
+    const depth = header[8];
+    const colourType = header[9];
+    const interlace = header[12];
+
+    if (depth !== 8 || interlace !== 0) {
+        throw new Error(`Unsupported PNG: depth ${depth}, interlace ${interlace}`);
+    }
+
+    const channels = Object.entries(COLOUR_TYPES)
+        .find(([, type]) => type === colourType)?.[0];
+
+    if (!channels) {
+        throw new Error(`Unsupported PNG colour type ${colourType}`);
+    }
+
+    const stride = width * Number(channels);
+    const raw = inflateSync(Buffer.concat(idat));
+
+    if (raw.length !== (stride + 1) * height) {
+        throw new Error('PNG scanline data is the wrong length');
+    }
+
+    const pixels = new Uint8Array(stride * height);
+    const bpp = Number(channels);
+
+    for (let y = 0; y < height; y += 1) {
+        const filter = raw[y * (stride + 1)];
+        const row = y * stride;
+        const prior = row - stride;
+
+        for (let i = 0; i < stride; i += 1) {
+            const value = raw[y * (stride + 1) + 1 + i];
+            const left = i >= bpp ? pixels[row + i - bpp] : 0;
+            const up = y > 0 ? pixels[prior + i] : 0;
+            const upLeft = (y > 0 && i >= bpp) ? pixels[prior + i - bpp] : 0;
+
+            let restored = value;
+
+            if (filter === 1) {
+                restored = value + left;
+            } else if (filter === 2) {
+                restored = value + up;
+            } else if (filter === 3) {
+                restored = value + ((left + up) >> 1);
+            } else if (filter === 4) {
+                restored = value + paeth(left, up, upLeft);
+            } else if (filter !== 0) {
+                throw new Error(`Unknown PNG filter ${filter}`);
+            }
+
+            pixels[row + i] = restored & 0xff;
+        }
+    }
+
+    return { width, height, channels: bpp, colourType, pixels };
 }
 
 export function encodePng(pixels, width, height, options = {}) {

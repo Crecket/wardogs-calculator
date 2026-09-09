@@ -7,27 +7,53 @@
     "stencilSpacingMeters": 2,
     "aimRingMeters": 300,
     "aimPoints": 36,
+    "tiltLimitDegrees": 4,
+    "lowArcMissableTowers": 1,
+    "canopyMeters": 30,
+    "fallbackTiltLimitDegrees": 8,
     "minRegionCells": 16,
-    "viableKm2": 2.38,
-    "droppedAsTooSmallKm2": 0.069,
+    "viableKm2": 0.524,
+    "fallbackKm2": 1.648,
+    "droppedAsUnparkableKm2": 0.359,
+    "droppedAsTooSmallKm2": 0.047,
     "spawns": [
         {
             "label": "Valkyra",
-            "share": 0.498,
-            "nearestMeters": 106,
-            "medianMeters": 1193
+            "share": 0.457,
+            "nearestMeters": 169,
+            "medianMeters": 1017
         },
         {
             "label": "Manticore",
-            "share": 0.164,
-            "nearestMeters": 2029,
-            "medianMeters": 2481
+            "share": 0.071,
+            "nearestMeters": 2046,
+            "medianMeters": 2534
         },
         {
             "label": "Lonestar",
-            "share": 0.338,
+            "share": 0.472,
+            "nearestMeters": 1727,
+            "medianMeters": 2045
+        }
+    ],
+    "fallbackSpawns": [
+        {
+            "label": "Valkyra",
+            "share": 0.491,
+            "nearestMeters": 144,
+            "medianMeters": 1162
+        },
+        {
+            "label": "Manticore",
+            "share": 0.158,
+            "nearestMeters": 2029,
+            "medianMeters": 2477
+        },
+        {
+            "label": "Lonestar",
+            "share": 0.351,
             "nearestMeters": 1717,
-            "medianMeters": 2131
+            "medianMeters": 2127
         }
     ],
     "grid": {
@@ -39,6 +65,6 @@
         "stepY": 0.08
     },
     "file": "firing-positions-any.png",
-    "bytes": 14628,
-    "sha256": "745507fefeacc4a5752886d944aed606c6f4732507e4d43dc39ba026c9cc606e"
+    "bytes": 14987,
+    "sha256": "0de082125485f1a11782bb92f1575842c2e0144a33c889721dc5260b26a091fc"
 }

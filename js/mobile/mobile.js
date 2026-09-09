@@ -164,8 +164,6 @@ function startMobilePinch() {
             midpoint.y
         )
     };
-
-    setPresetMarkerHover(null);
 }
 
 function updateMobilePinch() {
@@ -266,7 +264,7 @@ function handleMobilePointerDown(event) {
 
     if (
         typeof MAP_TOOL_STATE !== 'undefined' &&
-        ['ruler', 'pencil', 'shapes', 'zone', 'polygon', 'eraser', 'marker'].includes(
+        ['ruler', 'pencil', 'shapes', 'zone', 'eraser', 'marker'].includes(
             MAP_TOOL_STATE.tool
         )
     ) {
@@ -294,21 +292,6 @@ function handleMobilePointerDown(event) {
             );
 
     if (markerType) {
-        if (
-            isPointMapLocked(
-                markerType
-            )
-        ) {
-            MOBILE_TOUCH.gesture = {
-                type: 'locked-point',
-                pointerId: event.pointerId,
-                startX: point.x,
-                startY: point.y,
-                moved: false
-            };
-            return;
-        }
-
         pushMapToolHistory();
 
         MOBILE_TOUCH.gesture = {
@@ -442,7 +425,6 @@ function handleMobilePointerMove(event) {
             gesture.startY
         );
 
-    setPresetMarkerHover(null);
     draw();
 }
 
@@ -469,35 +451,6 @@ function finishMobileTap(event, gesture) {
         return;
     }
 
-    if (
-        typeof MAP_TOOL_STATE === 'undefined' ||
-        !['ruler', 'pencil', 'shapes', 'zone', 'polygon', 'eraser', 'marker'].includes(
-            MAP_TOOL_STATE.tool
-        )
-    ) {
-        const markerInfo =
-            findPresetMarkerAtCanvasPoint(
-                point.x,
-                point.y
-            );
-
-        if (markerInfo) {
-            if (
-                isPointMapLocked(
-                    'target'
-                )
-            ) {
-                return;
-            }
-
-            selectPresetMarkerAsTarget(
-                markerInfo.item,
-                markerInfo.index
-            );
-            return;
-        }
-    }
-
     const hitSavedTarget =
         typeof savedTargetAtScreen === 'function'
             ? savedTargetAtScreen(
@@ -508,14 +461,6 @@ function finishMobileTap(event, gesture) {
             : null;
 
     if (hitSavedTarget) {
-
-        if (
-            isPointMapLocked(
-                'target'
-            )
-        ) {
-            return;
-        }
 
         restoreTarget(
             hitSavedTarget
@@ -535,14 +480,6 @@ function finishMobileTap(event, gesture) {
 
     const pointType =
         S.mode;
-
-    if (
-        isPointMapLocked(
-            pointType
-        )
-    ) {
-        return;
-    }
 
     pushMapToolHistory();
 
@@ -931,15 +868,9 @@ function updateMobileDesktopLink() {
             document.baseURI
         );
 
-    const languagePath =
-        LANG &&
-        LANG !== DEFAULT_LANG
-            ? `${LANG}/`
-            : '';
-
     const target =
         new URL(
-            languagePath,
+            './',
             siteRoot
         );
 

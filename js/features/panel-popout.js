@@ -30,7 +30,7 @@ let solutionPopoutPanel = null;
 let solutionPopoutPlaceholder = null;
 let solutionPopoutHome = null;
 let solutionPopoutButton = null;
-let solutionPopoutThemeObserver = null;
+let solutionPopoutLangObserver = null;
 let solutionPopoutStyleObserver = null;
 let solutionPopoutRestoring = false;
 
@@ -61,6 +61,7 @@ function findSolutionPanel() {
     }
 
     const anchor =
+        $('milLow') ||
         $('mil') ||
         $('distm');
 
@@ -288,7 +289,7 @@ function observeSolutionPopoutStyles() {
     );
 }
 
-function mirrorSolutionPopoutTheme() {
+function mirrorSolutionPopoutLang() {
 
     if (!solutionPopoutWindow) {
         return;
@@ -302,31 +303,23 @@ function mirrorSolutionPopoutTheme() {
             .document
             .documentElement;
 
-    if (source.dataset.theme) {
-        target.dataset.theme =
-            source.dataset.theme;
-    } else {
-        delete target.dataset.theme;
-    }
-
     target.lang =
         source.lang ||
         LANG;
 }
 
-function observeSolutionPopoutTheme() {
+function observeSolutionPopoutLang() {
 
-    solutionPopoutThemeObserver =
+    solutionPopoutLangObserver =
         new MutationObserver(
-            mirrorSolutionPopoutTheme
+            mirrorSolutionPopoutLang
         );
 
-    solutionPopoutThemeObserver.observe(
+    solutionPopoutLangObserver.observe(
         document.documentElement,
         {
             attributes: true,
             attributeFilter: [
-                'data-theme',
                 'lang'
             ]
         }
@@ -335,10 +328,10 @@ function observeSolutionPopoutTheme() {
 
 function disconnectSolutionPopoutObservers() {
 
-    solutionPopoutThemeObserver?.disconnect();
+    solutionPopoutLangObserver?.disconnect();
     solutionPopoutStyleObserver?.disconnect();
 
-    solutionPopoutThemeObserver = null;
+    solutionPopoutLangObserver = null;
     solutionPopoutStyleObserver = null;
 }
 
@@ -451,7 +444,8 @@ function updateSolutionPopoutControls() {
                 : tr('popOutSolution');
 
         solutionPopoutButton.innerHTML =
-            SOLUTION_POPOUT_ICON;
+            SOLUTION_POPOUT_ICON +
+            `<span class="sidebar-control-label">${label}</span>`;
 
         solutionPopoutButton.title =
             poppedOut
@@ -575,8 +569,8 @@ async function openSolutionPopout() {
     );
 
     observeSolutionPopoutStyles();
-    observeSolutionPopoutTheme();
-    mirrorSolutionPopoutTheme();
+    observeSolutionPopoutLang();
+    mirrorSolutionPopoutLang();
 
     solutionPopoutHome = {
         parent: panel.parentNode,
@@ -696,21 +690,19 @@ function initSolutionPopout() {
         return;
     }
 
-    const themeToggle =
-        $('themeToggle');
+    const host =
+        $('sidebarControls');
 
-    if (!themeToggle?.parentElement) {
+    if (!host) {
         return;
     }
 
     solutionPopoutButton =
         createSolutionPopoutButton();
 
-    themeToggle.parentElement
-        .insertBefore(
-            solutionPopoutButton,
-            themeToggle
-        );
+    host.appendChild(
+        solutionPopoutButton
+    );
 
     updateSolutionPopoutControls();
 

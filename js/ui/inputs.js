@@ -18,12 +18,6 @@ function inputs() {
 
     $('ty').value = formatGameCoordinate(S.target.y);
 
-    $('w').value =
-        S.w;
-
-    $('h').value =
-        S.h;
-
     /*
      * Origin and target are written from six different places (map drags,
      * the coordinate inputs, saved-target restore, undo, coordinate
@@ -95,13 +89,6 @@ function setPointMode(type) {
             'active',
             type === 'target'
         );
-
-    if (
-        typeof updateForcePlacementUI ===
-        'function'
-    ) {
-        updateForcePlacementUI();
-    }
 }
 
 function inputPoint(type) {
@@ -147,16 +134,4 @@ function inputPoint(type) {
     );
 
     inputs();
-}
-
-function updatePresetLock() {
-
-    const locked =
-        $('mapSelect').value !==
-        'custom';
-
-    $('customMapSizing').style.display =
-        locked
-            ? 'none'
-            : '';
 }

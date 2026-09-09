@@ -63,7 +63,6 @@ The dedicated `/mobile/` UI is designed around touch input rather than being a s
 - Drag-to-move Artillery/Target
 - Touch Map Tools, including Pencil, Zone, Polygon, Eraser, Markers, Layers, and Import / Export; the mobile toolbar is collapsed behind a single button by default
 - Touch-accessible Undo / Redo buttons inside Layers
-- Tap preset marker to select it as Target
 - Swipeable bottom sheet for calculator, map settings, and saved targets
 - Automatic routing from narrow coarse-pointer devices
 - Desktop-version escape link
@@ -256,7 +255,7 @@ Artillery and Target positions can be copied in the shareable `x100.05, y109.14`
 
 ## Position locks
 
-Artillery and Target can be locked independently against direct map interaction. A locked point cannot be moved by map clicks, marker dragging, touch dragging, or preset-marker target selection. Manual coordinate input and the coordinate Paste action remain available while a point is locked, so the lock acts as protection against accidental map edits rather than disabling intentional coordinate entry. Explicit actions such as Swap, Reset, and restoring a saved target are also left available.
+Artillery and Target can be locked independently against direct map interaction. A locked point cannot be moved by map clicks, marker dragging, or touch dragging. Manual coordinate input and the coordinate Paste action remain available while a point is locked, so the lock acts as protection against accidental map edits rather than disabling intentional coordinate entry. Explicit actions such as Swap, Reset, and restoring a saved target are also left available.
 
 
 ## Firing-solution result hierarchy

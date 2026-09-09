@@ -2,7 +2,7 @@
   "name": "wardogs-artillery-calculator",
   "private": true,
   "scripts": {
-    "build": "node scripts/build-pages.mjs && node scripts/sync-locales.mjs && node scripts/version-assets.mjs",
+    "build": "node scripts/build-pages.mjs && node scripts/version-assets.mjs",
     "test:build": "node scripts/verify-build.mjs",
     "dev": "node scripts/dev-supervisor.mjs node scripts/dev-server.mjs",
     "dev:once": "node scripts/dev-server.mjs",
@@ -12,10 +12,11 @@
     "build-heightfield": "node scripts/build-heightfield.mjs",
     "build-hillshade": "node scripts/build-hillshade.mjs",
     "build-flatness": "node scripts/build-flatness.mjs",
+    "build-canopy": "node scripts/build-canopy.mjs",
     "build-firing-positions": "node scripts/build-firing-positions.mjs",
     "fit-ballistics": "node scripts/fit-ballistics.mjs",
     "build-height-correction": "node scripts/build-height-correction.mjs",
     "bench:render": "node scripts/bench-render.mjs",
-    "test:scripts": "node --test scripts/lib/sigv4.test.mjs scripts/lib/dev-env.test.mjs scripts/lib/contours.test.mjs scripts/lib/ballistics.test.mjs scripts/lib/heightfield.test.mjs scripts/lib/heightfield-slope.test.mjs scripts/lib/png.test.mjs scripts/lib/hillshade.test.mjs scripts/lib/runtime-globals.test.mjs scripts/lib/ballistics-model.test.mjs scripts/lib/reachability.test.mjs scripts/lib/results-note.test.mjs scripts/lib/terrain-ballistics.test.mjs scripts/lib/cross-section-shot.test.mjs scripts/lib/dead-ground-runtime.test.mjs scripts/lib/range-ring-runtime.test.mjs scripts/lib/reach-classify.test.mjs scripts/lib/config.test.mjs scripts/lib/flight-time-runtime.test.mjs scripts/lib/flatness.test.mjs scripts/lib/flatness-runtime.test.mjs scripts/lib/firing-positions.test.mjs scripts/lib/firing-positions-runtime.test.mjs"
+    "test:scripts": "node --test scripts/lib/sigv4.test.mjs scripts/lib/dev-env.test.mjs scripts/lib/contours.test.mjs scripts/lib/ballistics.test.mjs scripts/lib/heightfield.test.mjs scripts/lib/heightfield-slope.test.mjs scripts/lib/png.test.mjs scripts/lib/hillshade.test.mjs scripts/lib/runtime-globals.test.mjs scripts/lib/ballistics-model.test.mjs scripts/lib/reachability.test.mjs scripts/lib/results-note.test.mjs scripts/lib/terrain-ballistics.test.mjs scripts/lib/cross-section-shot.test.mjs scripts/lib/dead-ground-runtime.test.mjs scripts/lib/range-ring-runtime.test.mjs scripts/lib/reach-classify.test.mjs scripts/lib/config.test.mjs scripts/lib/flight-time-runtime.test.mjs scripts/lib/flatness.test.mjs scripts/lib/flatness-runtime.test.mjs scripts/lib/firing-positions.test.mjs scripts/lib/firing-positions-runtime.test.mjs scripts/lib/canopy.test.mjs scripts/lib/tiles-fallback-runtime.test.mjs scripts/lib/target-minimap-runtime.test.mjs"
   }
 }

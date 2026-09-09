@@ -151,29 +151,6 @@ body.mobile-app {
     height: 40px;
 }
 
-.mobile-app .theme-toggle {
-    width: 40px;
-    min-width: 40px;
-    height: 40px;
-    min-height: 40px;
-    padding: 0;
-
-    display: grid;
-    place-items: center;
-    flex: 0 0 40px;
-}
-
-.mobile-app #themeIcon {
-    width: 24px;
-    height: 24px;
-
-    display: grid;
-    place-items: center;
-
-    font-size: 21px;
-    line-height: 1;
-    transform: translateY(-1px);
-}
 
 .mobile-app .language-picker {
     width: 44px;

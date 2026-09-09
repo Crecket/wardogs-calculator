@@ -47,59 +47,15 @@
 
     const UI_TEXT = {
         en: {
-            warningTitle: 'LEVEL THE SPH-2 BEFORE FIRING',
-            warningBody: 'Vehicle tilt changes the actual range. Park the SPH-2 on the flattest ground available. In the gunner HUD, find the vehicle silhouette below STABILIZED / ASL: the two small side markers show lateral tilt. Reposition the vehicle until the markers are as centered and aligned as possible. Front/back slope also affects range, so avoid parking uphill or downhill.'
-        },
-        ru: {
-            warningTitle: 'ВЫРОВНЯЙТЕ SPH-2 ПЕРЕД СТРЕЛЬБОЙ',
-            warningBody: 'Наклон машины меняет фактическую дальность. Ставьте SPH-2 на максимально ровную поверхность. В прицеле наводчика найдите силуэт машины под STABILIZED / ASL: две боковые засечки показывают боковой наклон. Переставляйте машину, пока засечки не будут максимально по центру и на одном уровне. Наклон вперёд-назад тоже влияет на дальность — не ставьте орудие на подъёме или спуске.'
-        },
-        uk: {
-            warningTitle: 'ВИРІВНЯЙТЕ SPH-2 ПЕРЕД ПОСТРІЛОМ',
-            warningBody: 'Нахил машини змінює фактичну дальність. Ставте SPH-2 на максимально рівну поверхню. У прицілі навідника знайдіть силует машини під STABILIZED / ASL: дві бокові позначки показують поперечний нахил. Переставляйте машину, доки позначки не будуть максимально по центру та на одному рівні. Нахил уперед-назад також впливає на дальність — уникайте стоянки на підйомі або спуску.'
-        },
-        de: {
-            warningTitle: 'SPH-2 VOR DEM SCHUSS NIVELLIEREN',
-            warningBody: 'Die Fahrzeugneigung verändert die tatsächliche Reichweite. Stelle die SPH-2 auf möglichst ebenen Boden. Im Richtschützen-HUD befindet sich unter STABILIZED / ASL die Fahrzeugsilhouette; die beiden kleinen Seitenmarken zeigen die seitliche Neigung. Versetze das Fahrzeug, bis die Marken möglichst mittig und auf gleicher Höhe stehen. Auch Neigung nach vorn/hinten beeinflusst die Reichweite — vermeide Steigungen und Gefälle.'
-        },
-        fr: {
-            warningTitle: 'METTEZ LE SPH-2 À NIVEAU AVANT DE TIRER',
-            warningBody: 'L’inclinaison du véhicule modifie la portée réelle. Placez le SPH-2 sur le terrain le plus plat possible. Dans le HUD du tireur, repérez la silhouette du véhicule sous STABILIZED / ASL : les deux petits repères latéraux indiquent l’inclinaison latérale. Repositionnez le véhicule jusqu’à ce que les repères soient aussi centrés et alignés que possible. La pente avant/arrière affecte aussi la portée — évitez de stationner en montée ou en descente.'
-        },
-        es: {
-            warningTitle: 'NIVELA EL SPH-2 ANTES DE DISPARAR',
-            warningBody: 'La inclinación del vehículo cambia el alcance real. Coloca el SPH-2 en el terreno más plano posible. En el HUD del artillero, busca la silueta del vehículo bajo STABILIZED / ASL: las dos pequeñas marcas laterales muestran la inclinación lateral. Reposiciona el vehículo hasta que las marcas estén lo más centradas y alineadas posible. La pendiente hacia delante/atrás también afecta al alcance; evita aparcar cuesta arriba o cuesta abajo.'
-        },
-        pl: {
-            warningTitle: 'WYPOZIOMUJ SPH-2 PRZED STRZAŁEM',
-            warningBody: 'Przechył pojazdu zmienia rzeczywisty zasięg. Ustaw SPH-2 na możliwie płaskim terenie. W HUD celowniczego znajdź sylwetkę pojazdu pod STABILIZED / ASL: dwie małe boczne kreski pokazują przechył boczny. Przestaw pojazd, aż znaczniki będą możliwie wycentrowane i na tej samej wysokości. Nachylenie przód/tył również wpływa na zasięg — unikaj ustawiania działa pod górę lub z górki.'
-        },
-        pt: {
-            warningTitle: 'NIVELA O SPH-2 ANTES DE DISPARAR',
-            warningBody: 'A inclinação do veículo altera o alcance real. Coloca o SPH-2 no terreno mais plano possível. No HUD do artilheiro, procura a silhueta do veículo por baixo de STABILIZED / ASL: as duas pequenas marcas laterais mostram a inclinação lateral. Reposiciona o veículo até as marcas ficarem o mais centradas e alinhadas possível. A inclinação para a frente/trás também afeta o alcance — evita estacionar numa subida ou descida.'
-        },
-        'zh-cn': {
-            terrainLoading: '正在加载地形高程',
-            terrainStatus: 'ΔZ {dz} m · MIL 未自动修正',
-            warningTitle: '射击前请将 SPH-2 调平',
-            warningBody: '车体倾斜会改变实际射程。请尽量将 SPH-2 停在平坦地面上。在炮手 HUD 中找到 STABILIZED / ASL 下方的车辆轮廓；两侧的小标记显示横向倾斜。重新调整车辆位置，直到标记尽可能居中并处于同一水平。前后坡度同样会影响射程，因此避免在上坡或下坡位置停车。'
-        },
-        cat: {
-            warningTitle: 'LEVEL THE MEOWTILLERY BEFORE FIRING',
-            warningBody: 'TILTED CAT TANK = WEIRD RANGE. PARK THE SPH-2 ON THE FLATTEST GROUND YOU CAN FIND. IN THE GUNNER HUD, LOOK UNDER STABILIZED / ASL FOR THE VEHICLE SILHOUETTE: THE TWO LITTLE SIDE TICKS SHOW SIDE TILT. MOVE THE BIG CAT UNTIL THE TICKS ARE AS CENTERED AND LEVEL AS POSSIBLE. NOSE-UP / NOSE-DOWN SLOPE ALSO CHANGES RANGE. MEOW.'
+            warningTitle: 'Level the SPH-2 before firing',
+            warningBody: 'Tilt changes range. Park on flat ground, then centre the two side markers under STABILIZED / ASL in the gunner HUD. Uphill and downhill count too.',
+            flatLayer: 'Flat ground',
+            flatLayerHint: 'Show where the ground is flat enough to park the SPH-2'
         }
     };
 
-    function currentLanguage() {
-        return (
-            typeof LANG === 'string' && LANG
-                ? LANG
-                : document.documentElement.lang || 'en'
-        );
-    }
-
     function uiText() {
-        return UI_TEXT[currentLanguage()] || UI_TEXT.en;
+        return UI_TEXT.en;
     }
 
     function installWarningStyle() {
@@ -112,17 +68,11 @@
         style.textContent = `
             .sph-level-warning {
                 margin-top: 9px;
-                padding: 10px 11px;
-                border: 1px solid color-mix(in srgb, #f0b24a 72%, var(--border-light, #424a50));
-                border-left: 4px solid #f0b24a;
-                border-radius: 7px;
-                background:
-                    linear-gradient(
-                        135deg,
-                        color-mix(in srgb, #f0b24a 16%, var(--panel-bg, #171b1f)),
-                        color-mix(in srgb, #f0b24a 6%, var(--panel-bg, #171b1f))
-                    );
-                box-shadow: 0 0 0 1px color-mix(in srgb, #f0b24a 8%, transparent);
+                padding: 7px 9px;
+                border: 1px solid color-mix(in srgb, #f0b24a 55%, var(--border-light, #424a50));
+                border-left: 3px solid #f0b24a;
+                border-radius: 6px;
+                background: color-mix(in srgb, #f0b24a 9%, var(--panel-bg, #171b1f));
             }
 
             .sph-level-warning[hidden] {
@@ -132,26 +82,52 @@
             .sph-level-warning-title {
                 display: flex;
                 align-items: center;
-                gap: 7px;
+                gap: 6px;
                 color: #f0b24a;
-                font-size: 11px;
-                font-weight: 900;
-                line-height: 1.25;
-                letter-spacing: .035em;
-                text-transform: uppercase;
+                font-size: 10px;
+                font-weight: 700;
+                line-height: 1.3;
             }
 
             .sph-level-warning-icon {
                 flex: 0 0 auto;
-                font-size: 15px;
+                font-size: 12px;
                 line-height: 1;
             }
 
             .sph-level-warning-body {
-                margin-top: 6px;
-                color: var(--text, #e6e9eb);
+                margin-top: 5px;
+                color: var(--muted, #9aa4ae);
                 font-size: 10px;
                 line-height: 1.45;
+            }
+
+            .sph-level-warning-copy {
+                margin: 0;
+            }
+
+            .sph-level-warning-actions {
+                margin-top: 6px;
+                display: flex;
+            }
+
+            button.sph-level-warning-layer {
+                width: auto;
+                min-height: 0;
+                margin: 0;
+                padding: 3px 7px;
+                border: 1px solid var(--border, #2b3238);
+                border-radius: 5px;
+                background: none;
+                color: var(--muted, #9aa4ae);
+                font-size: 9px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+            button.sph-level-warning-layer[aria-pressed="true"] {
+                border-color: #f0b24a;
+                color: #f0b24a;
             }
 
             body:not(.mobile-app) button.sph-level-warning-title {
@@ -250,6 +226,10 @@
         const body = document.createElement('div');
         body.className = 'sph-level-warning-body';
 
+        const copy = document.createElement('p');
+        copy.className = 'sph-level-warning-copy';
+        body.append(copy);
+
         title.append(icon, titleText);
 
         if (!isMobile) {
@@ -274,11 +254,55 @@
             });
         }
 
+        const actions = document.createElement('div');
+        actions.className = 'sph-level-warning-actions';
+
+        const layerButton = document.createElement('button');
+
+        layerButton.type = 'button';
+        layerButton.id = 'sphLevelWarningLayer';
+        layerButton.className = 'sph-level-warning-layer';
+
+        layerButton.addEventListener('click', event => {
+            event.stopPropagation();
+
+            if (typeof setMapLayerVisible !== 'function') {
+                return;
+            }
+
+            setMapLayerVisible(
+                'flatness',
+                !isMapLayerVisible('flatness')
+            );
+
+            syncSphLevelWarningLayerButton();
+        });
+
+        actions.append(layerButton);
+        body.append(actions);
+
         root.append(title, body);
 
         fallbackCard.insertAdjacentElement('afterend', root);
 
         return root;
+    }
+
+    function syncSphLevelWarningLayerButton() {
+        const button = $('sphLevelWarningLayer');
+
+        if (!button) {
+            return;
+        }
+
+        const text = uiText();
+        const shown =
+            typeof isMapLayerVisible === 'function' &&
+            isMapLayerVisible('flatness');
+
+        button.textContent = text.flatLayer;
+        button.title = text.flatLayerHint;
+        button.setAttribute('aria-pressed', String(shown));
     }
 
     function syncSphLevelWarning() {
@@ -301,15 +325,18 @@
 
         const text = uiText();
         const title = root.querySelector('.sph-level-warning-title-text');
-        const body = root.querySelector('.sph-level-warning-body');
 
         if (title) {
             title.textContent = text.warningTitle;
         }
 
-        if (body) {
-            body.textContent = text.warningBody;
+        const copy = root.querySelector('.sph-level-warning-copy');
+
+        if (copy) {
+            copy.textContent = text.warningBody;
         }
+
+        syncSphLevelWarningLayerButton();
     }
 
     async function fetchJson(url) {

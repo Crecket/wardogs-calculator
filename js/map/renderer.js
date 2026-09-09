@@ -200,7 +200,6 @@ function drawNow() {
      */
     if (isMapLayerVisible('polygons')) {
         drawPresetPolygons(currentMap);
-        drawMapToolPolygons();
     }
 
     /*

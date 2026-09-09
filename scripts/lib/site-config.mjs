@@ -72,6 +72,14 @@ export function tileBaseUrl() {
         .replace(/\/+$/, '');
 }
 
+export function tileFallbackBaseUrl() {
+    loadEnv();
+
+    return String(process.env.TILE_FALLBACK_BASE_URL || '')
+        .trim()
+        .replace(/\/+$/, '');
+}
+
 export const LOCAL_TILE_PREFIX = 'maps/tiles/';
 
 /*
@@ -96,6 +104,7 @@ export function patchAppConfig(config) {
 
 export function patchMapConfig(map) {
     const base = tileBaseUrl();
+    const fallback = tileFallbackBaseUrl();
     const current = map?.tiles?.path;
 
     /*
@@ -103,18 +112,21 @@ export function patchMapConfig(map) {
      * already pointing somewhere absolute is left alone.
      */
     if (
-        !base ||
+        (!base && !fallback) ||
         typeof current !== 'string' ||
         !current.startsWith(LOCAL_TILE_PREFIX)
     ) {
         return null;
     }
 
+    const id = current.slice(LOCAL_TILE_PREFIX.length);
+
     return {
         ...map,
         tiles: {
             ...map.tiles,
-            path: `${base}/${current.slice(LOCAL_TILE_PREFIX.length)}`
+            ...(base ? { path: `${base}/${id}` } : {}),
+            ...(fallback ? { fallbackPath: `${fallback}/${id}` } : {})
         }
     };
 }

@@ -13,12 +13,19 @@ import {
     AIM_RING_METRES,
     AIM_RING_POINTS,
     CELL_BOUNDARY,
+    CELL_FALLBACK_BOUNDARY,
+    CELL_FALLBACK_INTERIOR,
     CELL_INTERIOR,
     CELL_OUTSIDE,
+    FALLBACK_TILT_LIMIT_DEGREES,
+    LOW_ARC_MISSABLE_TOWERS,
     MIN_REGION_CELLS,
+    TILT_LIMIT_DEGREES,
     aimPoints,
     dropSmallRegions,
-    outlineMask
+    outlineMask,
+    parkingMask,
+    tierMask
 } from './firing-positions.mjs';
 
 test('each tower contributes its centre and a ring around it', () => {
@@ -220,4 +227,102 @@ test('dropping regions leaves the original mask untouched', () => {
 
     assert.equal(viable[0], 1, 'the caller keeps its own array');
     assert.equal(kept[0], 0);
+});
+
+test('a region that is one cell wide is not somewhere to park', () => {
+    const viable = new Uint8Array(100);
+
+    for (let x = 0; x < 10; x += 1) {
+        viable[5 * 10 + x] = 1;
+    }
+
+    const parked = parkingMask(viable, 10, 10);
+
+    assert.equal(parked.filter(Boolean).length, 0);
+});
+
+test('a solid three by three block survives the parking test whole', () => {
+    const viable = new Uint8Array(100);
+
+    for (let y = 3; y < 6; y += 1) {
+        for (let x = 3; x < 6; x += 1) {
+            viable[y * 10 + x] = 1;
+        }
+    }
+
+    const parked = parkingMask(viable, 10, 10);
+
+    assert.deepEqual(Array.from(parked), Array.from(viable));
+});
+
+test('the parking test trims a spur off a block but keeps the block', () => {
+    const viable = new Uint8Array(100);
+
+    for (let y = 3; y < 6; y += 1) {
+        for (let x = 3; x < 6; x += 1) {
+            viable[y * 10 + x] = 1;
+        }
+    }
+
+    viable[4 * 10 + 6] = 1;
+    viable[4 * 10 + 7] = 1;
+
+    const parked = parkingMask(viable, 10, 10);
+
+    assert.equal(parked[4 * 10 + 4], 1);
+    assert.equal(parked[4 * 10 + 6], 0);
+    assert.equal(parked[4 * 10 + 7], 0);
+    assert.equal(parked.filter(Boolean).length, 9);
+});
+
+test('the parking test leaves the caller\'s mask alone', () => {
+    const viable = new Uint8Array(9).fill(1);
+    const copy = Uint8Array.from(viable);
+
+    parkingMask(viable, 3, 3);
+
+    assert.deepEqual(Array.from(viable), Array.from(copy));
+});
+
+test('the low arc may miss one tower, and the tilt cap is half the hull limit', () => {
+    assert.equal(LOW_ARC_MISSABLE_TOWERS, 1);
+    assert.equal(TILT_LIMIT_DEGREES, 4);
+});
+
+test('the fallback tier fills in around the go-to tier and never over it', () => {
+    const primary = new Uint8Array(49);
+    const fallback = new Uint8Array(49);
+
+    for (let y = 1; y < 6; y += 1) {
+        for (let x = 1; x < 6; x += 1) {
+            fallback[y * 7 + x] = 1;
+        }
+    }
+
+    for (let y = 2; y < 5; y += 1) {
+        for (let x = 2; x < 5; x += 1) {
+            primary[y * 7 + x] = 1;
+        }
+    }
+
+    const mask = tierMask(primary, fallback, 7, 7);
+
+    assert.equal(mask[3 * 7 + 3], CELL_INTERIOR, 'centre of the go-to block');
+    assert.equal(mask[2 * 7 + 2], CELL_BOUNDARY, 'corner of the go-to block');
+    assert.equal(mask[1 * 7 + 1], CELL_FALLBACK_BOUNDARY, 'corner of the orange ring');
+    assert.equal(mask[0], CELL_OUTSIDE);
+
+    /*
+     * A one cell wide ring has no interior, so every orange cell is edge;
+     * what matters is that none of it landed on the green block.
+     */
+    for (let i = 0; i < 49; i += 1) {
+        if (primary[i]) {
+            assert.ok(mask[i] === CELL_INTERIOR || mask[i] === CELL_BOUNDARY, `cell ${i}`);
+        }
+    }
+});
+
+test('the fallback tier is the hull limit, twice the go-to tilt', () => {
+    assert.equal(FALLBACK_TILT_LIMIT_DEGREES, 8);
 });

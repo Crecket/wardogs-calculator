@@ -63,9 +63,8 @@ const DEFAULT_APP_CONFIG = {
         shortcuts: {
             ruler: 'r',
             pencil: 'p',
-            shapes: 's',
+            shapes: 'g',
             zone: 'z',
-            polygon: 'g',
             eraser: 'e',
             marker: 'm',
             coordinateSearch: 'f',

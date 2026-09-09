@@ -97,7 +97,8 @@ test('dev server injects COLLAB_URL and TILE_BASE_URL', async () => {
     await writeFile(
         envPath,
         'COLLAB_URL=ws://localhost:8799\n' +
-        'TILE_BASE_URL=https://tiles.example.test\n'
+        'TILE_BASE_URL=https://tiles.example.test\n' +
+        'TILE_FALLBACK_BASE_URL=https://mirror.example.test\n'
     );
 
     const server = startDevServer(PORT);
@@ -116,6 +117,10 @@ test('dev server injects COLLAB_URL and TILE_BASE_URL', async () => {
         ).json();
 
         assert.equal(map.tiles?.path, 'https://tiles.example.test/bakurani');
+        assert.equal(
+            map.tiles?.fallbackPath,
+            'https://mirror.example.test/bakurani'
+        );
 
         /* Patching must not disturb anything else in the map definition. */
         assert.equal(map.id, 'bakurani');
@@ -171,6 +176,7 @@ test('without .env the dev server serves the originals', async () => {
         ).json();
 
         assert.equal(map.tiles?.path, 'maps/tiles/bakurani');
+        assert.equal(map.tiles?.fallbackPath, undefined);
 
         /* Tiles are still served locally when they are not remote. */
         await writeTileFixture();

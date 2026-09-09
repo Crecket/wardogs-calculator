@@ -31,12 +31,9 @@ import {
     loadEnv,
     patchAppConfig,
     patchMapConfig,
-    tileBaseUrl
+    tileBaseUrl,
+    tileFallbackBaseUrl
 } from './lib/site-config.mjs';
-import {
-    MAP_LANDING_PAGES_BY_ID,
-    renderMapLandingPage
-} from './map-landing-pages.mjs';
 
 loadEnv();
 
@@ -231,75 +228,6 @@ function directoryExists(path) {
     } catch {
         return false;
     }
-}
-
-function renderMobileLocale(
-    template,
-    language
-) {
-    const isDefault =
-        language === 'en';
-
-    const desktopCanonical =
-        isDefault
-            ? 'https://wardogs-artillery.com/'
-            : `https://wardogs-artillery.com/${language}/`;
-
-    const baseHref =
-        isDefault
-            ? '../'
-            : '../../';
-
-    return template
-        .replace(
-            '<html data-page-language="en" lang="en">',
-            `<html data-page-language="${language}" lang="${language}">`
-        )
-        .replace(
-            '<base href="../"/>',
-            `<base href="${baseHref}"/>`
-        )
-        .replace(
-            '<link href="https://wardogs-artillery.com/" rel="canonical"/>',
-            `<link href="${desktopCanonical}" rel="canonical"/>`
-        )
-        .replace(
-            'href="../?desktop=1"',
-            `href="${desktopCanonical}?desktop=1"`
-        );
-}
-
-async function getLanguages() {
-    const index =
-        JSON.parse(
-            await readFile(
-                join(
-                    root,
-                    'locales',
-                    'index.json'
-                ),
-                'utf8'
-            )
-        );
-
-    const configured =
-        Array.isArray(
-            index.languages
-        )
-            ? index.languages
-                .map(
-                    item =>
-                        item?.id
-                )
-                .filter(Boolean)
-            : [];
-
-    return new Set(
-        [
-            'en',
-            ...configured
-        ]
-    );
 }
 
 function prepareDevHTML(html) {
@@ -836,15 +764,6 @@ async function createRequestHandler() {
             'index.html'
         );
 
-    const mapTemplatePath =
-        join(
-            root,
-            'src',
-            'pages',
-            'maps',
-            'template.html'
-        );
-
     return async (
         request,
         response
@@ -925,41 +844,14 @@ async function createRequestHandler() {
                 return;
             }
 
-            const mapLandingMatch =
-                pathname.match(
-                    /^\/maps\/([a-z0-9-]+)(?:\/index\.html)?\/?$/i
-                );
-
-            if (mapLandingMatch) {
-                const mapId =
-                    mapLandingMatch[1]
-                        .toLowerCase();
-                const page =
-                    MAP_LANDING_PAGES_BY_ID[mapId];
-
-                if (page) {
-                    await sendHTML(
-                        response,
-                        mapTemplatePath,
-                        template =>
-                            renderMapLandingPage(
-                                template,
-                                page
-                            )
-                    );
-
-                    return;
-                }
-            }
-
             const mobileMatch =
                 pathname.match(
-                    /^\/mobile(?:\/([a-z-]+))?\/?$/i
+                    /^\/mobile\/?$/i
                 );
 
             const mobileIndexMatch =
                 pathname.match(
-                    /^\/mobile(?:\/([a-z-]+))?\/index\.html$/i
+                    /^\/mobile\/index\.html$/i
                 );
 
             const matchedMobileRoute =
@@ -967,78 +859,12 @@ async function createRequestHandler() {
                 mobileIndexMatch;
 
             if (matchedMobileRoute) {
-                const language =
-                    matchedMobileRoute[1] ||
-                    'en';
-
-                const languages =
-                    await getLanguages();
-
-                if (
-                    !languages.has(
-                        language
-                    )
-                ) {
-                    sendText(
-                        response,
-                        404,
-                        'Unknown mobile language.'
-                    );
-
-                    return;
-                }
-
                 await sendHTML(
                     response,
-                    mobileTemplatePath,
-                    template =>
-                        renderMobileLocale(
-                            template,
-                            language
-                        )
+                    mobileTemplatePath
                 );
 
                 return;
-            }
-
-            const desktopMatch =
-                pathname.match(
-                    /^\/([a-z-]+)(?:\/index\.html)?\/?$/i
-                );
-
-            if (desktopMatch) {
-                const language =
-                    desktopMatch[1];
-
-                const languages =
-                    await getLanguages();
-
-                if (
-                    language !== 'en' &&
-                    languages.has(language)
-                ) {
-                    const localePath =
-                        join(
-                            root,
-                            'src',
-                            'pages',
-                            'locales',
-                            `${language}.html`
-                        );
-
-                    if (
-                        await exists(
-                            localePath
-                        )
-                    ) {
-                        await sendHTML(
-                            response,
-                            localePath
-                        );
-
-                        return;
-                    }
-                }
             }
 
             if (
@@ -1164,6 +990,11 @@ server.listen(
                 ? `Map tiles are served from ${tileBaseUrl()} (TILE_BASE_URL).`
                 : 'Map tiles are served directly and are not watched for changes.'
         );
+        if (tileFallbackBaseUrl()) {
+            console.log(
+                `Missing tiles fall back to ${tileFallbackBaseUrl()} (TILE_FALLBACK_BASE_URL).`
+            );
+        }
         console.log(
             collabUrl()
                 ? `Shared sessions point at ${collabUrl()} (COLLAB_URL).`

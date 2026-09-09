@@ -6,32 +6,9 @@
     min-width: 0;
     min-height: 0;
 
-    padding: 14px;
-
     display: flex;
     flex-direction: column;
 }
-
-.toolbar {
-    height: 18px;
-    min-height: 18px;
-
-    display: flex;
-    align-items: center;
-
-    margin-bottom: 10px;
-}
-
-.status {
-    margin-left: auto;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-}
-
 
 /* =========================
    MAP
@@ -98,10 +75,6 @@ main:fullscreen canvas,
 main:-webkit-full-screen canvas {
     width: 100%;
     height: 100%;
-}
-
-canvas.preset-marker-hover {
-    cursor: pointer;
 }
 
 /* =========================
@@ -234,15 +207,33 @@ canvas.preset-marker-hover {
 }
 
 
-.cross-section {
+.map-panels {
     position: absolute;
 
-    left: 10px;
-    bottom: 46px;
+    left: 14px;
+    bottom: 14px;
 
     width: 380px;
 
     max-width: calc(100% - 20px);
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+
+    pointer-events: none;
+
+    z-index: 6;
+}
+
+.map-panels > * {
+    pointer-events: auto;
+}
+
+.target-minimap,
+.cross-section {
+    width: 100%;
 
     padding: 4px 4px 5px;
 
@@ -268,7 +259,12 @@ canvas.preset-marker-hover {
     z-index: 6;
 }
 
+.target-minimap-header,
 .cross-section-header {
+    cursor: pointer;
+
+    user-select: none;
+
     min-height: 24px;
 
     padding: 0 2px;
@@ -279,6 +275,7 @@ canvas.preset-marker-hover {
     gap: 8px;
 }
 
+.target-minimap-title,
 .cross-section-title {
     color: var(--muted);
 
@@ -291,6 +288,7 @@ canvas.preset-marker-hover {
     text-transform: uppercase;
 }
 
+.target-minimap-toggle,
 .cross-section-toggle {
     width: 24px;
     min-width: 24px;
@@ -320,6 +318,8 @@ canvas.preset-marker-hover {
     cursor: pointer;
 }
 
+.target-minimap-toggle:hover,
+.target-minimap-toggle:focus-visible,
 .cross-section-toggle:hover,
 .cross-section-toggle:focus-visible {
     border-color: var(--accent-border);
@@ -338,6 +338,20 @@ canvas.preset-marker-hover {
     display: block;
 }
 
+.target-minimap-canvas {
+    width: 100%;
+    height: auto;
+
+    aspect-ratio: 1 / 1;
+
+    margin-top: 2px;
+
+    display: block;
+
+    border-radius: 5px;
+}
+
+.target-minimap-caption,
 .cross-section-caption {
     margin-top: 3px;
 
@@ -349,6 +363,8 @@ canvas.preset-marker-hover {
     line-height: 1.4;
 }
 
+.target-minimap[data-collapsed="true"] .target-minimap-canvas,
+.target-minimap[data-collapsed="true"] .target-minimap-caption,
 .cross-section[data-collapsed="true"] .cross-section-canvas,
 .cross-section[data-collapsed="true"] .cross-section-caption {
     display: none;

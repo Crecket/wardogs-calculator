@@ -20,6 +20,7 @@ set take precedence, so CI and one-off overrides still win.
 |---|---|---|
 | `COLLAB_URL` | build, dev | Shared sessions disable themselves entirely |
 | `TILE_BASE_URL` | build, dev | Tiles are bundled into `dist/` |
+| `TILE_FALLBACK_BASE_URL` | build, dev | A tile that fails to load simply fails |
 | `ANALYTICS_WEBSITE_ID` | build, dev | Analytics are stripped from the built pages |
 | `R2_*` | sync-tiles | Tile upload refuses to run |
 
@@ -46,6 +47,19 @@ tile traffic is free. `TILE_BASE_URL` drops the built site from 44,306 files to
 
 No client code changes are involved: tile URLs go through `resourceURL()`,
 which is `new URL(path, BASE_PATH)`, and an absolute URL ignores the base.
+
+#### A second tile host
+
+`TILE_FALLBACK_BASE_URL` names a second host to try when a tile fails to load from the primary one. It is written into the built map definitions as `tiles.fallbackPath`, and `loadTile()` retries there once before marking the tile failed; a tile that loads first time never touches it. Both origins are added to the page's CSP.
+
+This is what makes a partly-filled bucket usable. A fork whose own bucket is missing a map — Zestafona, for instance — can serve what it has and let the rest come from upstream's public asset origin:
+
+```sh
+TILE_BASE_URL=https://tiles.example.com
+TILE_FALLBACK_BASE_URL=https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles
+```
+
+Order the two by which host you would rather serve from: the primary takes every request that succeeds, so pointing it at upstream and falling back to your own bucket sends nearly all traffic to upstream's origin.
 
 #### Uploading tiles
 
@@ -135,6 +149,7 @@ needs, under Settings:
 | Build output directory | `dist` |
 | `TILE_BASE_URL` | your bucket's public URL, as a **Text** variable |
 | `COLLAB_URL` | your Worker's `wss://` URL, as a **Text** variable |
+| `TILE_FALLBACK_BASE_URL` | optional second tile host, as a **Text** variable |
 
 `.env` is not committed, so Cloudflare cannot see it — the variables have to be
 re-entered there or the deployed site builds with the features off. Set them on
@@ -161,7 +176,8 @@ npm run dev         # the site, on :8000
 With `COLLAB_URL=ws://localhost:8799` in `.env`, shared sessions work locally
 against the local Worker. The dev server prints what it is wired to on
 startup. Leave `TILE_BASE_URL` unset in development so tiles are served
-straight from disk.
+straight from disk — with `TILE_FALLBACK_BASE_URL` set as well, the maps a
+local pyramid does not cover still draw, from the remote host.
 
 ### Tests
 

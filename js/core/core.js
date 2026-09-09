@@ -30,7 +30,6 @@ const S = {
 let LANG = 'en';
 let DEFAULT_LANG = 'en';
 
-let LANGUAGES = [];
 let I18N = {};
 let MAPS = {};
 let MAP_ASSETS = {};
@@ -51,16 +50,6 @@ const MAP_POINTS_KEY =
 
 const APP_SELECTIONS_KEY =
     'wardogs-app-selections';
-
-const DEFAULT_CUSTOM_MAP_SIZE = {
-    w: 10,
-    h: 10
-};
-
-let savedCustomMapSize = {
-    ...DEFAULT_CUSTOM_MAP_SIZE
-};
-
 
 /* =========================
    PERSISTED APP SELECTIONS
@@ -98,30 +87,6 @@ function loadAppSelections() {
                 parsed.weapon.trim();
         }
 
-        const customWidth =
-            Number(parsed?.customMap?.w);
-
-        const customHeight =
-            Number(parsed?.customMap?.h);
-
-        if (
-            Number.isFinite(customWidth) &&
-            Number.isFinite(customHeight) &&
-            customWidth >= 1 &&
-            customWidth <= 100 &&
-            customHeight >= 1 &&
-            customHeight <= 100
-        ) {
-            savedCustomMapSize = {
-                w: customWidth,
-                h: customHeight
-            };
-        }
-
-        if (S.map === 'custom') {
-            S.w = savedCustomMapSize.w;
-            S.h = savedCustomMapSize.h;
-        }
     } catch (error) {
         console.warn(
             'Failed to load app selections:',
@@ -132,21 +97,11 @@ function loadAppSelections() {
 
 function persistAppSelections() {
     try {
-        if (S.map === 'custom') {
-            savedCustomMapSize = {
-                w: S.w,
-                h: S.h
-            };
-        }
-
         localStorage.setItem(
             APP_SELECTIONS_KEY,
             JSON.stringify({
                 map: S.map,
-                weapon: S.weapon,
-                customMap: {
-                    ...savedCustomMapSize
-                }
+                weapon: S.weapon
             })
         );
     } catch (error) {
@@ -156,13 +111,6 @@ function persistAppSelections() {
         );
     }
 }
-
-function getSavedCustomMapSize() {
-    return {
-        ...savedCustomMapSize
-    };
-}
-
 
 /* =========================
    KEYBOARD SHORTCUTS
@@ -234,9 +182,6 @@ function getNearestUnlockedMapPoint(
             point =>
                 Number.isFinite(
                     point.distance
-                ) &&
-                !isPointMapLocked(
-                    point.type
                 )
         )
         .sort(

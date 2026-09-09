@@ -8,10 +8,10 @@ const TR_TEXT = {
     noteArc: 'arc',
     noteAllArcs: 'all arcs',
     noteMasked: '{arcs}: masked by terrain',
-    noteTooClose: '{arcs}: inside minimum range',
-    noteTooFar: '{arcs}: out of reach at this height',
+    noteTooClose: '{arcs}: too close',
+    noteTooFar: '{arcs}: out of reach',
     noteUncorrected: 'not corrected for height',
-    noteElevationLimit: "MIL clamped at the gun's elevation limit",
+    noteElevationLimit: 'MIL clamped at elevation limit',
     noteOffMap: 'no terrain data here',
     noteDeltaZ: 'ΔZ {dz} m',
     crossSectionLoadingTerrain: 'Loading terrain…',
@@ -37,29 +37,29 @@ function noteCtx() {
 
 const arcOk = { status: 'hit', masked: false };
 
-test('terrainNoteText is empty for a clean hit and renders the substituted note for a mixed verdict', () => {
+test('terrainNoteItems is empty for a clean hit and renders the substituted items for a mixed verdict', () => {
     const ctx = noteCtx();
     setRuntimeGlobal(ctx, '__shot', {
         state: 'ready', deltaZ: 12.34,
         arcs: { single: null, low: { status: 'tooClose', masked: false }, high: arcOk }
     });
-    assert.equal(callRuntime(ctx, 'terrainNoteText({ state: "ready", deltaZ: 0, arcs: { single: null, low: null, high: { status: "hit", masked: false } } }, null)'), '');
-    const text = callRuntime(ctx, 'terrainNoteText(__shot, null)');
-    assert.equal(text, 'ΔZ +12.3 m · Low arc: inside minimum range');
+    assert.equal(callRuntime(ctx, 'terrainNoteItems({ state: "ready", deltaZ: 0, arcs: { single: null, low: null, high: { status: "hit", masked: false } } }, null).join(" | ")'), '');
+    const items = callRuntime(ctx, 'terrainNoteItems(__shot, null).join(" | ")');
+    assert.equal(items, 'ΔZ +12.3 m | Low arc: too close');
 });
 
 test('terrainNoteText covers pending, offmap, nodata, a null shot and the all-arcs collapse', () => {
     const ctx = noteCtx();
-    assert.equal(callRuntime(ctx, 'terrainNoteText({ state: "pending" }, null)'), 'Loading terrain…');
-    assert.equal(callRuntime(ctx, 'terrainNoteText({ state: "offmap" }, null)'), 'no terrain data here');
-    assert.equal(callRuntime(ctx, 'terrainNoteText({ state: "nodata" }, null)'), '');
-    assert.equal(callRuntime(ctx, 'terrainNoteText(null, null)'), '');
+    assert.equal(callRuntime(ctx, 'terrainNoteItems({ state: "pending" }, null).join(" | ")'), 'Loading terrain…');
+    assert.equal(callRuntime(ctx, 'terrainNoteItems({ state: "offmap" }, null).join(" | ")'), 'no terrain data here');
+    assert.equal(callRuntime(ctx, 'terrainNoteItems({ state: "nodata" }, null).join(" | ")'), '');
+    assert.equal(callRuntime(ctx, 'terrainNoteItems(null, null).join(" | ")'), '');
     setRuntimeGlobal(ctx, '__shot', {
         state: 'ready', deltaZ: -5,
         arcs: { single: null, low: { status: 'tooFar', masked: false }, high: { status: 'tooFar', masked: false } }
     });
-    const text = callRuntime(ctx, 'terrainNoteText(__shot, null)');
-    assert.equal(text, 'ΔZ -5.0 m · all arcs: out of reach at this height');
+    const items = callRuntime(ctx, 'terrainNoteItems(__shot, null).join(" | ")');
+    assert.equal(items, 'ΔZ -5.0 m | all arcs: out of reach');
 });
 
 test('the uncorrected warning renders for arcs the grid could not cover, not just for withheld ones', () => {
@@ -68,11 +68,11 @@ test('the uncorrected warning renders for arcs the grid could not cover, not jus
         state: 'ready', deltaZ: 900,
         arcs: { single: null, low: arcOk, high: arcOk }
     });
-    const withheld = callRuntime(ctx, 'terrainNoteText(__shot, { arcsWithheld: ["low"], arcsUnavailable: [] })');
-    assert.equal(withheld, 'ΔZ +900.0 m · not corrected for height');
-    const unavailable = callRuntime(ctx, 'terrainNoteText(__shot, { arcsWithheld: [], arcsUnavailable: ["low"] })');
-    assert.equal(unavailable, 'ΔZ +900.0 m · not corrected for height');
-    const negligible = callRuntime(ctx, 'terrainNoteText(__shot, { arcsWithheld: [], arcsUnavailable: [] })');
+    const withheld = callRuntime(ctx, 'terrainNoteItems(__shot, { arcsWithheld: ["low"], arcsUnavailable: [] }).join(" | ")');
+    assert.equal(withheld, 'ΔZ +900.0 m | not corrected for height');
+    const unavailable = callRuntime(ctx, 'terrainNoteItems(__shot, { arcsWithheld: [], arcsUnavailable: ["low"] }).join(" | ")');
+    assert.equal(unavailable, 'ΔZ +900.0 m | not corrected for height');
+    const negligible = callRuntime(ctx, 'terrainNoteItems(__shot, { arcsWithheld: [], arcsUnavailable: [] }).join(" | ")');
     assert.equal(negligible, '');
 });
 
@@ -166,4 +166,75 @@ test('rangeStatusView renders the right text and colour for every verdict, pendi
         assert.equal(view.text, expected.text, `${name}: text`);
         assert.equal(view.color, expected.color, `${name}: color`);
     }
+});
+
+test('an arc the note calls out is the arc whose card is flagged blocked', () => {
+    const ctx = noteCtx();
+
+    const shot = {
+        state: 'ready',
+        deltaZ: -33.6,
+        arcs: {
+            single: null,
+            low: { status: 'tooClose', masked: false },
+            high: arcOk
+        }
+    };
+
+    setRuntimeGlobal(ctx, '__shot', shot);
+
+    const items = callRuntime(ctx, 'terrainNoteItems(__shot, null)');
+
+    assert.ok(
+        items.some(item => item.includes('Low arc') && item.includes('too close')),
+        `expected a low-arc note, got ${JSON.stringify(items)}`
+    );
+
+    const solution = { mil: 35, minMil: 35, maxMil: 35 };
+
+    setRuntimeGlobal(ctx, '__solution', solution);
+
+    assert.equal(
+        callRuntime(ctx, 'milArcBlocked(__solution, __shot, "low")'),
+        true
+    );
+
+    assert.equal(
+        callRuntime(ctx, 'milArcBlocked(__solution, __shot, "high")'),
+        false
+    );
+});
+
+test('a masked arc is blocked, and a missing solution is blocked whatever the terrain says', () => {
+    const ctx = noteCtx();
+
+    setRuntimeGlobal(ctx, '__masked', {
+        state: 'ready',
+        deltaZ: 0,
+        arcs: { single: null, low: { status: 'hit', masked: true }, high: arcOk }
+    });
+
+    setRuntimeGlobal(ctx, '__solution', { mil: 200, minMil: 200, maxMil: 200 });
+
+    assert.equal(
+        callRuntime(ctx, 'milArcBlocked(__solution, __masked, "low")'),
+        true
+    );
+
+    assert.equal(
+        callRuntime(ctx, 'milArcBlocked(null, __masked, "high")'),
+        true
+    );
+});
+
+test('nothing is flagged while the terrain is still loading', () => {
+    const ctx = noteCtx();
+
+    setRuntimeGlobal(ctx, '__pending', { state: 'pending' });
+    setRuntimeGlobal(ctx, '__solution', { mil: 200, minMil: 200, maxMil: 200 });
+
+    assert.equal(
+        callRuntime(ctx, 'milArcBlocked(__solution, __pending, "low")'),
+        false
+    );
 });

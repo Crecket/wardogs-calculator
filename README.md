@@ -1,65 +1,59 @@
 # WARDOGS Artillery Calculator
 
-[![Live App](https://img.shields.io/badge/Live-wardogs--artillery.com-d7a452?style=flat-square)](https://wardogs-artillery.com/)
+[![Live App](https://img.shields.io/badge/Live-wardogs--map.olm.pet-d7a452?style=flat-square)](https://wardogs-map.olm.pet/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/JavaScript-Vanilla-F7DF1E?style=flat-square&logo=javascript&logoColor=000)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![GitHub Pages](https://img.shields.io/badge/Hosted_on-GitHub_Pages-222?style=flat-square&logo=github)](https://pages.github.com/)
 
-A lightweight, open-source **L81 Mortar** and **SPH-2** artillery calculator, live team map, and tactical planning tool for **WARDOGS**.
+Point at where the gun is, point at where the shell should land, and the page tells you the azimuth and the elevation in mils for both arcs. It is a map of **WARDOGS** with the ballistics of the **L81 Mortar** and the **SPH-2** wrapped around it, plus the terrain data to say whether the shot actually gets there — over the ridge in the way, and with the height difference between gun and target corrected for.
 
-**Live app:** https://wardogs-artillery.com/  
-**Mobile UI:** https://wardogs-artillery.com/mobile/  
+**Live app:** https://wardogs-map.olm.pet/  
+**Mobile UI:** https://wardogs-map.olm.pet/mobile/
 
-<table>
-  <tr>
-    <th width="72%">Desktop</th>
-    <th width="28%">Mobile</th>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="assets/preview.png" alt="WARDOGS Artillery Calculator — Desktop">
-    </td>
-    <td align="center">
-      <img src="assets/preview_mobile.png" alt="WARDOGS Artillery Calculator — Mobile">
-    </td>
-  </tr>
-</table>
+## This is a fork
 
----
+A personal fork of [apollyon-sys/wardogs-calculator](https://github.com/apollyon-sys/wardogs-calculator), kept deliberately smaller than upstream. Everything here is what I actually use in game, which means a good deal of upstream has been deleted rather than disabled:
+
+- **English only** — the other eleven locales are gone, along with the language switcher and the localized routes.
+- **Dark only** — no theme toggle and no light palette.
+- **No import/export** — neither for saved targets nor for map drawings.
+- **No top bar, no site footer, no on-page SEO copy** — the map gets the window.
+- **Terrain correction is always on**, rather than an experimental option.
+
+Upstream is the place to go for the full-featured, many-language, actively maintained version. Fixes worth having flow back there; the deletions do not.
+
+## What it does
+
+- **Firing solution** — distance, azimuth, and a MIL card per arc. An arc turns red when the shot cannot be made: too close, out of reach, past an elevation stop, or masked by ground in the way.
+- **Terrain** — a 3D height model per map drives the MIL correction for the height difference, the dead-ground shading, the trajectory cross-section, and a flat-ground layer for parking the SPH-2 somewhere it will not tilt.
+- **Map layers** — tiles, contours, shaded relief, flat ground, viable firing positions, dead ground, grid, zones, markers, drawings, range rings.
+- **Panels** — a target-area minimap and the trajectory cross-section, both foldable, over the bottom-left of the map.
+- **Multiple guns** — several guns at once, each with its own rings and solution, with the active one driving the readout.
+- **Saved targets** — named targets with their own firing solution and a reach badge, optionally carrying the artillery position with them.
+- **Map tools** — ruler, pencil, shapes, zones, markers, eraser, targeting mode, coordinate search, and a layers popover.
+- **Shared sessions** — an optional live lobby where everyone with the link edits the same map. Off unless a sync Worker is configured.
+- **OBS overlay** — `/obs/`, a chrome-free route to composite over gameplay footage.
+- **Pop-out solution** — the firing solution in a floating always-on-top window, on Chrome and Edge.
+
+Maps: **Bakurani**, **Ozeti** and **Zestafona**.
 
 ## Interfaces
 
-The project ships two interfaces from the same repository and GitHub Pages deployment:
+Two interfaces ship from the same repository and the same GitHub Pages deployment:
 
 - **Desktop** — `/`
 - **Mobile** — `/mobile/`
 
-Phones are automatically routed from the desktop entry pages to the matching mobile route. The mobile UI is a separate map-first interface with touch panning, pinch zoom, touch-friendly point placement, Map Tools, and a bottom-sheet calculator.
+Phones are routed automatically from the desktop entry to the mobile route. The mobile UI is a separate map-first interface with touch panning, pinch zoom, touch-friendly point placement, map tools, and a bottom-sheet calculator. Both share the calculator logic, maps, tile pyramid, configuration, saved targets, drawings, browser storage, and lobbies.
 
-Both interfaces reuse the same calculator logic, maps, tile pyramid, configuration, translations, saved targets, drawings, browser storage, and optional live team lobbies.
+## Quick start
 
-## Localization
+```bash
+npm install
+npm run dev          # dev server on :8000, with live reload
+```
 
-The shared locale system supports English, Russian, Ukrainian, German, French, Spanish, Polish, Portuguese, Simplified Chinese, Korean, Japanese, and the non-indexed Cat locale.
-
-## Documentation
-
-Detailed documentation is split into focused files to keep this README concise.
-
-- [Features & weapons](docs/features.md) — calculator features, Map Tools, weapons, touch controls, and coordinate system
-- [Maps](docs/maps.md) — map configuration, tile structure, bounds, marker zoom visibility, and adding new maps
-- [Mobile interface](docs/mobile.md) — mobile routes, automatic routing, touch controls, and deployment architecture
-- [Shared sessions](docs/collaboration.md) — real-time collaborative map planning (disabled by default; needs a separately deployed sync service)
-- [Fork deployment](docs/deployment.md) — running your own copy: `.env` settings, hosting tiles on R2, and deploying the site and sync Worker
-- [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, localized URLs, and SEO metadata
-- [Development](docs/development.md) — project structure, local development, unified build process, and GitHub Pages deployment
-- [Analytics](docs/analytics.md) — Umami custom events, event payloads, debouncing, and privacy considerations
-- [Message of the Day](docs/motd.md) — MOTD configuration, localization, and behavior
-- [Security hardening](docs/security.md) — public-source threat model, Cloudflare headers, secrets, CI, and residual risks
-- [Contributing](docs/contributing.md) — contribution guidelines
-- [License & Disclaimer](docs/legal.md) — MIT scope, third-party assets, and project disclaimer
-
-## Quick Start
+Or build the production artifact and serve it:
 
 ```bash
 npm run build
@@ -67,18 +61,38 @@ cd dist
 python -m http.server 8000
 ```
 
-Then open:
-
 ```text
-Desktop:            http://localhost:8000/
-Mobile:             http://localhost:8000/mobile/
+Desktop:   http://localhost:8000/
+Mobile:    http://localhost:8000/mobile/
+OBS:       http://localhost:8000/obs/
 ```
 
-## Contributing
+Tests:
 
-Corrections, map data improvements, localization updates, bug fixes, and QoL improvements are welcome.
+```bash
+npm run test:scripts     # build plumbing, ballistics, runtime units
+npm run test:build       # checks the production artifact
+```
 
-See [Contributing](docs/contributing.md) for details.
+Map tiles are not in this repository — `maps/tiles/` is gitignored, and the pyramid is ~43,700 files. A clone with no `.env` builds and runs, but the map draws empty until `TILE_BASE_URL` (and optionally `TILE_FALLBACK_BASE_URL`) point at a host that has them. See [Fork deployment](docs/deployment.md).
+
+## Documentation
+
+- [Features & weapons](docs/features.md) — calculator features, map tools, weapons, touch controls, coordinate system, OBS overlay
+- [Maps](docs/maps.md) — map configuration, tile structure, bounds, marker zoom visibility, adding maps
+- [Terrain](docs/terrain.md) — the height model, chunk format, and how the MIL correction uses it
+- [Mobile interface](docs/mobile.md) — mobile routes, automatic routing, touch controls
+- [Shared sessions](docs/collaboration.md) — the live lobby and the sync Worker it needs
+- [Fork deployment](docs/deployment.md) — `.env` settings, tiles on R2 with a fallback host, deploying the site and the Worker
+- [Development](docs/development.md) — project structure, local development, build process, deployment
+- [Performance](docs/performance.md) — render budget and the measurements behind it
+- [Analytics](docs/analytics.md) — opt-in Umami events and privacy
+- [Message of the Day](docs/motd.md) — MOTD configuration and behavior
+- [Security hardening](docs/security.md) — threat model, headers, secrets, CI
+- [Contributing](docs/contributing.md) — contribution guidelines
+- [License & Disclaimer](docs/legal.md) — MIT scope, third-party assets, disclaimer
+
+Most of `docs/` came from upstream and describes the full project. Where a document disagrees with the list above, this README is the one that matches the code.
 
 ## License
 

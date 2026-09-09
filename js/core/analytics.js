@@ -27,8 +27,7 @@ const ANALYTICS_CONTEXT_DEDUPED_EVENTS =
     new Set([
         'calculation',
         'origin-placed',
-        'target-placed',
-        'preset-marker-selected'
+        'target-placed'
     ]);
 
 let analyticsFlushTimer = null;

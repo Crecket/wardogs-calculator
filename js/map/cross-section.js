@@ -805,13 +805,14 @@ function bindCrossSection() {
         return;
     }
 
-    const button = $('crossSectionToggle');
+    const header = $('crossSection')
+        ?.querySelector('.cross-section-header');
 
-    if (!button) {
+    if (!header) {
         return;
     }
 
-    button.addEventListener('click', toggleCrossSection);
+    header.addEventListener('click', toggleCrossSection);
 
     CROSS_SECTION_STATE.bound = true;
 }

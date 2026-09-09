@@ -184,8 +184,55 @@ button:disabled {
 
 .solution-primary-grid {
     display: grid;
-    grid-template-columns: .95fr 1.25fr .95fr;
+    grid-template-columns: 1fr 1fr;
     gap: 6px;
+}
+
+.solution-mil-grid {
+    margin-top: 6px;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.solution-mil-grid[data-arcs="1"] {
+    grid-template-columns: 1fr;
+}
+
+.solution-primary-grid .solution-metric,
+.solution-mil-grid .solution-metric {
+    min-height: 58px;
+}
+
+.solution-metric[data-blocked="true"] {
+    border-color:
+        color-mix(
+            in srgb,
+            #d86666 62%,
+            var(--border)
+        );
+    background:
+        color-mix(
+            in srgb,
+            #d86666 12%,
+            var(--panel-bg)
+        );
+    box-shadow: none;
+}
+
+.solution-metric[data-blocked="true"] .solution-metric-value {
+    color: #e58585;
+}
+
+.solution-metric[data-blocked="true"] .solution-metric-label {
+    color: #d86666;
+}
+
+.solution-mil-note {
+    margin-top: 5px;
+
+    text-align: center;
 }
 
 .solution-metric {
@@ -385,13 +432,32 @@ button:disabled {
     line-height: 1.4;
 }
 
+.note-issues {
+    margin: 0;
+    padding-left: 14px;
+    list-style: disc;
+}
+
+.note-issues li {
+    margin: 0;
+}
+
+.note-issues li + li {
+    margin-top: 2px;
+}
+
 .solution-terrain-note[hidden] {
     display: none;
 }
 
+.solution-terrain-note[data-warn] {
+    display: flex;
+    gap: 5px;
+    align-items: flex-start;
+}
+
 .solution-terrain-note[data-warn]::before {
     content: "\26A0";
-    margin-right: 5px;
     color: #f0b24a;
     font-size: 11px;
 }
@@ -464,11 +530,10 @@ button:disabled {
 }
 
 /* =========================
-   HINT / STATUS
+   HINT
    ========================= */
 
-.hint,
-.status {
+.hint {
     font-size: 11px;
 
     color: var(--muted);
@@ -484,32 +549,56 @@ button:disabled {
    COORDINATE SHARING
    ========================= */
 
+.coordinate-row {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.coordinate-row > .grid2 {
+    flex: 1;
+    min-width: 0;
+}
+
 .point-coordinate-actions {
     display: flex;
-    justify-content: flex-end;
-    gap: 6px;
-    margin-top: 6px;
+    gap: 4px;
+    flex: 0 0 auto;
 }
 
-.point-coordinate-actions button {
-    width: auto;
-    min-height: 28px;
-    padding: 4px 9px;
+.point-coordinate-actions .coordinate-action {
+    width: 30px;
+    min-width: 30px;
+    min-height: 0;
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
     color: var(--muted);
-    font-size: 10px;
 }
 
+.point-coordinate-actions .coordinate-action:hover {
+    color: var(--text);
+}
 
-.point-coordinate-actions .point-lock-button.active {
-    border-color: var(--accent-border);
-    background: var(--active-bg);
+.coordinate-action-done {
+    display: none;
+}
+
+.coordinate-action.is-done {
     color: var(--accent);
 }
 
-.mode .point-map-locked::after {
-    content: "  🔒";
-    font-size: 10px;
+.coordinate-action.is-done .coordinate-action-icon {
+    display: none;
 }
+
+.coordinate-action.is-done .coordinate-action-done {
+    display: block;
+}
+
 
 /* =========================
    FORCE PLACEMENT
@@ -519,41 +608,6 @@ button:disabled {
     position: relative;
 }
 
-.mode-option > button:not(.mode-force-pin) {
+.mode-option > button {
     width: 100%;
-}
-
-.mode-force-pin {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-
-    width: 21px;
-    min-height: 0;
-    height: 21px;
-    padding: 0;
-
-    border: 0;
-    border-radius: 3px;
-
-    background: none;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    color: var(--text);
-
-    opacity: .3;
-    cursor: pointer;
-}
-
-.mode-force-pin:hover {
-    border: 0;
-    opacity: .75;
-}
-
-.mode-force-pin.active {
-    color: var(--accent);
-    opacity: 1;
 }

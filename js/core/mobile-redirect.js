@@ -105,19 +105,9 @@
             document.baseURI
         );
 
-    const pageLanguage =
-        document.documentElement
-            .dataset.pageLanguage ||
-        'en';
-
-    const languagePath =
-        pageLanguage === 'en'
-            ? ''
-            : `${pageLanguage}/`;
-
     const target =
         new URL(
-            `mobile/${languagePath}`,
+            'mobile/',
             siteRoot
         );
 

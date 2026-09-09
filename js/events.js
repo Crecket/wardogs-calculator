@@ -2,21 +2,6 @@
    EVENTS
    ========================= */
 
-function bindThemeToggle() {
-
-    const toggle =
-        $('themeToggle');
-
-    if (!toggle) {
-        return;
-    }
-
-    toggle.addEventListener(
-        'click',
-        toggleTheme
-    );
-}
-
 function bindEvents() {
 
     $('mapSelect').addEventListener(
@@ -25,34 +10,9 @@ function bindEvents() {
             const key =
                 $('mapSelect').value;
 
-            if (
-                key !==
-                'custom'
-            ) {
-
-                S.map =
-                    key;
-
-                S.w =
-                    MAPS[key].w;
-
-                S.h =
-                    MAPS[key].h;
-
-            } else {
-
-                S.map =
-                    'custom';
-
-                const customSize =
-                    getSavedCustomMapSize();
-
-                S.w =
-                    customSize.w;
-
-                S.h =
-                    customSize.h;
-            }
+            S.map = key;
+            S.w = MAPS[key].w;
+            S.h = MAPS[key].h;
 
             if (
                 typeof loadMapPoints ===
@@ -81,7 +41,6 @@ function bindEvents() {
                 0;
 
             resetMapToolHistory();
-            updatePresetLock();
 
             if (
                 typeof trackAnalytics ===
@@ -96,19 +55,6 @@ function bindEvents() {
             }
 
             inputs();
-        }
-    );
-
-    $('language').addEventListener(
-        'change',
-        () => {
-
-            const language =
-                $('language').value;
-
-            switchLanguage(
-                language
-            );
         }
     );
 
@@ -155,86 +101,6 @@ function bindEvents() {
         }
     );
 
-    $('apply').addEventListener(
-        'click',
-        () => {
-            /*
-             * A room's map is fixed at creation: saved targets carry no
-             * map id, so resizing under them would silently misplace
-             * every one for every peer.
-             */
-            if (
-                typeof collabHandlesHistory === 'function' &&
-                collabHandlesHistory()
-            ) {
-                return;
-            }
-
-            S.map =
-                'custom';
-
-            S.w =
-                Math.max(
-                    1,
-                    Math.min(
-                        100,
-                        Number(
-                            $('w').value
-                        ) ||
-                        10
-                    )
-                );
-
-            S.h =
-                Math.max(
-                    1,
-                    Math.min(
-                        100,
-                        Number(
-                            $('h').value
-                        ) ||
-                        10
-                    )
-                );
-
-            persistAppSelections();
-
-            clamp(
-                S.origin
-            );
-
-            clamp(
-                S.target
-            );
-
-            S.zoom =
-                1;
-
-            S.panX =
-                0;
-
-            S.panY =
-                0;
-
-            resetMapToolHistory();
-            updatePresetLock();
-
-            if (
-                typeof trackAnalytics ===
-                'function'
-            ) {
-                trackAnalytics(
-                    'map-changed',
-                    {
-                        map: 'custom'
-                    }
-                );
-            }
-
-            inputs();
-        }
-    );
-
     $('originMode').addEventListener(
         'click',
         () => setPointMode('origin')
@@ -244,18 +110,6 @@ function bindEvents() {
         'click',
         () => setPointMode('target')
     );
-
-    $('originForcePin')
-        ?.addEventListener(
-            'click',
-            () => toggleForcePlacementFor('origin')
-        );
-
-    $('targetForcePin')
-        ?.addEventListener(
-            'click',
-            () => toggleForcePlacementFor('target')
-        );
 
     ['ox', 'oy'].forEach(
         id => {
@@ -307,18 +161,6 @@ function bindEvents() {
             () => pastePointCoordinates('target')
         );
 
-    $('coordinateOriginLock')
-        ?.addEventListener(
-            'click',
-            () => togglePointMapLock('origin')
-        );
-
-    $('coordinateTargetLock')
-        ?.addEventListener(
-            'click',
-            () => togglePointMapLock('target')
-        );
-
     $('zoomIn').addEventListener(
         'click',
         () => {
@@ -363,33 +205,6 @@ function bindEvents() {
                 0;
 
             draw();
-        }
-    );
-
-    $('swap').addEventListener(
-        'click',
-        () => {
-
-            pushMapToolHistory();
-
-            /*
-             * S.origin is a live reference to the active gun's position, so
-             * capturing it directly would alias the gun: the setter below
-             * would overwrite the very object we are about to hand to
-             * S.target. Copy at capture.
-             */
-            const oldOrigin = {
-                x: S.origin.x,
-                y: S.origin.y
-            };
-
-            S.origin =
-                S.target;
-
-            S.target =
-                oldOrigin;
-
-            inputs();
         }
     );
 
@@ -440,18 +255,6 @@ function bindEvents() {
             saveArtilleryPreference
         );
 
-    $('exportSavedTargets')
-        ?.addEventListener(
-            'click',
-            exportAllSavedTargets
-        );
-
-    $('importSavedTargets')
-        ?.addEventListener(
-            'click',
-            importSavedTargets
-        );
-
 
     /* =========================
        CANVAS
@@ -498,10 +301,6 @@ function bindEvents() {
                     .style.display =
                     'none';
 
-                setPresetMarkerHover(
-                    null
-                );
-
                 return;
             }
 
@@ -512,20 +311,6 @@ function bindEvents() {
                 )
             ) {
                 drag = null;
-                return;
-            }
-
-            if (
-                handlePresetMarkerTargetMouseDown(
-                    e
-                )
-            ) {
-                drag = null;
-
-                updateCursor(
-                    e
-                );
-
                 return;
             }
 
@@ -618,28 +403,12 @@ function bindEvents() {
 
                     drag = null;
 
-                    if (
-                        !isPointMapLocked(
-                            'target'
-                        )
-                    ) {
-                        restoreTarget(
-                            hitSavedTarget
-                        );
-                    }
+                    restoreTarget(
+                        hitSavedTarget
+                    );
 
                     updateCursor(e);
 
-                    return;
-                }
-
-                if (
-                    isPointMapLocked(
-                        S.mode
-                    )
-                ) {
-                    drag = null;
-                    updateCursor(e);
                     return;
                 }
 
@@ -748,10 +517,6 @@ function bindEvents() {
                 return;
             }
 
-            updatePresetMarkerHover(
-                e
-            );
-
             if (
                 typeof updateMilCursor ===
                 'function'
@@ -807,10 +572,6 @@ function bindEvents() {
     c.addEventListener(
         'mouseleave',
         () => {
-
-            setPresetMarkerHover(
-                null
-            );
 
             if (
                 typeof collabOnPointerLeft ===

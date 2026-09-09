@@ -2,16 +2,6 @@
    SAVED TARGETS
    ========================= */
 
-const SAVED_TARGET_EXPORT_TYPE =
-    'wardogs-saved-target';
-
-const SAVED_TARGETS_EXPORT_TYPE =
-    'wardogs-saved-targets';
-
-const SAVED_TARGET_EXPORT_VERSION = 1;
-
-const SAVED_TARGET_IMPORT_LIMIT = 500;
-
 /*
  * Both sides of the comparison have been through clamp(), which rounds
  * to a fixed precision, so they land on the same quantum — but that
@@ -635,339 +625,6 @@ function savedTargetOrigin(target) {
     };
 }
 
-function savedTargetForExport(target) {
-    const origin =
-        savedTargetOrigin(target);
-
-    return {
-        name:
-            typeof target.name ===
-            'string'
-                ? target.name
-                : '',
-        x: Number(target.x),
-        y: Number(target.y),
-        saveArtillery:
-            Boolean(
-                target.saveArtillery &&
-                origin
-            ),
-        origin
-    };
-}
-
-function exportSavedTarget(target) {
-    if (!target) {
-        return;
-    }
-
-    const payload = {
-        type: SAVED_TARGET_EXPORT_TYPE,
-        version:
-            SAVED_TARGET_EXPORT_VERSION,
-        exportedAt:
-            new Date().toISOString(),
-        target:
-            savedTargetForExport(
-                target
-            )
-    };
-
-    const fileName =
-        sanitizeWardogsFilenamePart(
-            target.name,
-            'target'
-        );
-
-    downloadWardogsJson(
-        `wardogs-target-${fileName}.json`,
-        payload
-    );
-
-    savedTargetTransferStatus();
-
-    if (
-        typeof trackAnalytics ===
-        'function'
-    ) {
-        trackAnalytics(
-            'target-exported',
-            {
-                withArtillery:
-                    Boolean(
-                        payload.target
-                            .saveArtillery
-                    )
-            }
-        );
-    }
-}
-
-function exportAllSavedTargets() {
-    if (!savedTargets.length) {
-        return;
-    }
-
-    const payload = {
-        type: SAVED_TARGETS_EXPORT_TYPE,
-        version:
-            SAVED_TARGET_EXPORT_VERSION,
-        exportedAt:
-            new Date().toISOString(),
-        targets:
-            savedTargets.map(
-                savedTargetForExport
-            )
-    };
-
-    downloadWardogsJson(
-        `wardogs-saved-targets-${wardogsExportTimestamp()}.json`,
-        payload
-    );
-
-    savedTargetTransferStatus();
-
-    if (
-        typeof trackAnalytics ===
-        'function'
-    ) {
-        trackAnalytics(
-            'targets-exported',
-            {
-                count:
-                    payload.targets.length
-            }
-        );
-    }
-}
-
-function uniqueImportedTargetName(
-    value,
-    takenNames
-) {
-    const base =
-        typeof value === 'string' &&
-        value.trim()
-            ? value.trim().slice(0, 120)
-            : createTargetName();
-
-    if (!takenNames.has(base)) {
-        takenNames.add(base);
-        return base;
-    }
-
-    let suffix = 2;
-    let candidate =
-        `${base} (${suffix})`;
-
-    while (takenNames.has(candidate)) {
-        suffix++;
-        candidate =
-            `${base} (${suffix})`;
-    }
-
-    takenNames.add(candidate);
-    return candidate;
-}
-
-function normalizeImportedSavedTarget(
-    target,
-    takenNames
-) {
-    if (
-        !target ||
-        typeof target !== 'object' ||
-        !Number.isFinite(
-            Number(target.x)
-        ) ||
-        !Number.isFinite(
-            Number(target.y)
-        )
-    ) {
-        return null;
-    }
-
-    const origin =
-        savedTargetOrigin(target);
-
-    return {
-        id: generateTargetId(),
-        name:
-            uniqueImportedTargetName(
-                target.name,
-                takenNames
-            ),
-        x: Number(target.x),
-        y: Number(target.y),
-        saveArtillery:
-            Boolean(
-                target.saveArtillery &&
-                origin
-            ),
-        origin
-    };
-}
-
-function extractImportedSavedTargets(
-    payload
-) {
-    if (
-        !payload ||
-        typeof payload !== 'object'
-    ) {
-        throw new Error(
-            'Invalid saved target payload'
-        );
-    }
-
-    let source = null;
-    let format = 'single';
-
-    if (Array.isArray(payload)) {
-        source = payload;
-        format = 'list';
-
-    } else if (
-        payload.type ===
-            SAVED_TARGET_EXPORT_TYPE &&
-        payload.target
-    ) {
-        source = [payload.target];
-
-    } else if (
-        payload.type ===
-            SAVED_TARGETS_EXPORT_TYPE &&
-        Array.isArray(payload.targets)
-    ) {
-        source = payload.targets;
-        format = 'list';
-
-    } else if (
-        Array.isArray(payload.targets)
-    ) {
-        source = payload.targets;
-        format = 'list';
-
-    } else if (payload.target) {
-        source = [payload.target];
-
-    } else if (
-        Number.isFinite(Number(payload.x)) &&
-        Number.isFinite(Number(payload.y))
-    ) {
-        source = [payload];
-    }
-
-    if (!source) {
-        throw new Error(
-            'No saved targets found'
-        );
-    }
-
-    const takenNames =
-        new Set(
-            savedTargets.map(
-                target => target.name
-            )
-        );
-
-    const targets =
-        source
-            .slice(
-                0,
-                SAVED_TARGET_IMPORT_LIMIT
-            )
-            .map(
-                target =>
-                    normalizeImportedSavedTarget(
-                        target,
-                        takenNames
-                    )
-            )
-            .filter(Boolean);
-
-    if (!targets.length) {
-        throw new Error(
-            'No valid saved targets found'
-        );
-    }
-
-    return {
-        targets,
-        format
-    };
-}
-
-async function importSavedTargets() {
-    try {
-        const file =
-            await selectWardogsJsonFile();
-
-        if (!file) {
-            return;
-        }
-
-        const payload =
-            await readWardogsJsonFile(
-                file
-            );
-
-        const imported =
-            extractImportedSavedTargets(
-                payload
-            );
-
-        savedTargets.push(
-            ...imported.targets
-        );
-
-        persistSavedTargets();
-
-        if (
-            typeof collabOnBulkAdd ===
-            'function'
-        ) {
-            collabOnBulkAdd({
-                targets: imported.targets
-            });
-        }
-
-        renderSavedTargets();
-
-        savedTargetTransferStatus(
-            'savedTargetsImportSuccess',
-            imported.targets.length
-        );
-
-        if (
-            typeof trackAnalytics ===
-            'function'
-        ) {
-            trackAnalytics(
-                'targets-imported',
-                {
-                    count:
-                        imported.targets.length,
-                    format:
-                        imported.format
-                }
-            );
-        }
-
-    } catch (error) {
-        console.warn(
-            'Failed to import saved targets:',
-            error
-        );
-
-        savedTargetTransferStatus(
-            'savedTargetsImportInvalid',
-            0,
-            true
-        );
-    }
-}
-
 function saveCurrentTarget() {
 
     const saveArtillery =
@@ -1507,14 +1164,6 @@ function renderSavedTargets() {
             savedTargets.length;
     }
 
-    const exportAllButton =
-        $('exportSavedTargets');
-
-    if (exportAllButton) {
-        exportAllButton.disabled =
-            savedTargets.length === 0;
-    }
-
     if (!savedTargets.length) {
 
         const empty =
@@ -1561,6 +1210,14 @@ function renderSavedTargets() {
                 }
             );
 
+            const marker =
+                document.createElement(
+                    'div'
+                );
+
+            marker.className =
+                'saved-target-marker';
+
             const number =
                 document.createElement(
                     'span'
@@ -1571,6 +1228,10 @@ function renderSavedTargets() {
 
             number.textContent =
                 String(index + 1);
+
+            marker.appendChild(
+                number
+            );
 
             const info =
                 document.createElement(
@@ -1785,38 +1446,6 @@ function renderSavedTargets() {
                 }
             );
 
-            const exportButton =
-                document.createElement(
-                    'button'
-                );
-
-            exportButton.type =
-                'button';
-
-            exportButton.className =
-                'saved-target-icon-button saved-target-export';
-
-            exportButton.textContent =
-                '⇩';
-
-            exportButton.title =
-                tr('exportTarget');
-
-            exportButton.setAttribute(
-                'aria-label',
-                tr('exportTarget')
-            );
-
-            exportButton.addEventListener(
-                'click',
-                event => {
-                    event.stopPropagation();
-                    exportSavedTarget(
-                        target
-                    );
-                }
-            );
-
             const edit =
                 document.createElement(
                     'button'
@@ -1890,10 +1519,6 @@ function renderSavedTargets() {
             );
 
             actions.appendChild(
-                exportButton
-            );
-
-            actions.appendChild(
                 edit
             );
 
@@ -1902,7 +1527,7 @@ function renderSavedTargets() {
             );
 
             item.appendChild(
-                number
+                marker
             );
 
             item.appendChild(

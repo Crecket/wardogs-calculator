@@ -528,50 +528,12 @@
     min-width: 92px;
 }
 
-.saved-target-actions-inline .saved-target-export {
-    color: var(--accent);
-}
-
 .saved-target-actions-inline .saved-target-sync {
     color: var(--accent);
 }
 
 .saved-target-actions-inline .saved-target-sync[hidden] {
     display: none;
-}
-
-.saved-target-transfer-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 7px;
-}
-
-.saved-target-transfer-actions button {
-    width: 100%;
-    min-width: 0;
-    min-height: 34px;
-    padding: 7px 8px;
-
-    border: 1px solid var(--border-light);
-    border-radius: 6px;
-
-    background: var(--input-bg);
-    color: var(--text);
-
-    font: inherit;
-    font-size: 10px;
-    line-height: 1.2;
-}
-
-.saved-target-transfer-actions button:hover:not(:disabled) {
-    border-color: var(--accent-border);
-    background: var(--input-hover-bg);
-    color: var(--accent);
-}
-
-.saved-target-transfer-actions button:disabled {
-    opacity: .45;
-    cursor: not-allowed;
 }
 
 .saved-target-transfer-status {
@@ -791,22 +753,6 @@
     color: var(--accent);
 }
 
-.saved-target-delta {
-    grid-column: 1 / -1;
-
-    padding: 1px 2px 0;
-
-    color: var(--muted);
-
-    font:
-        9px ui-monospace,
-        SFMono-Regular,
-        Consolas,
-        monospace;
-
-    line-height: 1.2;
-}
-
 .saved-target.out-of-range
 .saved-target-metric-mil
 .saved-target-metric-value {
@@ -831,26 +777,22 @@
    REACH BADGES
    ========================= */
 
-.saved-target-head {
-    min-width: 0;
+.saved-target-reach[hidden] {
+    display: none;
+}
+
+.saved-target-marker {
+    flex: 0 0 auto;
 
     display: flex;
 
+    flex-direction: column;
+
     align-items: center;
 
-    justify-content: space-between;
+    gap: 4px;
 
-    gap: 8px;
-}
-
-.saved-target-head .saved-target-name {
-    min-width: 0;
-
-    flex: 1 1 auto;
-}
-
-.saved-target-reach[hidden] {
-    display: none;
+    align-self: flex-start;
 }
 
 .saved-target-reach {
@@ -859,6 +801,8 @@
     display: flex;
 
     align-items: center;
+
+    justify-content: center;
 
     gap: 3px;
 }

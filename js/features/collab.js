@@ -376,17 +376,14 @@ function collabApplyMapId(mapId) {
      * op we sent would be stamped with a map the others do not have, so
      * both sides would see an empty room and no error.
      */
-    if (mapId !== 'custom' && !MAPS[mapId]) {
+    if (!MAPS[mapId]) {
         console.warn('Room uses an unknown map:', mapId);
         return false;
     }
 
     S.map = mapId;
-
-    if (mapId !== 'custom') {
-        S.w = MAPS[mapId].w;
-        S.h = MAPS[mapId].h;
-    }
+    S.w = MAPS[mapId].w;
+    S.h = MAPS[mapId].h;
 
     const select = $('mapSelect');
 
@@ -396,10 +393,6 @@ function collabApplyMapId(mapId) {
 
     clamp(S.origin);
     clamp(S.target);
-
-    if (typeof updatePresetLock === 'function') {
-        updatePresetLock();
-    }
 
     return true;
 }
@@ -1267,17 +1260,6 @@ function collabSetStatus(status, key = null, isError = false) {
 
 async function collabCreateRoom(includeMine) {
     if (!isCollabConfigured()) {
-        return;
-    }
-
-    /*
-     * Custom maps carry their size in S.w/S.h, which the room document has
-     * no field for — a joiner would default to their own dimensions and
-     * every shared coordinate would land in a different frame, silently.
-     * Rooms are preset-map only until the document carries w/h.
-     */
-    if (S.map === 'custom') {
-        collabSetStatus('error', 'collabErrorCustomMap', true);
         return;
     }
 
@@ -3226,6 +3208,10 @@ function collabSyncObsButton() {
 
     button.title = label;
 
+    button.innerHTML =
+        COLLAB_OBS_ICON +
+        `<span class="sidebar-control-label">${tr('obsOverlay')}</span>`;
+
     button.setAttribute(
         'aria-label',
         label
@@ -3238,9 +3224,7 @@ function collabInitObsButton() {
         return;
     }
 
-    const theme = $('themeToggle');
-
-    const host = theme?.parentElement;
+    const host = $('sidebarControls');
 
     if (!host || $('obsOverlayLaunch')) {
         return;
@@ -3270,7 +3254,7 @@ function collabInitObsButton() {
 
     host.insertBefore(
         button,
-        $('solutionPopoutToggle') || theme
+        $('solutionPopoutToggle')
     );
 
     collabSyncObsButton();

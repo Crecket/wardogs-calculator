@@ -301,7 +301,16 @@ function obsRenderReadout() {
 
     const note = $('obsTerrainNote');
     const source = $('terrainNote');
-    const noteText = source && !source.hidden ? source.textContent.trim() : '';
+    const noteItems = source
+        ? [...source.querySelectorAll('.note-issues li')]
+            .map(item => item.textContent.trim())
+        : [];
+
+    const noteText = source && !source.hidden
+        ? (noteItems.length
+            ? noteItems.join(' \u00b7 ')
+            : source.textContent.trim())
+        : '';
 
     if (note) {
         setText(note, noteText);

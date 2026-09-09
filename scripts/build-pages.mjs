@@ -1,11 +1,6 @@
 import { cp, mkdir, readFile, rm, writeFile, readdir, stat } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-    MAP_LANDING_PAGES,
-    mapLandingUrl,
-    renderMapLandingPage
-} from './map-landing-pages.mjs';
 import { SEO_ALTERNATE_NAMES, SEO_PAGE_CONTENT } from './seo-content.mjs';
 import { buildObsPage } from './lib/obs-page.mjs';
 import {
@@ -13,15 +8,13 @@ import {
     collabUrl,
     patchAppConfig,
     patchMapConfig,
-    tileBaseUrl
+    tileBaseUrl,
+    tileFallbackBaseUrl
 } from './lib/site-config.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const dist = join(root, 'dist');
-
-const NON_INDEXABLE_PAGE_LANGUAGES =
-    new Set(['cat']);
 
 const sourceDirs = [
     'assets',
@@ -47,7 +40,6 @@ const desktopStyleFiles = [
     'styles/desktop/map-tools.css',
     'styles/desktop/motd.css',
     'styles/desktop/popout.css',
-    'styles/desktop/seo.css'
 ];
 
 const obsStyleFiles = [
@@ -71,16 +63,20 @@ async function exists(path) {
     }
 }
 
-function tileOrigin() {
-    const base = tileBaseUrl();
+function tileOrigins() {
+    const origins = [];
 
-    if (!base) return null;
+    for (const base of [tileBaseUrl(), tileFallbackBaseUrl()]) {
+        if (!base) continue;
 
-    try {
-        return new URL(base).origin;
-    } catch {
-        return null;
+        try {
+            origins.push(new URL(base).origin);
+        } catch {
+            /* a relative base needs no origin of its own */
+        }
     }
+
+    return [...new Set(origins)];
 }
 
 function collabOrigins() {
@@ -105,10 +101,10 @@ function addProductionSecurityMeta(html, appConfig) {
     const collab = appConfig.collab || {};
     const turnstileEnabled = collab.turnstile?.enabled === true;
     const analyticsEnabled = Boolean(analyticsWebsiteId());
-    const origin = tileOrigin();
+    const origins = tileOrigins();
 
     const connectSources = new Set(["'self'"]);
-    if (origin) connectSources.add(origin);
+    for (const origin of origins) connectSources.add(origin);
     if (analyticsEnabled) {
         connectSources.add('https://cloud.umami.is');
         connectSources.add('https://gateway.umami.is');
@@ -126,7 +122,7 @@ function addProductionSecurityMeta(html, appConfig) {
         'data:',
         'blob:'
     ];
-    if (origin) imageSources.push(origin);
+    imageSources.push(...origins);
     if (turnstileEnabled) imageSources.push('https://challenges.cloudflare.com');
 
     const policy = [
@@ -209,11 +205,6 @@ async function bundleStyles() {
     await mkdir(
         join(dist, 'styles'),
         { recursive: true }
-    );
-
-    await copyIfExists(
-        join(root, 'styles', 'map-landing.css'),
-        join(dist, 'styles', 'map-landing.css')
     );
 }
 
@@ -389,8 +380,7 @@ function replaceSeoMetaContent(
 function refreshSeoV2StructuredData(
     html,
     appConfig,
-    copy,
-    language
+    copy
 ) {
     const version =
         appConfig?.site?.footer?.version;
@@ -408,10 +398,9 @@ function refreshSeoV2StructuredData(
                     copy.description;
 
                 data.url =
-                    desktopUrlForLanguage(language);
+                    'https://wardogs-artillery.com/';
 
-                data.inLanguage =
-                    language;
+                data.inLanguage = 'en';
 
                 data.alternateName =
                     [...(copy.alternateNames || SEO_ALTERNATE_NAMES)];
@@ -432,184 +421,11 @@ function refreshSeoV2StructuredData(
     );
 }
 
-function injectFaqStructuredData(
-    html,
-    faq
-) {
-    if (
-        !Array.isArray(faq) ||
-        !faq.length ||
-        html.includes('\"@type\": \"FAQPage\"')
-    ) {
-        return html;
-    }
-
-    const data = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: faq.map(item => ({
-            '@type': 'Question',
-            name: item.question,
-            acceptedAnswer: {
-                '@type': 'Answer',
-                text: item.answer
-            }
-        }))
-    };
-
-    const script =
-        `<script type="application/ld+json">${JSON.stringify(data, null, 2)}</script>`;
-
-    return html.replace(
-        /<\/head>/i,
-        `${script}\n</head>`
-    );
-}
-
-function renderSeoTopicLinks(cluster, faq, faqLabel = 'FAQ') {
-    const links = [
-        {
-            id: 'wardogs-artillery-calculator',
-            label: cluster.heading
-        },
-        ...cluster.sections.map(section => ({
-            id: section.id,
-            label: section.heading,
-            href: section.href
-        }))
-    ];
-
-    if (Array.isArray(faq) && faq.length) {
-        links.push({
-            id: 'wardogs-calculator-faq',
-            label: faqLabel
-        });
-    }
-
-    return links
-        .map(link => (
-            `<a href="${link.href ? escapeSeoHtml(link.href) : `#${escapeSeoHtml(link.id)}`}">${escapeSeoHtml(link.label)}</a>`
-        ))
-        .join('');
-}
-
-function renderSeoFaq(faq, heading = 'WARDOGS Artillery Calculator FAQ') {
-    if (!Array.isArray(faq) || !faq.length) {
-        return '';
-    }
-
-    const items = faq
-        .map(item => [
-            '<details class="seo-faq-item">',
-            `<summary>${escapeSeoHtml(item.question)}</summary>`,
-            `<p>${escapeSeoHtml(item.answer)}</p>`,
-            '</details>'
-        ].join('\n'))
-        .join('\n');
-
-    return [
-        '<section class="seo-faq" id="wardogs-calculator-faq">',
-        `<h3>${escapeSeoHtml(heading)}</h3>`,
-        items,
-        '</section>'
-    ].join('\n');
-}
-
-function injectSeoContentCluster(
-    html,
-    copy
-) {
-    const cluster = copy.cluster;
-
-    if (
-        !cluster ||
-        !Array.isArray(cluster.sections) ||
-        !cluster.sections.length ||
-        html.includes('class="seo-content-cluster"')
-    ) {
-        return html;
-    }
-
-    const sections = cluster.sections
-        .map(section => {
-            const heading = section.href
-                ? `<a href="${escapeSeoHtml(section.href)}">${escapeSeoHtml(section.heading)}</a>`
-                : escapeSeoHtml(section.heading);
-
-            return [
-                `<section class="seo-topic" id="${escapeSeoHtml(section.id)}">`,
-                `<h3>${heading}</h3>`,
-                `<p>${escapeSeoHtml(section.body)}</p>`,
-                '</section>'
-            ].join('\n');
-        })
-        .join('\n');
-
-    const block = [
-        '<div class="section seo-content-cluster">',
-        `<h2 id="wardogs-artillery-calculator">${escapeSeoHtml(cluster.heading)}</h2>`,
-        `<p class="seo-content-lead">${escapeSeoHtml(cluster.intro)}</p>`,
-        `<nav aria-label="${escapeSeoHtml(cluster.navLabel)}" class="seo-topic-nav">`,
-        renderSeoTopicLinks(
-            cluster,
-            copy.faq,
-            copy.faqLabel || 'FAQ'
-        ),
-        '</nav>',
-        '<div class="seo-topic-list">',
-        sections,
-        '</div>',
-        renderSeoFaq(
-            copy.faq,
-            copy.faqHeading || 'WARDOGS Artillery Calculator FAQ'
-        ),
-        '</div>'
-    ].join('\n');
-
-    return html.replace(
-        /<\/aside>/i,
-        `${block}\n</aside>`
-    );
-}
-
-function injectSeoAbout(
-    html,
-    copy
-) {
-    if (
-        html.includes(
-            'class="seo-about"'
-        )
-    ) {
-        return html;
-    }
-
-    const block = [
-        '<div class="section seo-about-section">',
-        '<details class="seo-about">',
-        `<summary>${escapeSeoHtml(copy.heading)}</summary>`,
-        '<div class="seo-about-copy">',
-        `<p>${escapeSeoHtml(copy.intro)}</p>`,
-        `<p>${escapeSeoHtml(copy.usage)}</p>`,
-        '</div>',
-        '</details>',
-        '</div>'
-    ].join('\n');
-
-    return html.replace(
-        /<\/aside>/i,
-        `${block}\n</aside>`
-    );
-}
-
 function applySeoV2(
     html,
-    appConfig,
-    language
+    appConfig
 ) {
-    const copy =
-        SEO_PAGE_CONTENT[language] ||
-        SEO_PAGE_CONTENT.en;
+    const copy = SEO_PAGE_CONTENT.en;
 
     let output =
         replaceSeoMetaContent(
@@ -673,41 +489,14 @@ function applySeoV2(
         refreshSeoV2StructuredData(
             output,
             appConfig,
-            copy,
-            language
+            copy
         );
-
-    if (copy.cluster) {
-        output =
-            injectSeoContentCluster(
-                output,
-                copy
-            );
-
-        output =
-            injectFaqStructuredData(
-                output,
-                copy.faq
-            );
-    } else {
-        output =
-            injectSeoAbout(
-                output,
-                copy
-            );
-    }
 
     return output;
 }
 
-function mobileUrlForLanguage(language) {
-    return language === 'en'
-        ? 'https://wardogs-artillery.com/mobile/'
-        : `https://wardogs-artillery.com/mobile/${language}/`;
-}
-
-function addMobileAlternate(html, language) {
-    const mobileUrl = mobileUrlForLanguage(language);
+function addMobileAlternate(html) {
+    const mobileUrl = 'https://wardogs-artillery.com/mobile/';
     const mobileAlternate = `<link href="${mobileUrl}" media="only screen and (max-width: 900px)" rel="alternate"/>`;
 
     if (html.includes(mobileAlternate)) {
@@ -759,7 +548,7 @@ function prepareAnalytics(html) {
         );
 }
 
-async function writeDesktopPage(source, target, appConfig, language) {
+async function writeDesktopPage(source, target, appConfig) {
     const html = prepareAnalytics(await readFile(source, 'utf8'));
     const prepared = addProductionSecurityMeta(
         addMobileAlternate(
@@ -768,10 +557,8 @@ async function writeDesktopPage(source, target, appConfig, language) {
                     normalizeDesktopRuntimePlaceholders(html),
                     appConfig
                 ),
-                appConfig,
-                language
-            ),
-            language
+                appConfig
+            )
         ),
         appConfig
     );
@@ -785,37 +572,8 @@ async function buildDesktopPages() {
     await writeDesktopPage(
         join(root, 'src', 'pages', 'index.html'),
         join(dist, 'index.html'),
-        appConfig,
-        'en'
+        appConfig
     );
-
-    const localizedDir = join(
-        root,
-        'src',
-        'pages',
-        'locales'
-    );
-
-    if (!(await exists(localizedDir))) {
-        return;
-    }
-
-    const files = await readdir(localizedDir);
-
-    for (const file of files) {
-        if (!file.endsWith('.html')) continue;
-
-        const lang = file.slice(0, -5);
-        const targetDir = join(dist, lang);
-
-        await mkdir(targetDir, { recursive: true });
-        await writeDesktopPage(
-            join(localizedDir, file),
-            join(targetDir, 'index.html'),
-            appConfig,
-            lang
-        );
-    }
 }
 
 /*
@@ -865,25 +623,6 @@ async function applyTileBaseUrl() {
     );
 }
 
-async function buildMapLandingPages() {
-    const template = await readFile(
-        join(root, 'src', 'pages', 'maps', 'template.html'),
-        'utf8'
-    );
-    const appConfig = await readAppConfig();
-
-    for (const page of MAP_LANDING_PAGES) {
-        const targetDir = join(dist, 'maps', page.id);
-        const html = addProductionSecurityMeta(
-            renderMapLandingPage(template, page),
-            appConfig
-        );
-
-        await mkdir(targetDir, { recursive: true });
-        await writeFile(join(targetDir, 'index.html'), html, 'utf8');
-    }
-}
-
 async function readAppConfig() {
     const path = join(root, 'config', 'app.json');
     return JSON.parse(await readFile(path, 'utf8'));
@@ -922,34 +661,6 @@ async function applyCollabUrl() {
     console.log(`Shared sessions enabled against ${collabUrl()}`);
 }
 
-async function getDesktopLanguages() {
-    const localizedDir = join(
-        root,
-        'src',
-        'pages',
-        'locales'
-    );
-
-    if (!(await exists(localizedDir))) {
-        return ['en'];
-    }
-
-    const files = await readdir(localizedDir);
-    const localized = files
-        .filter(file => file.endsWith('.html'))
-        .map(file => file.slice(0, -5))
-        .filter(Boolean)
-        .filter(
-            language =>
-                !NON_INDEXABLE_PAGE_LANGUAGES.has(
-                    language
-                )
-        )
-        .sort();
-
-    return ['en', ...localized];
-}
-
 function escapeXml(value) {
     return String(value)
         .replaceAll('&', '&amp;')
@@ -959,56 +670,19 @@ function escapeXml(value) {
         .replaceAll("'", '&apos;');
 }
 
-function desktopUrlForLanguage(language) {
-    return language === 'en'
-        ? 'https://wardogs-artillery.com/'
-        : `https://wardogs-artillery.com/${language}/`;
-}
-
 async function buildSitemap() {
     const appConfig = await readAppConfig();
-    const languages = await getDesktopLanguages();
     const lastModified = appConfig?.site?.lastModified
         || new Date().toISOString().slice(0, 10);
 
-    const alternateLinks = languages
-        .map(language => (
-            `    <xhtml:link rel="alternate" hreflang="${escapeXml(language)}" href="${escapeXml(desktopUrlForLanguage(language))}" />`
-        ))
-        .concat(
-            '    <xhtml:link rel="alternate" hreflang="x-default" href="https://wardogs-artillery.com/" />'
-        )
-        .join('\n');
-
-    const localeUrls = languages
-        .map(language => [
-            '  <url>',
-            `    <loc>${escapeXml(desktopUrlForLanguage(language))}</loc>`,
-            alternateLinks,
-            '    <changefreq>weekly</changefreq>',
-            `    <lastmod>${escapeXml(lastModified)}</lastmod>`,
-            '  </url>'
-        ].join('\n'))
-        .join('\n');
-
-    const mapUrls = MAP_LANDING_PAGES
-        .map(page => [
-            '  <url>',
-            `    <loc>${escapeXml(mapLandingUrl(page.id))}</loc>`,
-            '    <changefreq>weekly</changefreq>',
-            `    <lastmod>${escapeXml(lastModified)}</lastmod>`,
-            '  </url>'
-        ].join('\n'))
-        .join('\n');
-
-    const urls = [localeUrls, mapUrls]
-        .filter(Boolean)
-        .join('\n');
-
     const sitemap = [
         '<?xml version="1.0" encoding="utf-8"?>',
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
-        urls,
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        '  <url>',
+        '    <loc>https://wardogs-artillery.com/</loc>',
+        '    <changefreq>weekly</changefreq>',
+        `    <lastmod>${escapeXml(lastModified)}</lastmod>`,
+        '  </url>',
         '</urlset>',
         ''
     ].join('\n');
@@ -1017,68 +691,6 @@ async function buildSitemap() {
         join(dist, 'sitemap.xml'),
         sitemap,
         'utf8'
-    );
-}
-
-function renderMobileLocale(template, language) {
-    const isDefault = language === 'en';
-
-    const desktopCanonical = isDefault
-        ? 'https://wardogs-artillery.com/'
-        : `https://wardogs-artillery.com/${language}/`;
-
-    const baseHref = isDefault
-        ? '../'
-        : '../../';
-
-    const indexableTemplate =
-        NON_INDEXABLE_PAGE_LANGUAGES.has(
-            language
-        )
-            ? template
-            : template.replace(
-                '<meta content="noindex, follow" name="robots"/>',
-                '<meta content="index, follow, max-image-preview:large" name="robots"/>'
-            );
-
-    return indexableTemplate
-        .replace(
-            '<html data-page-language="en" lang="en">',
-            `<html data-page-language="${language}" lang="${language}">`
-        )
-        .replace(
-            '<base href="../"/>',
-            `<base href="${baseHref}"/>`
-        )
-        .replace(
-            '<link href="https://wardogs-artillery.com/" rel="canonical"/>',
-            `<link href="${desktopCanonical}" rel="canonical"/>`
-        )
-        .replace(
-            'href="../?desktop=1"',
-            `href="${desktopCanonical}?desktop=1"`
-        );
-}
-
-async function getMobileLanguages() {
-    const indexPath = join(
-        root,
-        'locales',
-        'index.json'
-    );
-
-    const index = JSON.parse(
-        await readFile(indexPath, 'utf8')
-    );
-
-    const configured = Array.isArray(index.languages)
-        ? index.languages
-            .map(item => item?.id)
-            .filter(Boolean)
-        : [];
-
-    return Array.from(
-        new Set(['en', ...configured])
     );
 }
 
@@ -1107,51 +719,24 @@ async function buildMobilePages() {
     const appConfig =
         await readAppConfig();
 
-    const languages =
-        await getMobileLanguages();
+    const html = addProductionSecurityMeta(
+        prepareAnalytics(
+            template.replace(
+                '<meta content="noindex, follow" name="robots"/>',
+                '<meta content="index, follow, max-image-preview:large" name="robots"/>'
+            )
+        ),
+        appConfig
+    );
 
-    for (const language of languages) {
-        const html = addProductionSecurityMeta(
-            prepareAnalytics(
-                renderMobileLocale(
-                    template,
-                    language
-                )
-            ),
-            appConfig
-        );
-
-        if (language === 'en') {
-            await writeFile(
-                join(
-                    mobileRoot,
-                    'index.html'
-                ),
-                html,
-                'utf8'
-            );
-            continue;
-        }
-
-        const targetDir = join(
+    await writeFile(
+        join(
             mobileRoot,
-            language
-        );
-
-        await mkdir(
-            targetDir,
-            { recursive: true }
-        );
-
-        await writeFile(
-            join(
-                targetDir,
-                'index.html'
-            ),
-            html,
-            'utf8'
-        );
-    }
+            'index.html'
+        ),
+        html,
+        'utf8'
+    );
 }
 
 /*
@@ -1196,7 +781,6 @@ await applyCollabUrl();
 await applyTileBaseUrl();
 await bundleStyles();
 await buildDesktopPages();
-await buildMapLandingPages();
 await buildSitemap();
 await buildMobilePages();
 await buildObsRoute();

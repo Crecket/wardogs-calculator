@@ -27,6 +27,9 @@ const {
     root,
     heightfield,
     aims,
+    aimsPerTower,
+    lowTowersRequired,
+    lowRule,
     weaponId,
     xs,
     ys,
@@ -76,6 +79,9 @@ const raw = weapons.weapons.find(entry => entry.id === weaponId);
 setRuntimeGlobal(context, '__rawWeapon', raw);
 setRuntimeGlobal(context, '__field', field);
 setRuntimeGlobal(context, '__aims', aims);
+setRuntimeGlobal(context, '__aimsPerTower', aimsPerTower);
+setRuntimeGlobal(context, '__lowTowersRequired', lowTowersRequired);
+setRuntimeGlobal(context, '__lowNeedsEveryPoint', lowRule === 'every-point');
 
 callRuntime(
     context,
@@ -85,8 +91,18 @@ callRuntime(
     'var __weapon = normalizeWeapon(__rawWeapon);'
 );
 
+/*
+ * The aim points come grouped by tower, centre first and then its ring.
+ * The any-arc verdict wants every point with either arc and bails on the
+ * first miss. The low-arc verdict has two readings: the go-to tier counts
+ * towers whose centre has a clean low lane and passes when enough of them
+ * do, because a 600 m corridor of flat lanes in every direction is a thing
+ * no wooded valley has; the fallback tier keeps the original rule and asks
+ * for every point.
+ */
 const reaches = callRuntime(context, `(function (gunX, gunY) {
-    var low = true;
+    var lowTowers = 0;
+    var lowEverywhere = true;
 
     for (var i = 0; i < __aims.length; i += 1) {
         var shot = assessShot(
@@ -106,16 +122,24 @@ const reaches = callRuntime(context, `(function (gunX, gunY) {
             shot.arcs.high.status === 'hit' &&
             !shot.arcs.high.masked;
 
-        if (!lowHits) {
-            low = false;
-        }
-
         if (!lowHits && !highHits) {
             return [false, false];
         }
+
+        if (!lowHits) {
+            lowEverywhere = false;
+        }
+
+        if (lowHits && i % __aimsPerTower === 0) {
+            lowTowers += 1;
+        }
     }
 
-    return [low, true];
+    if (__lowNeedsEveryPoint) {
+        return [lowEverywhere, true];
+    }
+
+    return [lowTowers >= __lowTowersRequired, true];
 })`);
 
 const gunX = new Float64Array(xs);

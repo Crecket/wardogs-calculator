@@ -98,9 +98,10 @@ test('the palette draws the edge and nothing else', () => {
     const ctx = firingCtx();
     const palette = JSON.parse(callRuntime(ctx, 'JSON.stringify(firingPositionsPalette())'));
 
-    assert.equal(palette.length, 3);
-    assert.equal(palette[0][3], 0, 'ground outside the set is fully transparent');
-    assert.equal(palette[2][3], 255, 'the boundary is drawn at full strength');
+    assert.equal(palette.length, 5);
+    assert.equal(palette[0][3], 0, 'ground outside both sets is fully transparent');
+    assert.equal(palette[2][3], 255, 'the go-to boundary is drawn at full strength');
+    assert.equal(palette[4][3], 255, 'and so is the fallback boundary');
 
     /*
      * The interior says which side of the outline is the good ground, but
@@ -117,11 +118,17 @@ test('the palette draws the edge and nothing else', () => {
     );
 
     /*
-     * Not a terrain colour. The viable set always sits on the flatness
-     * ramp's green and amber, so an outline sharing that hue is the one
-     * that cannot be seen where it matters.
+     * Neon green: saturated and at full strength, so it stays several times
+     * brighter than the dim ramp band the viable ground sits on.
      */
     const [red, green, blue] = palette[2];
 
-    assert.ok(red > green && blue > green, 'the edge is magenta, not a green or amber');
+    assert.equal(green, 255, 'the edge is as green as it gets');
+    assert.ok(red < 96 && blue < 96, 'and nothing else, so it reads as go');
+
+    const [fallbackRed, fallbackGreen, fallbackBlue] = palette[4];
+
+    assert.deepEqual(palette[3].slice(0, 3), palette[4].slice(0, 3), 'the fallback wash matches its edge');
+    assert.ok(palette[3][3] > 0 && palette[3][3] <= 64, 'the fallback interior is washed as lightly');
+    assert.ok(fallbackRed === 255 && fallbackGreen > 96 && fallbackGreen < 200 && fallbackBlue < 64, 'the fallback is orange');
 });

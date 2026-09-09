@@ -184,178 +184,15 @@ function toggleSidebar() {
 const MOBILE_MENU_TEXT = {
     en: {
         menu: 'Menu',
-        appearance: 'Appearance',
-        light: 'Light',
-        dark: 'Dark',
-        language: 'Language',
         links: 'Links',
         support: 'Support',
         credits: 'Credits',
         legal: 'Legal'
-    },
-    ru: {
-        menu: 'Меню',
-        appearance: 'Тема',
-        light: 'Светлая',
-        dark: 'Тёмная',
-        language: 'Язык',
-        links: 'Ссылки',
-        support: 'Поддержать',
-        credits: 'Авторы',
-        legal: 'Дисклеймер'
-    },
-    uk: {
-        menu: 'Меню',
-        appearance: 'Тема',
-        light: 'Світла',
-        dark: 'Темна',
-        language: 'Мова',
-        links: 'Посилання',
-        support: 'Підтримати',
-        credits: 'Автори',
-        legal: 'Дисклеймер'
-    },
-    de: {
-        menu: 'Menü',
-        appearance: 'Darstellung',
-        light: 'Hell',
-        dark: 'Dunkel',
-        language: 'Sprache',
-        links: 'Links',
-        support: 'Unterstützen',
-        credits: 'Credits',
-        legal: 'Hinweis'
-    },
-    fr: {
-        menu: 'Menu',
-        appearance: 'Apparence',
-        light: 'Clair',
-        dark: 'Sombre',
-        language: 'Langue',
-        links: 'Liens',
-        support: 'Soutenir',
-        credits: 'Crédits',
-        legal: 'Mentions'
-    },
-    es: {
-        menu: 'Menú',
-        appearance: 'Apariencia',
-        light: 'Claro',
-        dark: 'Oscuro',
-        language: 'Idioma',
-        links: 'Enlaces',
-        support: 'Apoyar',
-        credits: 'Créditos',
-        legal: 'Aviso'
-    },
-    pl: {
-        menu: 'Menu',
-        appearance: 'Wygląd',
-        light: 'Jasny',
-        dark: 'Ciemny',
-        language: 'Język',
-        links: 'Linki',
-        support: 'Wesprzyj',
-        credits: 'Autorzy',
-        legal: 'Informacja'
-    },
-       ko: {
-        menu: '메뉴',
-        appearance: '테마',
-        light: '라이트',
-        dark: '다크',
-        language: '언어',
-        links: '링크',
-        support: '후원',
-        credits: '제작진',
-        legal: '법적 고지'
-    },
-    pt: {
-        menu: 'Menu',
-        appearance: 'Aparência',
-        light: 'Claro',
-        dark: 'Escuro',
-        language: 'Idioma',
-        links: 'Links',
-        support: 'Apoiar',
-        credits: 'Créditos',
-        legal: 'Aviso'
-    },
-    'zh-cn': {
-        menu: '菜单',
-        appearance: '外观',
-        light: '浅色',
-        dark: '深色',
-        language: '语言',
-        links: '链接',
-        support: '支持',
-        credits: '致谢',
-        legal: '法律信息'
-    },
-    cat: {
-        menu: 'MEOWNU',
-        appearance: 'MEOWDE',
-        light: 'SUN CAT',
-        dark: 'NIGHT CAT',
-        language: 'MEOWGUAGE',
-        links: 'CAT LINKS',
-        support: 'SUPPORT CAT',
-        credits: 'CAT CREDITS',
-        legal: 'LEGAL MEOW'
     }
 };
 
 function getMobileMenuText() {
-
-    const language =
-        typeof LANG === 'string' &&
-        LANG
-            ? LANG
-            : document.documentElement
-                .lang ||
-                'en';
-
-    return (
-        MOBILE_MENU_TEXT[language] ||
-        MOBILE_MENU_TEXT.en
-    );
-}
-
-function syncMobileThemeButtons() {
-
-    const isLight =
-        document.documentElement
-            .dataset.theme === 'light';
-
-    const lightButton =
-        $('mobileThemeLight');
-
-    const darkButton =
-        $('mobileThemeDark');
-
-    lightButton?.classList.toggle(
-        'active',
-        isLight
-    );
-
-    darkButton?.classList.toggle(
-        'active',
-        !isLight
-    );
-
-    lightButton?.setAttribute(
-        'aria-pressed',
-        isLight
-            ? 'true'
-            : 'false'
-    );
-
-    darkButton?.setAttribute(
-        'aria-pressed',
-        isLight
-            ? 'false'
-            : 'true'
-    );
+    return MOBILE_MENU_TEXT.en;
 }
 
 function syncMobileSideMenuLocalization() {
@@ -388,26 +225,6 @@ function syncMobileSideMenuLocalization() {
     setText(
         'mobileSideMenuTitle',
         text.menu
-    );
-
-    setText(
-        'mobileAppearanceLabel',
-        text.appearance
-    );
-
-    setText(
-        'mobileThemeLightLabel',
-        text.light
-    );
-
-    setText(
-        'mobileThemeDarkLabel',
-        text.dark
-    );
-
-    setText(
-        'mobileLanguageLabel',
-        text.language
     );
 
     setText(
@@ -509,7 +326,6 @@ function setMobileSideMenuOpen(
 
     if (mobileSideMenuOpen) {
 
-        syncMobileThemeButtons();
         syncMobileSideMenuLocalization();
 
         /*
@@ -617,121 +433,6 @@ function createMobileMenuSection(
     );
 
     return section;
-}
-
-function createMobileThemeButton(
-    theme,
-    id,
-    labelId
-) {
-
-    const button =
-        document.createElement(
-            'button'
-        );
-
-    button.id =
-        id;
-
-    button.type =
-        'button';
-
-    button.className =
-        'mobile-theme-choice-button';
-
-    button.dataset.theme =
-        theme;
-
-    button.setAttribute(
-        'aria-pressed',
-        'false'
-    );
-
-    const icon =
-        document.createElement(
-            'span'
-        );
-
-    icon.className =
-        'mobile-theme-choice-icon';
-
-    icon.setAttribute(
-        'aria-hidden',
-        'true'
-    );
-
-    icon.innerHTML =
-        theme === 'light'
-            ? `
-                <svg
-                    viewBox="0 0 24 24"
-                    width="19"
-                    height="19"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                >
-                    <circle cx="12" cy="12" r="4"></circle>
-                    <path d="M12 2v2"></path>
-                    <path d="M12 20v2"></path>
-                    <path d="m4.93 4.93 1.41 1.41"></path>
-                    <path d="m17.66 17.66 1.41 1.41"></path>
-                    <path d="M2 12h2"></path>
-                    <path d="M20 12h2"></path>
-                    <path d="m6.34 17.66-1.41 1.41"></path>
-                    <path d="m19.07 4.93-1.41 1.41"></path>
-                </svg>
-            `
-            : `
-                <svg
-                    viewBox="0 0 24 24"
-                    width="19"
-                    height="19"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="M21 12.7A8 8 0 1 1 11.3 3 6.2 6.2 0 0 0 21 12.7Z"></path>
-                </svg>
-            `;
-
-    const label =
-        document.createElement(
-            'span'
-        );
-
-    label.id =
-        labelId;
-
-    label.className =
-        'mobile-theme-choice-label';
-
-    button.append(
-        icon,
-        label
-    );
-
-    button.addEventListener(
-        'click',
-        () => {
-
-            if (
-                typeof applyTheme ===
-                'function'
-            ) {
-                applyTheme(
-                    theme
-                );
-            }
-
-            syncMobileThemeButtons();
-        }
-    );
-
-    return button;
 }
 
 function createMobileCreditsBlock() {
@@ -896,15 +597,6 @@ function initMobileSideMenu() {
         return;
     }
 
-    const themeToggle =
-        $('themeToggle');
-
-    const languagePicker =
-        $('languagePicker');
-
-    const languageSelect =
-        $('language');
-
     const desktopLink =
         $('mobileDesktopVersion');
 
@@ -1027,92 +719,6 @@ function initMobileSideMenu() {
         closeButton
     );
 
-    const appearanceSection =
-        createMobileMenuSection(
-            'mobileAppearanceLabel',
-            'mobile-side-menu-appearance'
-        );
-
-    const themeChoices =
-        document.createElement(
-            'div'
-        );
-
-    themeChoices.className =
-        'mobile-theme-choice';
-
-    const lightTheme =
-        createMobileThemeButton(
-            'light',
-            'mobileThemeLight',
-            'mobileThemeLightLabel'
-        );
-
-    const darkTheme =
-        createMobileThemeButton(
-            'dark',
-            'mobileThemeDark',
-            'mobileThemeDarkLabel'
-        );
-
-    themeChoices.append(
-        lightTheme,
-        darkTheme
-    );
-
-    appearanceSection.appendChild(
-        themeChoices
-    );
-
-    /*
-     * Keep the original theme toggle connected but hidden.
-     * theme.js updates #themeIcon / #themeToggle internally,
-     * so preserving the element avoids changing shared
-     * desktop theme logic.
-     */
-    if (themeToggle) {
-
-        themeToggle.classList.add(
-            'mobile-theme-toggle-legacy'
-        );
-
-        appearanceSection.appendChild(
-            themeToggle
-        );
-    }
-
-    const languageSection =
-        createMobileMenuSection(
-            'mobileLanguageLabel',
-            'mobile-side-menu-language'
-        );
-
-    const languageShell =
-        document.createElement(
-            'div'
-        );
-
-    languageShell.className =
-        'mobile-side-menu-language-shell';
-
-    if (languagePicker) {
-
-        languageShell.appendChild(
-            languagePicker
-        );
-    }
-
-    if (languageSelect) {
-
-        languageShell.appendChild(
-            languageSelect
-        );
-    }
-
-    languageSection.appendChild(
-        languageShell
-    );
-
     const linksSection =
         createMobileMenuSection(
             'mobileLinksLabel',
@@ -1177,8 +783,6 @@ function initMobileSideMenu() {
 
     menu.append(
         menuHeader,
-        appearanceSection,
-        languageSection,
         linksSection,
         supportSection,
         footer
@@ -1282,7 +886,6 @@ function initMobileSideMenu() {
         }
     );
 
-    syncMobileThemeButtons();
     syncMobileSideMenuLocalization();
 
     setMobileSideMenuOpen(
@@ -1598,6 +1201,10 @@ function installDesktopSavedTargetsCollapseStyle() {
 
         body:not(.mobile-app)
         .saved-targets-header {
+            cursor: pointer;
+
+            user-select: none;
+
             display: grid;
 
             grid-template-columns:
@@ -1871,13 +1478,18 @@ function initDesktopSavedTargetsPanelCollapse(
         header.appendChild(
             toggle
         );
+    }
 
-        toggle.addEventListener(
+    if (header.dataset.collapseBound !== 'true') {
+
+        header.dataset.collapseBound =
+            'true';
+
+        header.addEventListener(
             'click',
             event => {
 
                 event.preventDefault();
-                event.stopPropagation();
 
                 setDesktopSavedTargetsCollapsed(
                     panel,
@@ -1939,7 +1551,6 @@ function updateLayoutLocalization() {
             'mobile-app'
         )
     ) {
-        syncMobileThemeButtons();
         syncMobileSideMenuLocalization();
 
         const setAriaLabel = (id, key) => {
