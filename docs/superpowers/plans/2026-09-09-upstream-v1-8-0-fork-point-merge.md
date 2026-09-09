@@ -13,6 +13,7 @@
 ## Global Constraints
 
 - **Never merge `upstream/main` again after Task 2.** Later upstream work arrives by `git cherry-pick` of named commits. This is the whole point of the fork point.
+- **Tasks 3 through 7 stage only — never commit.** One merge stays open across all five of them, and `git commit` would close it and destroy the conflict state the remaining tasks need. Finish each of those tasks with `git add <files>` and stop. Task 8 makes the single merge commit. This overrides any general instruction to commit at the end of a task. (Tasks 1, 9 and 10 are outside the merge and do commit normally.)
 - **The fork's `sync/` and `js/features/collab.js` are authoritative.** Any conflict hunk that is a collab call site resolves by keeping the fork's side (`HEAD`). There are 5 such hunks in `js/map/map-tools.js` and 5 in `js/features/saved-targets.js`.
 - **Do not add code comments** beyond what the resolution requires; where a conflict deletes one side's comment, keep the surviving side's comment as it stands.
 - **No machine-translated locale strings.** New keys land in `locales/en.json` only, plus `locales/cat.json` by hand if it fits its register. Every other locale falls back to English through `tr()`, which resolves `language?.[key] ?? fallback?.[key] ?? key` with `DEFAULT_LANG` of `en`. This is the objection the maintainer raised on PR #14 and it applies to the fork too.
@@ -237,8 +238,10 @@ For `config/app.json`, keep the fork's `collab` block (it configures the fork's 
 
 - [ ] **Step 5: Verify the app still parses**
 
-Run: `node --check js/core/core.js && node --check js/main.js && node --check js/events.js`
+Run: `node --check js/core/core.js && node --check js/main.js`
 Expected: no output, exit 0.
+
+Do **not** check `js/events.js` here — it is Task 4's file and still holds conflict markers at this point.
 
 Run: `node -e "JSON.parse(require('fs').readFileSync('config/app.json','utf8')); console.log('ok')"`
 Expected: `ok`
@@ -389,7 +392,9 @@ git rm js/map/image-decode.js
 grep -rn "image-decode\|decodeTileImage\|createImageBitmap" --include=*.js --include=*.html . | grep -v node_modules
 ```
 
-Expected after removal: no output. Delete any leftover `<script>` tag that referenced it in `src/pages/index.html`.
+Expected after removal: no output from the `.js` files.
+
+`src/pages/index.html` will still list a `<script>` tag for the deleted module, and it still holds unresolved conflict markers at this point — **do not edit it here.** Record the exact tag text in this task's report; Task 7 Step 4 removes it while resolving that file.
 
 - [ ] **Step 3b: If the bucket does NOT send CORS — keep the fork's side**
 
@@ -687,14 +692,25 @@ Spec bucket A3. No code risk, no conflicts — these files do not exist on the f
 - Consumes: the merged tree.
 - Produces: nothing other tasks depend on.
 
-- [ ] **Step 1: Copy the four files from upstream**
+- [ ] **Step 1: Verify the four files arrived in the merge**
+
+All four are clean adds — the fork has none of them, so Task 2's merge brings them in with no conflict. This step confirms that rather than copying them again.
 
 ```bash
 for f in SECURITY.md .github/dependabot.yml .github/workflows/security.yml docs/security.md; do
-  mkdir -p "$(dirname "$f")"
-  git show upstream/main:"$f" > "$f"
+  [ -f "$f" ] && echo "present $f" || echo "MISSING $f"
 done
 ```
+
+Expected: all four `present`. If any is `MISSING`, the merge dropped it — recover just that one with `git show upstream/main:"$f" > "$f"`.
+
+Also confirm the fork's own workflow survived:
+
+```bash
+ls .github/workflows/
+```
+
+Expected: `pages.yml` (the fork's) alongside `security.yml` (upstream's).
 
 - [ ] **Step 2: Retarget them at the fork**
 
