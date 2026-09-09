@@ -170,14 +170,178 @@ Two things deliberately left out: the active gun is inferred from which gun move
 
 ---
 
+## Upstream shipped lobbies in v1.8.0
+
+Between 2026-09-06 and 2026-09-08 upstream landed 33 commits, including a complete collaboration feature of his own. `docs/lobbies.md` credits this branch directly: *"The implementation was informed by the prototype in Crecket's `feat/collab-rooms` branch. This version uses an independent operation-based protocol, conflict checks, hibernating WebSockets and explicit resource limits."* The same absorb-rather-than-merge pattern as v1.7.0, and this time it takes item 16 with it.
+
+Also landed in that window, from our side of the board: **#8 and #9 merged** (`e5eda83c9`, `afab7fa92`), and **#3 closed unmerged** — point locks arrived instead in `f8f4a399c`. **#10, #12, #13, #14 and #18 remain closed.** Still open upstream: #11, #15, #16, #17, #19, plus six Dependabot PRs.
+
+**He also took the object-storage work.** `96ae6cda8` moves map tiles to R2 and `6989c96b1` moves terrain data to R2 — item 13, parked here as "an infrastructure decision for the maintainer", decided by the maintainer.
+
+### What his lobby is
+
+Same runtime family as ours — a Cloudflare Worker, Durable Objects, WebSocket hibernation — and a different model above it.
+
+| | fork `sync/` | upstream `sync/` |
+| --- | --- | --- |
+| Server source | 1,081 lines (`index.js`, `room.js`, `ops.js`) | 565 lines (`index.mjs`, `rooms.mjs`, `admission.mjs`, `tokens.mjs`, `catalog.mjs`, `config.mjs`) |
+| Client | `js/features/collab.js`, 3,311 lines | `js/collab/lobby.js` 640, `protocol.mjs` 193, `replica.mjs` 87 |
+| Shared code | none — server validation is server-only | `js/collab/protocol.mjs` is imported by both the browser and the Worker |
+| Change model | 13 semantic ops (`gun.move`, `target.rename`, `point.set`, …) | generic compare-and-set: `{key, id, before, value}` over five collections |
+| Ordering | op stream | server-authoritative document plus a monotonic `revision`; a gap is an error |
+| Undo | client-side | `replica.mjs` — only acknowledged edits enter the undo stack, and `invertOperations` derives undo from the op itself |
+| Admission | room code is the only credential | Turnstile-gated creation, IP-bound signed admission tokens, `ownerHash` for close |
+| Budget | per-room limits | additionally a `LobbyBudget` DO enforcing rooms/day, batches/day and **a finite `maxChangeBatchesPerRoom` of 1000** |
+| Lifetime | idle-based | fixed 6h alarm, activity does not extend it |
+
+The shared document is `{mapId, w, h, drawings, markers, zones, polygons, savedTargets}`. **There is no gun state in it.** Each participant keeps a personal artillery point, target and weapon, published as a `presence` frame and rendered as a labelled artillery-to-target overlay for teammates; only the owner sees their own range circles. Camera, zoom, active tool, layer visibility, locks, theme and language stay local.
+
+`protocol.mjs` is the piece worth reading first. `diffDocuments(before, after)` derives ops by diffing two documents, so the client mutates its own copy and the wire format falls out; `applyOperations` fails `conflict` when `before` does not match; `invertOperations` and `coalesceOperations` give undo and batching for free. It is a smaller and better-factored contract than our op vocabulary.
+
+### The rest of v1.8.0 collides with this branch
+
+Two commits rewrote the files this fork is laced through:
+
+- `f8f4a399c` "improve map state, shortcuts, locks, and drawing tools" — `js/map/map-tools.js` **+1206/-80**, `js/mobile/mobile.js` **+927/-909**, `js/map/camera-keys.js` +227/-225, `js/core/core.js` +112.
+- `736813877` "persist selections and add zone and polygon map tools" — `js/core/core.js` +94, `js/map/map-tools.js` +65, `styles/desktop/map-tools.css` +557/-528, and eleven locale files.
+
+`js/map/map-tools.js` is now 4,370 lines upstream. This plan already named it as one of the two files that gate everything, at +1,006 lines and ~45 collab call sites on the fork. Both sides have now rewritten it independently.
+
+His tool set is `pencil`, `marker`, `zone`, `polygon`, `coordinateSearch`, `layers`, `dataTransfer`. The fork's is `pencil`, `marker`, `shapes` (line/arrow/rect/circle), `targeting`, `coordinateSearch`, `layers`, `dataTransfer`, `collab`. `zone` and `polygon` overlap item 30's shape tools without matching them.
+
+---
+
+## Merging onto v1.8.0, and what goes back upstream
+
+The posture from here is **his trunk, our layer**: delete the fork's `sync/` and `js/features/collab.js`, rebuild the fork's collaboration features on his protocol, and propose the extensions they need as upstream PRs. His security work is better than ours and not worth re-litigating — signed invites so scanners never instantiate a Durable Object, Turnstile-gated creation, IP-bound admission tokens, four separate rate-limit bindings, streaming body caps. The fork's worker has an origin check and nothing else.
+
+But his lobby is not better everywhere, and the places it is worse are exactly the places the fork's features need to live. Those are the PRs.
+
+### Where the fork is measurably ahead
+
+**The per-socket rate limiter disconnects an active user.** `LobbyRoom.allow()` runs one token bucket for *every* application message — changes and presence alike — refilling at 1 token per second with a cap of 8, and closes the socket with `1008 rate-limited` after 3 denials that are not separated by a 10-second silence. The shipped `batchDelayMs` default is 300. Transcribing `allow()` exactly and driving it at fixed cadences:
+
+| Cadence | Outcome |
+| --- | --- |
+| 300 ms (`batchDelayMs` default, changes only) | closed after 14 messages, 4.2 s |
+| 150 ms (changes and presence interleaved) | closed after 12 messages, 1.8 s |
+| 1000 ms | survives |
+| 1100 ms | survives |
+
+The sustained ceiling is one message per second. Nothing in `sync/test/` exercises the bucket, the strikes counter or the close path. This is verified at the level of the limiter's arithmetic, not against a live client: `changes` batches are gated on the previous batch's ack, so real spacing includes a round trip, and presence only sends on change. What needs a live check is whether a continuous drag — which produces ops and moves presence on every frame — holds above 1/sec for more than about four seconds. It almost certainly does.
+
+**The fork already solved this the right way, by separating the channels.** `sync/src/ops.js` budgets durable and ephemeral traffic apart: ops 20/s burst 40, cursors 20/s burst 30, views 10/s burst 20. His single shared bucket is the design error, and 1/sec is the symptom. This matters beyond the bug — cursors at 1 Hz are not cursors, so the channel split is the precondition for items 21, 24 and 26 existing on his server at all.
+
+**Room lifetime is a fixed 6 hours that activity does not extend.** The fork expires on 14 days of idleness. A clan session that runs past six hours loses the room mid-use, with no warning path other than the `expiresAt` readout.
+
+**A room stops accepting edits after 1000 change batches.** `maxChangeBatchesPerRoom` is spent, not refreshed; the client sets `readOnly = msg.remainingUpdates === 0` and shows a `quota` state. At the 300 ms default that is roughly five minutes of *continuous* editing inside a six-hour room. Counting bytes rather than batches, or coalescing harder, would buy the same cost protection without the cliff.
+
+**One conflict wipes all undo history.** `Replica.reject()` clears `undoStack` and `redoStack` outright. The recovery document is preserved, so no work is lost, but every undo step is.
+
+**Capability gaps, in fork-feature terms.** No live cursors (item 21). No camera following — there is no ephemeral `view` frame at all (item 24). No read-only viewer role: every socket counts against `maxParticipants` of 8, so the OBS overlay would eat an editing slot (item 26). And no gun state in the shared document — his model gives each *player* one artillery point via presence, which is a different answer to item 14 than PR #17's shared gun list, and #17 is the one he called "absolutely something I want".
+
+### What switching actually costs
+
+It is not one-to-one. Two things are lost by design rather than by omission, and no amount of re-applying a layer recovers them without fighting his model.
+
+**The shared firing solution is gone.** The fork's `point.set` op makes the artillery point and the target *shared* state — a peer moves the target and it moves for everyone, which is what `collabFlashOverwrite` exists to explain. His model is the opposite on purpose: `docs/lobbies.md` says "every participant keeps a personal artillery point, target and selected weapon", published as presence, and teammates see each other's labelled artillery-to-target overlays while only the owner sees their own range circles. These are two different products. A battery working one solution together wants the fork's; individual players each running their own tube want his.
+
+**Multiple guns have nowhere to live.** There is no gun state in his document at all — `COLLECTIONS` is `drawings`, `markers`, `zones`, `polygons`, `savedTargets`. Presence carries one `origin` per player. Item 14 and PR #17 do not map onto that. Unlike the shared point, though, this one is cleanly additive: adding a `guns` collection conflicts with nothing he has.
+
+**Capacity drops by one to two orders of magnitude**, and this is the one that shows up in ordinary use:
+
+| | fork | upstream |
+| --- | ---: | ---: |
+| drawings | 2000 | 64 |
+| markers | 5000 | 128 |
+| saved targets | 500 | 64 |
+| points per drawing | 10000 | 2048 |
+| whole document | uncapped | 96 KB |
+| peers | 16 | 8 |
+| message | 64 KB | 256 KB |
+
+Sixty-four pencil strokes is a short planning session. These are recoverable, cheaply: `LIMITS` lives in `js/collab/protocol.mjs` and the rest in `config/app.json`, both of which a fork deployment owns. Raising numbers in a frozen object is a few-line diff that stays mergeable — which is the argument for keeping every *other* change out of that file.
+
+**Room lifetime is partly recoverable by config.** `roomLifetimeHours` clamps at 24, against the fork's 14-day idle expiry, and `maxChangeBatchesPerRoom` is config-driven, so the five-minute editing cliff can be raised on a fork deployment without waiting on PR E.
+
+**Four features become rebuild work, not merge work.** Items 21, 24, 26 and 31 are the part of `js/features/collab.js` worth keeping; the transport, op dispatch and session UI around them are what his 640-line client replaces. Item 31 is nearly free. The other three wait on PRs B, C and D — or run against a fork deployment first.
+
+**Against that, things the fork does not have and gains for free:** zones and polygons as synced collections, undo and redo with server-side conflict checks and revision ordering, Turnstile-gated admission and signed invites, an owner who can close a room, starting a room from the creator's saved targets, and per-player firing solutions with labelled teammate overlays. Plus a client a fifth the size.
+
+### The merge, in four phases
+
+**Phase A — a new branch off his `main`, carrying the fork's non-collab work.** Items 22, 25, 27, 28, 32, 33 and 34 never touch collaboration, and `js/map/renderer.js` moved only +13 lines upstream, so item 20's render work should still apply. Delete `sync/` and `js/features/collab.js` in the first commit rather than trying to reconcile them. Items 5 and 11 come along as they are.
+
+**Phase B — re-apply the fork's tools by hand.** `f8f4a399c` and `736813877` rewrote `js/map/map-tools.js` to 4,370 lines, `js/mobile/mobile.js` (+927/-909) and `js/map/camera-keys.js` (+227/-225). There is no merge that survives this; `shapes` and `targeting` get re-applied onto his file once, deliberately. Reconcile item 30 against his `zone` and `polygon` while doing it — his are already synced collections, the fork's are not, so the likely shape is dropping the fork's circle and rect in favour of his and adding `line` and `arrow` as new collections.
+
+**Phase C — rebuild the collab-dependent features on his protocol.** Item 31 is nearly free, since his `changes` broadcast already carries `from`. Items 21, 24 and 26 each need a server-side extension, which is what Phase D is for. Run them against a fork deployment of his Worker first — `config/app.json` drives both sides, so the fork can raise its own limits without waiting on him.
+
+**Phase D — upstream the extensions.** Below.
+
+His architecture makes this cheaper than the fork's would have been. `js/collab/protocol.mjs` is one file imported by both the browser and the Worker, so a new collection is an entry in `COLLECTIONS` plus a case in `normalizeItem`, and the server picks it up at build time. The fork's `sync/src/ops.js` had no such property.
+
+### The upstream PR queue
+
+Ordered so that each is independently useful to him, because that is what has actually landed: small mechanical PRs merge, large feature PRs get absorbed and rewritten. Each of the first four is a precondition for a fork feature, so they are worth opening whether or not he takes them.
+
+| # | PR | Why he wants it | Unblocks |
+| --- | --- | --- | --- |
+| A | Fix the rate limiter's sustained ceiling, plus the missing test | A shipped default disconnects normal users after ~4 s of drawing | — |
+| B | Split ephemeral traffic from durable traffic into separate buckets | A is only correct as a design once presence stops competing with edits for the same tokens | 21, 24, 26 |
+| C | An ephemeral frame type, not persisted and not revisioned | Cheap, additive, and the natural home for anything that is not a document edit | 21, 24 |
+| D | A read-only viewer role, counted against its own limit | Streamers and spectators should not consume the 8 editing slots | 26 |
+| E | Budget shape: bytes rather than batch count, and idle-extended lifetime | Removes the five-minute editing cliff and the six-hour cutoff without weakening cost control | — |
+| F | Guns in the shared document, or multi-gun presence | #17 is already wanted; this is the version of it that fits his lobby | 14, 15 |
+
+A and B ship together or A ships alone; C and D are additive and compatible in both directions the way the fork's roster change was. F is last because it is the one with a product disagreement inside it, and it should follow a conversation rather than open one.
+
+**Expect absorption, not merge.** Five PRs went into v1.7.0 as one squashed commit under his own authorship, and v1.8.0's lobby was written after reading `feat/collab-rooms`, credited in `docs/lobbies.md` but not merged. That is an argument for keeping these PRs small and mechanical — a rate-limiter fix with a failing test attached is hard to restate in someone else's words — and against investing in large client-side PRs at all.
+
+---
+
+### Open decisions, and where this was left
+
+**The one decision everything else waits on: shared or personal firing solution.** The fork syncs one artillery point and one target for the whole room; upstream gives every participant their own and shows teammates as labelled overlays. Answering "a battery working one solution together" means layering shared points back on top of his presence model, which is the expensive path. Answering "players each running their own tube" means his model is simply better than the fork's and `point.set` retires. Items 14, 15, 26 and the OBS overlay's active-gun inference all hang off this.
+
+**Second decision: our own Worker deployment, or point at his.** A fork deployment owns `config/app.json` and `js/collab/protocol.mjs`, so limits, lifetime and the batch budget are all ours to set, and PRs B/C/D can be developed against it before he takes them. Pointing at `lobby.wardogs-artillery.com` means living with 64 drawings, 8 peers, a 6-hour room and no cursors until he merges. Assume our own deployment unless there is a reason not to.
+
+**How this assessment was made, and its limits.** `git fetch` is denied in this environment, so nothing here came from the local object store — upstream's tree, commits, PR states and file contents were read through `gh api`, and a shallow clone of `main` sits in the session scratchpad. Local `upstream/main` is still `c3252c9d2` and is 33 commits stale. **Nothing below has been checked against a real merge**; the conflict claims are inferred from per-commit file statistics, not measured. First thing to do with a working `git fetch` is merge `upstream/main` into a throwaway worktree and count.
+
+**The rate-limiter finding is verified at the arithmetic level only.** This is the transcription of `LobbyRoom.allow()` that produced the table above; it is not committed anywhere, so it is recorded here:
+
+```js
+function allow(a, now) {
+    const elapsed = now - a.time;
+    if (elapsed >= 10000) a.strikes = 0;
+    a.tokens = Math.min(8, a.tokens + elapsed / 1000);
+    a.time = now;
+    const ok = a.tokens >= 1;
+    if (ok) a.tokens--; else a.strikes++;
+    return { ok, closed: a.strikes >= 3 };
+}
+```
+
+Driven at a fixed cadence for 200 messages: 300 ms closes after 14 (4.2 s), 150 ms after 12 (1.8 s), 1000 ms and 1100 ms survive. What this does *not* establish is that a real client sustains that cadence — `changes` batches are gated on the previous ack, so the round trip spaces them, and presence only sends on change. The live check is a continuous drag held for more than four seconds, which produces ops and moves presence every frame. Do that before opening PR A, and attach the failing test to it.
+
+**Next actions, in order.**
+
+1. `git fetch upstream`, then measure the real conflict surface of `feat/collab-rooms` against `main` in a throwaway worktree.
+2. Confirm the rate-limit disconnect against a live client, then open PR A with a failing test.
+3. Answer the shared-vs-personal question.
+4. Cut the Phase A branch off his `main`, deleting `sync/` and `js/features/collab.js` in the first commit.
+
+**Loose ends noticed and not chased.** `maxRoomsPerAdmission` is 25 in `config/app.json` but documented as 3 in `docs/lobbies.md`. `LIMITS.participants` is 32 while `maxParticipants` defaults to 8. Neither is a problem, both are worth a glance before quoting either number back at him.
+
+---
+
 ## Status board
 
 Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed) · `pr` (open upstream) · `held` (reviewed, blocked on something upstream wants first) · `merged` · `absorbed` (closed unmerged, content shipped in v1.7.0) · `parked`.
 
 | # | Item(s) | What | Status | Branch |
 | --- | --- | --- | --- | --- |
-| 1 | 5.5 | Tower icon | [`pr` #9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | `upstream-pr/map-visuals`, carries v1.7.0 |
-| 3 | 7.1 | Positions survive a reload | [`pr` #8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | `upstream-pr/remember-positions`, carries v1.7.0 |
+| 1 | 5.5 | Tower icon | [`merged` #9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | merged upstream 2026-09-08 as `afab7fa92` |
+| 3 | 7.1 | Positions survive a reload | [`merged` #8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | merged upstream 2026-09-08 as `e5eda83c9` |
 | 4 | 3.1 | Contour layer | [`absorbed` #10](https://github.com/apollyon-sys/wardogs-calculator/pull/10) | branch deleted |
 | 5 | 3.2–3.4, 3.7 | Heightfield + terrain range ring + dead ground | [`pr` #11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | `upstream-pr/terrain-range-ring`, carries v1.7.0 |
 | 6 | 7.2 | Saved-target highlight derived from position | [`absorbed` #13](https://github.com/apollyon-sys/wardogs-calculator/pull/13) | branch deleted |
@@ -187,11 +351,11 @@ Statuses: `todo` · `wip` (being cut) · `branch` (branch cut, not yet proposed)
 | 10 | 8.1–8.3 | Docs (`todo.md`, `ideas-research/`) | `parked` | — |
 | 11 | 4.1 | Time of flight | [`pr` #15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | `upstream-pr/flight-time` (stacks on #11), carries v1.7.0 |
 | 12 | 5.2/5.4 + 8.4 | FOB build areas, drag placed markers | [`pr` #16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | `upstream-pr/fob-build-areas` (stacks on #9), carries v1.7.0 |
-| 13 | 6.1 + 6.2 | Tiles from object storage | `parked` | — |
+| 13 | 6.1 + 6.2 | Tiles from object storage | `absorbed` | upstream did it himself: `96ae6cda8` tiles to R2, `6989c96b1` terrain to R2 |
 | 14 | 2.1–2.4, 2.6, 2.8, 2.9 | Multiple guns | [`pr` #17](https://github.com/apollyon-sys/wardogs-calculator/pull/17) | `upstream-pr/multiple-guns` (on `integration/all-prs`), carries v1.7.0 |
 | 15 | 7.3–7.8 | Saved-target markers and sync | `branch` | `upstream-pr/saved-target-markers` (on `upstream-pr/multiple-guns`) |
-| 16 | 1.x | Shared sessions | `todo` | — (fork carries it on `feat/collab-rooms`; presence work tracked as item 21) |
-| 19 | — | Force placement mode on the per-point lock icons | [`pr` #3](https://github.com/apollyon-sys/wardogs-calculator/pull/3) | `feat/force-placement-mode`, carries v1.7.0 |
+| 16 | 1.x | Shared sessions | `absorbed` | upstream shipped its own lobby in v1.8.0, crediting this branch as the prototype; see *Upstream shipped lobbies* below |
+| 19 | — | Force placement mode on the per-point lock icons | [`absorbed` #3](https://github.com/apollyon-sys/wardogs-calculator/pull/3) | closed unmerged; point locks shipped in `f8f4a399c` |
 | 17 | — | Parent tile drawn while the child loads | [`absorbed` #18](https://github.com/apollyon-sys/wardogs-calculator/pull/18) | branch deleted |
 | 18 | — | Forced layout and no-op DOM writes on every pointer move | [`absorbed`](https://github.com/apollyon-sys/wardogs-calculator/pull/10) via #10 | branch deleted |
 | 20 | — | rAF-coalesced redraws, cached CSS custom properties, `createImageBitmap` tile decode with a bounded LRU, `devicePixelRatio` clamped to 2 | `branch` | `upstream-pr/render-perf`, cut from v1.7.0 |
@@ -252,10 +416,10 @@ All eleven open PRs were reviewed by the maintainer on 2026-08-30. Not one drew 
 | --- | --- | --- | --- |
 | [#12](https://github.com/apollyon-sys/wardogs-calculator/pull/12) | Marker tool toggle | `approved` | "No issues with this one" — awaiting merge |
 | [#18](https://github.com/apollyon-sys/wardogs-calculator/pull/18) | Parent-tile fallback | `approved` | "I don't see any blockers" — awaiting merge |
-| [#8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | Remember positions | `modified` | Keyed by map id in `463d30088`; awaiting re-review |
+| [#8](https://github.com/apollyon-sys/wardogs-calculator/pull/8) | Remember positions | `merged` | Keyed by map id in `463d30088`; merged 2026-09-08 |
 | [#13](https://github.com/apollyon-sys/wardogs-calculator/pull/13) | Derived highlight | `modified` | Highlights every coordinate match in `380f8882f`; awaiting re-review |
 | [#14](https://github.com/apollyon-sys/wardogs-calculator/pull/14) | Tactical markers | `modified` | KO/ZH machine strings dropped in `0387012cd`; awaiting re-review |
-| [#9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | Tower icon | `modified` | The main-zone half is withdrawn: the zone is randomised per match, so the radii it was blocked on do not exist. Only the tower icon remains. |
+| [#9](https://github.com/apollyon-sys/wardogs-calculator/pull/9) | Tower icon | `merged` | The main-zone half was withdrawn, the zone being randomised per match. The tower icon alone merged 2026-09-08. |
 | [#16](https://github.com/apollyon-sys/wardogs-calculator/pull/16) | FOB build areas | `blocked` | Needs confirmed FOB dimensions; also carries #9's commits. `RING_SIZE_KEYS` now has `fob` as its only kind, the main zone having been the other. |
 | [#11](https://github.com/apollyon-sys/wardogs-calculator/pull/11) | Terrain range ring | `blocked` | Built on the superseded vacuum-fit projectile model |
 | [#15](https://github.com/apollyon-sys/wardogs-calculator/pull/15) | Flight time | `blocked` | Same projectile model as #11; stacks on it |
@@ -328,18 +492,7 @@ Items 1 through 12 were extracted opportunistically, smallest and cleanest first
 
 **Phase 3 — saved-target map markers (§7.3–7.8).** Stacks on Phase 2. It collides with guns in three places, which is why it cannot run in parallel: 7.4 (click a marker to activate it) lives in the same `js/events.js` / `js/mobile/mobile.js` hit-test block as 2.6 (pick up the gun you click); 7.6's per-target artillery toggle decides whether restoring a target also moves the **guns**, plural, so it has to be written against the real gun list or written twice; and `c3edba645` carries 7.3–7.8 and 2.8/2.9 in one commit.
 
-**Phase 4 — collaboration, as two PRs, in this order.** The collab files alone are **6,346 lines** before the hooks, the toolbar UI, the popover CSS and twelve locales.
-
-1. **`sync/` alone** — the worker, the op validation, its ~1,160 lines of tests, `sync/README.md`. About 2,500 lines. It deploys standalone and changes nothing about the site (`changes.md` records 1.1 as *Needs: none*).
-2. **Everything client-side** — `js/features/collab.js`, the `collab.url` config gate, `getCollabServiceUrl()`, the self-disabling behaviour, the `collabOn*` hooks in `map-tools.js` and `saved-targets.js`, the toolbar button, the popover, the CSS and the strings. About 3,800 lines, and a working feature the moment it lands.
-
-**Why this split and not the earlier three-way one.** Separating the client module from its hooks and UI would have produced a middle PR consisting entirely of dead code: nothing could exercise it, the real review would happen at the next PR anyway, and if that next PR were rejected upstream would be left carrying a dead 1,946-line module. Client, hooks and UI are one testable unit and ship together.
-
-The worker stays separate for a different reason: it is testable in isolation, runs under a different runtime, and reviewing a Durable Object is a different skill from reviewing the canvas client.
-
-**Worker first is an operational requirement, not just review order.** The maintainer intends to host the service on Cloudflare themselves. The client reads `collab.url` from config and self-disables when it is absent, so the Worker has to be merged and deployed, and its `wss://` endpoint known, before the client PR has anything real to point at.
-
-Still worth opening an issue before building either, to agree the shape and confirm the endpoint arrangement.
+**Phase 4 — collaboration. Overtaken by events.** This phase planned to propose the fork's collab upstream as two PRs, worker first, on the reasoning that the maintainer would host the service himself. He built and shipped his own in v1.8.0 instead. The fork's `sync/` and `js/features/collab.js` are not going upstream and are not worth carrying; see *Merging onto v1.8.0* above for what replaces this phase.
 
 **`integration/all-prs`** is a branch merging all nine open PR branches, used as the base for Phase 2 so guns can be built against "everything landed". **The review invalidated it as the base for #17's rebase:** it contains #9, #10, #11, #15 and #16, all now held. The real base is `upstream/main` plus #8, #12, #13, #14 and #18 once those merge. It is a working aid, not a thing to propose upstream.
 
@@ -418,11 +571,11 @@ The tiers are the reasoning; the status board at the top is the live state.
 
 ### Tier 4 — big, after the above
 
-9. **6.1 + 6.2 Tiles from object storage.** Mechanically fine and a large win — 1.4 GB and 43,700 files out of the tree — but it is an infrastructure decision for the maintainer, not just a code review. Needs #5 landed first.
+9. **6.1 + 6.2 Tiles from object storage.** Retired — the maintainer made the infrastructure decision himself and moved both tiles (`96ae6cda8`) and terrain data (`6989c96b1`) to R2.
 10. **3.3 + 3.7 Heightfield and terrain range ring.** 370 KB of binary heightfields plus a real ballistics model. Genuinely novel behaviour, wants its own discussion.
 11. **2.1 → 2.3 Multiple guns.** `changes.md` is right that 2.1 is the keystone and that keeping `js/core/core.js` untouched is the property to preserve.
 12. **7.3 – 7.8 Saved-target map markers and sync.** Stacks on itself; the hardest slice in the fork.
-13. **1.x Shared sessions.** Last, as planned.
+13. **1.x Shared sessions.** Retired — upstream shipped its own in v1.8.0. The work is now porting the fork's collab-dependent features onto his protocol, and the upstream PR queue that unblocks them.
 
 ---
 
